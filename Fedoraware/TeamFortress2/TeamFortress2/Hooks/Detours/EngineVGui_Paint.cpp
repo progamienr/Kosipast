@@ -39,13 +39,13 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 
 		if (!bInitIcons)
 		{
-for (int nIndex = 0; nIndex < ICONS::TEXTURE_AMOUNT; nIndex++)
-{
-	ICONS::ID[nIndex] = -1;
-	g_Draw.Texture(-200, 0, 18, 18, Colors::White, nIndex);
-}
+			for (int nIndex = 0; nIndex < ICONS::TEXTURE_AMOUNT; nIndex++)
+			{
+				ICONS::ID[nIndex] = -1;
+				g_Draw.Texture(-200, 0, 18, 18, Colors::White, nIndex);
+			}
 
-bInitIcons = true;
+			bInitIcons = true;
 		}
 	}
 
@@ -121,48 +121,6 @@ bInitIcons = true;
 					});
 			}
 
-			if (I::EngineVGui->IsGameUIVisible()) //Snow
-			{
-				if (!I::EngineClient->IsInGame())
-				{
-					static time_t curTime = time(0);
-					static tm* curCalTime = localtime(&curTime);
-
-					if (F::Menu.IsOpen)
-					{
-					#ifdef _DEBUG
-						g_Draw.String(FONT_MENU, 5, g_ScreenSize.h - 2 - Vars::Fonts::FONT_MENU::nTall.Value, { 200, 200, 200, 255 }, ALIGN_DEFAULT, L"Debug Build of %hs", __DATE__);
-					#else
-						g_Draw.String(FONT_MENU, 5, g_ScreenSize.h - 2 - Vars::Fonts::FONT_MENU::nTall.Value, { 200, 200, 200, 255 }, ALIGN_DEFAULT, L"Build of %hs", __DATE__);
-					#endif
-						if (Vars::Visuals::MenuCelebration.Value)
-						{
-							if (curCalTime->tm_mon == 11 && curCalTime->tm_mday == 25)
-							{
-								g_Draw.String(FONT_MENU, g_ScreenSize.c, 150, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, "MERRY CHRISTMAS!!!!!!!");
-							}
-							if (curCalTime->tm_mon == 11 || curCalTime->tm_mon == 0 || curCalTime->tm_mon == 1)
-							{
-								F::Visuals.DrawMenuSnow();
-							}
-						}
-					}
-				}
-			}
-
-			if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
-			{
-				if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value) { return FinishDrawing(I::VGuiSurface); }
-				F::Visuals.DrawAntiAim(pLocal);
-				F::Visuals.DrawTickbaseInfo(pLocal);
-				F::Visuals.DrawAimbotFOV(pLocal);
-				F::Visuals.DrawDebugInfo(pLocal);
-				F::Visuals.DrawOnScreenConditions(pLocal);
-				F::Visuals.DrawOnScreenPing(pLocal);
-				F::Visuals.DrawServerHitboxes();
-				F::AntiAim.Draw(pLocal);
-			}
-
 			F::ESP.Run();
 			F::Visuals.PickupTimers();
 			F::PlayerArrows.Run();
@@ -172,6 +130,19 @@ bInitIcons = true;
 			F::Radar.Run();
 			F::PlayerList.Run();
 			F::Notifications.Think();
+
+			if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
+			{
+				if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value) { return FinishDrawing(I::VGuiSurface); }
+				F::Visuals.DrawAntiAim(pLocal);
+				F::Visuals.DrawTickbaseText();
+				F::Visuals.DrawAimbotFOV(pLocal);
+				F::Visuals.DrawDebugInfo(pLocal);
+				F::Visuals.DrawOnScreenConditions(pLocal);
+				F::Visuals.DrawOnScreenPing(pLocal);
+				F::Visuals.DrawServerHitboxes();
+				F::AntiAim.Draw(pLocal);
+			}
 		}
 		FinishDrawing(I::VGuiSurface);
 	}

@@ -140,7 +140,6 @@ void CAutoStab::RunRage(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 
 				// Set origins and eye angles for further logic
 				pEnemy->SetAbsOrigin(pTick.vOrigin);
-				pEnemy->SetEyeAngles(pTick.vAngles);
 
 				// Check stab range (option)
 				const float flRange = (48.0f * Vars::Triggerbot::Stab::Range.Value);

@@ -20,6 +20,8 @@ class CMisc
 	void AntiAFK(CUserCmd* pCmd);
 	void CheatsBypass();
 	void PingReducer();
+	int iLastCmdrate = -1;
+	void FakeInterp();
 	void WeaponSway();
 	void DetectChoke();
 	void ChokeCheck(bool* pSendPacket);
@@ -41,6 +43,7 @@ public:
 	bool TauntControl(CUserCmd* pCmd);
 	void RunPre(CUserCmd* pCmd, bool* pSendPacket);
 	void RunPost(CUserCmd* pCmd, bool* pSendPacket);
+	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
 
 	void SteamRPC();
 	void UnlockAchievements();

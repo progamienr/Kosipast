@@ -19,7 +19,6 @@ struct BulletTracer_t
 	float m_flTimeCreated;
 };
 
-
 class CVisuals
 {
 private:
@@ -35,20 +34,30 @@ public:
 	void RestoreWorldModulation();
 	void OverrideWorldTextures();
 	void PickupTimers();
-	void DrawHitboxMatrix(CBaseEntity* pEntity, Color_t colourface, Color_t colouredge, float time);
+	void DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity);
+	void DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin);
 
 	void DrawOnScreenConditions(CBaseEntity* pLocal);
 	void DrawOnScreenPing(CBaseEntity* pLocal);
 	void SkyboxChanger();
 	void BulletTrace(CBaseEntity* pEntity, Color_t color);
+	void ProjectileTrace();
 	void DrawAimbotFOV(CBaseEntity* pLocal);
 	void DrawDebugInfo(CBaseEntity* pLocal);
 	void DrawAntiAim(CBaseEntity* pLocal);
-	void DrawTickbaseInfo(CBaseEntity* pLocal);
-	void DrawMenuSnow();
-	void DrawMovesimLine();
+	void DrawTickbaseText();
+	void DrawTickbaseBars();
+	void DrawBulletLines();
+	void ClearBulletLines();
+	void RevealBulletLines();
+	void DrawSimLine(std::vector<std::pair<Vec3, Vec3>> Line, Color_t Color, bool Separators = false);
+	void DrawSimLines();
+	void RevealSimLines();
+	void DrawBoxes();
+	void RevealBoxes();
 	void ManualNetwork(const StartSoundParams_t& params); // Credits: reestart
-	void RenderLine(const Vector& v1, const Vector& v2, Color_t c, bool bZBuffer);
+	void RenderLine(const Vec3& v1, const Vec3& v2, Color_t c, bool bZBuffer);
+	void RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace);
 	void DrawSightlines();
 	void FillSightlines();
 	void AddBulletTracer(const Vec3& vFrom, const Vec3& vTo, const Color_t& clr);

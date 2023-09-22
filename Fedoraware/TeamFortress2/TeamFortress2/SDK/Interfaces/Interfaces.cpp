@@ -10,7 +10,7 @@
 #define MATSURFACE L"vguimatsurface.dll"
 #define VSTDLIB L"vstdlib.dll"
 #define MATSYSTEM L"materialsystem.dll"
-
+#define VPHYSICS L"vphysics.dll"
 
 void CInterfaces::Init()
 {
@@ -30,6 +30,12 @@ void CInterfaces::Init()
 
 	GameMovement = g_Interface.Get<CGameMovement*>(CLIENT, CLIENT_GAMEMOVEMENT_INTERFACE_VERSION);
 	_valid(GameMovement);
+
+	Physics = g_Interface.Get<IPhysics*>(VPHYSICS, VPHYSICS_INTERFACE_VERSION);
+	_valid(Physics);
+
+	PhysicsCollision = g_Interface.Get<IPhysicsCollision*>(VPHYSICS, VPHYSICS_COLLISION_INTERFACE_VERSION);
+	_valid(PhysicsCollision);
 
 	CenterPrint = g_Interface.Get<ICenterPrint*>(CLIENT, VCENTERPRINT_INTERFACE_VERSION);
 	_valid(CenterPrint);
@@ -139,30 +145,33 @@ void CInterfaces::Init()
 	AchievementMgr = reinterpret_cast<IAchievementMgr*>(GetVFunc<getachievementmgr>(I::EngineClient, 115));
 	_valid(AchievementMgr);
 
-	ViewRenderBeams = **reinterpret_cast<IViewRenderBeams***>(g_Pattern.Find(L"client.dll", L"8B 0D ? ? ? ? 56 8B 01 FF 50 18 0F B7 96 ? ? ? ?") + 0x2);
+	ViewRenderBeams = **reinterpret_cast<IViewRenderBeams***>(g_Pattern.Find(CLIENT, L"8B 0D ? ? ? ? 56 8B 01 FF 50 18 0F B7 96 ? ? ? ?") + 0x2);
 	_valid(ViewRenderBeams);
 
-	EngineSound = g_Interface.Get<IEngineSound*>(L"engine.dll", "IEngineSoundClient003");
+	EngineSound = g_Interface.Get<IEngineSound*>(ENGINE, "IEngineSoundClient003");
 	_valid(EngineSound);
 
-	TFGameRules = *reinterpret_cast<CTFGameRules**>(g_Pattern.Find(L"client.dll", L"8B 0D ? ? ? ? 56 8B 01 8B 80 ? ? ? ? FF D0 84 C0 0F 84 ? ? ? ? 80 BB ? ? ? ? ?") + 0x1);
+	TFGameRules = *reinterpret_cast<CTFGameRules**>(g_Pattern.Find(CLIENT, L"8B 0D ? ? ? ? 56 8B 01 8B 80 ? ? ? ? FF D0 84 C0 0F 84 ? ? ? ? 80 BB ? ? ? ? ?") + 0x1);
 	_valid(TFGameRules);
 
-	ThirdPersonManager = *reinterpret_cast<CThirdPersonManager**>(g_Pattern.Find(L"client.dll", L"B9 ? ? ? ? E8 ? ? ? ? 84 C0 74 42 8B 86") + 0x1);
+	ThirdPersonManager = *reinterpret_cast<CThirdPersonManager**>(g_Pattern.Find(CLIENT, L"B9 ? ? ? ? E8 ? ? ? ? 84 C0 74 42 8B 86") + 0x1);
 	_valid(ThirdPersonManager);
 
 	// Forgive the double cast but this was annoying meeeeee
 	DirectXDevice = reinterpret_cast<IDirect3DDevice9*>(**reinterpret_cast<DWORD**>(g_Pattern.Find(L"shaderapidx9.dll", L"A1 ? ? ? ? 50 8B 08 FF 51 0C") + 0x1));
 	_valid(DirectXDevice);
 
-	ClientModeTF = *reinterpret_cast<ClientModeTFNormal**>(g_Pattern.Find(L"client.dll", L"B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 C4 04 8B 35 ? ? ? ?") + 0x1);
+	ClientModeTF = *reinterpret_cast<ClientModeTFNormal**>(g_Pattern.Find(CLIENT, L"B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 C4 04 8B 35 ? ? ? ?") + 0x1);
 	_valid(ClientModeTF);
 
 	Localize = g_Interface.Get<ILocalize*>(VGUI2, VGUI_LOCALIZE_INTERFACE_VERSION);
 	_valid(Localize);
 
-	HostState = *reinterpret_cast<CCommonHostState**>(g_Pattern.Find(L"engine.dll", L"8B 15 ? ? ? ? C6 85 ? ? ? ? ? C6 85 ? ? ? ? ? C6 85 ? ? ? ? ? C6 85 ? ? ? ? ? C6 85") + 0x1);
+	HostState = *reinterpret_cast<CCommonHostState**>(g_Pattern.Find(ENGINE, L"8B 15 ? ? ? ? C6 85 ? ? ? ? ? C6 85 ? ? ? ? ? C6 85 ? ? ? ? ? C6 85 ? ? ? ? ? C6 85") + 0x1);
 	_valid(HostState);
+
+	TFGameMovement = *reinterpret_cast<CTFGameMovement**>(g_Pattern.Find(CLIENT, L"B9 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? C7 05 ? ? ? ? ? ? ? ? C6 05 ? ? ? ? ? E8") + 0x1);
+	_valid(TFGameMovement);
 }
 
 void CSteamInterfaces::Init()

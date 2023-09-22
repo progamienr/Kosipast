@@ -1,6 +1,6 @@
 #include "PlayerArrows.h"
 #include "../Vars.h"
-
+// [implement]
 bool CPlayerArrows::ShouldRun(CBaseEntity* pLocal)
 {
 	if (!Vars::Visuals::OutOfFOVArrows.Value || I::EngineVGui->IsGameUIVisible())
@@ -23,77 +23,62 @@ bool CPlayerArrows::ShouldRun(CBaseEntity* pLocal)
 
 void CPlayerArrows::DrawArrowTo(const Vec3& vecFromPos, const Vec3& vecToPos, Color_t color)
 {
-	color.a = 150;
-
-	auto GetClockwiseAngle = [&](const Vec3& vecViewAngle, const Vec3& vecAimAngle) -> float
-	{
-		auto vecAngle = Vec3();
-		Math::AngleVectors(vecViewAngle, &vecAngle);
-
-		auto vecAim = Vec3();
-		Math::AngleVectors(vecAimAngle, &vecAim);
-
-		return -atan2(vecAngle.x * vecAim.y - vecAngle.y * vecAim.x, vecAngle.x * vecAim.x + vecAngle.y * vecAim.y);
-	};
-
-	auto MapFloat = [&](float x, float in_min, float in_max, float out_min, float out_max) -> float
-	{
-		return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-	};
-
-	const Vec3 vecAngleTo = Math::CalcAngle(vecFromPos, vecToPos);
-	const Vec3 vecViewAngle = I::EngineClient->GetViewAngles();
-
-	const float deg = GetClockwiseAngle(vecViewAngle, vecAngleTo);
-	const float xrot = cos(deg - PI / 2);
-	const float yrot = sin(deg - PI / 2);
-
-	const float x1 = (g_ScreenSize.w * Vars::Visuals::FovArrowsDist.Value + 5.0f) * xrot;
-	const float y1 = (g_ScreenSize.w * Vars::Visuals::FovArrowsDist.Value + 5.0f) * yrot;
-	const float x2 = (g_ScreenSize.w * Vars::Visuals::FovArrowsDist.Value + 15.0f) * xrot;
-	const float y2 = (g_ScreenSize.w * Vars::Visuals::FovArrowsDist.Value + 15.0f) * yrot;
-
-	//constexpr float arrow_angle = DEG2RAD(60.0f);
-	const float arrowAngle = DEG2RAD(Vars::Visuals::ArrowAngle.Value);
-	//constexpr float arrow_length = 20.0f;
-	const float arrowLength = Vars::Visuals::ArrowLength.Value;
-
-	const Vec3 line{ x2 - x1, y2 - y1, 0.0f };
-	const float length = line.Length();
-
-	const float fpointOnLine = arrowLength / (atanf(arrowAngle) * length);
-	const Vec3 pointOnLine = Vec3(x2, y2, 0) + (line * fpointOnLine * -1.0f);
-	const Vec3 normalVector{ -line.y, line.x, 0.0f };
-	const Vec3 normal = Vec3(arrowLength, arrowLength, 0.0f) / (length * 2);
-
-	const Vec3 rotation = normal * normalVector;
-	const Vec3 left = pointOnLine + rotation;
-	const Vec3 right = pointOnLine - rotation;
-
 	const auto cx = static_cast<float>(g_ScreenSize.w / 2);
 	const auto cy = static_cast<float>(g_ScreenSize.h / 2);
 
-	//float fMap = std::clamp(MapFloat(vecFromPos.DistTo(vecToPos), 1000.0f, 100.0f, 0.0f, 1.0f), 0.0f, 1.0f);
-	const float fMap = std::clamp(MapFloat(vecFromPos.DistTo(vecToPos), Vars::Visuals::MaxDist.Value,
-								  Vars::Visuals::MinDist.Value, 0.0f, 1.0f), 0.0f, 1.0f);
-	Color_t heatColor = color;
-	heatColor.a = static_cast<byte>(fMap * 255.0f);
+	bool onScreen; Vec3 vScreenPos = {};
+	{
+		const matrix3x4& worldToScreen = G::WorldToProjection.As3x4();
+		float w = worldToScreen[3][0] * vecToPos[0] + worldToScreen[3][1] * vecToPos[1] + worldToScreen[3][2] * vecToPos[2] + worldToScreen[3][3];
+		vScreenPos.z = 0;
 
-	if (Vars::Visuals::OutOfFOVArrowsOutline.Value)
-	{
-		g_Draw.Line(cx + x2, cy + y2, cx + left.x, cy + left.y, heatColor);
-		g_Draw.Line(cx + x2, cy + y2, cx + right.x, cy + right.y, heatColor);
-		g_Draw.Line(cx + left.x, cy + left.y, cx + right.x, cy + right.y, heatColor);
+		onScreen = w > 0.f;
+		float fl1DBw = 1 / abs(w);
+		vScreenPos.x = cx + (0.5 * ((worldToScreen[0][0] * vecToPos[0] + worldToScreen[0][1] * vecToPos[1] + worldToScreen[0][2] * vecToPos[2] + worldToScreen[0][3]) * fl1DBw) * cx + 0.5);
+		vScreenPos.y = cy - (0.5 * ((worldToScreen[1][0] * vecToPos[0] + worldToScreen[1][1] * vecToPos[1] + worldToScreen[1][2] * vecToPos[2] + worldToScreen[1][3]) * fl1DBw) * cy + 0.5);
 	}
-	else
+
+	/*
+	if (onScreen && !(vScreenPos.x < 0 ||
+		vScreenPos.x > g_ScreenSize.w ||
+		vScreenPos.y < 0 ||
+		vScreenPos.y > g_ScreenSize.h))
+		return;
+	*/
+
+	if (onScreen)
 	{
-		Vertex_t t1, t2, t3;
-		t1.Init({ cx + left.x, cy + left.y });
-		t2.Init({ cx + right.x, cy + right.y });
-		t3.Init({ cx + x2, cy + y2 });
-		std::array<Vertex_t, 3> verts{ t1, t2, t3 };
-		g_Draw.DrawTexturedPolygon(3, verts.data(), heatColor);
+		float minc = std::min(cx, cy); float maxc = std::max(cx, cy);
+		float dist = sqrt(powf(vScreenPos.x - cx, 2) + powf(vScreenPos.y - cy, 2)) * 2;
+		float transparency;
+		if (minc != maxc)
+			transparency = 1 - std::clamp((dist - minc) / (maxc - minc), 0.f, 1.f);
+		else
+			transparency = 1 - std::clamp(dist - minc, 0.f, 1.f);
+		color.a = static_cast<byte>(std::max(static_cast<float>(color.a) - transparency * 255.f, 0.f));
 	}
+
+	if (color.a == 0) {
+		return;
+	}
+
+	Vec2
+		p1 = { static_cast<float>(-Vars::Visuals::FovArrowsDist.Value), 12.5f },
+		p2 = { static_cast<float>(-Vars::Visuals::FovArrowsDist.Value), -12.5f },
+		p3 = { static_cast<float>(-Vars::Visuals::FovArrowsDist.Value) - 25.f * sqrt(3.f) / 2.f, 0.f };
+
+	auto angle = Vec3();
+	Math::VectorAngles(Vec3(cx - vScreenPos.x, cy - vScreenPos.y, 0), angle);
+	const float deg = DEG2RAD(angle.y);
+	const float _cos = cos(deg);
+	const float _sin = sin(deg);
+
+	Vertex_t t1, t2, t3;
+		t1.Init({ cx + p1.x * _cos - p1.y * _sin, cy + p1.y * _cos + p1.x * _sin });
+		t2.Init({ cx + p2.x * _cos - p2.y * _sin, cy + p2.y * _cos + p2.x * _sin });
+		t3.Init({ cx + p3.x * _cos - p3.y * _sin, cy + p3.y * _cos + p3.x * _sin });
+	std::array<Vertex_t, 3> verts{ t1, t2, t3 };
+	g_Draw.DrawTexturedPolygon(3, verts.data(), color);
 }
 
 void CPlayerArrows::Run()
@@ -105,9 +90,7 @@ void CPlayerArrows::Run()
 			return;
 		}
 
-		const Vec3 vLocalPos = pLocal->GetWorldSpaceCenter();
-
-		m_vecPlayers.clear();
+		const Vec3 vLocalPos = pLocal->GetEyePosition();
 
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
@@ -115,73 +98,33 @@ void CPlayerArrows::Run()
 			{
 				continue;
 			}
-
 			Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
-			Vec3 vScreen;
 
-			if (!Utils::W2S(vEnemyPos, vScreen))
-			{
-				m_vecPlayers.push_back(vEnemyPos);
-			}
-
-			///*if (!(vLocalPos.DistTo(vEnemyPos) > 400.0f))
-			//	continue;*/
-
-			//Vec3 vAngleToEnemy = Math::CalcAngle(vLocalPos, vEnemyPos);
-			//Vec3 viewangless = I::Engine->GetViewAngles();
-			//viewangless.x = 0;
-			//float fFovToEnemy = Math::CalcFov(viewangless, vAngleToEnemy);
-
-			///*
-			//Vec3 vEntForward = {};
-			//Math::AngleVectors(pEnemy->GetEyeAngles(), &vEntForward);
-			//Vec3 vToEnt = pEnemy->GetAbsOrigin() - pLocal->GetAbsOrigin();
-			//vToEnt.NormalizeInPlace();
-
-			//if (vEntForward.Dot(vToEnt) < 0.5071f)
-			//	continue;*/
-
-			//if (fFovToEnemy < Vars::Visuals::FieldOfView.m_Var)
-			//	continue;
-
-			///*if (Vars::Visuals::SpyWarningVisibleOnly.m_Var)
-			//{
-			//	CGameTrace Trace = {};
-			//	CTraceFilterWorldAndPropsOnly Filter = {};
-
-			//	Utils::Trace(vEnemyPos, vLocalPos, MASK_SOLID, &Filter, &Trace);
-
-			//	if (Trace.flFraction < 1.0f)
-			//		continue;
-			//}*/
-
-			/*m_vecPlayers.push_back(vEnemyPos);*/
-		}
-		if (m_vecPlayers.empty())
-		{
-			return;
-		}
-
-		for (const auto& player : m_vecPlayers)
-		{
-			Color_t teamColor;
+			Color_t color;
 			if (!Vars::ESP::Main::EnableTeamEnemyColors.Value)
 			{
 				if (pLocal->GetTeamNum() == 2)
 				{
-					teamColor = Colors::TeamBlu;
+					color = Colors::TeamBlu;
 				}
 				else
 				{
-					teamColor = Colors::TeamRed;
+					color = Colors::TeamRed;
 				}
 			}
 			else
 			{
-				teamColor = Colors::Enemy;
+				color = Colors::Enemy;
 			}
+			auto MapFloat = [&](float x, float in_min, float in_max, float out_min, float out_max) -> float
+			{
+				return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+			};
+			const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::MaxDist.Value,
+				Vars::Visuals::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
+			color.a = static_cast<byte>(fMap * 255.f);
 
-			DrawArrowTo(vLocalPos, player, teamColor);
+			DrawArrowTo(vLocalPos, vEnemyPos, color);
 		}
 	}
 }

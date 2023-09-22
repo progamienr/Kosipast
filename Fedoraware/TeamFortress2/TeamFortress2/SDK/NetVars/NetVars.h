@@ -63,7 +63,7 @@ public:
 		dwOffset = g_NetVars.get_offset(a...) + nOffset;
 	}
 
-	T GetValue(void* base)
+	T& GetValue(void* base)
 	{
 		return *reinterpret_cast<T*>(reinterpret_cast<DWORD>(base) + dwOffset);
 	}
@@ -78,13 +78,13 @@ public:
 #define DYNVAR_RETURN(type, base, ...) DYNVAR(n, type, __VA_ARGS__); return n.GetValue(base)
 #define DYNVAR_SET(type, base, value, ...) DYNVAR(n, type, __VA_ARGS__); n.SetValue(base,value)
 
-#define M_DYNVARGET(name, type, base, ...) __inline type Get##name() \
+#define M_DYNVARGET(name, type, base, ...) __inline type& Get##name() \
 { \
 	static CDynamicNetvar<type>  Var##name( __VA_ARGS__ ); \
 	return Var##name.GetValue(base); \
 }
 
-#define M_OFFSETGET(name, type, offset) __inline type Get##name() \
+#define M_OFFSETGET(name, type, offset) __inline type& Get##name() \
 { \
 	return *reinterpret_cast<type*>(this + offset); \
 }

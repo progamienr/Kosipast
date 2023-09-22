@@ -5,6 +5,7 @@
 #include "../../Features/Glow/Glow.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Visuals/FakeAngleManager/FakeAng.h"
+#include "../../Features/Menu/MaterialEditor/MaterialEditor.h"
 
 void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 
@@ -38,18 +39,19 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 		if (pEntity && pEntity->GetClassID() == ETFClassID::CTFPlayer)
 		{
 			if (!pEntity->IsAlive())
-			{
 				return;
-			}
+
 			if (!F::Glow.m_bRendering && !F::Chams.m_bRendering)
 			{
 				if (Vars::Backtrack::BtChams::EnemyOnly.Value && g_EntityCache.GetLocal() && pEntity->GetTeamNum() ==
 					g_EntityCache.GetLocal()->GetTeamNum())
-				{
 					return;
-				}
 
-				IMaterial* chosenMat = F::DMEChams.v_MatList.at(Vars::Backtrack::BtChams::Material.Value) ? F::DMEChams.v_MatList.at(Vars::Backtrack::BtChams::Material.Value) : nullptr;
+				IMaterial* chosenMat = nullptr; // fake latency material
+				if (Vars::Backtrack::BtChams::Material.Value == 9)
+					chosenMat = F::MaterialEditor.GetByName(Vars::Backtrack::BtChams::Custom);
+				else
+					chosenMat = F::DMEChams.v_MatList.at(Vars::Backtrack::BtChams::Material.Value) ? F::DMEChams.v_MatList.at(Vars::Backtrack::BtChams::Material.Value) : nullptr;
 
 				I::ModelRender->ForcedMaterialOverride(chosenMat);
 
@@ -71,13 +73,14 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 				I::RenderView->SetBlend(Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.a));
 
 				const auto& vRecords = F::Backtrack.GetRecords(pEntity);
+				if (!vRecords || vRecords->empty())
+					return;
+
 				if (Vars::Backtrack::BtChams::LastOnly.Value)
 				{
 					std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
-					if (vLastRec)
-					{
+					if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
 						OriginalFn(ecx, edx, pState, pInfo, (matrix3x4*)(&vLastRec->BoneMatrix));
-					}
 				}
 				else
 				{
@@ -85,8 +88,13 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 					{
 						for (auto& record : *vRecords)
 						{
+							if (!F::Backtrack.WithinRewind(record))
+								continue;
+							if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) <= 0.1f)
+								continue;
+
 							I::RenderView->SetColorModulation(record.bOnShot ? 1 : Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.r), record.bOnShot ? 0 : Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.g), record.bOnShot ? 0 : Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.b));
-							if (F::Backtrack.WithinRewind(record)) { OriginalFn(ecx, edx, pState, pInfo, (matrix3x4*)(&record.BoneMatrix)); }
+							OriginalFn(ecx, edx, pState, pInfo, (matrix3x4*)(&record.BoneMatrix));
 						}
 					}
 				}

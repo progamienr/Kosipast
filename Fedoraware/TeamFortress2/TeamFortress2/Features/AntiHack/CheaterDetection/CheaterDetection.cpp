@@ -5,11 +5,14 @@ bool CCheaterDetection::ShouldScan()
 	const int iProtFlags = Vars::Misc::CheaterDetection::Protections.Value;
 	const int iDetectFlags = Vars::Misc::CheaterDetection::Methods.Value;
 
-	if (I::EngineClient->IsPlayingTimeDemo()) { return false; }
+	if (I::EngineClient->IsPlayingTimeDemo())
+		return false;
 
-	if (!Vars::Misc::CheaterDetection::Enabled.Value && !iDetectFlags) { return false; }
+	if (!Vars::Misc::CheaterDetection::Enabled.Value && !iDetectFlags)
+		return false;
 
-	if (iLastScanTick == I::GlobalVars->tickcount && iProtFlags & (1 << 2)) { return false; }
+	if (iLastScanTick == I::GlobalVars->tickcount && iProtFlags & (1 << 2))
+		return false;
 
 	if (flLastFrameTime)
 	{
@@ -29,7 +32,8 @@ bool CCheaterDetection::ShouldScan()
 		const float flMaxReceive = I::GlobalVars->interval_per_tick * 2;
 		const bool bIsTimeOut = NetChannel->IsTimingOut();
 		const bool bShouldSkip = (flLastReceive > flMaxReceive) || bIsTimeOut;
-		if (bShouldSkip && iProtFlags & (1 << 0)) { return false; }
+		if (bShouldSkip && iProtFlags & (1 << 0))
+			return false;
 	}
 
 	return true;
@@ -39,17 +43,21 @@ bool CCheaterDetection::ShouldScanEntity(CBaseEntity* pEntity)
 {
 	const int iIndex = pEntity->GetIndex();
 
-	if (fabsf(I::GlobalVars->curtime - mData[pEntity].flJoinTime) < 10.f) { return false; }	//	if they haven't been in the server for 10 seconds dont scan them
+	if (fabsf(I::GlobalVars->curtime - mData[pEntity].flJoinTime) < 10.f)
+		return false;	//	if they haven't been in the server for 10 seconds dont scan them
 
 	// dont scan invalid players
-	if (pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->IsTaunting()) { return false; }
+	if (pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->IsTaunting())
+		return false;
 
 	// dont scan players that arent simulated this tick
-	if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime()) { return false; }
+	if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime())
+		return false;
 
 	// dont scan if we can't get playerinfo
 	PlayerInfo_t pInfo{};
-	if (!I::EngineClient->GetPlayerInfo(iIndex, &pInfo)) { return false; }
+	if (!I::EngineClient->GetPlayerInfo(iIndex, &pInfo))
+		return false;
 
 	// dont scan friends, or players already marked as cheaters
 	switch (G::PlayerPriority[pInfo.friendsID].Mode) 
@@ -59,9 +67,7 @@ bool CCheaterDetection::ShouldScanEntity(CBaseEntity* pEntity)
 		return false;
 	}
 	if(g_EntityCache.IsFriend(pEntity->GetIndex())) //first check only gets based off of playerlist, so do another check for steam friends
-	{
 		return false;
-	}
 
 	if (!mData[pEntity].flJoinTime) 
 	{ 
@@ -91,18 +97,32 @@ void CCheaterDetection::ReportTickCount(std::pair<CBaseEntity*, int> pReport)
 bool CCheaterDetection::CheckBHop(CBaseEntity* pEntity)
 {
 	const bool bOnGround = pEntity->OnSolid();	//	NOTE: groundentity isn't networked properly sometimes i think
-	if (bOnGround) { mData[pEntity].pBhop.first++; }
-	else if (mData[pEntity].pBhop.first <= Vars::Misc::CheaterDetection::BHopMaxDelay.Value && mData[pEntity].pBhop.first > 0) { mData[pEntity].pBhop.second++; mData[pEntity].pBhop.first = 0; }
-	else { mData[pEntity].pBhop = { 0, 0 }; }
+	if (bOnGround)
+		mData[pEntity].pBhop.first++;
+	else if (mData[pEntity].pBhop.first <= Vars::Misc::CheaterDetection::BHopMaxDelay.Value && mData[pEntity].pBhop.first > 0)
+	{
+		mData[pEntity].pBhop.second++; mData[pEntity].pBhop.first = 0; 
+	}
+	else
+		mData[pEntity].pBhop = { 0, 0 };
 
-	if (mData[pEntity].pBhop.second >= Vars::Misc::CheaterDetection::BHopDetectionsRequired.Value) { mData[pEntity].iPlayerSuspicion++; mData[pEntity].pBhop = { 0, 0 }; return true; }
+	if (mData[pEntity].pBhop.second >= Vars::Misc::CheaterDetection::BHopDetectionsRequired.Value)
+	{
+		mData[pEntity].iPlayerSuspicion++;
+		mData[pEntity].pBhop = { 0, 0 };
+		return true;
+	}
 	return false;
 }
 
 bool CCheaterDetection::AreAnglesSuspicious(CBaseEntity* pEntity)
 {
 // first check if we should scan this player at all
-	if (G::ChokeMap[pEntity->GetIndex()] > 0 || pEntity->GetVelocity().Length() < 10.f || mData[pEntity].vLastAngle.IsZero()) { mData[pEntity].pTrustAngles = { false, {0, 0} }; return false; } //	angles don't update the way I WANT them to if the player is not moving.
+	if (G::ChokeMap[pEntity->GetIndex()] > 0 || pEntity->GetVelocity().Length() < 10.f || mData[pEntity].vLastAngle.IsZero())
+	{
+		mData[pEntity].pTrustAngles = { false, {0, 0} };
+		return false;
+	} //	angles don't update the way I WANT them to if the player is not moving.
 	if (!mData[pEntity].pTrustAngles.first)
 	{	//	we are not suspicious of this player yet
 		const Vec3 vCurAngle = pEntity->GetEyeAngles();
@@ -147,8 +167,13 @@ void CCheaterDetection::AimbotCheck(CBaseEntity* pEntity)
 bool CCheaterDetection::IsDuckSpeed(CBaseEntity* pEntity)
 {
 	const bool bIsDucking = pEntity->IsDucking() && pEntity->OnSolid();	//	this may break on movement sim?? (ty spook >:C)
-	if (!bIsDucking) { mData[pEntity].pDuckInfo = { 0, 0 }; return false; }
-	if (mData[pEntity].pDuckInfo.first == -1) { return false; }	//	dont double infract
+	if (!bIsDucking)
+	{
+		mData[pEntity].pDuckInfo = { 0, 0 };
+		return false;
+	}
+	if (mData[pEntity].pDuckInfo.first == -1)
+		return false;	//	dont double infract
 
 	if (TICKS_TO_TIME(mData[pEntity].pDuckInfo.first) > 1.f)
 	{	//	only check once we have a full second of data.
@@ -170,12 +195,16 @@ bool CCheaterDetection::IsDuckSpeed(CBaseEntity* pEntity)
 void CCheaterDetection::BacktrackCheck(CGameEvent* pEvent) {
 	//	get victim & attacker
 	CBaseCombatWeapon* pWeapon = reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(pEvent->GetInt("weaponid")));
-	if (Utils::GetWeaponType(pWeapon) == EWeaponType::PROJECTILE || Utils::GetWeaponType(pWeapon) == EWeaponType::UNKNOWN) { return; }	//	check that our attacker has lag compensation on their weapon.
+	if (Utils::GetWeaponType(pWeapon) == EWeaponType::PROJECTILE || Utils::GetWeaponType(pWeapon) == EWeaponType::UNKNOWN)
+		return;	//	check that our attacker has lag compensation on their weapon.
 	CBaseEntity* pAttacker = I::ClientEntityList->GetClientEntity(pEvent->GetInt("attacker"));
 	CBaseEntity* pVictim = I::ClientEntityList->GetClientEntity(pEvent->GetInt("userid"));
-	if (!pVictim || !pAttacker) { return; }
-	if (pVictim->GetDormant() || pAttacker->GetDormant()) { return; }
-	if (pVictim->GetVelocity().Length() < 16.f) { return; }	//	don't check static players
+	if (!pVictim || !pAttacker)
+		return;
+	if (pVictim->GetDormant() || pAttacker->GetDormant())
+		return;
+	if (pVictim->GetVelocity().Length() < 16.f)
+		return;	//	don't check static players
 
 	const Vec3 vEyeAng = pAttacker->GetEyeAngles();			//	get attacker angles & pos
 	const Vec3 vEyePos = pAttacker->GetEyePosition();		//	
@@ -187,7 +216,7 @@ void CCheaterDetection::BacktrackCheck(CGameEvent* pEvent) {
 
 	const Vec3 vTraceStart = vEyePos;									  //
 	const Vec3 vTraceEnd = (vTraceStart + (vForward * 8192.0f));		  //
-	//
+
 	CGameTrace trace = {};												  //
 	CTraceFilterHitscan filter = {};									  //
 	filter.pSkip = pAttacker;											  //
@@ -196,18 +225,24 @@ void CCheaterDetection::BacktrackCheck(CGameEvent* pEvent) {
 	float flTime = 0.f;
 
 	const auto& pRecords = F::Backtrack.GetRecords(pVictim);
-	if (!pRecords) { return; }
+	if (!pRecords)
+		return;
 
 	for (const auto& pTick : *pRecords)
 	{
 		pVictim->m_vecOrigin() = pTick.vOrigin;
 		Utils::Trace(vTraceStart, vTraceEnd, (MASK_SHOT), &filter, &trace);		//	do a trace along the players view angle
-		if (trace.entity == pVictim) { flTime = pTick.flCreateTime; break; }	//	we hit a player with the trace and therefor have the time that the attacker was lag comped to
+		if (trace.entity == pVictim)
+		{
+			flTime = pTick.flCreateTime;
+			break;
+		}	//	we hit a player with the trace and therefor have the time that the attacker was lag comped to
 	}
 
 	pVictim->m_vecOrigin() = vRestorePos;					//	restore old player origin
 
-	if (flTime == 0) { return; }
+	if (flTime == 0)
+		return;
 
 	const float flDelta = I::GlobalVars->curtime - flTime;	//	get delta between attackers shot and servers time
 	switch (mData[pAttacker].iLagCompChecks) {
@@ -228,10 +263,15 @@ void CCheaterDetection::SimTime(CBaseEntity* pEntity)
 {
 	if (Vars::Misc::CheaterDetection::Methods.Value & ~(1 << 2))
 	{
-		if (mData[pEntity].iNonDormantCleanQueries < 6) { return; }
+		if (mData[pEntity].iNonDormantCleanQueries < 6)
+			return;
 		const float flSimDelta = pEntity->GetSimulationTime() - pEntity->GetOldSimulationTime();
 		const int iTickDelta = TIME_TO_TICKS(flSimDelta);
-		if (mData[pEntity].pChoke.first = 0) { mData[pEntity].pChoke.second = iTickDelta; return; }
+		if (mData[pEntity].pChoke.first = 0)
+		{
+			mData[pEntity].pChoke.second = iTickDelta;
+			return;
+		}
 		mData[pEntity].pChoke.first++;
 		mData[pEntity].pChoke.second += iTickDelta;
 	}
@@ -250,7 +290,8 @@ void CCheaterDetection::OnDormancy(CBaseEntity* pEntity)
 void CCheaterDetection::OnTick()
 {
 	const auto pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !I::EngineClient->IsConnected() || G::ShouldShift || !ShouldScan()) { return; }
+	if (!pLocal || !I::EngineClient->IsConnected() || G::ShouldShift || !ShouldScan())
+		return;
 	iLastScanTick = I::GlobalVars->tickcount;
 	flScanningTime = I::GlobalVars->curtime - flFirstScanTime;
 	FindScores();
@@ -261,33 +302,83 @@ void CCheaterDetection::OnTick()
 	for (int n = 1; n < I::EngineClient->GetMaxClients(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity) { continue; }
-		if (pEntity->GetDormant()) { OnDormancy(pEntity); continue; }
-		if (!ShouldScanEntity(pEntity)) { OnDormancy(pEntity); continue; }
-		if (pEntity == pLocal) { continue; }	//	i think for this code to run the local player has to be cheating anyway :thinking:
+		if (!pEntity)
+			continue;
+		if (pEntity->GetDormant())
+		{
+			OnDormancy(pEntity);
+			continue;
+		}
+		if (!ShouldScanEntity(pEntity))
+		{
+			OnDormancy(pEntity);
+			continue;
+		}
+		if (pEntity == pLocal)
+			continue;	//	i think for this code to run the local player has to be cheating anyway :thinking:
 
 		PlayerInfo_t pInfo{};
-		if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pInfo)) { continue; }
+		if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pInfo))
+			continue;
 
 		CalculateHitChance(pEntity);
 		SimTime(pEntity);
 
-		if (iDetectionFlags & (1 << 6) && !IsPitchLegal(pEntity)) { mData[pEntity].iPlayerSuspicion = Vars::Misc::CheaterDetection::SuspicionGate.Value; Utils::ConLog("CheaterDetection", tfm::format("%s marked for OOB angles.", pInfo.name).c_str(), { 224, 255, 131, 255 }); }
-		if (iDetectionFlags & (1 << 5) && AreAnglesSuspicious(pEntity)) { mData[pEntity].iPlayerSuspicion++; Utils::ConLog("CheaterDetection", tfm::format("%s infracted for suspicious angles.", pInfo.name).c_str(), { 224, 255, 131, 255 }); }
-		if (iDetectionFlags & (1 << 4) && CheckBHop(pEntity)) { Utils::ConLog("CheaterDetection", tfm::format("%s infracted for bunny-hopping.", pInfo.name).c_str(), { 224, 255, 131, 255 }); }
-		if (iDetectionFlags & (1 << 8) && IsDuckSpeed(pEntity)) { Utils::ConLog("CheaterDetection", tfm::format("%s infracted for suspected duck speed.", pInfo.name).c_str(), { 224, 255, 131, 255 }); mData[pEntity].iPlayerSuspicion++; }
+		if (iDetectionFlags & (1 << 6) && !IsPitchLegal(pEntity))
+		{
+			mData[pEntity].iPlayerSuspicion = Vars::Misc::CheaterDetection::SuspicionGate.Value;
+			Utils::ConLog("CheaterDetection", tfm::format("%s marked for OOB angles.", pInfo.name).c_str(), { 224, 255, 131, 255 });
+		}
+		if (iDetectionFlags & (1 << 5) && AreAnglesSuspicious(pEntity))
+		{
+			mData[pEntity].iPlayerSuspicion++;
+			Utils::ConLog("CheaterDetection", tfm::format("%s infracted for suspicious angles.", pInfo.name).c_str(), { 224, 255, 131, 255 });
+		}
+		if (iDetectionFlags & (1 << 4) && CheckBHop(pEntity))
+		{
+			Utils::ConLog("CheaterDetection", tfm::format("%s infracted for bunny-hopping.", pInfo.name).c_str(), { 224, 255, 131, 255 });
+		}
+		if (iDetectionFlags & (1 << 8) && IsDuckSpeed(pEntity))
+		{
+			mData[pEntity].iPlayerSuspicion++;
+			Utils::ConLog("CheaterDetection", tfm::format("%s infracted for suspected duck speed.", pInfo.name).c_str(), { 224, 255, 131, 255 });
+		}
 
 		//analytical analysis
-		if (mData[pEntity].pChoke.second && mData[pEntity].pChoke.first) { if (((float)mData[pEntity].pChoke.second / (float)mData[pEntity].pChoke.first) > (Vars::Misc::CheaterDetection::PacketManipGate.Value / server.flMultiplier) && mData[pEntity].pChoke.first > 10) { mData[pEntity].iPlayerSuspicion++; Utils::ConLog("CheaterDetection", tfm::format("%s infracted for high avg packet choking {%.1f / %.1f}.", pInfo.name, mData[pEntity].pChoke.second, (14.f / server.flMultiplier)).c_str(), { 224, 255, 131, 255 }); mData[pEntity].pChoke = { 0, 0.f }; } }
+		if (mData[pEntity].pChoke.second && mData[pEntity].pChoke.first)
+		{
+			if (((float)mData[pEntity].pChoke.second / (float)mData[pEntity].pChoke.first) > (Vars::Misc::CheaterDetection::PacketManipGate.Value / server.flMultiplier) && mData[pEntity].pChoke.first > 10)
+			{
+				mData[pEntity].iPlayerSuspicion++; Utils::ConLog("CheaterDetection", tfm::format("%s infracted for high avg packet choking {%.1f / %.1f}.", pInfo.name, mData[pEntity].pChoke.second, (14.f / server.flMultiplier)).c_str(), { 224, 255, 131, 255 });
+				mData[pEntity].pChoke = { 0, 0.f };
+			}
+		}
 		if (flScanningTime > 60.f)
 		{
-			if (iDetectionFlags & (1 << 0) && mData[pEntity].flHitchance && server.flHighAccuracy && mData[pEntity].pShots.first > 25) { if (mData[pEntity].flHitchance > (server.flHighAccuracy) && !mData[pEntity].pDetections.first) { mData[pEntity].iPlayerSuspicion += 5; Utils::ConLog("CheaterDetection", tfm::format("%s infracted for extremely high accuracy {%.1f / %.1f}.", pInfo.name, mData[pEntity].flHitchance, server.flHighAccuracy).c_str(), { 224, 255, 131, 255 }); } }
-			if (iDetectionFlags & (1 << 1) && mData[pEntity].flScorePerSecond && server.flAverageScorePerSecond) { if (mData[pEntity].flScorePerSecond > (std::max(server.flAverageScorePerSecond, server.flFloorScore) * Vars::Misc::CheaterDetection::ScoreMultiplier.Value) && !mData[pEntity].pDetections.second) { mData[pEntity].iPlayerSuspicion += 5; Utils::ConLog("CheaterDetection", tfm::format("%s infracted for extremely high score per second {%.1f / %.1f}.", pInfo.name, mData[pEntity].flScorePerSecond, server.flAverageScorePerSecond).c_str(), { 224, 255, 131, 255 }); } }
+			if (iDetectionFlags & (1 << 0) && mData[pEntity].flHitchance && server.flHighAccuracy && mData[pEntity].pShots.first > 25)
+			{
+				if (mData[pEntity].flHitchance > (server.flHighAccuracy) && !mData[pEntity].pDetections.first)
+				{
+					mData[pEntity].iPlayerSuspicion += 5;
+					Utils::ConLog("CheaterDetection", tfm::format("%s infracted for extremely high accuracy {%.1f / %.1f}.", pInfo.name, mData[pEntity].flHitchance, server.flHighAccuracy).c_str(), { 224, 255, 131, 255 });
+				}
+			}
+			if (iDetectionFlags & (1 << 1) && mData[pEntity].flScorePerSecond && server.flAverageScorePerSecond)
+			{
+				if (mData[pEntity].flScorePerSecond > (std::max(server.flAverageScorePerSecond, server.flFloorScore) * Vars::Misc::CheaterDetection::ScoreMultiplier.Value) && !mData[pEntity].pDetections.second)
+				{
+					mData[pEntity].iPlayerSuspicion += 5; Utils::ConLog("CheaterDetection", tfm::format("%s infracted for extremely high score per second {%.1f / %.1f}.", pInfo.name, mData[pEntity].flScorePerSecond, server.flAverageScorePerSecond).c_str(), { 224, 255, 131, 255 });
+				}
+			}
 		}
 
 		const Vec3 vAngles = pEntity->GetEyeAngles();
 		mData[pEntity].vLastAngle = { vAngles.x, vAngles.y };
-		if (mData[pEntity].iPlayerSuspicion >= Vars::Misc::CheaterDetection::SuspicionGate.Value) { mData[pEntity].iPlayerSuspicion = 0; G::PlayerPriority[pInfo.friendsID].Mode = 4; }
+		if (mData[pEntity].iPlayerSuspicion >= Vars::Misc::CheaterDetection::SuspicionGate.Value)
+		{
+			mData[pEntity].iPlayerSuspicion = 0;
+			G::PlayerPriority[pInfo.friendsID].Mode = 4;
+		}
 	}
 }
 
@@ -304,9 +395,11 @@ void CCheaterDetection::FillServerInfo()
 
 void CCheaterDetection::FindScores()
 {	//	runs every 30 seconds
-	if (I::GlobalVars->curtime - flLastScoreTime < 30.f) { return; }
+	if (I::GlobalVars->curtime - flLastScoreTime < 30.f)
+		return;
 	CTFPlayerResource* cResource = g_EntityCache.GetPR();
-	if (!cResource) { return; }
+	if (!cResource)
+		return;
 	flLastScoreTime = I::GlobalVars->curtime;
 
 	float flTotalAvg = 0;
@@ -314,12 +407,14 @@ void CCheaterDetection::FindScores()
 	for (int n = 1; n < I::EngineClient->GetMaxClients(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity || !cResource->GetValid(pEntity->GetIndex())) { continue; }
+		if (!pEntity || !cResource->GetValid(pEntity->GetIndex()))
+			continue;
 		const float iScore = cResource->GetScore(pEntity->GetIndex()) / cResource->GetConnectionTime(pEntity->GetIndex());
 		flTotalAvg += iScore; iTotalPlayers++;	//	used for calculating the average score
 	}
 
-	if (!flTotalAvg || !iTotalPlayers) { return; }
+	if (!flTotalAvg || !iTotalPlayers)
+		return;
 
 	// now that we've gone through all players (including local) find the avg
 	server.flAverageScorePerSecond = (flTotalAvg / (float)iTotalPlayers);
@@ -331,7 +426,8 @@ void CCheaterDetection::FindScores()
 
 void CCheaterDetection::FindHitchances()
 {	//	runs every 30 seconds
-	if (I::GlobalVars->curtime - flLastAccuracyTime < 30.f || !server.iHits || !server.iMisses) { return; }
+	if (I::GlobalVars->curtime - flLastAccuracyTime < 30.f || !server.iHits || !server.iMisses)
+		return;
 	flLastAccuracyTime = I::GlobalVars->curtime;
 
 	const float flAvg = (float)server.iHits / (float)server.iMisses;
@@ -371,23 +467,41 @@ void CCheaterDetection::CalculateHitChance(CBaseEntity* pEntity)
 void CCheaterDetection::ReportShot(int iIndex)
 {
 	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(iIndex);
-	if (!pEntity) { return; }
+	if (!pEntity)
+		return;
 	mData[pEntity].pShots.second++;
 	server.iMisses++;
 }
 
 void CCheaterDetection::ReportDamage(CGameEvent* pEvent)
 {
-	const int iIndex = pEvent->GetInt("attacker");
-	if (iIndex == I::EngineClient->GetLocalPlayer()) { return; }
-	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(iIndex);
-	if (!pEntity) { return; }
-	if (pEntity->GetDormant()) { return; }
+	const int iDetectFlags = Vars::Misc::CheaterDetection::Methods.Value;
+
+	if (!Vars::Misc::CheaterDetection::Enabled.Value && !iDetectFlags)
+		return;
+
+	const int userid = pEvent->GetInt("userid");
+
+	const int index = I::EngineClient->GetPlayerForUserID(userid);
+	if (index == I::EngineClient->GetLocalPlayer())
+		return;
+
+	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(index);
+	if (!pEntity)
+		return;
+
+	if (pEntity->GetDormant())
+		return;
+
 	CBaseCombatWeapon* pWeapon = pEntity->GetActiveWeapon();
-	if ( !pWeapon ) { return; }
+	if (!pWeapon)
+		return;
+
 	AimbotCheck(pEntity);
 	//BacktrackCheck(pEvent);
-	if (I::GlobalVars->tickcount - mData[pEntity].iLastDamageEventTick <= 1) { return; }
+	if (I::GlobalVars->tickcount - mData[pEntity].iLastDamageEventTick <= 1)
+		return;
+
 	mData[pEntity].iLastDamageEventTick = I::GlobalVars->tickcount;
 	mData[pEntity].pShots.first++; mData[pEntity].bDidDamage = true;
 	server.iHits++;

@@ -28,6 +28,17 @@ struct Color_t
 		ss << std::hex << static_cast<int>(a);
 		return ss.str();
 	}
+
+	[[nodiscard]] Color_t lerp(Color_t to, float t) const
+	{
+		//a + (b - a) * t
+		return {
+			static_cast<byte>(r + (to.r - r) * t),
+			static_cast<byte>(g + (to.g - g) * t),
+			static_cast<byte>(b + (to.b - b) * t),
+			static_cast<byte>(a + (to.a - a) * t),
+		};
+	}
 };
 
 struct Gradient_t

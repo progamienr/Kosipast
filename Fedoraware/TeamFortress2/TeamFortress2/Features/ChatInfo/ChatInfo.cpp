@@ -149,11 +149,10 @@ void CChatInfo::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 			}
 		}
 
+		/*
 		// Show Hitboxes on hit
-		if (Vars::Aimbot::Global::showHitboxes.Value && uNameHash == FNV1A::HashConst("player_hurt"))
+		if (Vars::Aimbot::Global::ShowHitboxes.Value && uNameHash == FNV1A::HashConst("player_hurt"))
 		{
-			if (Vars::Aimbot::Global::ClearPreviousHitbox.Value) { I::DebugOverlay->ClearAllOverlays(); }
-			auto time = Vars::Aimbot::Global::HitboxLifetime.Value;
 			// alpha is how "filled" the hitbox render is, looks bad at anything non-zero (rijin moment)
 			auto pEntity = I::ClientEntityList->GetClientEntity(
 				I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid")));
@@ -161,8 +160,17 @@ void CChatInfo::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 				I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker")));
 			if (pEntity == pLocal) { return; }
 			if (pLocal != nAttacker) { return; }
-			F::Visuals.DrawHitboxMatrix(pEntity, Colors::HitboxFace, Colors::HitboxEdge, time);
+
+			const model_t* model = pEntity->GetModel();
+			const studiohdr_t* hdr = I::ModelInfoClient->GetStudioModel(model);
+			const mstudiohitboxset_t* set = hdr->GetHitboxSet(pEntity->GetHitboxSet());
+
+			matrix3x4 bones[128];
+			if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, I::GlobalVars->curtime)) { return; }
+
+			F::Visuals.DrawHitboxMatrix(bones, set, Colors::HitboxEdge, Colors::HitboxFace);
 		}
+		*/
 	}
 }
 

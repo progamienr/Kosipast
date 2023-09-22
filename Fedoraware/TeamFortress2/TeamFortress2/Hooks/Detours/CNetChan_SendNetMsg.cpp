@@ -52,8 +52,10 @@ MAKE_HOOK(CNetChan_SendNetMsg, g_Pattern.Find(L"engine.dll", L"55 8B EC 57 8B F9
 
 		case clc_Move:
 		{
+			// doesn't seem to work above 21 ticks (can dt but shot seems off, plus aimbot will make it not work?)
+			// also possibly make fakelag choke more than 21 ticks
 			static int iOldShift = G::ShiftedTicks;
-			const int iAllowedNewCommands = fmax(fmin(24 - G::ShiftedTicks, 22), 0);
+			const int iAllowedNewCommands = g_ConVars.sv_maxusrcmdprocessticks->GetInt();//fmax(fmin(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, g_ConVars.sv_maxusrcmdprocessticks->GetInt()), 0);
 			const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
 			const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands;
 			if (iCmdCount > iAllowedNewCommands)

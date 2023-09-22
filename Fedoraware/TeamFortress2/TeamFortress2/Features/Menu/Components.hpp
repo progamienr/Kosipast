@@ -467,14 +467,14 @@ namespace ImGui
 	__inline bool WToggle(const char* label, bool* v)
 	{
 		bool result;
-		if (Vars::Menu::ModernDesign)
-		{
-			result = ToggleButton(label, v);
-		}
-		else
-		{
+		//if (Vars::Menu::ModernDesign)
+		//{
+			//result = ToggleButton(label, v);
+		//}
+		//else
+		//{
 			result = Checkbox(label, v);
-		}
+		//}
 		return result;
 	}
 #pragma endregion

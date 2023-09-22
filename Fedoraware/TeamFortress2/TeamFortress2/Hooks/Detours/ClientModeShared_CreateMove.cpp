@@ -2,6 +2,7 @@
 
 #include "../../Features/Prediction/Prediction.h"
 #include "../../Features/Aimbot/Aimbot.h"
+#include "../../Features/Aimbot/AimbotProjectile/AimbotProjectile.h"
 #include "../../Features/Auto/Auto.h"
 #include "../../Features/Misc/Misc.h"
 #include "../../Features/Visuals/Visuals.h"
@@ -10,6 +11,7 @@
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Visuals/FakeAngleManager/FakeAng.h"
 #include "../../Features/CritHack/CritHack.h"
+#include "../../Features/NoSpread/NoSpread.h"
 #include "../../Features/Resolver/Resolver.h"
 #include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
 #include "../../Features/Vars.h"
@@ -55,12 +57,22 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	static float fOldSide = pCmd->sidemove;
 	static float fOldForward = pCmd->forwardmove;
 
+	F::Backtrack.iTickCount = pCmd->tick_count;
 	G::CurrentUserCmd = pCmd;
+
+	// correct tick_count for fakeinterp / nointerp
+	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Misc::DisableInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
 	if (!G::ShouldShift)
 	{
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
+			if (F::AimbotProjectile.bLastTickCancel)
+			{
+				pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
+				F::AimbotProjectile.bLastTickCancel = false;
+			}
+
 			nOldFlags = pLocal->GetFlags();
 			nOldGroundEnt = pLocal->m_hGroundEntity();
 
@@ -147,6 +159,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 		F::Ticks.CreateMove(pCmd);
 		F::CritHack.Run(pCmd);
+		F::NoSpread.Run(pCmd);
 		F::Misc.RunPost(pCmd, pSendPacket);
 		F::Resolver.CreateMove();
 	}

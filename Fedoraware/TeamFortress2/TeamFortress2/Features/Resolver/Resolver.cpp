@@ -1,5 +1,6 @@
 #include "Resolver.h"
 #include "../AntiHack/AntiAim.h"
+#include "../Backtrack/Backtrack.h"
 
 static std::vector<float> vYawRotations{ 0.0f, 180.0f, 90.0f, -90.0f};
 
@@ -228,6 +229,7 @@ void PResolver::CreateMove(){
 		mResolverData[pWaiting.second.first].iYawIndex++;
 		if (mResolverData[pWaiting.second.first].iYawIndex > 3) { mResolverData[pWaiting.second.first].iYawIndex = 0; }
 		pWaiting = {0, {nullptr, false}};
+		F::Backtrack.ResolverUpdate(pWaiting.second.first);
 	}
 }
 
@@ -260,7 +262,8 @@ void PResolver::FXFireBullet(int iIndex, const Vec3 vAngles){
 
 void PResolver::OnPlayerHurt(CGameEvent* pEvent){
 	const bool bLocal = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker")) == I::EngineClient->GetLocalPlayer();
-	if (!bLocal) { return; }
+	if (!bLocal)
+		return;
 
 	const CBaseEntity* pVictim = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid")));
 

@@ -12,36 +12,46 @@ class CBaseCombatWeapon : public CBaseEntity
 {
 public: //Netvars
 	M_DYNVARGET(Clip1, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip1")
-		M_DYNVARGET(Clip2, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip2")
-		M_DYNVARGET(nViewModelIndex, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_nViewModelIndex")
-		M_DYNVARGET(iViewModelIndex, int, this, "DT_BaseCombatWeapon", "m_iViewModelIndex")
-		M_DYNVARGET(ItemDefIndex, int, this, "DT_EconEntity", "m_AttributeManager", "m_Item", "m_iItemDefinitionIndex")
-		M_DYNVARGET(ChargeBeginTime, float, this, "DT_WeaponPipebombLauncher", "PipebombLauncherLocalData", "m_flChargeBeginTime")
-		M_DYNVARGET(ChargeDamage, float, this, "DT_TFSniperRifle", "SniperRifleLocalData", "m_flChargedDamage")
-		M_DYNVARGET(LastFireTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastFireTime")
-		M_DYNVARGET(NextSecondaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextSecondaryAttack")
-		M_DYNVARGET(NextPrimaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack")
-		M_DYNVARGET(ChargeResistType, int, this, "DT_WeaponMedigun", "m_nChargeResistType")
-		M_DYNVARGET(ReloadMode, int, this, "DT_TFWeaponBase", "m_iReloadMode")
-		M_DYNVARGET(DetonateTime, float, this, "DT_WeaponGrenadeLauncher", "m_flDetonateTime")
-		//M_DYNVARGET(ObservedCritChance, float, this, "DT_LocalTFWeaponData", "m_flObservedCritChance")
-		//M_DYNVARGET(LastCritCheckTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastCritCheckTime")
-		M_DYNVARGET(ObservedCritChance, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flObservedCritChance")
+	M_DYNVARGET(Clip2, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip2")
+	M_DYNVARGET(nViewModelIndex, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_nViewModelIndex")
+	M_DYNVARGET(iViewModelIndex, int, this, "DT_BaseCombatWeapon", "m_iViewModelIndex")
+	M_DYNVARGET(ItemDefIndex, int, this, "DT_EconEntity", "m_AttributeManager", "m_Item", "m_iItemDefinitionIndex")
+	M_DYNVARGET(ChargeBeginTime, float, this, "DT_WeaponPipebombLauncher", "PipebombLauncherLocalData", "m_flChargeBeginTime")
+	M_DYNVARGET(ChargeDamage, float, this, "DT_TFSniperRifle", "SniperRifleLocalData", "m_flChargedDamage")
+	M_DYNVARGET(LastFireTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastFireTime")
+	M_DYNVARGET(NextSecondaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextSecondaryAttack")
+	M_DYNVARGET(NextPrimaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack")
+	M_DYNVARGET(ChargeResistType, int, this, "DT_WeaponMedigun", "m_nChargeResistType")
+	M_DYNVARGET(ReloadMode, int, this, "DT_TFWeaponBase", "m_iReloadMode")
+	M_DYNVARGET(DetonateTime, float, this, "DT_WeaponGrenadeLauncher", "m_flDetonateTime")
+	//M_DYNVARGET(ObservedCritChance, float, this, "DT_LocalTFWeaponData", "m_flObservedCritChance")
+	M_DYNVARGET(LastCritCheckTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastCritCheckTime")
+	M_DYNVARGET(ObservedCritChance, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flObservedCritChance")
+	inline void SetObservedCritChance(float crit_chance)
+	{
+		static auto offset = GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
+		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + offset) = crit_chance;
+	}
 
-		M_OFFSETGET(UberCharge, float, 0xC6C) //DT_WeaponMedigun -> NonLocalTFWeaponMedigundata -> m_flChargeLevel
-		//M_OFFSETGET(HealingTarget, int, 0xC48) //DT_WeaponMedigun -> m_hHealingTarget
-		M_OFFSETGET(Healing, int, 0xC51) //DT_WeaponMedigun -> m_bHealing
-		M_OFFSETGET(CritTokenBucket, float, 0xA54)
+	M_OFFSETGET(UberCharge, float, 0xC6C) //DT_WeaponMedigun -> NonLocalTFWeaponMedigundata -> m_flChargeLevel
+	//M_OFFSETGET(HealingTarget, int, 0xC48) //DT_WeaponMedigun -> m_hHealingTarget
+	M_OFFSETGET(Healing, int, 0xC51) //DT_WeaponMedigun -> m_bHealing
+	M_OFFSETGET(CurrentSeed, int, 0x2D7)
+	M_OFFSETGET(CritTokenBucket, float, 0xA54)
+	M_OFFSETGET(CritChecks, int, 0xA58)
+	M_OFFSETGET(CritSeedRequests, int, 0xA5C)
+	M_OFFSETGET(CritTime, float, 0xB50)
+	M_OFFSETGET(LastRapidFireCritCheckTime, float, 0xB60)
 
-		NETVAR(m_iPrimaryAmmoType, int, "CBaseCombatWeapon", "m_iPrimaryAmmoType");
+	NETVAR(m_iPrimaryAmmoType, int, "CBaseCombatWeapon", "m_iPrimaryAmmoType");
 	NETVAR(m_flNextPrimaryAttack, float, "CBaseCombatWeapon", "m_flNextPrimaryAttack")
 
 public: //Virtuals
 	M_VIRTUALGET(WeaponID, int, this, int(__thiscall*)(void*), 381)
-		M_VIRTUALGET(Slot, int, this, int(__thiscall*)(void*), 330)
-		M_VIRTUALGET(DamageType, int, this, int(__thiscall*)(void*), 340)
-		M_VIRTUALGET(FinishReload, void, this, void(__thiscall*)(void*), 275)
-		M_VIRTUALGET(BulletSpread, Vec3&, this, Vec3& (__thiscall*)(void*), 286)
+	M_VIRTUALGET(Slot, int, this, int(__thiscall*)(void*), 330)
+	M_VIRTUALGET(DamageType, int, this, int(__thiscall*)(void*), 340)
+	M_VIRTUALGET(FinishReload, void, this, void(__thiscall*)(void*), 275)
+	M_VIRTUALGET(BulletSpread, Vec3&, this, Vec3& (__thiscall*)(void*), 286)
 
 public: //Everything else, lol
 	__inline float GetSmackTime()
@@ -52,6 +62,8 @@ public: //Everything else, lol
 	}
 
 	int GetBulletAmount();
+
+	bool IsStreamingWeapon();
 
 	__inline float ObservedCritChance()
 	{
@@ -193,6 +205,12 @@ public: //Everything else, lol
 		return GetVFunc<int(__thiscall*)(CGameTrace&)>(this, 454)(Trace);
 	}
 
+	__inline bool DoSwingTraceInternal(CGameTrace& Trace)
+	{
+		static auto DoSwingTraceInternalFn = reinterpret_cast<bool(__thiscall*)(decltype(this), CGameTrace&, bool, void*)>(g_Pattern.Find(L"client.dll", L"53 8B DC 83 EC ? 83 E4 ? 83 C4 ? 55 8B 6B ? 89 6C 24 ? 8B EC 81 EC ? ? ? ? A1 ? ? ? ? 56 8B F1"));
+		return DoSwingTraceInternalFn(this, Trace, false, nullptr);
+	}
+
 	__inline int LookupAttachment(const char* pAttachmentName)
 	{
 		const auto pRend = Renderable();
@@ -233,25 +251,9 @@ public: //Everything else, lol
 
 		if (pLocal->GetClassNum() == CLASS_SPY)
 		{
-			{ //DR
-				static float flTimer = 0.0f;
-
-				if (pLocal->GetFeignDeathReady())
-				{
-					flTimer = 0.0f;
-					return false;
-				}
-				else
-				{
-					if (!flTimer)
-						flTimer = I::GlobalVars->curtime;
-
-					if (flTimer > I::GlobalVars->curtime)
-						flTimer = 0.0f;
-
-					if ((I::GlobalVars->curtime - flTimer) < 0.4f)
-						return false;
-				}
+			if (pLocal->GetFeignDeathReady() && !pLocal->IsCloaked())
+			{
+				return false;
 			}
 
 			{ //Invis
@@ -326,7 +328,7 @@ public: //Everything else, lol
 
 	__inline bool CalcIsAttackCritical()
 	{
-		static auto func = g_Pattern.Find(L"client.dll", L"53 57 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B D8 83 C4 14 85 DB 0F 84 ? ? ? ?");
+		static auto func = g_Pattern.Find(L"client.dll", L"53 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B D8 83 C4 ? 85 DB 0F 84");
 		typedef bool(__thiscall* fn)(void*);
 		return reinterpret_cast<fn>(func)(this);
 	}

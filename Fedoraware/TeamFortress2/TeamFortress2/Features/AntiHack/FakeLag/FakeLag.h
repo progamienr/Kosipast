@@ -19,8 +19,8 @@ class CFakeLag
 
 	bool IsVisible(CBaseEntity* pLocal);
 	bool IsAllowed(CBaseEntity* pLocal);
-	void Prediction(const int nOldGroundInt, const int nOldFlags);	//	TODO: Create a struct for dealing with pre-prediction info.
-	void PreserveBlastJump(const int nOldGroundInt, const int nOldFlags);
+	void Prediction(const int nOldGroundInt, const int nOldFlags, CUserCmd* pCmd);	//	TODO: Create a struct for dealing with pre-prediction info.
+	void PreserveBlastJump(const int nOldGroundInt, const int nOldFlags, CUserCmd* pCmd);
 	void Unduck(const int nOldFlags);
 
 public:

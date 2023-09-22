@@ -40,7 +40,12 @@ namespace Vars
 	namespace Backtrack
 	{
 		inline CVar<bool> Enabled{ false };
+		inline CVar<int> Method{ 0 };
+		inline CVar<bool> UnchokePrediction{ true };
 		inline CVar<int> Latency{ 0 };
+		inline CVar<int> Interp{ 0 };
+		inline CVar<int> Protect{ 1 };
+		inline CVar<int> PassthroughOffset{ 0 }; // debug
 
 		namespace BtChams
 		{
@@ -49,6 +54,8 @@ namespace Vars
 			inline CVar<bool> EnemyOnly{ false };
 			inline CVar<bool> IgnoreZ{ false };
 			inline CVar<int> Material{ 1 };
+			inline std::string Custom = "None";
+			inline CVar<int> Overlay{ 1 };
 			inline Color_t BacktrackColor{ 255, 255, 255, 255 };
 		}
 	}
@@ -60,16 +67,13 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<int> AimKey{ VK_XBUTTON1 };
 			inline CVar<bool> AutoShoot{ false };
-			inline CVar<bool> DontWaitForShot{ false };
-			inline CVar<bool> FlickatEnemies{ false };
 			inline CVar<int> AimAt{ 0b1000000 }; //players, sentry, dispenser, teleporter, stickies, npcs, bombs
 			inline CVar<int> IgnoreOptions{ 0b0000000 }; //disguised, fakelagging players, vaccinator, taunting, friends, deadringer,cloaked, invul
 			inline CVar<int> TickTolerance{ 7 };
+			inline CVar<int> MaxTargets{ 2 };
 			inline CVar<int> IgnoreCloakPercentage{ 100 }; // if player cloak percent > ignore threshold, ignore them 
 			inline CVar<bool> BAimLethal{ false }; // This is in global cause i remmebered hunterman exists
-			inline CVar<bool> showHitboxes{ false }; // original codenz
-			inline CVar<bool> ClearPreviousHitbox{ false };
-			inline CVar<int> HitboxLifetime{ 2 };
+			inline CVar<bool> ShowHitboxes{ false };
 		}
 
 		namespace Hitscan
@@ -77,14 +81,10 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<float> AimFOV{ 19.f };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
-			inline CVar<int> BackTrackMethod{ 0 };
+			inline CVar<int> SmoothingAmount{ 25 };
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
-			inline CVar<int> AimHitbox{ 2 }; //0 - Head,		1 - Body,	2 - Auto
-			inline CVar<int> ScanHitboxes{ 0b00111 }; // {legs, arms, body, pelvis, head}
-			inline CVar<int> MultiHitboxes{ 0b00101 }; // {legs, arms, body, pelvis, head}
-			inline CVar<int> StaticHitboxes{ 0b11000 }; // {legs, arms, body, pelvis, head}
+			inline CVar<int> Hitboxes{ 0b00111 }; // {legs, arms, body, pelvis, head}
 			inline CVar<float> PointScale{ .54f };
-			inline CVar<int> SmoothingAmount{ 4 };
 			inline CVar<int> TapFire{ 0 }; //0 - Off, 1 - Distance, 2 - Always
 			inline CVar<float> TapFireDist{ 1000.f };
 			inline CVar<bool> ScanBuildings{ false };
@@ -92,7 +92,6 @@ namespace Vars
 			inline CVar<bool> WaitForCharge{ false };
 			inline CVar<bool> ScopedOnly{ false };
 			inline CVar<bool> AutoScope{ false };
-			inline CVar<bool> AutoRev{ false };
 			inline CVar<bool>ExtinguishTeam{ false };
 		}
 
@@ -101,16 +100,14 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<float> AimFOV{ 26.f };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
-			inline CVar<int> AimMethod{ 1 }; //0 - Normal,	1 - Silent
-			inline CVar<int> AimPosition{ 3 }; // 0/head, 1/body, 2/feet, 3/auto
+			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
+			inline CVar<int> SmoothingAmount{ 25 };
 			inline CVar<float> ScanScale{ 0.78f }; // how to scale the points. 0.78 is a good number, huntsman bugs at anything below 0.76
-			inline CVar<int> AllowedHitboxes{ 0b000 }; // 111, Feet, Body, Head.
-			inline CVar<bool> FeetAimIfOnGround{ false };
-			inline CVar<int> BounceKey{ 0x0 };
 			inline CVar<bool> SplashPrediction{ false };
-			inline Color_t PredictionColor{ 0, 255, 0, 255 };
+			inline Color_t PredictionColor{ 255, 255, 255, 255 };
+			inline Color_t ProjectileColor{ 255, 100, 100, 255 };
 			inline CVar<float> PredictionTime{ 2.0f };
-//			inline CVar<bool> NoSpread{ false }; i dont even think this works???
+			inline CVar<bool> NoSpread{ false };
 			inline CVar<bool> ChargeLooseCannon{ false };
 			inline CVar<bool> StrafePredictionGround{ false };
 			inline CVar<bool> StrafePredictionAir{ false };
@@ -124,8 +121,10 @@ namespace Vars
 			inline CVar<float> AimFOV{ 180.f };
 			inline CVar<int> SortMethod{ 1 }; //0 - FOV, 1 - Distance
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
-			inline CVar<int> SmoothingAmount{ 8 };
+			inline CVar<int> SmoothingAmount{ 25 };
 			inline CVar<bool> PredictSwing{ false };
+			inline CVar<bool> AutoBackstab{ true };
+			inline CVar<bool> IgnoreRazorback{ true };
 			inline CVar<bool> WhipTeam{ false };
 		}
 	}
@@ -148,16 +147,6 @@ namespace Vars
 			inline CVar<bool> WaitForHeadshot{ false };
 			inline CVar<bool> ScopeOnly{ false };
 			inline CVar<float> HeadScale{ 0.7f };
-		}
-
-		namespace Stab
-		{
-			inline CVar<bool> Active{ false };
-			inline CVar<bool> RageMode{ false };
-			inline CVar<bool> Silent{ false };
-			inline CVar<bool> Disguise{ false };
-			inline CVar<bool> IgnRazor{ false };
-			inline CVar<float> Range{ 0.9f };
 		}
 
 		namespace Detonate
@@ -369,8 +358,8 @@ namespace Vars
 		namespace Main
 		{
 			inline CVar<bool> Active{ false };
-			inline CVar<int> Type{ 0 };	//	blur, stencil, fps stencil, wireframe
-			inline CVar<int> Scale{ 5 };
+			inline CVar<int> Type{ 0 };	//	blur, stencil
+			inline CVar<int> Scale{ 1 };
 		}
 
 		namespace Players
@@ -402,13 +391,6 @@ namespace Vars
 			inline CVar<bool> Bombs{ false };
 			inline CVar<int> Projectiles{ 1 }; //0 - Off, 1 - All, 2 - Enemy Only
 			inline CVar<float> Alpha{ 1.0f };
-		}
-
-		namespace Misc
-		{
-			inline CVar<bool> MovementSimLine{ false };
-			inline CVar<bool> Sightlines{ false };
-			inline CVar<bool> BulletTracers{ false };
 		}
 	}
 
@@ -457,7 +439,6 @@ namespace Vars
 	namespace Visuals
 	{
 		inline CVar<bool> ScoreboardColours{ false };
-		inline CVar<bool> MenuCelebration{ true };
 		inline CVar<bool> CleanScreenshots{ true };
 		inline CVar<bool> RemoveDisguises{ false };
 		inline CVar<bool> RemoveTaunts{ false };
@@ -466,7 +447,7 @@ namespace Vars
 		inline DragBox_t OnScreenConditions{ };
 		inline DragBox_t OnScreenPing{ };
 		inline CVar<int> FieldOfView{ 90 };
-		inline CVar<int> AimFOVAlpha{ 10 };
+		inline CVar<int> ZoomFieldOfView{ 30 };
 		inline CVar<bool> RemoveScope{ false };
 		inline CVar<bool> RemoveRagdolls{ false };
 		inline CVar<bool> RemoveMOTD{ false };
@@ -481,9 +462,10 @@ namespace Vars
 		inline CVar<bool> CrosshairAimPos{ false };
 		inline CVar<bool> ChatInfoText{ false };
 		inline CVar<bool> ChatInfoChat{ false };
-		inline CVar<bool> OutOfFOVArrowsOutline{ false };
-		inline CVar<float> FovArrowsDist{ 0.15f };
-		inline CVar<int> SpectatorList{ 2 }; //0 - Off, 1 - Default, 2 - Classic, 3 - Classic Avatars
+		inline CVar<int> FovArrowsDist{ 25 };
+		inline CVar<bool> SpectatorList{ false };
+		inline CVar<bool> SpectatorAvatars{ false };
+		inline DragBox_t SpectatorPos{};
 
 		inline CVar<bool> ThirdPerson{ false };
 		inline CVar<int> ThirdPersonKey{ VK_B };
@@ -504,15 +486,19 @@ namespace Vars
 		inline CVar<bool> SkyboxChanger{ false };
 		inline CVar<bool> SkyModulation{ false };
 		
-		inline CVar<bool> BulletTracer{ false };
 		inline CVar<bool> AimbotViewmodel{ false };
 		inline CVar<bool> ViewmodelSway{ false };
 		inline CVar<float> ViewmodelSwayScale{ 5.f };
 		inline CVar<float> ViewmodelSwayInterp{ 0.05f };
-		inline CVar<bool> MoveSimLine{ false };
-		inline CVar<bool> MoveSimSeperators{ false };
+
+		inline CVar<bool> BulletTracer{ false };
+
+		inline CVar<bool> SimLine{ false };
+		inline CVar<bool> SimSeperators{ false };
 		inline CVar<int> SeperatorLength{ 12 };
 		inline CVar<int> SeperatorSpacing{ 6 };
+		inline CVar<bool> SwingLines{ false };
+		inline CVar<bool> ProjectileTrajectory{ false };
 
 		inline CVar<bool> DoPostProcessing{ false };
 
@@ -556,12 +542,8 @@ namespace Vars
 			inline CVar<int> Segments{ 2 };
 		}
 
-		inline CVar<bool> BulletTracerRainbow{ false };
 		inline CVar<bool> OutOfFOVArrows{ false };
-		inline CVar<float> ArrowLength{ 21.f };
-		inline CVar<float> ArrowAngle{ 100.f };
 		inline CVar<float> MaxDist{ 1000.f };
-		inline CVar<float> MinDist{ 200.f };
 		inline CVar<int> VMOffX{ 0 };
 		inline CVar<int> VMOffY{ 0 };
 		inline CVar<int> VMOffZ{ 0 };
@@ -602,10 +584,9 @@ namespace Vars
 		inline CVar<bool> AutoJump{ false };
 		inline CVar<int> AutoStrafe{ 2 };
 		inline CVar<bool> DirectionalOnlyOnMove{ false };
+		inline CVar<bool> DirectionalOnlyOnSpace{ false };
 		inline CVar<bool> Directional{ false };
 		inline CVar<bool> TauntSlide{ false };
-		inline CVar<bool> TauntControl{ false };
-		inline CVar<bool> TauntFollowsCamera{ false };
 		inline CVar<bool> BypassPure{ false };
 		inline CVar<bool> DisableInterpolation{ false };
 		inline CVar<int> NoPush{ 0 };	//	0 off, 1 on, 2 on while not afk, 3 semi while afk
@@ -619,6 +600,8 @@ namespace Vars
 		inline CVar<bool> MVMRes{ false };
 		inline CVar<bool> PingReducer{ false };
 		inline CVar<int> PingTarget{ 0 };
+		inline std::string ConvarName{ 0 };
+		inline std::string ConvarValue{ 0 };
 		inline CVar<int> SoundBlock{ 0 };
 		inline CVar<bool> ChatFlags{ false };
 		inline CVar<bool> AutoAcceptItemDrops{ false };

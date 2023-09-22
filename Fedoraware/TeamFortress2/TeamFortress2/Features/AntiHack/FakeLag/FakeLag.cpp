@@ -25,12 +25,12 @@ bool CFakeLag::IsVisible(CBaseEntity* pLocal)
 bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 {
 	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	const int doubleTapAllowed = 21 - G::ShiftedTicks;
+	const int doubleTapAllowed = g_ConVars.sv_maxusrcmdprocessticks->GetInt() - 3 - G::ShiftedTicks;
 	const bool retainFakelagTest = Vars::Misc::CL_Move::RetainFakelag.Value ? G::ShiftedTicks != 1 : !G::ShiftedTicks;
 	if (!iNetChan) { return false; }	//	no netchannel no fakelag
 
 	// Failsafe, in case we're trying to choke too many ticks
-	if (std::max(ChokeCounter, iNetChan->m_nChokedPackets) >= 21)
+	if (std::max(ChokeCounter, iNetChan->m_nChokedPackets) >= g_ConVars.sv_maxusrcmdprocessticks->GetInt() - 3)
 	{
 		return false;
 	}
@@ -95,13 +95,17 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 	}
 }
 
-void CFakeLag::PreserveBlastJump(const int nOldGround, const int nOldFlags) {
+void CFakeLag::PreserveBlastJump(const int nOldGround, const int nOldFlags, CUserCmd* pCmd) {
 	//if (G::IsAttacking) { return; }
 	bPreservingBlast = false;
 	if (!Vars::Misc::CL_Move::RetainBlastJump.Value) { return; }
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || !pLocal->IsPlayer()) { return; }
+
+	int key = VK_SPACE; static KeyHelper spaceKey{ &key };
+	if (!spaceKey.Down() || pLocal->IsDucking()) { return; }
+
 	if (!pLocal->OnSolid() && nOldGround < 0 && !(nOldFlags & FL_ONGROUND)) { return; }
 	if (pLocal->GetClassNum() != ETFClass::CLASS_SOLDIER) { return; }
 	if (pLocal->GetCondEx2() & TFCondEx2_BlastJumping) {
@@ -119,18 +123,20 @@ void CFakeLag::Unduck(const int nOldFlags){
 	bUnducking = true; 
 }
 
-void CFakeLag::Prediction(const int nOldGroundInt, const int nOldFlags){
+void CFakeLag::Prediction(const int nOldGroundInt, const int nOldFlags, CUserCmd* pCmd){
 	//	do blast jump preservation here.
-	PreserveBlastJump(nOldGroundInt, nOldFlags);
+	PreserveBlastJump(nOldGroundInt, nOldFlags, pCmd);
 	Unduck(nOldFlags);
 }
 
 void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt, const int nOldFlags)
 {
-	Prediction(nOldGroundInt, nOldFlags);
+	Prediction(nOldGroundInt, nOldFlags, pCmd);
 	G::IsChoking = false;	//	do this first
 	if (G::ShouldShift) { return; }
-	if (!Vars::Misc::CL_Move::Fakelag.Value && !bPreservingBlast) { ChokeCounter = 0; return; }
+	if (!Vars::Misc::CL_Move::Fakelag.Value && !bPreservingBlast) {
+		ChokeCounter = 0; G::ChokedTicks = ChokeCounter; return;
+	}
 
 	// Set the selected choke amount (if not random)
 	if (Vars::Misc::CL_Move::FakelagMode.Value != FL_Random)
@@ -143,7 +149,7 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 	{
 
 		*pSendPacket = true;
-		ChokeCounter = 0;
+		ChokeCounter = 0; G::ChokedTicks = 0;
 
 		return;
 	}
@@ -155,7 +161,7 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 		*pSendPacket = true;
 		// Set a new random amount (if desired)
 		if (Vars::Misc::CL_Move::FakelagMode.Value == FL_Random) { ChosenAmount = Utils::RandIntSimple(Vars::Misc::CL_Move::FakelagMin.Value, Vars::Misc::CL_Move::FakelagMax.Value); }
-		ChokeCounter = 0;
+		ChokeCounter = 0; G::ChokedTicks = 0;
 		pInAirTicks = {pLocal->OnSolid(), 0};
 		bUnducking = false;
 		return;
@@ -163,7 +169,7 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 
 	G::IsChoking = true;
 	*pSendPacket = false;
-	ChokeCounter++;
+	ChokeCounter++; G::ChokedTicks = ChokeCounter;
 
 	if (!pLocal->OnSolid()){
 		pInAirTicks.second++;

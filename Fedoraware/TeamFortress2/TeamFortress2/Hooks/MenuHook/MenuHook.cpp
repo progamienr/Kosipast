@@ -37,8 +37,20 @@ LONG __stdcall WndProc::Func(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if (F::Menu.IsOpen)
 	{
 		ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
-		I::InputSystem->ResetInputStateVFunc();
-		return 1;
+		if (ImGui::GetIO().WantTextInput)
+		{
+			I::InputSystem->ResetInputStateVFunc();
+			return 1;
+		}
+
+		if (I::EngineClient->Con_IsVisible() || I::EngineVGui->IsGameUIVisible())
+		{
+			if (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST)
+			{
+				I::InputSystem->ResetInputStateVFunc();
+				return 1;
+			}
+		}
 	}
 
 	return CallWindowProc(Original, hWnd, uMsg, wParam, lParam);

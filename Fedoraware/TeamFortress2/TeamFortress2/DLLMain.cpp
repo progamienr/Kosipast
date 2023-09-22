@@ -14,6 +14,7 @@
 
 #include "SDK/Includes/Enums.h"
 #include "Utils/Events/Events.h"
+#include "Utils/Minidump/Minidump.h"
 
 void Sleep(int ms)
 {
@@ -74,6 +75,14 @@ void Initialize()
 void Uninitialize()
 {
 	I::EngineClient->ClientCmd_Unrestricted("play vo/items/wheatley_sapper/wheatley_sapper_hacked02.mp3");
+
+	ConVar* cl_wpn_sway_interp = g_ConVars.FindVar("cl_wpn_sway_interp");
+	ConVar* cl_wpn_sway_scale = g_ConVars.FindVar("cl_wpn_sway_scale");
+	if (cl_wpn_sway_interp)
+	{
+		cl_wpn_sway_interp->SetValue(0.0f);
+		cl_wpn_sway_scale->SetValue(0.0f);
+	}
 	G::UnloadWndProcHook = true;
 	Vars::Visuals::SkyboxChanger.Value = false;
 	Vars::Visuals::ThirdPerson.Value = false;
@@ -83,7 +92,6 @@ void Uninitialize()
 	g_Events.Destroy();
 	g_HookManager.Release();
 	g_PatchManager.Restore();
-
 
 	Sleep(100);
 
@@ -121,7 +129,6 @@ void LoadDefaultConfig()
 	F::Menu.ConfigLoaded = true;
 }
 
-
 LONG WINAPI UnhandledExFilter(PEXCEPTION_POINTERS ExPtr);
 
 DWORD WINAPI MainThread(LPVOID lpParam)
@@ -142,7 +149,7 @@ DWORD WINAPI MainThread(LPVOID lpParam)
 	Initialize();
 	LoadDefaultConfig();
 
-	g_Events.Setup({ "vote_cast", "player_changeclass", "player_connect", "player_hurt", "achievement_earned", "player_death", "vote_started", "teamplay_round_start", "player_spawn", "item_pickup" }); // all events @ https://github.com/tf2cheater2013/gameevents.txt
+	g_Events.Setup({ "client_beginconnect", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect", "player_spawn", "player_changeclass", "player_hurt", "player_death", "vote_started", "vote_cast", "achievement_earned", "item_pickup" }); // all events @ https://github.com/tf2cheater2013/gameevents.txt
 
 	Loaded();
 
@@ -160,8 +167,13 @@ DWORD WINAPI MainThread(LPVOID lpParam)
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
+	SetUnhandledExceptionFilter(Minidump::ExceptionFilter);
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
+//		#ifndef _DEBUG
+//			SetUnhandledExceptionFilter(Minidump::ExceptionFilter);
+//		#endif
+
 		Utils::RemovePEH(hinstDLL);
 		if (const auto hMainThread = CreateThread(nullptr, 0, MainThread, hinstDLL, 0, nullptr))
 		{
@@ -171,59 +183,3 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
 	return TRUE;
 }
-
-////https://www.unknowncheats.me/forum/c-and-c-/63409-write-mindump-crash.html
-//
-//#include <dbghelp.h>
-//#include <shlobj.h>
-//#include <tchar.h>
-//
-//LONG WINAPI UnhandledExFilter(PEXCEPTION_POINTERS ExPtr)
-//{
-//	BOOL(WINAPI * pMiniDumpWriteDump)(IN HANDLE hProcess, IN DWORD ProcessId, IN HANDLE hFile, IN MINIDUMP_TYPE DumpType, IN CONST PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam, OPTIONAL IN CONST PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam, OPTIONAL IN CONST PMINIDUMP_CALLBACK_INFORMATION CallbackParam OPTIONAL) = NULL;
-//
-//	HMODULE hLib = LoadLibrary(_T("dbghelp"));
-//	if (hLib)
-//		*(void**)&pMiniDumpWriteDump = (void*)GetProcAddress(hLib, "MiniDumpWriteDump");
-//
-//	TCHAR buf[MAX_PATH], buf2[MAX_PATH];
-//
-//	if (pMiniDumpWriteDump)
-//	{
-//		SHGetFolderPath(NULL, CSIDL_DESKTOPDIRECTORY, NULL, SHGFP_TYPE_CURRENT, buf);
-//		int rnd;
-//		__asm push edx
-//		__asm rdtsc
-//		__asm pop edx
-//		__asm mov rnd, eax
-//		rnd &= 0xFFFF;
-//		wsprintfW(buf2, _T("%s\\Fedoraware_CrashDump_%x%x%x.dmp"), buf, rnd, rnd, rnd);
-//		HANDLE hFile = CreateFile(buf2, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-//
-//		if (hFile != INVALID_HANDLE_VALUE)
-//		{
-//			MINIDUMP_EXCEPTION_INFORMATION md;
-//			md.ThreadId = GetCurrentThreadId();
-//			md.ExceptionPointers = ExPtr;
-//			md.ClientPointers = FALSE;
-//			BOOL win = pMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpNormal, &md, 0, 0);
-//
-//			if (!win)
-//				wsprintfW(buf, _T("MiniDumpWriteDump failed. Error: %u \n(%s)"), GetLastError(), buf2);
-//			else
-//				wsprintfW(buf, _T("Minidump created:\n%s"), buf2);
-//			CloseHandle(hFile);
-//
-//		}
-//		else
-//		{
-//			wsprintfW(buf, _T("Could not create minidump:\n%s"), buf2);
-//		}
-//	}
-//	else
-//	{
-//		wsprintf(buf, _T("Could not load dbghelp"));
-//	}
-//	MessageBoxW(NULL, buf, _T("Dump file on desktop, make an issue"), MB_OK | MB_ICONERROR);
-//	abort();
-//}

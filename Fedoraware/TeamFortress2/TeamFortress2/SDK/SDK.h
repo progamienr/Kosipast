@@ -237,16 +237,6 @@ namespace Utils
 		};
 	};
 
-	__inline void GetProjectileFireSetup(CBaseEntity *pPlayer, const Vec3 &vViewAngles, Vec3 vOffset, Vec3 *vSrc)
-	{
-		if (g_ConVars.cl_flipviewmodels->GetBool()) { vOffset.y *= -1.0f; }
-
-		Vec3 vecForward = Vec3(), vecRight = Vec3(), vecUp = Vec3();
-		Math::AngleVectors(vViewAngles, &vecForward, &vecRight, &vecUp);
-
-		*vSrc = pPlayer->GetShootPos() + (vecForward * vOffset.x) + (vecRight * vOffset.y) + (vecUp * vOffset.z);
-	}
-
 	__inline bool IsGameWindowInFocus()
 	{
 		static HWND hwGame = nullptr;
@@ -527,6 +517,12 @@ namespace Utils
 		return RandomFloatFn(flMinVal, flMaxVal);
 	}
 
+	__inline int RandomInt(int iMinVal = 0, int iMaxVal = 1)
+	{
+		static auto RandomIntFn = reinterpret_cast<int(*)(int, int)>(GetProcAddress(GetModuleHandleA("vstdlib.dll"), "RandomInt"));
+		return RandomIntFn(iMinVal, iMaxVal);
+	}
+
 	__inline bool VisPos(CBaseEntity *pSkip, const CBaseEntity *pEntity, const Vec3 &from, const Vec3 &to)
 	{
 		CGameTrace trace = {};
@@ -638,6 +634,47 @@ namespace Utils
 		return EWeaponType::UNKNOWN;
 	}
 
+	__inline void GetProjectileFireSetup(CBaseEntity* player, const Vec3& ang_in, Vec3 offset, Vec3& pos_out, Vec3& ang_out, bool pipes = false, bool interp = false)
+	{
+		ConVar* cl_flipviewmodels = g_ConVars.cl_flipviewmodels;
+
+		if (!cl_flipviewmodels)
+			return;
+
+		if (cl_flipviewmodels->GetBool())
+			offset.y *= -1.0f;
+
+		Vec3 forward, right, up;
+		Math::AngleVectors(ang_in, &forward, &right, &up);
+
+		Vec3 shoot_pos;
+		if (!interp)
+			shoot_pos = player->GetShootPos();
+		else
+			shoot_pos = player->GetEyePosition();
+
+		pos_out = shoot_pos + (forward * offset.x) + (right * offset.y) + (up * offset.z);
+
+		if (pipes)
+		{
+			ang_out = ang_in;
+		}
+
+		else
+		{
+			Vec3 end_pos = shoot_pos + (forward * 2000.0f);
+
+			CGameTrace trace = {};
+			CTraceFilterHitscan filter = {};
+			filter.pSkip = player;
+			Trace(shoot_pos, end_pos, MASK_SHOT, &filter, &trace);
+			if (trace.DidHit() && trace.flFraction > 0.1f)
+				end_pos = trace.vEndPos;
+
+			Math::VectorAngles(end_pos - pos_out, ang_out);
+		}
+	}
+
 	__inline uintptr_t GetVirtual(void* pBaseClass, unsigned int nIndex)
 	{
 		return static_cast<uintptr_t>((*static_cast<int**>(pBaseClass))[nIndex]);
@@ -709,6 +746,10 @@ namespace Utils
 						return true;
 					}
 					break;
+				}
+			case TF_WEAPON_MINIGUN:
+				{
+					return pWeapon->GetMinigunState() != AC_STATE_FIRING;
 				}
 			default:
 				{
@@ -881,76 +922,11 @@ namespace Utils
 		return 0;
 	}
 
-	__inline bool WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const Vec3& targetPos)
+	__inline Vec3 GetHeadOffset(CBaseEntity* pEntity, const Vec3 vOffset = {})
 	{
-		CGameTrace trace{};
-		static CTraceFilterWorldAndPropsOnly traceFilter = {};
-		traceFilter.pSkip = pLocal;
-
-		Vec3 shootPos = pLocal->GetEyePosition();
-		const Vec3 aimAngles = Math::CalcAngle(shootPos, targetPos);
-
-		{
-			switch (pWeapon->GetWeaponID())
-			{
-			case TF_WEAPON_RAYGUN_REVENGE:
-			case TF_WEAPON_ROCKETLAUNCHER:
-			case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
-			{
-				Vec3 vecOffset(23.5f, 12.0f, -3.0f); //tf_weaponbase_gun.cpp @L529 & @L760
-				if (pLocal->IsDucking())
-				{
-					vecOffset.z = 8.0f;
-				}
-				GetProjectileFireSetup(pLocal, aimAngles, vecOffset, &shootPos);
-				break;
-			}
-			case TF_WEAPON_SYRINGEGUN_MEDIC:
-			{
-				const Vec3 vecOffset(16.f, 6.f, -8.f); //tf_weaponbase_gun.cpp @L628
-				GetProjectileFireSetup(pLocal, aimAngles, vecOffset, &shootPos);
-				break;
-			}
-			case TF_WEAPON_COMPOUND_BOW:
-			{
-				const Vec3 vecOffset(23.5f, 12.0f, -3.0f); //tf_weapon_grapplinghook.cpp @L355 ??
-				GetProjectileFireSetup(pLocal, aimAngles, vecOffset, &shootPos);
-				break;
-			}
-			case TF_WEAPON_RAYGUN:
-			case TF_WEAPON_PARTICLE_CANNON:
-			case TF_WEAPON_DRG_POMSON:
-			{
-				Vec3 vecOffset(23.5f, -8.0f, -3.0f); //tf_weaponbase_gun.cpp @L568
-				if (pLocal->IsDucking())
-				{
-					vecOffset.z = 8.0f;
-				}
-				GetProjectileFireSetup(pLocal, aimAngles, vecOffset, &shootPos);
-				break;
-			}
-			case TF_WEAPON_GRENADELAUNCHER:
-			case TF_WEAPON_PIPEBOMBLAUNCHER:
-			case TF_WEAPON_STICKBOMB:
-			case TF_WEAPON_STICKY_BALL_LAUNCHER:
-			{
-				// TODO: Implement this
-				break;
-			}
-			default: break;
-			}
-		}
-
-		TraceHull(shootPos, targetPos, Vec3(-3.8f, -3.8f, -3.8f), Vec3(3.8f, 3.8f, 3.8f), MASK_SHOT_HULL, &traceFilter, &trace);
-		return !trace.DidHit();
-	}
-
-	__inline Vec3 GetHeadOffset(CBaseEntity* pEntity)
-	{
-		const Vec3 headPos = pEntity->GetHitboxPos(HITBOX_HEAD);
+		const Vec3 headPos = pEntity->GetHitboxPos(HITBOX_HEAD, vOffset);
 		const Vec3 entPos = pEntity->GetAbsOrigin();
-		const Vec3 delta = entPos - headPos;
-		return delta * -1.f;
+		return headPos - entPos;
 	}
 }
 

@@ -4,18 +4,22 @@
 
 class CAimbotMelee
 {
-	EGroupType GetGroupType(CBaseCombatWeapon* pWeapon);
-	bool AimFriendlyBuilding(CBaseObject* pBuilding);
-	bool CanMeleeHit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const Vec3& vecViewAngles, int nTargetIndex);
 	std::vector<Target_t> GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	bool VerifyTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& target);
-	bool GetTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& outTarget);
-	void Aim(CUserCmd* pCmd, Vec3& vAngle);
-	bool ShouldSwing(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, const Target_t& Target);
-	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
+	bool AimFriendlyBuilding(CBaseObject* pBuilding);
+	std::vector<Target_t> SortTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
-	bool bCached = false;
-	Vec3 vCached{};
+	int GetSwingTime(CBaseCombatWeapon* pWeapon);
+	void SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, std::vector<Target_t> targets, Vec3& vEyePos,
+						 std::unordered_map<CBaseEntity*, std::deque<TickRecord>>& pRecordMap,
+						 std::unordered_map<CBaseEntity*, std::vector<std::pair<Vec3, Vec3>>>& simLines);
+	bool CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 eyeAngles);
+	bool CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords);
+	
+	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
+	void Aim(CUserCmd* pCmd, Vec3& vAngle);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
+
+	Target_t lockedTarget;
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 };

@@ -145,7 +145,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <!-- <ClCompile Include="TeamFortress2\Features\Backtrack\Backtrack.cpp" /> -->
-    <ClCompile Include="TeamFortress2\Features\Aimbot\MovementSimulation\MovementSimulation.cpp" />
+    <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotProjectile\AimbotProjectile.cpp" />
+    <ClCompile Include="TeamFortress2\Features\Simulation\MovementSimulation\MovementSimulation.cpp" />
     <ClCompile Include="TeamFortress2\Features\AntiHack\CheaterDetection\CheaterDetection.cpp" />
     <ClCompile Include="TeamFortress2\Features\AntiHack\FakeLag\FakeLag.cpp" />
     <ClCompile Include="TeamFortress2\Features\AutoQueue\AutoQueue.cpp" />
@@ -155,13 +156,14 @@
     <ClCompile Include="TeamFortress2\Features\ESP\GetWeaponName\GetWeaponName.cpp" />
     <ClCompile Include="TeamFortress2\Features\ESP\LocalConditions\LocalConditions.cpp" />
     <ClCompile Include="TeamFortress2\Features\Misc\Notifications\Notifications.cpp" />
+    <ClCompile Include="TeamFortress2\Features\NoSpread\NoSpread.cpp" />
+    <ClCompile Include="TeamFortress2\Features\Simulation\ProjectileSimulation\ProjectileSimulation.cpp" />
     <ClCompile Include="TeamFortress2\Features\TickHandler\TickHandler.cpp" />
     <ClCompile Include="TeamFortress2\DLLMain.cpp" />
     <ClCompile Include="TeamFortress2\Features\Aimbot\Aimbot.cpp" />
     <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotGlobal\AimbotGlobal.cpp" />
     <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotHitscan\AimbotHitscan.cpp" />
     <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotMelee\AimbotMelee.cpp" />
-    <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotProjectile\AimbotProjectile.cpp" />
     <ClCompile Include="TeamFortress2\Features\AntiHack\AntiAim.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoBlast\AutoBlast.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoDetonate\AutoDetonate.cpp" />
@@ -193,7 +195,6 @@
     <ClCompile Include="TeamFortress2\Features\Resolver\Resolver.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoGlobal\AutoGlobal.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoShoot\AutoShoot.cpp" />
-    <ClCompile Include="TeamFortress2\Features\Auto\AutoStab\AutoStab.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\Auto.cpp" />
     <ClCompile Include="TeamFortress2\Features\Visuals\FakeAngleManager\FakeAng.cpp" />
     <ClCompile Include="TeamFortress2\Features\Visuals\Visuals.cpp" />
@@ -235,10 +236,10 @@
     <ClCompile Include="TeamFortress2\Hooks\Detours\CL_SendMove.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\CMaterial_Uncache.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\CStaticPropMgr_DrawStaticProps.cpp" />
-    <ClCompile Include="TeamFortress2\Hooks\Detours\CTFGameMovement_Duck.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\CTFPlayerInventory_GetMaxItemCount.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\CTFPlayerShared_InCond.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\CTFPlayerShared_IsPlayerDominated.cpp" />
+    <ClCompile Include="TeamFortress2\Hooks\Detours\C_BaseCombatWeapon_CanFireRandomCriticalShot.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\C_BaseEntity_FireBullets.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\C_BaseEntity_Interpolate.cpp" />
     <ClCompile Include="TeamFortress2\Hooks\Detours\C_BaseEntity_SetAbsVelocity.cpp" />
@@ -288,6 +289,7 @@
     <ClCompile Include="TeamFortress2\SDK\Interfaces\Interfaces.cpp" />
     <ClCompile Include="TeamFortress2\SDK\Interfaces\NetChannel\NetChannel.cpp" />
     <ClCompile Include="TeamFortress2\SDK\Interfaces\Localize\Localize.h" />
+    <ClCompile Include="TeamFortress2\SDK\Interfaces\VPhysics\VPhysics.h" />
     <ClCompile Include="TeamFortress2\SDK\Main\BaseCombatWeapon\BaseCombatWeapon.cpp" />
     <ClCompile Include="TeamFortress2\SDK\Main\ConVars\ConVars.cpp" />
     <ClCompile Include="TeamFortress2\SDK\Main\DrawUtils\DrawUtils.cpp" />
@@ -303,19 +305,23 @@
     <ClCompile Include="TeamFortress2\Utils\MinHook\hde\hde64.c" />
     <ClCompile Include="TeamFortress2\Utils\MinHook\hook.c" />
     <ClCompile Include="TeamFortress2\Utils\MinHook\trampoline.c" />
+    <ClCompile Include="TeamFortress2\Utils\Minidump\Minidump.cpp" />
     <ClCompile Include="TeamFortress2\Utils\Pattern\Pattern.cpp" />
   </ItemGroup>
   <ItemGroup>
     <!-- <ClInclude Include="TeamFortress2\Features\Backtrack\Backtrack.h" /> -->
+    <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotProjectile\AimbotProjectile.h" />
     <ClInclude Include="TeamFortress2\Features\AutoQueue\AutoQueue.h" />
     <ClInclude Include="TeamFortress2\Features\Commands\Commands.h" />
     <ClInclude Include="TeamFortress2\Features\ESP\GetWeaponName\GetWeaponName.h" />
     <ClInclude Include="TeamFortress2\Features\ESP\LocalConditions\LocalConditions.h" />
     <ClInclude Include="TeamFortress2\Features\Misc\Notifications\Notifications.h" />
+    <ClInclude Include="TeamFortress2\Features\NoSpread\NoSpread.h" />
+    <ClInclude Include="TeamFortress2\Features\Simulation\ProjectileSimulation\ProjectileSimulation.h" />
     <ClInclude Include="TeamFortress2\Features\TickHandler\TickHandler.h" />
     <ClInclude Include="TeamFortress2\Features\NetVarHooks\NetVarHk.h" />
     <ClInclude Include="TeamFortress2\Resources\DVD-Icon.h" />
-    <ClInclude Include="TeamFortress2\Features\Aimbot\MovementSimulation\MovementSimulation.h" />
+    <ClInclude Include="TeamFortress2\Features\Simulation\MovementSimulation\MovementSimulation.h" />
     <ClInclude Include="TeamFortress2\Features\AntiHack\CheaterDetection\CheaterDetection.h" />
     <ClInclude Include="TeamFortress2\Features\AntiHack\FakeLag\FakeLag.h" />
     <ClInclude Include="TeamFortress2\Features\Backtrack\Backtrack.h" />
@@ -324,7 +330,6 @@
     <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotGlobal\AimbotGlobal.h" />
     <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotHitscan\AimbotHitscan.h" />
     <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotMelee\AimbotMelee.h" />
-    <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotProjectile\AimbotProjectile.h" />
     <ClInclude Include="TeamFortress2\Features\AntiHack\AntiAim.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoBlast\AutoBlast.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoDetonate\AutoDetonate.h" />
@@ -362,7 +367,6 @@
     <ClInclude Include="TeamFortress2\Features\Resolver\Resolver.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoGlobal\AutoGlobal.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoShoot\AutoShoot.h" />
-    <ClInclude Include="TeamFortress2\Features\Auto\AutoStab\AutoStab.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\Auto.h" />
     <ClInclude Include="TeamFortress2\Features\Vars.h" />
     <ClInclude Include="TeamFortress2\Features\Visuals\FakeAngleManager\FakeAng.h" />
@@ -482,6 +486,7 @@
     <ClInclude Include="TeamFortress2\SDK\Interfaces\ClientEntityList\ClientEntityList.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\ClientModeShared\ClientModeShared.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\ConVar\ConVar.h" />
+    <ClInclude Include="TeamFortress2\SDK\Interfaces\CTFGameMovement\CTFGameMovement.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\CTFGameRules\CTFGameRules.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\CTFGCClientSystem\CTFGCClientSystem.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\CTFPartyClient\CTFPartyClient.h" />
@@ -496,6 +501,7 @@
     <ClInclude Include="TeamFortress2\SDK\Interfaces\GameEvent\GameEvent.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\GameMovement\GameMovement.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\GlobalVarsBase\GlobalVarsBase.h" />
+    <ClInclude Include="TeamFortress2\SDK\Interfaces\IAppSystem\IAppSystem.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\ICenterPrint\ICenterPrint.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\InputSystem\InputSystem.h" />
     <ClInclude Include="TeamFortress2\SDK\Interfaces\Input\Input.h" />
@@ -804,6 +810,7 @@
     <ClInclude Include="TeamFortress2\Utils\MinHook\hde\table64.h" />
     <ClInclude Include="TeamFortress2\Utils\MinHook\MinHook.h" />
     <ClInclude Include="TeamFortress2\Utils\MinHook\trampoline.h" />
+    <ClInclude Include="TeamFortress2\Utils\Minidump\Minidump.h" />
     <ClInclude Include="TeamFortress2\Utils\Pattern\Pattern.h" />
     <ClInclude Include="TeamFortress2\Utils\TFM\tfm.h" />
     <ClInclude Include="TeamFortress2\Utils\Timer\Timer.hpp" />

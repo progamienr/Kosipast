@@ -1,5 +1,6 @@
 #pragma once
 #include "../../../SDK/SDK.h"
+#include "../../Backtrack/Backtrack.h"
 
 namespace SandvichAimbot
 {
@@ -63,7 +64,7 @@ struct Target_t
 
 	// Backtrack
 	bool ShouldBacktrack = false;
-	float SimTime = 0.f;
+	TickRecord* pTick = nullptr;
 };
 
 class CAimbotGlobal
@@ -71,6 +72,7 @@ class CAimbotGlobal
 public:
 	bool IsKeyDown();
 	void SortTargets(std::vector<Target_t>*, const ESortMethod& method);
+	void SortPriority(std::vector<Target_t>*, const ESortMethod& method);
 	bool ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun = false);
 	Priority GetPriority(int targetIdx);
 };

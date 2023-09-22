@@ -4,18 +4,21 @@
 
 class CAimbotHitscan
 {
-	int GetHitbox(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	EGroupType GetGroupType(CBaseCombatWeapon* pWeapon);
 	std::vector<Target_t> GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	bool ScanHitboxes(CBaseEntity* pLocal, Target_t& target);
-	bool ScanBuildings(CBaseEntity* pLocal, Target_t& target);
-	bool VerifyTarget(CBaseEntity* pLocal, Target_t& target);
-	bool GetTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& outTarget);
+	std::vector<Target_t> SortTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
+
+	bool IsHitboxValid(int nHitbox);
+	int GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseEntity* pTarget);
+	bool CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
+
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
 	bool ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const Target_t& target);
 	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
+	void Exit(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 
-	int PriorityHitbox = 1; // this is the first hitbox we want to scan, just ignore it.
+	bool bLastTickAttack = false;
+	bool bLastTickHeld = false; // classic
 
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);

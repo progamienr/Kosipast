@@ -26,6 +26,29 @@ struct Priority {
 	int Mode = 2; // 0 - Friend, 1 - Ignore, 2 - Default, 3 - Rage, 4 - Cheater
 };
 
+struct DrawBullet {
+	std::pair<Vec3, Vec3> m_line;
+	float m_flTime;
+	Color_t m_color;
+};
+
+struct DrawLine {
+	std::vector<std::pair<Vec3, Vec3>> m_line;
+	float m_flTime;
+	Color_t m_color;
+};
+
+struct DrawBox {
+	Vec3 m_vecPos;
+	//Vec3 m_vecSize;
+	Vec3 m_vecMins;
+	Vec3 m_vecMaxs;
+	Vec3 m_vecOrientation;
+	float m_flTime;
+	Color_t m_colorEdge;
+	Color_t m_colorFace;
+};
+
 namespace G
 {
 	inline int CurrentTargetIdx = 0; // Index of the current aimbot target
@@ -55,6 +78,7 @@ namespace G
 	inline bool RechargeQueued = false; // Queues a recharge
 
 	/* Choking / Packets */
+	inline int ChokedTicks = 0; // Amount of ticks that are choked
 	inline bool ForceSendPacket = false; // might not actually be useful 
 	inline bool ForceChokePacket = false; // might not actually be useful 
 	inline bool IsChoking = false; // might not actually be useful 
@@ -73,11 +97,18 @@ namespace G
 	inline std::pair<bool, bool> AntiAim = {};	//	fakeset, realset
 	inline Vec3 PunchAngles = {};
 
-	/* Projectile prediction */
+	/* Bullets */
+	inline std::vector<DrawBullet> BulletsStorage;
+
+	/* Prediction */
 	inline Vec3 PredictedPos = {};
 	inline Vec3 LinearPredLine = {};
-	inline std::vector<std::pair<Vec3, Vec3>> PredictionLines;
-	inline std::vector<std::pair<Vec3, Vec3>> PredLinesBackup;
+	inline std::vector<std::pair<Vec3, Vec3>> MoveLines;
+	inline std::vector<std::pair<Vec3, Vec3>> ProjLines;
+	inline std::vector<DrawLine> LinesStorage;
+
+	/* Boxes */
+	inline std::vector<DrawBox> BoxesStorage;
 
 	inline CUserCmd* CurrentUserCmd{nullptr}; // Unreliable! Only use this if you really have to.
 	inline CUserCmd* LastUserCmd{nullptr};

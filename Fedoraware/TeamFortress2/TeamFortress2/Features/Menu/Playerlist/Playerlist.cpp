@@ -154,7 +154,7 @@ void CPlayerList::Render()
 							{
 								/* Name */
 								ImGui::PushStyleColor(ImGuiCol_Text, ImColor(Player.Color.r, Player.Color.g, Player.Color.b, Player.Alive ? Player.Color.a : 127).Value);
-								ImGui::Text("%s", Player.Name);
+								ImGui::Text("%s", Player.Name ? Player.Name : "N/A");
 								ImGui::PopStyleColor();
 								break;
 							}

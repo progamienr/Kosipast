@@ -89,13 +89,15 @@ public: //Netvars & conditions
 		M_DYNVARGET(Flags, int, this, "DT_BasePlayer", "m_fFlags")
 		M_DYNVARGET(LifeState, BYTE, this, "DT_BasePlayer", "m_lifeState")
 		M_DYNVARGET(ClassNum, int, this, "DT_TFPlayer", "m_PlayerClass", "m_iClass")
-		M_DYNVARGET(Cond, int, this, "DT_TFPlayer", "m_Shared", "m_nPlayerCond")
 		M_DYNVARGET(ViewingCYOAPDA, bool, this, "DT_TFPlayer", "m_bViewingCYOAPDA")
 		M_DYNVARGET(UsingActionSlot, bool, this, "DT_TFPlayer", "m_bUsingActionSlot")
 		M_DYNVARGET(LoadoutUnavailable, bool, this, "DT_TFPlayer", "m_Shared", "m_bLoadoutUnavailable")
+		M_DYNVARGET(Cond, int, this, "DT_TFPlayer", "m_Shared", "m_nPlayerCond")
+		M_DYNVARGET(CondBits, int, this, "DT_TFPlayer", "m_Shared", "m_ConditionList", "_condition_bits")
 		M_DYNVARGET(CondEx, int, this, "DT_TFPlayer", "m_Shared", "m_nPlayerCondEx")
 		M_DYNVARGET(CondEx2, int, this, "DT_TFPlayer", "m_Shared", "m_nPlayerCondEx2")
 		M_DYNVARGET(CondEx3, int, this, "DT_TFPlayer", "m_Shared", "m_nPlayerCondEx3")
+		M_DYNVARGET(CondEx4, int, this, "DT_TFPlayer", "m_Shared", "m_nPlayerCondEx4")
 		M_DYNVARGET(CollideableMins, Vec3, this, "DT_BaseEntity", "m_Collision", "m_vecMins")
 		M_DYNVARGET(CollideableMaxs, Vec3, this, "DT_BaseEntity", "m_Collision", "m_vecMaxs")
 		M_DYNVARGET(EyeAngles, Vec3, this, "DT_TFPlayer", "tfnonlocaldata", "m_angEyeAngles[0]")
@@ -327,7 +329,7 @@ public: //Everything else, lol.
 
 	__inline bool IsCloaked() // i dont put flickers in here because they are slightly visible, so it doesnt really count as cloaked to me
 	{
-		return GetCond() & TFCond_Cloaked || GetCondEx() & TFCondEx2_Stealthed;
+		return GetCond() & TFCond_Cloaked;// || GetCondEx() & TFCondEx2_Stealthed;
 	}
 
 	__inline CBaseEntity* GetGroundEntity()
@@ -363,8 +365,8 @@ public: //Everything else, lol.
 
 	__inline CBaseCombatWeapon* GetWeaponFromSlot(const int nSlot)
 	{
-		static DWORD dwMyWeapons = g_NetVars.get_offset("DT_BaseCombatCharacter", "m_hMyWeapons");
-		int hWeapon = *reinterpret_cast<int*>(this + (dwMyWeapons + (nSlot * 0x4)));
+		static auto dwOff = g_NetVars.get_offset("DT_BaseCombatCharacter", "m_hMyWeapons");
+		int hWeapon = *reinterpret_cast<int*>(this + (dwOff + (nSlot * 0x4)));
 		return reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(hWeapon));
 	}
 
@@ -375,27 +377,96 @@ public: //Everything else, lol.
 		return FN(this, eCond);
 	}
 
+	//Credits to KGB
+	inline bool InCond(const ETFCond eCond)
+	{
+		const int iCond = static_cast<int>(eCond);
+
+		switch (iCond / 32)
+		{
+		case 0:
+		{
+			const int bit = (1 << iCond);
+			if ((GetCond() & bit) == bit)
+			{
+				return true;
+			}
+
+			if ((GetCondBits() & bit) == bit)
+			{
+				return true;
+			}
+
+			break;
+		}
+		case 1:
+		{
+			const int bit = 1 << (iCond - 32);
+			if ((GetCondEx() & bit) == bit)
+			{
+				return true;
+			}
+
+			break;
+		}
+		case 2:
+		{
+			const int bit = 1 << (iCond - 64);
+			if ((GetCondEx2() & bit) == bit)
+			{
+				return true;
+			}
+
+			break;
+		}
+		case 3:
+		{
+			const int bit = 1 << (iCond - 96);
+			if ((GetCondEx3() & bit) == bit)
+			{
+				return true;
+			}
+
+			break;
+		}
+		case 4:
+		{
+			const int bit = 1 << (iCond - 128);
+			if ((GetCondEx4() & bit) == bit)
+			{
+				return true;
+			}
+
+			break;
+		}
+		default:
+			break;
+		}
+
+		return false;
+	}
+
 	__inline ETFClassID GetClassID()
 	{
 		const auto& pCC = GetClientClass();
 		return pCC ? ETFClassID(pCC->m_ClassID) : ETFClassID(0);
 	}
 
-	__inline CTFPlayerAnimState* GetAnimState()
+	__inline CTFPlayerAnimState* GetAnimState() //[implement]
 	{
 		return *reinterpret_cast<CTFPlayerAnimState**>(this + 0x1D88);
 	}
 
 	__inline void SetPoseParam(std::array<float, MAXSTUDIOPOSEPARAM> param)
 	{
-		static DWORD dwOffset = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
-		*reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOffset) = param;
+		static DWORD dwOff = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
+		*reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOff) = param;
 	}
 
 	__inline std::array<float, MAXSTUDIOPOSEPARAM> GetPoseParam()
 	{
-		static DWORD dwOffset = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
-		return *reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOffset);
+		static DWORD dwOff = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
+		return *reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOff);
 	}
 
 	__inline bool GetHitboxMinsAndMaxsAndMatrix(const int nHitbox, Vec3& vMins, Vec3& vMaxs, matrix3x4& matrix, Vec3* vCenter)
@@ -551,6 +622,14 @@ public: //Everything else, lol.
 				IsCritTempRune());
 	}
 
+	inline bool IsMiniCritBoosted()
+	{
+		return InCond(TF_COND_MINICRITBOOSTED_ON_KILL) ||
+			InCond(TF_COND_NOHEALINGDAMAGEBUFF) ||
+			InCond(TF_COND_ENERGY_BUFF) ||
+			InCond(TF_COND_CRITBOOSTED_DEMO_CHARGE);
+	}
+
 	__inline const char* GetRune()
 	{
 		if (IsStrengthRune()) { return "Strength Rune"; }
@@ -625,29 +704,26 @@ public: //Everything else, lol.
 		}
 	}
 
-	__inline Vec3 GetHitboxPos(const int nHitbox)
+	__inline Vec3 GetHitboxPos(const int nHitbox, const Vec3 vOffset = {})
 	{
-		if (const auto& pModel = GetModel())
-		{
-			if (const auto& pHdr = I::ModelInfoClient->GetStudioModel(pModel))
-			{
-				matrix3x4 BoneMatrix[128];
-				if (SetupBones(BoneMatrix, 128, 0x100, I::GlobalVars->curtime))
-				{
-					if (const auto& pSet = pHdr->GetHitboxSet(GetHitboxSet()))
-					{
-						if (const auto& pBox = pSet->hitbox(nHitbox))
-						{
-							Vec3 vPos = (pBox->bbmin + pBox->bbmax) * 0.5f, vOut;
-							Math::VectorTransform(vPos, BoneMatrix[pBox->bone], vOut);
-							return vOut;
-						}
-					}
-				}
-			}
-		}
+		const model_t* pModel = GetModel();
+		if (!pModel) return Vec3();
+		const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
+		if (!pHDR) return Vec3();
+		const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(GetHitboxSet());
+		if (!pSet) return Vec3();
 
-		return Vec3();
+		matrix3x4 BoneMatrix[128];
+		if (!SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, GetSimulationTime()))
+			return Vec3();
+
+		const mstudiobbox_t* pBox = pSet->hitbox(nHitbox);
+		if (!pBox)
+			return Vec3();
+
+		Vec3 vOut;
+		Math::VectorTransform(vOffset, BoneMatrix[pBox->bone], vOut);
+		return vOut;
 	}
 
 
@@ -910,5 +986,49 @@ public: //Everything else, lol.
 		return *reinterpret_cast<CCollisionProperty*>(this + 0x1C8);
 	}
 	*/ // why push this when A) It doesn't work, and B) Isn't used
+
+	__inline void UpdateButtonState(int nUserCmdButtonMask)
+	{
+		static auto fnUpdateButtonState = reinterpret_cast<void(__thiscall*)(void*, int)>(g_Pattern.Find(L"client.dll", L"55 8B EC 8B 81 ? ? ? ? 8B D0"));
+		fnUpdateButtonState(this, nUserCmdButtonMask);
+	}
+
+	__inline void SetNextThink(float thinkTime, const char* szContext)
+	{
+		static auto fnSetNextThink = reinterpret_cast<void(__thiscall*)(void*, float, const char*)>(g_Pattern.Find(L"client.dll", L"55 8B EC F3 0F 10 45 ? 0F 2E 05 ? ? ? ? 53"));
+		fnSetNextThink(this, thinkTime, szContext);
+	}
+
+	__inline int GetNextThinkTick(const char* szContext)
+	{
+		static auto fnGetNextThinkTick = reinterpret_cast<int(__thiscall*)(void*, const char*)>(g_Pattern.Find(L"client.dll", L"55 8B EC 8B 45 ? 56 8B F1 85 C0 75 ? 8B 86"));
+		return fnGetNextThinkTick(this, szContext);
+	}
+
+	__inline bool PhysicsRunThink(int thinkMethod = 0)
+	{
+		static auto fnPhysicsRunThink = reinterpret_cast<bool(__thiscall*)(void*, int)>(g_Pattern.Find(L"client.dll", L"55 8B EC 53 8B D9 56 57 8B 83 ? ? ? ? C1 E8"));
+		return fnPhysicsRunThink(this, thinkMethod);
+	}
+
+	__inline void SelectItem(const char* pstr, int iSubType) {
+		typedef bool(__thiscall* FN)(PVOID, const char*, int);
+		GetVFunc<FN>(this, 270)(this, pstr, iSubType);
+	}
+
+	__inline void PreThink() {
+		typedef bool(__thiscall* FN)(PVOID);
+		GetVFunc<FN>(this, 260)(this);
+	}
+
+	__inline void Think() {
+		typedef bool(__thiscall* FN)(PVOID);
+		GetVFunc<FN>(this, 174)(this);
+	}
+
+	__inline void PostThink() {
+		typedef bool(__thiscall* FN)(PVOID);
+		GetVFunc<FN>(this, 261)(this);
+	}
 
 };

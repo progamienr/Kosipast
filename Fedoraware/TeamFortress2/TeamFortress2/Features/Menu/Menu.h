@@ -15,7 +15,7 @@ class CMenu
 	void SettingsWindow();
 	void DebugMenu();
 
-	void AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw, bool setSize = false);
+	void AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw);
 
 	void DrawKeybinds();
 	void LoadStyle();
@@ -79,7 +79,7 @@ public:
 	// Fonts
 	ImFont* VerdanaSmall = nullptr;	// 12px
 	ImFont* Verdana = nullptr;		// 14px
-	ImFont* VerdanaBold = nullptr;	// 18px
+	ImFont* VerdanaBold = nullptr;	// 14px
 
 	ImFont* SectionFont = nullptr;	// 16px
 	ImFont* TitleFont = nullptr;	// 20px

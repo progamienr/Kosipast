@@ -267,7 +267,6 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 	{
 		WriteTree.clear();
 
-		SAVE_VAR(Vars::Debug::DebugInfo); //I added this because I felt like it
 		SAVE_VAR(Vars::Menu::MenuKey);
 
 		//Aimbot
@@ -277,21 +276,22 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Aimbot::Global::Active);
 				SAVE_VAR(Vars::Aimbot::Global::AimKey);
 				SAVE_VAR(Vars::Aimbot::Global::AutoShoot);
-				SAVE_VAR(Vars::Aimbot::Global::DontWaitForShot);
-				SAVE_VAR(Vars::Aimbot::Global::FlickatEnemies);
 				SAVE_VAR(Vars::Aimbot::Global::AimAt);
 				SAVE_VAR(Vars::Aimbot::Global::IgnoreOptions);
+				SAVE_VAR(Vars::Aimbot::Global::IgnoreCloakPercentage);
+				SAVE_VAR(Vars::Aimbot::Global::MaxTargets);
 				SAVE_VAR(Vars::Aimbot::Global::TickTolerance);
 				SAVE_VAR(Vars::Aimbot::Global::BAimLethal);
-				SAVE_VAR(Vars::Aimbot::Global::showHitboxes);
-				SAVE_VAR(Vars::Aimbot::Global::ClearPreviousHitbox);
-				SAVE_VAR(Vars::Aimbot::Global::HitboxLifetime);
 			}
 
 			// Backtrack
 			{
 				SAVE_VAR(Vars::Backtrack::Enabled);
+				SAVE_VAR(Vars::Backtrack::Method);
+				SAVE_VAR(Vars::Backtrack::UnchokePrediction);
 				SAVE_VAR(Vars::Backtrack::Latency);
+				SAVE_VAR(Vars::Backtrack::Interp);
+				SAVE_VAR(Vars::Backtrack::Protect);
 			}
 
 			{
@@ -306,22 +306,17 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Aimbot::Hitscan::Active);
 				SAVE_VAR(Vars::Aimbot::Hitscan::AimFOV);
 				SAVE_VAR(Vars::Aimbot::Hitscan::SortMethod);
-				SAVE_VAR(Vars::Aimbot::Hitscan::BackTrackMethod);
 				SAVE_VAR(Vars::Aimbot::Hitscan::AimMethod);
-				SAVE_VAR(Vars::Aimbot::Hitscan::AimHitbox);
 				SAVE_VAR(Vars::Aimbot::Hitscan::SmoothingAmount);
 				SAVE_VAR(Vars::Aimbot::Hitscan::TapFire);
 				SAVE_VAR(Vars::Aimbot::Hitscan::TapFireDist);
-				SAVE_VAR(Vars::Aimbot::Hitscan::ScanHitboxes);
-				SAVE_VAR(Vars::Aimbot::Hitscan::MultiHitboxes);
-				SAVE_VAR(Vars::Aimbot::Hitscan::StaticHitboxes);
+				SAVE_VAR(Vars::Aimbot::Hitscan::Hitboxes);
 				SAVE_VAR(Vars::Aimbot::Hitscan::PointScale);
 				SAVE_VAR(Vars::Aimbot::Hitscan::ScanBuildings);
 				SAVE_VAR(Vars::Aimbot::Hitscan::WaitForHeadshot);
 				SAVE_VAR(Vars::Aimbot::Hitscan::WaitForCharge);
 				SAVE_VAR(Vars::Aimbot::Hitscan::ScopedOnly);
 				SAVE_VAR(Vars::Aimbot::Hitscan::AutoScope);
-				SAVE_VAR(Vars::Aimbot::Hitscan::AutoRev);
 				SAVE_VAR(Vars::Aimbot::Hitscan::ExtinguishTeam);
 			}
 
@@ -331,13 +326,9 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Aimbot::Projectile::AimFOV);
 				SAVE_VAR(Vars::Aimbot::Projectile::SortMethod);
 				SAVE_VAR(Vars::Aimbot::Projectile::AimMethod);
-				SAVE_VAR(Vars::Aimbot::Projectile::AimPosition);
-				SAVE_VAR(Vars::Aimbot::Projectile::AllowedHitboxes);
-				SAVE_VAR(Vars::Aimbot::Projectile::FeetAimIfOnGround);
-				SAVE_VAR(Vars::Aimbot::Projectile::BounceKey);
+				SAVE_VAR(Vars::Aimbot::Projectile::SmoothingAmount);
 				SAVE_VAR(Vars::Aimbot::Projectile::SplashPrediction);
 				SAVE_VAR(Vars::Aimbot::Projectile::PredictionTime);
-				SAVE_VAR(Vars::Aimbot::Projectile::ScanScale);
 				SAVE_VAR(Vars::Aimbot::Projectile::ChargeLooseCannon);
 				SAVE_VAR(Vars::Aimbot::Projectile::StrafePredictionAir);
 				SAVE_VAR(Vars::Aimbot::Projectile::StrafePredictionGround);
@@ -352,6 +343,8 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Aimbot::Melee::SortMethod);
 				SAVE_VAR(Vars::Aimbot::Melee::AimMethod);
 				SAVE_VAR(Vars::Aimbot::Melee::SmoothingAmount);
+				SAVE_VAR(Vars::Aimbot::Melee::AutoBackstab);
+				SAVE_VAR(Vars::Aimbot::Melee::IgnoreRazorback);
 				SAVE_VAR(Vars::Aimbot::Melee::PredictSwing);
 				SAVE_VAR(Vars::Aimbot::Melee::WhipTeam);
 			}
@@ -380,16 +373,6 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Triggerbot::Shoot::WaitForHeadshot);
 				SAVE_VAR(Vars::Triggerbot::Shoot::ScopeOnly);
 				SAVE_VAR(Vars::Triggerbot::Shoot::HeadScale);
-			}
-
-			//Stab
-			{
-				SAVE_VAR(Vars::Triggerbot::Stab::Active);
-				SAVE_VAR(Vars::Triggerbot::Stab::RageMode);
-				SAVE_VAR(Vars::Triggerbot::Stab::Silent);
-				SAVE_VAR(Vars::Triggerbot::Stab::Disguise);
-				SAVE_VAR(Vars::Triggerbot::Stab::IgnRazor);
-				SAVE_VAR(Vars::Triggerbot::Stab::Range);
 			}
 
 			//Detonate
@@ -433,10 +416,9 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 			SAVE_VAR(Vars::Misc::FastDeltaStrafe);
 			SAVE_VAR(Vars::Misc::AccurateMovement);
 			SAVE_VAR(Vars::Misc::DirectionalOnlyOnMove);
+			SAVE_VAR(Vars::Misc::DirectionalOnlyOnSpace);
 			SAVE_VAR(Vars::Misc::AutoJump);
 			SAVE_VAR(Vars::Misc::TauntSlide);
-			SAVE_VAR(Vars::Misc::TauntControl);
-			SAVE_VAR(Vars::Misc::TauntFollowsCamera);
 			SAVE_VAR(Vars::Misc::BypassPure);
 			SAVE_VAR(Vars::Misc::DisableInterpolation);
 			SAVE_VAR(Vars::Misc::NoPush);
@@ -588,7 +570,6 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 		ReadTree.clear();
 		read_json(ConfigPath + "\\" + configName + ConfigExtension, ReadTree);
 
-		LOAD_VAR(Vars::Debug::DebugInfo);
 		LOAD_VAR(Vars::Menu::MenuKey);
 
 		//Aimbot
@@ -598,22 +579,23 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Aimbot::Global::Active);
 				LOAD_VAR(Vars::Aimbot::Global::AimKey);
 				LOAD_VAR(Vars::Aimbot::Global::AutoShoot);
-				LOAD_VAR(Vars::Aimbot::Global::DontWaitForShot);
-				LOAD_VAR(Vars::Aimbot::Global::FlickatEnemies);
 				LOAD_VAR(Vars::Aimbot::Global::AimAt);
 				LOAD_VAR(Vars::Aimbot::Global::IgnoreOptions);
+				LOAD_VAR(Vars::Aimbot::Global::IgnoreCloakPercentage);
+				LOAD_VAR(Vars::Aimbot::Global::MaxTargets);
 				LOAD_VAR(Vars::Aimbot::Global::TickTolerance);
 				LOAD_VAR(Vars::Aimbot::Global::BAimLethal);
-				LOAD_VAR(Vars::Aimbot::Global::showHitboxes);
-				LOAD_VAR(Vars::Aimbot::Global::ClearPreviousHitbox);
-				LOAD_VAR(Vars::Aimbot::Global::HitboxLifetime);
 			}
 
 
 			// Backtrack
 			{
 				LOAD_VAR(Vars::Backtrack::Enabled);
+				LOAD_VAR(Vars::Backtrack::Method);
+				LOAD_VAR(Vars::Backtrack::UnchokePrediction);
 				LOAD_VAR(Vars::Backtrack::Latency);
+				LOAD_VAR(Vars::Backtrack::Interp);
+				LOAD_VAR(Vars::Backtrack::Protect);
 			}
 
 			{
@@ -630,22 +612,17 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Aimbot::Hitscan::Active);
 				LOAD_VAR(Vars::Aimbot::Hitscan::AimFOV);
 				LOAD_VAR(Vars::Aimbot::Hitscan::SortMethod);
-				LOAD_VAR(Vars::Aimbot::Hitscan::BackTrackMethod);
 				LOAD_VAR(Vars::Aimbot::Hitscan::AimMethod);
-				LOAD_VAR(Vars::Aimbot::Hitscan::AimHitbox);
 				LOAD_VAR(Vars::Aimbot::Hitscan::SmoothingAmount);
 				LOAD_VAR(Vars::Aimbot::Hitscan::TapFire);
 				LOAD_VAR(Vars::Aimbot::Hitscan::TapFireDist);
-				LOAD_VAR(Vars::Aimbot::Hitscan::ScanHitboxes);
-				LOAD_VAR(Vars::Aimbot::Hitscan::MultiHitboxes);
-				LOAD_VAR(Vars::Aimbot::Hitscan::StaticHitboxes);
+				LOAD_VAR(Vars::Aimbot::Hitscan::Hitboxes);
 				LOAD_VAR(Vars::Aimbot::Hitscan::PointScale);
 				LOAD_VAR(Vars::Aimbot::Hitscan::ScanBuildings);
 				LOAD_VAR(Vars::Aimbot::Hitscan::WaitForHeadshot);
 				LOAD_VAR(Vars::Aimbot::Hitscan::WaitForCharge);
 				LOAD_VAR(Vars::Aimbot::Hitscan::ScopedOnly);
 				LOAD_VAR(Vars::Aimbot::Hitscan::AutoScope);
-				LOAD_VAR(Vars::Aimbot::Hitscan::AutoRev);
 				LOAD_VAR(Vars::Aimbot::Hitscan::ExtinguishTeam);
 			}
 
@@ -655,13 +632,9 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Aimbot::Projectile::AimFOV);
 				LOAD_VAR(Vars::Aimbot::Projectile::SortMethod);
 				LOAD_VAR(Vars::Aimbot::Projectile::AimMethod);
-				LOAD_VAR(Vars::Aimbot::Projectile::AimPosition);
-				LOAD_VAR(Vars::Aimbot::Projectile::AllowedHitboxes);
-				LOAD_VAR(Vars::Aimbot::Projectile::FeetAimIfOnGround);
-				LOAD_VAR(Vars::Aimbot::Projectile::BounceKey);
+				LOAD_VAR(Vars::Aimbot::Projectile::SmoothingAmount);
 				LOAD_VAR(Vars::Aimbot::Projectile::SplashPrediction);
 				LOAD_VAR(Vars::Aimbot::Projectile::PredictionTime);
-				LOAD_VAR(Vars::Aimbot::Projectile::ScanScale);
 				LOAD_VAR(Vars::Aimbot::Projectile::ChargeLooseCannon);
 				LOAD_VAR(Vars::Aimbot::Projectile::StrafePredictionAir);
 				LOAD_VAR(Vars::Aimbot::Projectile::StrafePredictionGround);
@@ -676,6 +649,8 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Aimbot::Melee::SortMethod);
 				LOAD_VAR(Vars::Aimbot::Melee::AimMethod);
 				LOAD_VAR(Vars::Aimbot::Melee::SmoothingAmount);
+				LOAD_VAR(Vars::Aimbot::Melee::AutoBackstab);
+				LOAD_VAR(Vars::Aimbot::Melee::IgnoreRazorback);
 				LOAD_VAR(Vars::Aimbot::Melee::PredictSwing);
 				LOAD_VAR(Vars::Aimbot::Melee::WhipTeam);
 			}
@@ -703,16 +678,6 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Triggerbot::Shoot::WaitForHeadshot);
 				LOAD_VAR(Vars::Triggerbot::Shoot::ScopeOnly);
 				LOAD_VAR(Vars::Triggerbot::Shoot::HeadScale);
-			}
-
-			//Stab
-			{
-				LOAD_VAR(Vars::Triggerbot::Stab::Active);
-				LOAD_VAR(Vars::Triggerbot::Stab::RageMode);
-				LOAD_VAR(Vars::Triggerbot::Stab::Silent);
-				LOAD_VAR(Vars::Triggerbot::Stab::Disguise);
-				LOAD_VAR(Vars::Triggerbot::Stab::IgnRazor);
-				LOAD_VAR(Vars::Triggerbot::Stab::Range);
 			}
 
 			//Detonate
@@ -756,10 +721,9 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 			SAVE_VAR(Vars::Misc::FastDeltaStrafe);
 			SAVE_VAR(Vars::Misc::AccurateMovement);
 			LOAD_VAR(Vars::Misc::DirectionalOnlyOnMove);
+			LOAD_VAR(Vars::Misc::DirectionalOnlyOnSpace);
 			LOAD_VAR(Vars::Misc::AutoJump);
 			LOAD_VAR(Vars::Misc::TauntSlide);
-			LOAD_VAR(Vars::Misc::TauntControl);
-			LOAD_VAR(Vars::Misc::TauntFollowsCamera);
 			LOAD_VAR(Vars::Misc::BypassPure);
 			LOAD_VAR(Vars::Misc::DisableInterpolation);
 			LOAD_VAR(Vars::Misc::NoPush);
@@ -919,10 +883,13 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Backtrack::BtChams::EnemyOnly);
 		SAVE_VAR(Vars::Backtrack::BtChams::IgnoreZ);
 		SAVE_VAR(Vars::Backtrack::BtChams::Material);
+		SAVE_STRING(Vars::Backtrack::BtChams::Custom);
+		SAVE_VAR(Vars::Backtrack::BtChams::Overlay);
 		SAVE_OTHER(Vars::Backtrack::BtChams::BacktrackColor);
 		SAVE_VAR(Vars::CritHack::Indicators);
 		SAVE_OTHER(Vars::CritHack::IndicatorPos);
 		SAVE_OTHER(Vars::Aimbot::Projectile::PredictionColor);
+		SAVE_OTHER(Vars::Aimbot::Projectile::ProjectileColor);
 		SAVE_VAR(Vars::ESP::Main::Active);
 		SAVE_VAR(Vars::ESP::Main::EnableTeamEnemyColors);
 		SAVE_VAR(Vars::ESP::Main::DormantSoundESP);
@@ -1023,9 +990,6 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Glow::World::Bombs);
 		SAVE_VAR(Vars::Glow::World::Projectiles);
 		SAVE_VAR(Vars::Glow::World::Alpha);
-		SAVE_VAR(Vars::Glow::Misc::MovementSimLine);
-		SAVE_VAR(Vars::Glow::Misc::BulletTracers);
-		SAVE_VAR(Vars::Glow::Misc::Sightlines);
 		SAVE_VAR(Vars::Radar::Main::Active);
 		SAVE_VAR(Vars::Radar::Main::NoTitleGradient);
 		SAVE_VAR(Vars::Radar::Main::BackAlpha);
@@ -1047,7 +1011,6 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Radar::World::Health);
 		SAVE_VAR(Vars::Radar::World::Ammo);
 		SAVE_VAR(Vars::Visuals::ScoreboardColours);
-		SAVE_VAR(Vars::Visuals::MenuCelebration);
 		SAVE_VAR(Vars::Visuals::CleanScreenshots);
 		SAVE_VAR(Vars::Visuals::RemoveMOTD);
 		SAVE_VAR(Vars::Visuals::RemoveDisguises);
@@ -1055,7 +1018,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::DrawOnScreenPing);
 		SAVE_VAR(Vars::Visuals::RemoveTaunts);
 		SAVE_VAR(Vars::Visuals::FieldOfView);
-		SAVE_VAR(Vars::Visuals::AimFOVAlpha);
+		SAVE_VAR(Vars::Visuals::ZoomFieldOfView);
 		SAVE_VAR(Vars::Visuals::RemoveScope);
 		SAVE_VAR(Vars::Visuals::RemoveRagdolls);
 		SAVE_VAR(Vars::Visuals::RemoveScreenEffects);
@@ -1069,8 +1032,9 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::CrosshairAimPos);
 		SAVE_VAR(Vars::Visuals::ChatInfoText);
 		SAVE_VAR(Vars::Visuals::ChatInfoChat);
-		SAVE_VAR(Vars::Visuals::OutOfFOVArrowsOutline);
 		SAVE_VAR(Vars::Visuals::SpectatorList);
+		SAVE_VAR(Vars::Visuals::SpectatorAvatars);
+		SAVE_OTHER(Vars::Visuals::SpectatorPos);
 		SAVE_VAR(Vars::Visuals::ThirdPerson);
 		SAVE_VAR(Vars::Visuals::ThirdPersonSilentAngles);
 		SAVE_VAR(Vars::Visuals::ThirdPersonInstantYaw);
@@ -1089,29 +1053,28 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::Particles::Feet::Enabled);
 		SAVE_VAR(Vars::Visuals::Particles::Feet::ColorType);
 		SAVE_VAR(Vars::Visuals::Particles::Feet::DashOnly);
-		SAVE_VAR(Vars::Visuals::BulletTracer);
-		SAVE_VAR(Vars::Visuals::BulletTracerRainbow);
 		SAVE_STRING(Vars::Visuals::Particles::Tracers::ParticleName);
 		SAVE_VAR(Vars::Visuals::AimbotViewmodel);
 		SAVE_VAR(Vars::Visuals::ViewmodelSway);
 		SAVE_VAR(Vars::Visuals::ViewmodelSwayInterp);
 		SAVE_VAR(Vars::Visuals::ViewmodelSwayScale);
-		SAVE_VAR(Vars::Visuals::MoveSimLine);
-		SAVE_VAR(Vars::Visuals::MoveSimSeperators);
-		SAVE_VAR(Vars::Visuals::SeperatorLength);
-		SAVE_VAR(Vars::Visuals::SeperatorSpacing);
 		SAVE_OTHER(Vars::Visuals::VMOffsets);
 		SAVE_OTHER(Vars::Visuals::OnScreenConditions);
 		SAVE_OTHER(Vars::Visuals::OnScreenPing);
 		SAVE_VAR(Vars::Visuals::VMRoll);
 		SAVE_VAR(Vars::Visuals::OutOfFOVArrows);
-		SAVE_VAR(Vars::Visuals::ArrowLength);
-		SAVE_VAR(Vars::Visuals::ArrowAngle);
 		SAVE_VAR(Vars::Visuals::MaxDist);
-		SAVE_VAR(Vars::Visuals::MinDist);
 		SAVE_VAR(Vars::Visuals::FovArrowsDist);
 		SAVE_VAR(Vars::Visuals::DoPostProcessing);
 		SAVE_VAR(Vars::Visuals::EquipRegionUnlock);
+		SAVE_VAR(Vars::Visuals::BulletTracer);
+		SAVE_VAR(Vars::Visuals::SimLine);
+		SAVE_VAR(Vars::Visuals::SimSeperators);
+		SAVE_VAR(Vars::Visuals::SeperatorLength);
+		SAVE_VAR(Vars::Visuals::SeperatorSpacing);
+		SAVE_VAR(Vars::Visuals::SwingLines);
+		SAVE_VAR(Vars::Visuals::ProjectileTrajectory);
+		SAVE_VAR(Vars::Aimbot::Global::ShowHitboxes);
 		SAVE_VAR(Vars::Visuals::NoStaticPropFade);
 		SAVE_VAR(Vars::Visuals::Beans::Active);
 		SAVE_VAR(Vars::Visuals::Beans::Rainbow);
@@ -1258,10 +1221,13 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Backtrack::BtChams::EnemyOnly);
 		LOAD_VAR(Vars::Backtrack::BtChams::IgnoreZ);
 		LOAD_VAR(Vars::Backtrack::BtChams::Material);
+		LOAD_STRING(Vars::Backtrack::BtChams::Custom);
+		LOAD_VAR(Vars::Backtrack::BtChams::Overlay);
 		LOAD_OTHER(Vars::Backtrack::BtChams::BacktrackColor);
 		LOAD_VAR(Vars::CritHack::Indicators);
 		LOAD_OTHER(Vars::CritHack::IndicatorPos);
 		LOAD_OTHER(Vars::Aimbot::Projectile::PredictionColor);
+		LOAD_OTHER(Vars::Aimbot::Projectile::ProjectileColor);
 		//ESP
 		LOAD_VAR(Vars::ESP::Main::Active);
 		LOAD_VAR(Vars::ESP::Main::EnableTeamEnemyColors);
@@ -1324,9 +1290,6 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::ESP::World::BombBox);
 
 		LOAD_VAR(Vars::ESP::World::Alpha);
-		LOAD_VAR(Vars::Glow::Misc::MovementSimLine);
-		LOAD_VAR(Vars::Glow::Misc::BulletTracers);
-		LOAD_VAR(Vars::Glow::Misc::Sightlines);
 		LOAD_VAR(Vars::Chams::Main::Active);
 		LOAD_VAR(Vars::Chams::Players::Active);
 		LOAD_VAR(Vars::Chams::Players::Wearables);
@@ -1393,7 +1356,6 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Radar::World::Health);
 		LOAD_VAR(Vars::Radar::World::Ammo);
 		LOAD_VAR(Vars::Visuals::ScoreboardColours);
-		LOAD_VAR(Vars::Visuals::MenuCelebration);
 		LOAD_VAR(Vars::Visuals::CleanScreenshots);
 		LOAD_VAR(Vars::Visuals::RemoveMOTD);
 		LOAD_VAR(Vars::Visuals::RemoveDisguises);
@@ -1406,7 +1368,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Visuals::RemoveConvarQueries);
 		LOAD_VAR(Vars::Visuals::PreventForcedAngles);
 		LOAD_VAR(Vars::Visuals::FieldOfView);
-		LOAD_VAR(Vars::Visuals::AimFOVAlpha);
+		LOAD_VAR(Vars::Visuals::ZoomFieldOfView);
 		LOAD_VAR(Vars::Visuals::RemoveScope);
 		LOAD_VAR(Vars::Visuals::RemoveRagdolls);
 		LOAD_VAR(Vars::Visuals::PickupTimers);
@@ -1415,8 +1377,9 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Visuals::CrosshairAimPos);
 		LOAD_VAR(Vars::Visuals::ChatInfoText);
 		LOAD_VAR(Vars::Visuals::ChatInfoChat);
-		LOAD_VAR(Vars::Visuals::OutOfFOVArrowsOutline);
 		LOAD_VAR(Vars::Visuals::SpectatorList);
+		LOAD_VAR(Vars::Visuals::SpectatorAvatars);
+		LOAD_OTHER(Vars::Visuals::SpectatorPos);
 
 		LOAD_VAR(Vars::Visuals::ThirdPerson);
 		LOAD_VAR(Vars::Visuals::ThirdPersonSilentAngles);
@@ -1438,26 +1401,17 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Visuals::Particles::Feet::ColorType);
 		LOAD_VAR(Vars::Visuals::Particles::Feet::DashOnly);
 		LOAD_VAR(Vars::Visuals::Particles::Tracers::ParticleTracer);
-		LOAD_VAR(Vars::Visuals::BulletTracer);
-		LOAD_VAR(Vars::Visuals::BulletTracerRainbow);
 		LOAD_STRING(Vars::Visuals::Particles::Tracers::ParticleName);
 		LOAD_VAR(Vars::Visuals::AimbotViewmodel);
 		LOAD_VAR(Vars::Visuals::ViewmodelSway);
 		LOAD_VAR(Vars::Visuals::ViewmodelSwayInterp);
 		LOAD_VAR(Vars::Visuals::ViewmodelSwayScale);
-		LOAD_VAR(Vars::Visuals::MoveSimLine);
-		LOAD_VAR(Vars::Visuals::MoveSimSeperators);
-		LOAD_VAR(Vars::Visuals::SeperatorLength);
-		LOAD_VAR(Vars::Visuals::SeperatorSpacing);
 		LOAD_OTHER(Vars::Visuals::VMOffsets);
 		LOAD_OTHER(Vars::Visuals::OnScreenConditions);
 		LOAD_OTHER(Vars::Visuals::OnScreenPing);
 		LOAD_VAR(Vars::Visuals::VMRoll);
 		LOAD_VAR(Vars::Visuals::OutOfFOVArrows);
-		LOAD_VAR(Vars::Visuals::ArrowLength);
-		LOAD_VAR(Vars::Visuals::ArrowAngle);
 		LOAD_VAR(Vars::Visuals::MaxDist);
-		LOAD_VAR(Vars::Visuals::MinDist);
 		LOAD_VAR(Vars::Visuals::FovArrowsDist);
 		LOAD_VAR(Vars::Visuals::NotificationLifetime);
 		LOAD_VAR(Vars::Visuals::DamageLoggerText);
@@ -1465,6 +1419,17 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Visuals::DamageLoggerConsole);
 		LOAD_VAR(Vars::Visuals::DoPostProcessing);
 		LOAD_VAR(Vars::Visuals::EquipRegionUnlock);
+
+		LOAD_VAR(Vars::Visuals::BulletTracer);
+
+		LOAD_VAR(Vars::Visuals::SimLine);
+		LOAD_VAR(Vars::Visuals::SimSeperators);
+		LOAD_VAR(Vars::Visuals::SeperatorLength);
+		LOAD_VAR(Vars::Visuals::SeperatorSpacing);
+		LOAD_VAR(Vars::Visuals::SwingLines);
+		LOAD_VAR(Vars::Visuals::ProjectileTrajectory);
+
+		LOAD_VAR(Vars::Aimbot::Global::ShowHitboxes);
 
 		LOAD_VAR(Vars::Visuals::NoStaticPropFade);
 

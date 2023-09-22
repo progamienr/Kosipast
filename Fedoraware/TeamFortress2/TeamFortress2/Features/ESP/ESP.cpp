@@ -59,69 +59,58 @@ bool CESP::GetDrawBounds(CBaseEntity* pEntity, Vec3* vTrans, int& x, int& y, int
 		Vec3(vMins.x, vMins.y, vMaxs.z),
 		Vec3(vMaxs.x, vMins.y, vMaxs.z)
 	};
-
 	for (int n = 0; n < 8; n++)
 	{
 		Math::VectorTransform(vPoints[n], transform, vTrans[n]);
 	}
 
-	Vec3 flb, brt, blb, frt, frb, brb, blt, flt;
-
-	if (Utils::W2S(vTrans[3], flb) && Utils::W2S(vTrans[5], brt)
-		&& Utils::W2S(vTrans[0], blb) && Utils::W2S(vTrans[4], frt)
-		&& Utils::W2S(vTrans[2], frb) && Utils::W2S(vTrans[1], brb)
-		&& Utils::W2S(vTrans[6], blt) && Utils::W2S(vTrans[7], flt))
+	float left = 0.f, right = 0.f, top = 0.f, bottom = 0.f;
+	const Vec3 vOther[] =
 	{
-		const Vec3 arr[] = { flb, brt, blb, frt, frb, brb, blt, flt };
+		Vec3(0.f, 0.f, vMins.z),
+		Vec3(0.f, 0.f, vMaxs.z),
+		Vec3(vMins.x, vMins.y, vMaxs.z * 0.5f),
+		Vec3(vMins.x, vMaxs.y, vMaxs.z * 0.5f),
+		Vec3(vMaxs.x, vMins.y, vMaxs.z * 0.5f),
+		Vec3(vMaxs.x, vMaxs.y, vMaxs.z * 0.5f)
+	};
+	for (int n = 0; n < 6; n++)
+	{
+		Vec3 trans; Math::VectorTransform(vOther[n], transform, trans);
 
-		float left = flb.x;
-		float top = flb.y;
-		float righ = flb.x;
-		float bottom = flb.y;
+		Vec3 vScreenPos;
+		if (!Utils::W2S(trans, vScreenPos))
+			return false;
 
-		for (int n = 1; n < 8; n++)
-		{
-			if (left > arr[n].x)
-			{
-				left = arr[n].x;
-			}
+		if (vScreenPos.x < -g_ScreenSize.w
+			|| vScreenPos.x > g_ScreenSize.w * 2
+			|| vScreenPos.y < -g_ScreenSize.h
+			|| vScreenPos.y > g_ScreenSize.h * 2)
+			return false;
 
-			if (top < arr[n].y)
-			{
-				top = arr[n].y;
-			}
-
-			if (righ < arr[n].x)
-			{
-				righ = arr[n].x;
-			}
-
-			if (bottom > arr[n].y)
-			{
-				bottom = arr[n].y;
-			}
-		}
-
-		float x_ = left;
-		const float y_ = bottom;
-		float w_ = righ - left;
-		const float h_ = top - bottom;
-
-		if (bIsPlayer && Vars::ESP::Players::Box.Value != 3)
-		{
-			x_ += (righ - left) / 8.0f;
-			w_ -= (righ - left) / 8.0f * 2.0f;
-		}
-
-		x = static_cast<int>(x_);
-		y = static_cast<int>(y_);
-		w = static_cast<int>(w_);
-		h = static_cast<int>(h_);
-
-		return !(x > g_ScreenSize.w || x + w < 0 || y > g_ScreenSize.h || y + h < 0);
+		left = n ? std::min(left, vScreenPos.x) : vScreenPos.x;
+		right = n ? std::max(right, vScreenPos.x) : vScreenPos.x;
+		top = n ? std::max(top, vScreenPos.y) : vScreenPos.y;
+		bottom = n ? std::min(bottom, vScreenPos.y) : vScreenPos.y;
 	}
 
-	return false;
+	float x_ = left;
+	const float y_ = bottom;
+	float w_ = right - left;
+	const float h_ = top - bottom;
+
+	if (bIsPlayer && Vars::ESP::Players::Box.Value != 3)
+	{
+		x_ += (right - left) / 8.0f;
+		w_ -= (right - left) / 8.0f * 2.0f;
+	}
+
+	x = static_cast<int>(x_);
+	y = static_cast<int>(y_);
+	w = static_cast<int>(w_);
+	h = static_cast<int>(h_);
+
+	return !(x > g_ScreenSize.w || x + w < 0 || y > g_ScreenSize.h || y + h < 0);
 }
 
 void CESP::DrawPlayers(CBaseEntity* pLocal)
@@ -144,7 +133,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 		// distance things
 		const Vec3 vDelta = Player->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Players::Alpha.Value);
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Players::Alpha.Value * (Player->GetDormant() ? 0.25f : 1.f));
 
 		if (Player->GetDormant()) {
 			Player->m_iHealth() = cResource->GetHealth(Player->GetIndex());
@@ -221,7 +210,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 				g_Draw.OutlinedRect(x, y, w, height, drawColor);
 				g_Draw.OutlinedRect(x + 1, y + 1, w - 2, height - 2, Colors::OutlineESP);
-			        g_Draw.OutlinedRect(x - 1, y - 1, w + 2, height + 2, Colors::OutlineESP);
+			    g_Draw.OutlinedRect(x - 1, y - 1, w + 2, height + 2, Colors::OutlineESP);
 
 				break;
 			}
@@ -456,6 +445,17 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				size_t FONT = FONT_ESP_COND;
 				int offset = g_Draw.m_vecFonts[FONT].nTall / 4;
 
+				/*
+				if (Vars::ESP::Players::Conditions::Dormant.Value)
+				{
+					if (Player->GetDormant())
+					{
+						g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 128, 128, 128, 255 }, ALIGN_DEFAULT, "D");
+						nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
+					}
+				}
+				*/
+
 				if (Vars::ESP::Players::Conditions::Ping.Value)
 				{
 					// ping warning, idea from nitro
@@ -464,7 +464,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					{
 						if (!netChannel->IsLoopback()) // dont draw if in a local server, since every ping will be below 10 anyways, also reduces clutter 
 						{
-							if (ping != 0 && (ping >= 200 || ping <= 20))
+							if (ping != 0 && (ping >= 200 || ping <= 6))
 							{
 								g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "%dMS", ping);
 								nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
@@ -505,22 +505,13 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						if (!F::Backtrack.mRecords[Player].empty())
 						{
 							const Vec3 vPrevOrigin = F::Backtrack.mRecords[Player].front().vOrigin;
-							const Vec3 vDelta = Player->m_vecOrigin() - vPrevOrigin;
+							const Vec3 vDelta = Player->GetAbsOrigin() - vPrevOrigin;
 							if (vDelta.Length2DSqr() > 4096.f)
 							{
 								g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
 								nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
 							}
 						}
-					}
-				}
-
-				if (Vars::ESP::Players::Conditions::Dormant.Value)
-				{
-					if (Player->GetDormant())
-					{
-						g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 128, 128, 128, 255 }, ALIGN_DEFAULT, "DORMANT");
-						nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
 					}
 				}
 								
@@ -535,131 +526,71 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				const static Color_t yellow = { 255, 255, 0, 255 };
 
 				{ //this is here just so i can collapse this entire section to reduce clutter
+					auto drawCond = [](const char* text, Color_t color, int& nTextX, int& y, int& nTextOffset)
+					{
+						g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, color, ALIGN_DEFAULT, text);
+						nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
+					};
+
 					if (Vars::ESP::Players::Conditions::Buffs.Value)
 					{
+						if (Player->GetHealth() > Player->GetMaxHealth())
+							drawCond("HP+", Colors::Overheal, nTextX, y, nTextOffset);
+						if (nCond & TFCond_Healing || nCond & TFCond_MegaHeal || Player->IsKingBuffed())
+							drawCond("HEAL", Colors::Overheal, nTextX, y, nTextOffset);
+
 						if (nCond & TFCond_Ubercharged || nCondEx & TFCondEx_UberchargedHidden || nCondEx & TFCondEx_UberchargedCanteen)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::UberColor, ALIGN_DEFAULT, "UBER");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("UBER", Colors::UberColor, nTextX, y, nTextOffset);
 						else if (nCond & TFCond_Bonked)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "BONK");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						} // no need to show bonk effect if they are ubered, right?
+							drawCond("BONK", Colors::Cond, nTextX, y, nTextOffset);
+						// no need to show bonk effect if they are ubered, right?
 
 						/* vaccinator effects */
 						if (nCondEx & TFCondEx_BulletCharge)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "BULLET CHARGE");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BULLET+", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 						if (nCondEx & TFCondEx_ExplosiveCharge)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "BLAST CHARGE");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BLAST+", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 						if (nCondEx & TFCondEx_FireCharge)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "FIRE CHARGE");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("FIRE+", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 						if (nCondEx & TFCondEx_BulletResistance)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "BULLET RESIST");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BULLET", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 						if (nCondEx & TFCondEx_ExplosiveResistance)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "BLAST RESIST");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BLAST", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 						if (nCondEx & TFCondEx_FireResistance)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "FIRE RESIST");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
-
-						if (nCond & TFCond_MegaHeal)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "MEGAHEAL");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("FIRE", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 
 						if (Player->IsCritBoosted())
-						{															//light red
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 255, 107, 108, 255 }, ALIGN_DEFAULT, "CRITS");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("CRITS", { 255, 107, 108, 255 }, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_Buffed)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, teamColors, ALIGN_DEFAULT, "BUFF BANNER");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BANNER", teamColors, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_CritCola || nCond & TFCond_NoHealingDamageBuff)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "MINI-CRITS");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("MINI-CRITS", Colors::Cond, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_DefenseBuffed)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, teamColors, ALIGN_DEFAULT, "BATTALIONS");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BATTALIONS", teamColors, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_RegenBuffed)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, teamColors, ALIGN_DEFAULT, "CONCHEROR");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("CONCH", teamColors, nTextX, y, nTextOffset);
 
-						if (nCond & TFCondEx_FocusBuff)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "FOCUS");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
-
-						if (nCond & TFCond_Healing || nCond & TFCond_MegaHeal || Player->IsKingBuffed())
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Overheal, ALIGN_DEFAULT, "HP++");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
-						else if (Player->GetHealth() > Player->GetMaxHealth())
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Overheal, ALIGN_DEFAULT, "HP+");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
-
+						if (nCondEx2 & TFCondEx2_BlastJumping)
+							drawCond("BLASTJUMP", Colors::Cond, nTextX, y, nTextOffset);
 					}
 					
 					if (Vars::ESP::Players::Conditions::Debuffs.Value)
 					{
 						if (nCond & TFCond_Jarated)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "JARATE");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("JARATE", Colors::Cond, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_MarkedForDeath || nCondEx & TFCondEx_MarkedForDeathSilent)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "MARKED");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("MARKED", Colors::Cond, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_OnFire)
-						{															//orange
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "BURNING");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("BURN", Colors::Cond, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_Milked)
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::White, ALIGN_DEFAULT, "MILK");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("MILK", Colors::Cond, nTextX, y, nTextOffset);
 					}
 					
 					if (Vars::ESP::Players::Conditions::Other.Value)
@@ -667,67 +598,43 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						if (Vars::Visuals::RemoveTaunts.Value) // i dont really see a need for this condition unless you have this enabled
 						{
 							if (nCond & TFCond_Taunting)
-							{
-								g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, pink, ALIGN_DEFAULT, "TAUNTING");
-								nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-							}
+								drawCond("TAUNT", pink, nTextX, y, nTextOffset);
 						}
 
 						if (Player->GetFeignDeathReady())
-						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "DR");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("DR", Colors::Cond, nTextX, y, nTextOffset);
 				
 						if (nCond & TFCond_Slowed)
 						{
 							if (const auto& pWeapon = Player->GetActiveWeapon())
 							{
 								if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN)
-								{															//gray
-									g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 128, 128, 128, 255 }, ALIGN_DEFAULT, "REV");
-									nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-								}
+									drawCond("REV", { 128, 128, 128, 255 }, nTextX, y, nTextOffset);
 
 								if (pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW)
 								{
-									bool charged = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime()) >= 1.0f;
-									if (charged)
-									{
-										g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "CHARGED");
-									}
+									if ((I::GlobalVars->curtime - pWeapon->GetChargeBeginTime()) >= 1.0f)
+										drawCond("CHARGED", Colors::Cond, nTextX, y, nTextOffset);
 									else
-									{
-										g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "CHARGING");
-									}
-									nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall; //just put this here since it should draw something regardless
+										drawCond("CHARGING", Colors::Cond, nTextX, y, nTextOffset);
 								}
 
 								if (pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON)
-								{
-									g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "CHARGING");
-									nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-								}
+									drawCond("CHARGING", Colors::Cond, nTextX, y, nTextOffset);
 							}
 						}
 
 						if (nCond & TFCond_Zoomed)
-						{															//aqua
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "ZOOMED");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("ZOOM", Colors::Cond, nTextX, y, nTextOffset);
 
 						if (nCond & TFCond_Cloaked || nCond & TFCond_CloakFlicker || nCondEx2 & TFCondEx2_Stealthed || nCondEx2 & TFCondEx2_StealthedUserBuffFade)
 						{
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cloak, ALIGN_DEFAULT, L"INVIS %.0f%%", Player->GetInvisPercentage());
+							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cloak, ALIGN_DEFAULT, L"CLOAK %.0f%%", Player->GetInvisPercentage());
 							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
 						}
 
 						if (nCond & TFCond_Disguising || nCondEx & TFCondEx_DisguisedRemoved || nCond & TFCond_Disguised)
-						{															//gray
-							g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, Colors::Cond, ALIGN_DEFAULT, "DISGUISED");
-							nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-						}
+							drawCond("DISGUISE", Colors::Cond, nTextX, y, nTextOffset);
 					}																				
 				}
 			}
@@ -768,24 +675,23 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 				if (Vars::ESP::Players::HealthBarStyle.Value == 0 && Vars::ESP::Players::HealthBar.Value)
 				{
-					g_Draw.OutlinedGradientBar(x - 4, y + h, 2, h, ratio, clr.startColour, clr.endColour, Colors::OutlineESP, false);
+					g_Draw.RectOverlay(x - 4, y + h, 2, h * ratio, 1.f, clr.startColour.lerp(clr.endColour, ratio), Colors::OutlineESP, false);
 				}
-
 				else if (Vars::ESP::Players::HealthBarStyle.Value == 1 && Vars::ESP::Players::HealthBar.Value)
 				{
-					g_Draw.RectOverlay(x - 4, y + h, 2, h, ratio, HealthColor, Colors::OutlineESP, false);
+					g_Draw.RectOverlay(x - 4, y + h, 2, h * ratio, 1.f, HealthColor, Colors::OutlineESP, false);
 				}
 
 				if (Vars::ESP::Players::HealthText.Value == 2)
 				{
-					if (nHealth > nMaxHealth)
-					{
-						g_Draw.String(FONT, x - 6, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "+%d", nHealth - nMaxHealth);
-					}
-					else
-					{
-						g_Draw.String(FONT, x - 6, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "%d", nHealth);
-					}
+					//if (nHealth > nMaxHealth)
+					//{
+					//	g_Draw.String(FONT, x - 6, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "+%d", nHealth - nMaxHealth);
+					//}
+					//else
+					//{
+						g_Draw.String(FONT, x - 8, (y + h) - (ratio * h) - 2, nHealth > nMaxHealth ? Colors::UberColor : Colors::White, ALIGN_REVERSE, "%d", nHealth);
+					//}
 				}
 
 				x += 1;
@@ -1022,13 +928,13 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 
 				const float ratio = flHealth / flMaxHealth;
 
-				g_Draw.RectOverlay(x - 4, y + h, 2, h, ratio, healthColor, Colors::OutlineESP, false);
+				g_Draw.RectOverlay(x - 4, y + h, 2, h * ratio, 1.f, healthColor, Colors::OutlineESP, false);
 				g_Draw.OutlinedRect(x - 5, y + nHeight - nHeight * ratio - 1, 4,
 					nHeight * ratio + 1, Colors::OutlineESP);
 
 				if (Vars::ESP::Players::HealthText.Value == 2)
 				{
-					g_Draw.String(FONT, x - 6, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "%d", nHealth);
+					g_Draw.String(FONT, x - 8, (y + h) - (ratio * h) - 2, Colors::White, ALIGN_REVERSE, "%d", nHealth);
 				}
 
 				x += 1;
@@ -1158,8 +1064,8 @@ void CESP::DrawWorld() const
 			{
 				h += 1;
 
-                                        g_Draw.OutlinedRect(x + 1, y + 1, w - 2, h - 2, Colors::OutlineESP);
-					g_Draw.OutlinedRect(x - 1, y - 1, w + 2, h + 2, Colors::OutlineESP);
+				g_Draw.OutlinedRect(x + 1, y + 1, w - 2, h - 2, Colors::OutlineESP);
+				g_Draw.OutlinedRect(x - 1, y - 1, w + 2, h + 2, Colors::OutlineESP);
 
 				h -= 1;
 				break;
@@ -1373,42 +1279,42 @@ void CESP::DrawWorld() const
 	I::VGuiSurface->DrawSetAlphaMultiplier(1.0f);
 }
 
-using ETFCond = int;
-
 template <typename tIntType>
 class CConditionVars
 {
 public:
 	CConditionVars(tIntType& nPlayerCond, tIntType& nPlayerCondEx, tIntType& nPlayerCondEx2, tIntType& nPlayerCondEx3, ETFCond eCond)
 	{
-		if (eCond >= 96)
+		const int iCond = static_cast<int>(eCond);
+
+		if (iCond >= 96)
 		{
-			if (eCond < 96 + 32)
+			if (iCond < 96 + 32)
 			{
 				m_pnCondVar = &nPlayerCondEx3;
-				m_nCondBit = eCond - 96;
+				m_nCondBit = iCond - 96;
 			}
 		}
-		else if (eCond >= 64)
+		else if (iCond >= 64)
 		{
-			if (eCond < (64 + 32))
+			if (iCond < (64 + 32))
 			{
 				m_pnCondVar = &nPlayerCondEx2;
-				m_nCondBit = eCond - 64;
+				m_nCondBit = iCond - 64;
 			}
 		}
-		else if (eCond >= 32)
+		else if (iCond >= 32)
 		{
-			if (eCond < (32 + 32))
+			if (iCond < (32 + 32))
 			{
 				m_pnCondVar = &nPlayerCondEx;
-				m_nCondBit = eCond - 32;
+				m_nCondBit = iCond - 32;
 			}
 		}
 		else
 		{
 			m_pnCondVar = &nPlayerCond;
-			m_nCondBit = eCond;
+			m_nCondBit = iCond;
 		}
 	}
 

@@ -29,6 +29,7 @@ void CMisc::RunPre(CUserCmd* pCmd, bool* pSendPacket)
 	AntiAFK(pCmd);
 	CheatsBypass();
 	PingReducer();
+	FakeInterp();
 	WeaponSway();
 	DetectChoke();
 }
@@ -141,8 +142,8 @@ void CMisc::WeaponSway()
 		}
 		else
 		{
-				cl_wpn_sway_interp->SetValue(0.0f);
-				cl_wpn_sway_scale->SetValue(0.0f);
+			cl_wpn_sway_interp->SetValue(0.0f);
+			cl_wpn_sway_scale->SetValue(0.0f);
 		}
 	}
 }
@@ -279,17 +280,31 @@ void CMisc::CheatsBypass()
 	{
 		if (Vars::Misc::CheatsBypass.Value && sv_cheats)
 		{
-			sv_cheats->SetValue(1);
+			sv_cheats->m_Value.m_nValue = 1;
 			cheatset = true;
 		}
 		else
 		{
 			if (cheatset)
 			{
-				sv_cheats->SetValue(0);
+				sv_cheats->m_Value.m_nValue = 0;
 				cheatset = false;
 			}
 		}
+	}
+}
+
+void CMisc::Event(CGameEvent* pEvent, FNV1A_t uNameHash)
+{
+	if (uNameHash == FNV1A::HashConst("teamplay_round_start") || uNameHash == FNV1A::HashConst("client_disconnect") ||
+		uNameHash == FNV1A::HashConst("client_beginconnect") || uNameHash == FNV1A::HashConst("game_newmap"))
+	{
+		iLastCmdrate = -1;
+		F::Backtrack.flWishInterp = 0.f;
+
+		G::BulletsStorage.clear();
+		G::BoxesStorage.clear();
+		G::LinesStorage.clear();
 	}
 }
 
@@ -297,21 +312,52 @@ void CMisc::PingReducer()
 {
 	const ConVar* cl_cmdrate = g_ConVars.FindVar("cl_cmdrate");
 	CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-	if (cl_cmdrate == nullptr || netChannel == nullptr) { return; }
+	if (!cl_cmdrate || !netChannel) return;
 
 	static Timer updateRateTimer{};
 	if (updateRateTimer.Run(500))
 	{
+		int iTarget = cl_cmdrate->GetInt();
 		if (Vars::Misc::PingReducer.Value)
+		{ //[implement]
+			iTarget = Vars::Misc::PingTarget.Value;
+		}
+		if (iTarget == iLastCmdrate) return;
+		iLastCmdrate = iTarget;
+
+		if (Vars::Debug::DebugInfo.Value)
+			Utils::ConLog("SendNetMsg", tfm::format("cl_cmdrate: %d", iTarget).c_str(), { 224, 255, 131, 255 });
+
+		NET_SetConVar cmd("cl_cmdrate", std::to_string(iTarget).c_str());
+		netChannel->SendNetMsg(cmd);
+	}
+}
+
+void CMisc::FakeInterp()
+{
+	CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
+	if (!netChannel) return;
+
+	static Timer interpTimer{};
+	if (interpTimer.Run(500))
+	{ //[implement]
+		float flTarget = F::Backtrack.GetLerp();
+		if (flTarget == F::Backtrack.flWishInterp) return;
+		F::Backtrack.flWishInterp = flTarget;
+
+		if (Vars::Debug::DebugInfo.Value)
+			Utils::ConLog("SendNetMsg", tfm::format("cl_interp: %.3f", flTarget).c_str(), { 224, 255, 131, 255 });
+
 		{
-			if (!g_EntityCache.GetPR()) return;
-			const int currentPing = g_EntityCache.GetPR()->GetPing(I::EngineClient->GetLocalPlayer());
-			NET_SetConVar cmd("cl_cmdrate", (Vars::Misc::PingTarget.Value <= currentPing) ? "-1" : std::to_string(cl_cmdrate->GetInt()).c_str());
+			NET_SetConVar cmd("cl_interp", std::to_string(flTarget).c_str());
 			netChannel->SendNetMsg(cmd);
 		}
-		else
 		{
-			NET_SetConVar cmd("cl_cmdrate", std::to_string(cl_cmdrate->GetInt()).c_str());
+			NET_SetConVar cmd("cl_interp_ratio", "1.0");
+			netChannel->SendNetMsg(cmd);
+		}
+		{
+			NET_SetConVar cmd("cl_interpolate", "1");
 			netChannel->SendNetMsg(cmd);
 		}
 	}
@@ -482,7 +528,7 @@ void CMisc::AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal)
 		bTried = false;
 		pCmd->buttons &= ~IN_JUMP; return;
 	}
-	else if (bHopping && !pLocal->OnSolid() && bJumpHeld)
+	else if (bHopping && bJumpHeld && (!pLocal->OnSolid() || pLocal->IsDucking()))
 	{	//	 we are not on the ground and the key is in the same hold cycle
 		bTried = false;
 		pCmd->buttons &= ~IN_JUMP; return;
@@ -553,6 +599,14 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 			if (Vars::Misc::DirectionalOnlyOnMove.Value)
 			{
 				if (!(pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK)))
+				{
+					break;
+				}
+			}
+			if (Vars::Misc::DirectionalOnlyOnSpace.Value)
+			{
+				int key = VK_SPACE; static KeyHelper spaceKey{ &key };
+				if (!spaceKey.Down())
 				{
 					break;
 				}
@@ -712,7 +766,7 @@ const std::string SPAM_CH[] = {
 	"Cathook - ca(n)t stop me meow!"
 };
 
-bool CMisc::TauntControl(CUserCmd* pCmd)
+bool CMisc::TauntControl(CUserCmd* pCmd) // [implement]
 {
 	bool bReturn = true;
 	// Handle Taunt Slide
@@ -722,30 +776,39 @@ bool CMisc::TauntControl(CUserCmd* pCmd)
 		{
 			if (Vars::Misc::TauntSlide.Value)
 			{
-				if (Vars::Misc::TauntControl.Value)
+				if (pCmd->buttons & IN_FORWARD)
 				{
-					if (pCmd->buttons & IN_BACK)
-					{
-						pCmd->viewangles.x = 91.0f;
-					}
-					else if (pCmd->buttons & IN_FORWARD)
-					{
-						pCmd->viewangles.x = 0.0f;
-					}
-					else
-					{
-						pCmd->viewangles.x = 90.0f;
-					}
-					bReturn = false;
+					pCmd->forwardmove = 450.f;
+					pCmd->viewangles.x = 0.0f;
+				}
+				if (pCmd->buttons & IN_BACK)
+				{
+					pCmd->forwardmove = 450.f;
+					pCmd->viewangles.x = 91.0f;
+				}
+				if (pCmd->buttons & IN_MOVELEFT)
+				{
+					pCmd->sidemove = -450.f;
+				}
+				if (pCmd->buttons & IN_MOVERIGHT)
+				{
+					pCmd->sidemove = 450.f;
 				}
 
-				if (Vars::Misc::TauntFollowsCamera.Value)
+				if (!(pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK)))
 				{
-					Vec3 vAngle = I::EngineClient->GetViewAngles();
-					pCmd->viewangles.y = vAngle.y;
-
-					bReturn = false;
+					pCmd->viewangles.x = 90.0f;
 				}
+				
+				/*
+				if (pLocal->GetFlags() & FL_DUCKING) //+duck?
+				{
+					pCmd->buttons |= IN_DUCK;
+				}
+				*/
+
+				Vec3 vAngle = I::EngineClient->GetViewAngles();
+				pCmd->viewangles.y = vAngle.y;
 
 				bReturn = false;
 			}
@@ -771,11 +834,11 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (pLocal && pLocal->IsAlive() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned() && pLocal->GetVelocity().Length2D() > 5.f)
 	{
 		const int stopType = (
-			G::ShouldShift && G::ShiftedTicks && Vars::Misc::CL_Move::AntiWarp.Value ?
-			pLocal->OnSolid() ? 1 : 2 : 0
-			); // 0.none, 1.ground, 2.not ground
-		static Vec3 predEndPoint = {};
-		static Vec3 currentPos{};
+			G::ShouldShift && G::ShiftedTicks && Vars::Misc::CL_Move::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0
+			); // 0 none, 1 ground
+		static Vec3 prediction = {};
+		static Vec3 origin = {};
+		static Vec3 angles = {};
 		static int nShiftTickG = 0;
 		static int nShiftTickA = 0;
 
@@ -789,12 +852,36 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 		}
 		case 1:
 		{
+			/*
+			pCmd->forwardmove = 0.f; pCmd->sidemove = 0.f;
+
+			Vec3 origin = pLocal->GetAbsOrigin();
+			Vec3 velocity; pLocal->EstimateAbsVelocity(velocity);
+			Vec3 predicted = origin + (velocity * TICKS_TO_TIME(G::ShiftedTicks));
+			Vec3 predicted_max = origin + (velocity * TICKS_TO_TIME(22 - G::ChokedTicks));
+
+			float scale = Math::RemapValClamped(predicted.DistTo(origin), 0.0f, predicted_max.DistTo(origin) * 1.27f, 1.0f, 0.0f);
+			float scale_ = Math::RemapValClamped(velocity.Length2D(), 0.0f, 520.0f, 0.0f, 1.0f);
+
+			if (pLocal->IsClass(CLASS_SCOUT))
+			{
+				Utils::WalkTo(pCmd, pLocal, predicted, origin, TICKS_TO_TIME(22 - G::ChokedTicks));
+			}
+			else
+			{
+				Utils::WalkTo(pCmd, pLocal, predicted_max, origin, scale * scale_);
+			}
+			*/
+			
 			switch (nShiftTickG)
 			{
 			case 0:
 			{
 				G::ShouldStop = true;
-				predEndPoint = pLocal->GetVecOrigin() + pLocal->GetVecVelocity();
+				prediction = pLocal->GetVecOrigin() + pLocal->GetVecVelocity();
+				origin = pLocal->GetVecOrigin();
+				angles = I::EngineClient->GetViewAngles();
+
 				nShiftTickG++;
 				break;
 			}
@@ -804,38 +891,13 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 				nShiftTickG++;
 				break;
 			}
-			}//
+			}
 
-			currentPos = pLocal->GetVecOrigin();
-			Utils::WalkTo(pCmd, pLocal, predEndPoint, currentPos, (1.f / currentPos.Dist2D(predEndPoint)));
+			Utils::WalkTo(pCmd, pLocal, prediction, origin, (1.f / origin.Dist2D(prediction)));
+			pCmd->viewangles = angles;
 			//	the "slight stop" that u can see when we do this is due to (i believe) the player reaching the desired point, and then constantly accelerating backwards, meaning their velocity-
 			//	when they finish shifting ticks, is lower than when they started.
 			//	alot of things worked better than (1/dist) as the scale, but caused issues on different classes, for now this is the best I can get it to.
-			return;
-		}
-		case 2:
-		{
-			switch (nShiftTickA)
-			{
-			case 0:
-			{
-				predEndPoint = pLocal->GetVecOrigin();
-				nShiftTickA++;
-				break;
-			}
-			default:
-			{
-				nShiftTickA++;
-				break;
-			}
-			}
-
-			currentPos = pLocal->GetVecOrigin();
-			Utils::WalkTo(pCmd, pLocal, predEndPoint, currentPos, 500);
-			return;
-		}
-		default:
-		{
 			return;
 		}
 		}

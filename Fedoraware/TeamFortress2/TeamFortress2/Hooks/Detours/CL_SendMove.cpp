@@ -10,7 +10,7 @@ MAKE_HOOK(CL_SendMove, g_Pattern.Find(L"engine.dll", L"55 8B EC 81 EC ? ? ? ? A1
 	CLC_Move moveMsg;
 	moveMsg.m_DataOut.StartWriting(data, sizeof(data));
 	moveMsg.m_nNewCommands = std::clamp(1 + I::ClientState->chokedcommands, 0, 15);
-	const int extraCommands = I::ClientState->chokedcommands + 1 - moveMsg.m_nNewCommands;
+	const int extraCommands = 1 + I::ClientState->chokedcommands - moveMsg.m_nNewCommands;
 	const int backupCommands = std::max(2, extraCommands);
 	moveMsg.m_nBackupCommands = std::clamp(backupCommands, 0, 7);
 

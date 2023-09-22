@@ -1,4 +1,5 @@
 #include "NetVarHk.h"
+#include "../CritHack/CritHack.h"
 
 //	Excuse my pastering
 CVar<bool>& RemoveAnims = Vars::Visuals::RemoveTaunts;

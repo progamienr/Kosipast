@@ -33,7 +33,7 @@ void CTickshiftHandler::Doubletap(const CUserCmd* pCmd, CBaseEntity* pLocal)
 	static KeyHelper kDoubletap{ &Vars::Misc::CL_Move::DoubletapKey.Value };
 	if (bTeleport || bRecharge || bSpeedhack/*|| (iAvailableTicks < Vars::Misc::CL_Move::DTTicks.Value)*/) { return; }
 	if (G::WaitForShift && Vars::Misc::CL_Move::WaitForDT.Value) { return; }
-	if (G::ShouldShift || !pCmd) { return; }
+	if (G::ShouldShift || !pCmd || !G::ShiftedTicks) { return; }
 
 	switch (Vars::Misc::CL_Move::DTMode.Value)
 	{
@@ -124,7 +124,7 @@ void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 		return;
 	}
 
-	if (iDeficit && iAvailableTicks < 22 && Vars::Misc::CL_Move::AutoRetain.Value) {
+	if (iDeficit && iAvailableTicks < g_ConVars.sv_maxusrcmdprocessticks->GetInt() && Vars::Misc::CL_Move::AutoRetain.Value) {
 		iDeficit--;
 		return;
 	}

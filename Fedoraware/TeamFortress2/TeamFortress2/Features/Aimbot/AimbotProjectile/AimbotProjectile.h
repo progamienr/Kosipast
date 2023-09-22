@@ -3,23 +3,14 @@
 
 class CAimbotProjectile
 {
+	/*
 	struct ProjectileInfo_t
 	{
 		float m_flVelocity = 0.0f;
 		float m_flGravity = 0.0f;
 		float m_flMaxTime = 0.0f;
 	};
-
-	struct Predictor_t
-	{
-		CBaseEntity* m_pEntity = nullptr;
-		Vec3 m_vPosition = {};
-		Vec3 m_vVelocity = {};
-		Vec3 m_vAcceleration = {};
-
-
-		Vec3 Extrapolate(float time);
-	};
+	*/
 
 	struct Solution_t
 	{
@@ -28,31 +19,29 @@ class CAimbotProjectile
 		float m_flTime = 0.0f;
 	};
 
-	bool GetProjectileInfo(CBaseCombatWeapon* pWeapon, ProjectileInfo_t& out);
-	bool CalcProjAngle(const Vec3& vLocalPos, const Vec3& vTargetPos, const ProjectileInfo_t& projInfo,
-					   Solution_t& out);
-	bool SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Predictor_t& predictor,
-						 const ProjectileInfo_t& projInfo, Solution_t& out);
-
-	std::optional<Vec3> GetAimPos(CBaseEntity* pLocal, CBaseEntity* pEntity, const Vec3& targetPredPos);
-	std::optional<Vec3> GetAimPosBuilding(CBaseEntity* pLocal, CBaseEntity* pEntity);
-	bool WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, const Vec3& vPredictedPos, Solution_t& out, const ProjectileInfo_t& projInfo, const Predictor_t& predictor);
+	// new funcs
 	std::vector<Target_t> GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	bool VerifyTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Target_t& target);
-	bool GetTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Target_t& outTarget);
-	void Aim(CUserCmd* pCmd, CBaseCombatWeapon* pWeapon, Vec3& vAngle);
-	bool ShouldFire(CUserCmd* pCmd);
+	std::vector<Target_t> SortTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
+
+	int GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& target);
+	bool CalculateAngle(const Vec3& vLocalPos, const Vec3& vTargetPos, const float& flVelocity, const float& flGravity, Solution_t& out);
+	bool TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& target, const Vec3& vOriginal, const Vec3& vPredict, const Vec3& vAngles, const int& iSimTime);
+	bool CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
+
+	//bool GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Target_t& outTarget); implement splash
+
+	void Aim(CUserCmd* pCmd, Vec3& vAngle);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
 	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
-	bool GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Target_t& outTarget);
-	float m_flTravelTime = 0.0f;
-	float m_flTravelTimeStart = 0.0f;
-	bool IsFlameThrower = false;
-	bool IsBoosted = false;
+	void Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, bool bEarly = true);
+
+	bool bLastTickAttack = false;
+	bool bFlameThrower = false;
 
 public:
-
-	bool running = false;
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+
+	bool bLastTickCancel = false;
 };
 
 ADD_FEATURE(CAimbotProjectile, AimbotProjectile)

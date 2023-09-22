@@ -53,8 +53,11 @@ void CAimbotGlobal::SortTargets(std::vector<Target_t>* targets, const ESortMetho
 					  default: return false;
 				  }
 			  });
+}
 
-			  // Sort by priority
+void CAimbotGlobal::SortPriority(std::vector<Target_t>* targets, const ESortMethod& method)
+{
+	// Sort by priority
 	std::sort((*targets).begin(), (*targets).end(), [&](const Target_t& a, const Target_t& b) -> bool
 			  {
 				  return (a.n_Priority.Mode > b.n_Priority.Mode);
@@ -73,6 +76,7 @@ bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun)
 
 	PlayerInfo_t pInfo{};
 	if (!pTarget) { return true; }
+	if (pTarget == pLocal) { return true; }
 	if (!I::EngineClient->GetPlayerInfo(pTarget->GetIndex(), &pInfo)) { return true; }
 	if (pTarget->GetDormant()) { return true; }
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DEADRINGER) && pTarget->GetFeignDeathReady()) { return true; }

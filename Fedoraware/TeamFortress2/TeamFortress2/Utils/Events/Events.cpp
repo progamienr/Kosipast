@@ -4,6 +4,7 @@
 #include "../../Features/AntiHack/AntiAim.h"
 #include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
 #include "../../Features/Visuals/Visuals.h"
+#include "../../Features/CritHack/CritHack.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Misc/Misc.h"
 
@@ -34,12 +35,19 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 	const FNV1A_t uNameHash = FNV1A::Hash(pEvent->GetName());
 	F::ChatInfo.Event(pEvent, uNameHash);
 	F::AntiAim.Event(pEvent, uNameHash);
+	F::CritHack.Event(pEvent, uNameHash);
+	F::Misc.Event(pEvent, uNameHash);
 
 	if (uNameHash == FNV1A::HashConst("player_hurt"))
 	{
 		F::Resolver.OnPlayerHurt(pEvent);
 		F::Backtrack.PlayerHurt(pEvent);
 		F::BadActors.ReportDamage(pEvent);
+	}
+
+	if (uNameHash == FNV1A::HashConst("player_spawn"))
+	{
+		F::Backtrack.SetLerp(pEvent);
 	}
 
 	// Pickup Timers

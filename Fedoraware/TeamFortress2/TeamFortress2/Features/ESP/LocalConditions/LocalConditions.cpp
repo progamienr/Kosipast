@@ -1,41 +1,41 @@
 #include "LocalConditions.h"
 
-using ETFCond = int;
-
 template <typename tIntType>
 class CConditionVariables
 {
 public:
 	CConditionVariables(tIntType& nPlayerCond, tIntType& nPlayerCondEx, tIntType& nPlayerCondEx2, tIntType& nPlayerCondEx3, ETFCond eCond)
 	{
-		if (eCond >= 96)
+		const int iCond = static_cast<int>(eCond);
+
+		if (iCond >= 96)
 		{
-			if (eCond < 96 + 32)
+			if (iCond < 96 + 32)
 			{
 				m_pnCondVar = &nPlayerCondEx3;
-				m_nCondBit = eCond - 96;
+				m_nCondBit = iCond - 96;
 			}
 		}
-		else if (eCond >= 64)
+		else if (iCond >= 64)
 		{
-			if (eCond < (64 + 32))
+			if (iCond < (64 + 32))
 			{
 				m_pnCondVar = &nPlayerCondEx2;
-				m_nCondBit = eCond - 64;
+				m_nCondBit = iCond - 64;
 			}
 		}
-		else if (eCond >= 32)
+		else if (iCond >= 32)
 		{
-			if (eCond < (32 + 32))
+			if (iCond < (32 + 32))
 			{
 				m_pnCondVar = &nPlayerCondEx;
-				m_nCondBit = eCond - 32;
+				m_nCondBit = iCond - 32;
 			}
 		}
 		else
 		{
 			m_pnCondVar = &nPlayerCond;
-			m_nCondBit = eCond;
+			m_nCondBit = iCond;
 		}
 	}
 
@@ -70,9 +70,9 @@ public:
 	int _old_condition_bits;
 };
 
-bool CTFConditionsList::InCondition(ETFCond type) const
+bool CTFConditionsList::InCondition(ETFCond eType) const
 {
-	return ((_condition_bits & (1 << type)) != 0);
+	return ((_condition_bits & (1 << static_cast<int>(eType))) != 0);
 }
 
 class CTFConditions
@@ -109,9 +109,9 @@ private:
 	CBaseEntity* _provider;
 };
 
-bool InCondition(CBaseEntity* pEntity, int eCond)
+bool InCondition(CBaseEntity* pEntity, int iCond)
 {
-	if (eCond >= 0 && eCond < 122)
+	if (iCond >= 0 && iCond < 130)
 	{
 		void* condList = pEntity->m_ConditionList();
 		const auto& conditionList = *reinterpret_cast<CTFConditionsList*>(condList);
@@ -119,12 +119,12 @@ bool InCondition(CBaseEntity* pEntity, int eCond)
 		if (conditionList._conditions.Count() > 0)
 		{
 			// Old condition system, only used for the first 32 conditions
-			if (eCond < 32 && conditionList.InCondition(eCond))
+			if (iCond < 32 && conditionList.InCondition(static_cast<ETFCond>(iCond)))
 			{
 				return true;
 			}
 
-			CConditionVariables<const int> cPlayerCond(pEntity->GetCond(), pEntity->GetCondEx(), pEntity->GetCondEx2(), pEntity->GetCondEx3(), eCond);
+			CConditionVariables<const int> cPlayerCond(pEntity->GetCond(), pEntity->GetCondEx(), pEntity->GetCondEx2(), pEntity->GetCondEx3(), static_cast<ETFCond>(iCond));
 			return (cPlayerCond.CondVar() & cPlayerCond.CondBit()) != 0;
 		}
 	}
@@ -134,553 +134,349 @@ bool InCondition(CBaseEntity* pEntity, int eCond)
 std::vector<std::wstring> LCESP::GetPlayerConditions(CBaseEntity* pEntity) const
 {
 	std::vector<std::wstring> szCond{};
-	const int nCond = pEntity->GetCond();
-	const int nCondEx = pEntity->GetCondEx();
-	const int nCondEx2 = pEntity->GetCondEx2();
-	const int nFlag = pEntity->GetFlags();
+
 	if (Vars::Visuals::DrawOnScreenConditions.Value)
-	{ 
-		if (nCond & TFCond_Slowed)
-		{
-			szCond.emplace_back(L"AIMING");
-		}
+	{
+		if (pEntity->InCond(TF_COND_CRITBOOSTED))
+			szCond.emplace_back(L"KRITS");
+		else if (pEntity->InCond(TF_COND_CRITBOOSTED_PUMPKIN) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_USER_BUFF) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_DEMO_CHARGE) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_FIRST_BLOOD) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_BONUS_TIME) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_CTF_CAPTURE) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_ON_KILL) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_RAGE_BUFF) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_CARD_EFFECT) ||
+			pEntity->InCond(TF_COND_CRITBOOSTED_RUNE_TEMP))
+			szCond.emplace_back(L"CRITS");
 
-		if (nCond & TFCond_Zoomed)
-		{
-			szCond.emplace_back(L"ZOOMED");
-		}
+		if (pEntity->InCond(TF_COND_ENERGY_BUFF) ||
+			pEntity->InCond(TF_COND_NOHEALINGDAMAGEBUFF))
+			szCond.emplace_back(L"MINI CRITS");
 
-		if (nCond & TFCond_Disguising)
-		{
-			szCond.emplace_back(L"DISGUISING");
-		}
+		if (pEntity->InCond(TF_COND_MINICRITBOOSTED_ON_KILL))
+			szCond.emplace_back(L"MINI CRITS ON KILL");
 
-		if (nCond & TFCond_Disguised)
-		{
-			szCond.emplace_back(L"DISGUISED");
-		}
+		if (pEntity->InCond(TF_COND_OFFENSEBUFF))
+			szCond.emplace_back(L"OFFENSE BUFF");
 
-		if (nCond & TFCond_Cloaked)
-		{
-			szCond.emplace_back(L"STEALTHED");
-		}
+		if (pEntity->InCond(TF_COND_TMPDAMAGEBONUS))
+			szCond.emplace_back(L"DAMAGE BONUS");
 
-		if (nCond & TFCond_Ubercharged)
-		{
+		if (pEntity->InCond(TF_COND_INVULNERABLE) ||
+			pEntity->InCond(TF_COND_INVULNERABLE_HIDE_UNLESS_DAMAGED) ||
+			pEntity->InCond(TF_COND_INVULNERABLE_USER_BUFF) ||
+			pEntity->InCond(TF_COND_INVULNERABLE_CARD_EFFECT))
 			szCond.emplace_back(L"INVULNERABLE");
-		}
 
-		if (nCond & TFCond_TeleportedGlow)
-		{
-			szCond.emplace_back(L"TELEPORTED");
-		}
+		if (pEntity->InCond(TF_COND_INVULNERABLE_WEARINGOFF))
+			szCond.emplace_back(L"INVULNERABLE-");
 
-		if (nCond & TFCond_Taunting)
-		{
-			szCond.emplace_back(L"TAUNTING");
-		}
+		if (pEntity->InCond(TF_COND_DEFENSEBUFF))
+			szCond.emplace_back(L"DEFENSE BUFF");
 
-		if (nCond & TFCond_UberchargeFading)
-		{
-			szCond.emplace_back(L"INVULNERABLE WEARINGOFF");
-		}
+		if (pEntity->InCond(TF_COND_DEFENSEBUFF_HIGH))
+			szCond.emplace_back(L"DEFENSE BUFF+");
 
-		if (nCond & TFCond_CloakFlicker)
-		{
-			szCond.emplace_back(L"STEALTHED BLINK");
-		}
+		if (pEntity->InCond(TF_COND_DEFENSEBUFF_NO_CRIT_BLOCK))
+			szCond.emplace_back(L"DEFENSE BUFF-");
 
-		if (nCond & TFCond_Teleporting)
-		{
-			szCond.emplace_back(L"SELECTED TO TELEPORT");
-		}
+		if (pEntity->InCond(TF_COND_RADIUSHEAL) ||
+			pEntity->InCond(TF_COND_HEALTH_BUFF) ||
+			pEntity->InCond(TF_COND_RADIUSHEAL_ON_DAMAGE) ||
+			pEntity->InCond(TF_COND_HALLOWEEN_HELL_HEAL))
+			szCond.emplace_back(L"HEAL");
 
-		if (nCond & TFCond_Kritzkrieged)
-		{
-			szCond.emplace_back(L"CRITBOOSTED");
-		}
+		if (pEntity->InCond(TF_COND_MEGAHEAL) ||
+			pEntity->InCond(TF_COND_HALLOWEEN_QUICK_HEAL))
+			szCond.emplace_back(L"HEAL+");
 
-		if (nCond & TFCond_TmpDamageBonus)
-		{
-			szCond.emplace_back(L"TMPDAMAGEBONUS");
-		}
+		if (pEntity->InCond(TF_COND_REGENONDAMAGEBUFF))
+			szCond.emplace_back(L"HEALTH ON DAMAGE");
 
-		if (nCond & TFCond_DeadRingered)
-		{
-			szCond.emplace_back(L"FEIGN DEATH");
-		}
+		if (pEntity->InCond(TF_COND_HEALTH_OVERHEALED))
+			szCond.emplace_back(L"OVERHEAL");
 
-		if (nCond & TFCond_Bonked)
-		{
-			szCond.emplace_back(L"PHASE");
-		}
 
-		if (nCond & TFCond_Stunned)
-		{
-			szCond.emplace_back(L"STUNNED");
-		}
 
-		if (nCond & TFCond_Buffed)
-		{
-			szCond.emplace_back(L"OFFENSEBUFF");
-		}
+		if (pEntity->InCond(TF_COND_MEDIGUN_UBER_BULLET_RESIST) ||
+			pEntity->InCond(TF_COND_MEDIGUN_SMALL_BULLET_RESIST) ||
+			pEntity->InCond(TF_COND_BULLET_IMMUNE))
+			szCond.emplace_back(L"BULLET");
 
-		if (nCond & TFCond_Charging)
-		{
-			szCond.emplace_back(L"SHIELD CHARGE");
-		}
+		if (pEntity->InCond(TF_COND_MEDIGUN_UBER_BLAST_RESIST) ||
+			pEntity->InCond(TF_COND_MEDIGUN_SMALL_BLAST_RESIST) ||
+			pEntity->InCond(TF_COND_BLAST_IMMUNE))
+			szCond.emplace_back(L"BLAST");
 
-		if (nCond & TFCond_DemoBuff)
-		{
-			szCond.emplace_back(L"DEMO BUFF");
-		}
+		if (pEntity->InCond(TF_COND_MEDIGUN_UBER_FIRE_RESIST) ||
+			pEntity->InCond(TF_COND_MEDIGUN_SMALL_FIRE_RESIST) ||
+			pEntity->InCond(TF_COND_FIRE_IMMUNE))
+			szCond.emplace_back(L"FIRE");
 
-		if (nCond & TFCond_CritCola)
-		{
-			szCond.emplace_back(L"ENERGY BUFF");
-		}
 
-		if (nCond & TFCond_InHealRadius)
-		{
-			szCond.emplace_back(L"RADIUSHEAL");
-		}
 
-		if (nCond & TFCond_Healing)
-		{
-			szCond.emplace_back(L"HEALTH BUFF");
-		}
+		if (pEntity->InCond(TF_COND_FEIGN_DEATH))
+			szCond.emplace_back(L"FEIGN");
 
-		if (nCond & TFCond_OnFire)
-		{
-			szCond.emplace_back(L"BURNING");
-		}
+		if (pEntity->InCond(TF_COND_STEALTHED))
+			szCond.emplace_back(L"CLOAK");
 
-		if (nCond & TFCond_Overhealed)
-		{
-			szCond.emplace_back(L"HEALTH OVERHEALED");
-		}
+		if (pEntity->InCond(TF_COND_STEALTHED_USER_BUFF))
+			szCond.emplace_back(L"STEALTH");
 
-		if (nCond & TFCond_Jarated)
-		{
-			szCond.emplace_back(L"URINE");
-		}
+		if (pEntity->InCond(TF_COND_STEALTHED_USER_BUFF_FADING))
+			szCond.emplace_back(L"STEALTH+");
 
-		if (nCond & TFCond_Bleeding)
-		{
-			szCond.emplace_back(L"BLEEDING");
-		}
+		if (pEntity->InCond(TF_COND_DISGUISED))
+			szCond.emplace_back(L"DISGUISE");
 
-		if (nCond & TFCond_DefenseBuffed)
-		{
-			szCond.emplace_back(L"DEFENSEBUFF");
-		}
+		if (pEntity->InCond(TF_COND_DISGUISING))
+			szCond.emplace_back(L"DISGUISING");
 
-		if (nCond & TFCond_Milked)
-		{
-			szCond.emplace_back(L"MAD MILK");
-		}
+		if (pEntity->InCond(TF_COND_DISGUISE_WEARINGOFF))
+			szCond.emplace_back(L"UNDISGUISING");
 
-		if (nCond & TFCond_MegaHeal)
-		{
-			szCond.emplace_back(L"MEGAHEAL");
-		}
+		if (pEntity->InCond(TF_COND_STEALTHED_BLINK))
+			szCond.emplace_back(L"BLINK");
 
-		if (nCond & TFCond_RegenBuffed)
-		{
-			szCond.emplace_back(L"REGENONDAMAGEBUFF");
-		}
 
-		if (nCond & TFCond_MarkedForDeath)
-		{
-			szCond.emplace_back(L"MARKED FOR DEATH");
-		}
 
-		if (nCond & TFCond_NoHealingDamageBuff)
-		{
-			szCond.emplace_back(L"NOHEALINGDAMAGEBUFF");
-		}
-
-		if (nCondEx & TFCondEx_SpeedBuffAlly)
-		{
+		if (pEntity->InCond(TF_COND_SPEED_BOOST) ||
+			pEntity->InCond(TF_COND_HALLOWEEN_SPEED_BOOST))
 			szCond.emplace_back(L"SPEED BOOST");
-		}
 
-		if (nCondEx & TFCondEx_HalloweenCritCandy)
-		{
-			szCond.emplace_back(L"CRITBOOSTED PUMPKIN");
-		}
+		if (pEntity->InCond(TF_COND_SODAPOPPER_HYPE))
+			szCond.emplace_back(L"HYPE");
 
-		if (nCondEx & TFCondEx_CritCanteen)
-		{
-			szCond.emplace_back(L"CRITBOOSTED USER BUFF");
-		}
+		if (pEntity->InCond(TF_COND_SNIPERCHARGE_RAGE_BUFF))
+			szCond.emplace_back(L"FOCUS");
 
-		if (nCondEx & TFCondEx_CritDemoCharge)
-		{
-			szCond.emplace_back(L"CRITBOOSTED DEMO CHARGE");
-		}
+		if (pEntity->InCond(TF_COND_AIMING))
+			szCond.emplace_back(L"SLOWED");
 
-		if (nCondEx & TFCondEx_CritHype)
-		{
-			szCond.emplace_back(L"SODAPOPPER HYPE");
-		}
+		if (pEntity->InCond(TF_COND_ZOOMED))
+			szCond.emplace_back(L"ZOOM");
 
-		if (nCondEx & TFCondEx_CritOnFirstBlood)
-		{
-			szCond.emplace_back(L"CRITBOOSTED FIRST BLOOD");
-		}
+		if (pEntity->InCond(TF_COND_SHIELD_CHARGE))
+			szCond.emplace_back(L"CHARGING");
 
-		if (nCondEx & TFCondEx_CritOnWin)
-		{
-			szCond.emplace_back(L"CRITBOOSTED BONUS TIME");
-		}
+		if (pEntity->InCond(TF_COND_DEMO_BUFF))
+			szCond.emplace_back(L"EYELANDER");
 
-		if (nCondEx & TFCondEx_CritOnKill)
-		{
-			szCond.emplace_back(L"CRITBOOSTED ON KILL");
-		}
+		if (pEntity->InCond(TF_COND_PHASE))
+			szCond.emplace_back(L"BONK");
 
-		if (nCondEx & TFCondEx_RestrictToMelee)
-		{
-			szCond.emplace_back(L"CANNOT SWITCH FROM MELEE");
-		}
+		if (pEntity->InCond(TF_COND_AFTERBURN_IMMUNE))
+			szCond.emplace_back(L"NO AFTERBURN");
 
-		if (nCondEx & TFCondEx_DefenseBuffNoCritBlock)
-		{
-			szCond.emplace_back(L"DEFENSEBUFF NO CRIT BLOCK");
-		}
+		if (pEntity->InCond(TF_COND_BLASTJUMPING))
+			szCond.emplace_back(L"BLASTJUMP");
 
-		if (nCondEx & TFCondEx_PyroCrits)
-		{
-			szCond.emplace_back(L"CRITBOOSTED RAGE BUFF");
-		}
-
-		if (nCondEx & TFCondEx_FocusBuff)
-		{
-			szCond.emplace_back(L"SNIPERCHARGE RAGE BUFF");
-		}
-
-		if (nCondEx & TFCondEx_DisguisedRemoved)
-		{
-			szCond.emplace_back(L"DISGUISE WEARINGOFF");
-		}
-
-		if (nCondEx & TFCondEx_MarkedForDeathSilent)
-		{
-			szCond.emplace_back(L"MARKEDFORDEATH SILENT");
-		}
-
-		if (nCondEx & TFCondEx_DisguisedAsDispenser)
-		{
-			szCond.emplace_back(L"DISGUISED AS DISPENSER");
-		}
-
-		if (nCondEx & TFCondEx_UberchargedHidden)
-		{
-			szCond.emplace_back(L"INVULNERABLE HIDE UNLESS DAMAGED");
-		}
-
-		if (nCondEx & TFCondEx_UberchargedCanteen)
-		{
-			szCond.emplace_back(L"INVULNERABLE USER BUFF");
-		}
-
-		if (nCondEx & TFCondEx_HalloweenBombHead)
-		{
-			szCond.emplace_back(L"HALLOWEEN BOMB HEAD");
-		}
-
-		if (nCondEx & TFCondEx_HalloweenThriller)
-		{
-			szCond.emplace_back(L"HALLOWEEN THRILLER");
-		}
-
-	/*	if (nCondEx & TFCondEx_RadiusHealOnDamage)
-		{
-			szCond.emplace_back(L"RADIUSHEAL ON DAMAGE");
-		}
-
-		if (nCondEx & TFCondEx_CritBoostedCardEffect)
-		{
-			szCond.emplace_back(L"CRITBOOSTEDCARDEFFECT");
-		}
- 
-		if (nCondEx & TFCondEx_InvulnerableCardEffect)
-		{
-			szCond.emplace_back(L"INVULNERABLE CARD EFFECT");
-		}
-	*/
-		if (nCondEx & TFCondEx_BulletCharge)
-		{
-			szCond.emplace_back(L"MEDIGUN UBER BULLET RESIST");
-		}
-
-		if (nCondEx & TFCondEx_ExplosiveCharge)
-		{
-			szCond.emplace_back(L"MEDIGUN UBER BLAST RESIST");
-		}
-
-		if (nCondEx & TFCondEx_FireCharge)
-		{
-			szCond.emplace_back(L"MEDIGUN UBER FIRE RESIST");
-		}
-
-		if (nCondEx & TFCondEx_BulletResistance)
-		{
-			szCond.emplace_back(L"MEDIGUN SMALL BULLET RESIST");
-		}
-
-		if (nCondEx & TFCondEx_ExplosiveResistance)
-		{
-			szCond.emplace_back(L"MEDIGUN SMALL BLAST RESIST");
-		}
-
-		if (nCondEx & TFCondEx_FireResistance)
-		{
-			szCond.emplace_back(L"MEDIGUN SMALL FIRE RESIST");
-		}
-
-	//	if (nCondEx2 & TFCondEx2_Stealthed)
-	//	{
-	//		szCond.emplace_back(L"STEALTHED USER BUFF");
-	//	}
-
-		if (nCondEx2 & TFCondEx2_MedigunDebuff)
-		{
-			szCond.emplace_back(L"MEDIGUN DEBUFF");
-		}
-
-	//	if (nCondEx2 & TFCondEx2_StealthedUserBuffFade)
-	//	{
-	//		szCond.emplace_back(L"STEALTHED USER BUFF FADING");
-	//	}
-
-		if (nCondEx2 & TFCondEx2_BulletImmune)
-		{
-			szCond.emplace_back(L"BULLET IMMUNE");
-		}
-
-		if (nCondEx2 & TFCondEx2_BlastImmune)
-		{
-			szCond.emplace_back(L"BLAST IMMUNE");
-		}
-
-		if (nCondEx2 & TFCondEx2_FireImmune)
-		{
-			szCond.emplace_back(L"FIRE IMMUNE");
-		}
-
-	//	if (nCondEx2 & TFCondEx2_PreventDeath)
-	//	{
-	//		szCond.emplace_back(L"PREVENT DEATH");
-	//	}
-
-	//	if (nCondEx2 & TFCondEx2_MVMBotRadiowave)
-	//	{
-	//		szCond.emplace_back(L"MVM BOT STUN RADIOWAVE");
-	//	}
-
-		if (nCondEx2 & TFCondEx2_HalloweenSpeedBoost)
-		{
-			szCond.emplace_back(L"HALLOWEEN SPEED BOOST");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenQuickHeal)
-		{
-			szCond.emplace_back(L"HALLOWEEN QUICK HEAL");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenGiant)
-		{
-			szCond.emplace_back(L"HALLOWEEN GIANT");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenTiny)
-		{
-			szCond.emplace_back(L"HALLOWEEN TINY");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenInHell)
-		{
-			szCond.emplace_back(L"HALLOWEEN IN HELL");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenGhostMode)
-		{
-			szCond.emplace_back(L"HALLOWEEN GHOST MODE");
-		}
-
-	/*	if (nCondEx2 & TFCondEx2_MiniCritOnKill)
-		{
-			szCond.emplace_back(L"MINICRITBOOSTED ON KILL");
-		}
-
-		if (nCondEx2 & TFCondEx2_ObscuredSmoke)
-		{
-			szCond.emplace_back(L"OBSCURED SMOKE");
-		}
-	*/
-		if (nCondEx2 & TFCondEx2_BlastJumping)
-		{
-			szCond.emplace_back(L"BLASTJUMPING");
-		}
-
-	/*	if (nCondEx2 & TFCondEx2_HalloweenKart)
-		{
-			szCond.emplace_back(L"HALLOWEEN KART");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenKartDash)
-		{
-			szCond.emplace_back(L"HALLOWEEN KART DASH");
-		}
-
-		if (nCondEx2 & TFCondEx2_BalloonHead)
-		{
-			szCond.emplace_back(L"BALLOON HEAD");
-		}
-
-		if (nCondEx2 & TFCondEx2_MeleeOnly)
-		{
-			szCond.emplace_back(L"MELEE ONLY");
-		}
-
-		if (nCondEx2 & TFCondEx2_SwimmingCurse)
-		{
-			szCond.emplace_back(L"SWIMMING CURSE");
-		}
-
-		if (nCondEx2 & TFCondEx2_FreezeInput)
-		{
-			szCond.emplace_back(L"FREEZE INPUT");
-		}
-
-		if (nCondEx2 & TFCondEx2_HalloweenKartCage)
-		{
-			szCond.emplace_back(L"HALLOWEEN KART CAGE");
-		}
-
-		if (nCondEx2 & TFCondEx2_DoNotUse0)
-		{
-			szCond.emplace_back(L"DONOTUSE 0");
-		}
-	*/
-
-	/*	if (nCondEx3 & TFCondEx3_GrapplingHook)
-		{
-			szCond.emplace_back(L"GRAPPLINGHOOK");
-		}
-
-		if (nCondEx3 & TFCondEx3_GrapplingHookSafeFall)
-		{
-			szCond.emplace_back(L"GRAPPLINGHOOK SAFEFALL");
-		}
-
-		if (nCondEx3 & TFCondEx3_GrapplingHookLatched)
-		{
-			szCond.emplace_back(L"GRAPPLINGHOOK LATCHED");
-		}
-
-		if (nCondEx3 & TFCondEx3_GrapplingHookBleeding)
-		{
-			szCond.emplace_back(L"GRAPPLINGHOOK BLEEDING");
-		}
-
-		if (nCondEx3 & TFCondEx3_AfterburnImmune)
-		{
-			szCond.emplace_back(L"AFTERBURN IMMUNE");
-		}
-
-		if (nCondEx3 & TFCondEx3_CritboostedTempRune)
-		{
-			szCond.emplace_back(L"CRITBOOSTED RUNE TEMP");
-		}
-
-		if (nCondEx3 & TFCondEx3_PasstimeInterception)
-		{
-			szCond.emplace_back(L"PASSTIME INTERCEPTION");
-		}
-
-		if (nCondEx3 & TFCondEx3_SwimmingNoEffects)
-		{
-			szCond.emplace_back(L"SWIMMING NO EFFECTS");
-		}
-
-		if (nCondEx3 & TFCondEx3_Purgatory)
-		{
-			szCond.emplace_back(L"PURGATORY");
-		}
-
-		if (nCondEx3 & TFCondEx3_TeamGlows)
-		{
-			szCond.emplace_back(L"TEAM GLOWS");
-		}
-
-		if (nCondEx3 & TFCondEx3_KnockedIntoAir)
-		{
-			szCond.emplace_back(L"KNOCKED INTO AIR");
-		}
-
-		if (nCondEx3 & TFCondEx3_CompetitiveWinner)
-		{
-			szCond.emplace_back(L"COMPETITIVE WINNER");
-		}
-
-		if (nCondEx3 & TFCondEx3_CompetitiveLoser)
-		{
-			szCond.emplace_back(L"COMPETITIVE LOSER");
-		}
-
-		if (nCondEx3 & TFCondEx3_HealingDebuff)
-		{
-			szCond.emplace_back(L"HEALING DEBUFF");
-		}
-
-		if (nCondEx3 & TFCondEx3_PasstimePenaltyDebuff)
-		{
-			szCond.emplace_back(L"PASSTIME PENALTY DEBUFF");
-		}
-
-		if (nCondEx3 & TFCondEx3_GrappledToPlayer)
-		{
-			szCond.emplace_back(L"GRAPPLED TO PLAYER");
-		}
-
-		if (nCondEx3 & TFCondEx3_GrappledByPlayer)
-		{
-			szCond.emplace_back(L"GRAPPLED BY PLAYER");
-		}
-
-		if (nCondEx3 & TFCondEx3_ParachuteDeployed)
-		{
-			szCond.emplace_back(L"PARACHUTE DEPLOYED");
-		}
-
-		if (nCondEx3 & TFCondEx3_Gas)
-		{
-			szCond.emplace_back(L"GAS");
-		}
-
-		if (nCondEx3 & TFCondEx3_BurningPyro)
-		{
-			szCond.emplace_back(L"BURNING PYRO");
-		}
-
-		if (nCondEx3 & TFCondEx3_RocketPack)
-		{
+		if (pEntity->InCond(TF_COND_ROCKETPACK))
 			szCond.emplace_back(L"ROCKETPACK");
-		}
 
-		if (nCondEx3 & TFCondEx3_LostFooting)
-		{
-			szCond.emplace_back(L"LOST FOOTING");
-		}
+		if (pEntity->InCond(TF_COND_PARACHUTE_ACTIVE) ||
+			pEntity->InCond(TF_COND_PARACHUTE_DEPLOYED))
+			szCond.emplace_back(L"PARACHUTE");
 
-		if (nCondEx3 & TFCondEx3_AirCurrent)
-		{
-			szCond.emplace_back(L"AIR CURRENT");
-		}
-	*/
+		if (pEntity->InCond(TF_COND_OBSCURED_SMOKE))
+			szCond.emplace_back(L"DODGE");
+
+
+
+		if (pEntity->InCond(TF_COND_STUNNED) ||
+			pEntity->InCond(TF_COND_MVM_BOT_STUN_RADIOWAVE))
+			szCond.emplace_back(L"STUN");
+
+		if (pEntity->InCond(TF_COND_MARKEDFORDEATH) ||
+			pEntity->InCond(TF_COND_MARKEDFORDEATH_SILENT) ||
+			pEntity->InCond(TF_COND_PASSTIME_PENALTY_DEBUFF))
+			szCond.emplace_back(L"MARKED FOR DEATH");
+
+		if (pEntity->InCond(TF_COND_URINE))
+			szCond.emplace_back(L"JARATE");
+
+		if (pEntity->InCond(TF_COND_MAD_MILK))
+			szCond.emplace_back(L"MILK");
+
+		if (pEntity->InCond(TF_COND_GAS))
+			szCond.emplace_back(L"GAS");
+
+		if (pEntity->InCond(TF_COND_BURNING) ||
+			pEntity->InCond(TF_COND_BURNING_PYRO))
+			szCond.emplace_back(L"BURN");
+
+		if (pEntity->InCond(TF_COND_BLEEDING) ||
+			pEntity->InCond(TF_COND_GRAPPLINGHOOK_BLEEDING))
+			szCond.emplace_back(L"BLEED");
+
+		if (pEntity->InCond(TF_COND_KNOCKED_INTO_AIR))
+			szCond.emplace_back(L"AIRBLAST");
+
+		if (pEntity->InCond(TF_COND_AIR_CURRENT))
+			szCond.emplace_back(L"AIR");
+
+		if (pEntity->InCond(TF_COND_LOST_FOOTING))
+			szCond.emplace_back(L"SLIDE");
+
+		if (pEntity->InCond(TF_COND_HEALING_DEBUFF))
+			szCond.emplace_back(L"HEAL DEBUFF");
+
+		if (pEntity->InCond(TF_COND_CANNOT_SWITCH_FROM_MELEE) ||
+			pEntity->InCond(TF_COND_MELEE_ONLY))
+			szCond.emplace_back(L"ONLY MELEE");
+
+
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_GIANT))
+			szCond.emplace_back(L"GIANT");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_TINY))
+			szCond.emplace_back(L"TINY");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_BOMB_HEAD))
+			szCond.emplace_back(L"BOMB");
+
+		if (pEntity->InCond(TF_COND_BALLOON_HEAD))
+			szCond.emplace_back(L"BALLOON");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_GHOST_MODE))
+			szCond.emplace_back(L"GHOST");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_KART))
+			szCond.emplace_back(L"KART");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_KART_DASH))
+			szCond.emplace_back(L"DASH");
+
+		if (pEntity->InCond(TF_COND_SWIMMING_CURSE) ||
+			pEntity->InCond(TF_COND_SWIMMING_NO_EFFECTS))
+			szCond.emplace_back(L"SWIM");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_KART_CAGE))
+			szCond.emplace_back(L"CAGE");
+
+
+
+	//	if (pEntity->InCond(TF_COND_HASRUNE))
+	//		szCond.emplace_back(L"RUNE");
+
+		if (pEntity->InCond(TF_COND_POWERUPMODE_DOMINANT))
+			szCond.emplace_back(L"DOMINANT");
+
+		if (pEntity->InCond(TF_COND_RUNE_STRENGTH))
+			szCond.emplace_back(L"STRENGTH");
+
+		if (pEntity->InCond(TF_COND_RUNE_HASTE))
+			szCond.emplace_back(L"HASTE");
+
+		if (pEntity->InCond(TF_COND_RUNE_REGEN))
+			szCond.emplace_back(L"REGEN");
+
+		if (pEntity->InCond(TF_COND_RUNE_RESIST))
+			szCond.emplace_back(L"RESIST");
+
+		if (pEntity->InCond(TF_COND_RUNE_VAMPIRE))
+			szCond.emplace_back(L"VAMPIRE");
+
+		if (pEntity->InCond(TF_COND_RUNE_REFLECT))
+			szCond.emplace_back(L"REFLECT");
+
+		if (pEntity->InCond(TF_COND_RUNE_PRECISION))
+			szCond.emplace_back(L"PRECISION");
+
+		if (pEntity->InCond(TF_COND_RUNE_AGILITY))
+			szCond.emplace_back(L"AGILITY");
+
+		if (pEntity->InCond(TF_COND_RUNE_KNOCKOUT))
+			szCond.emplace_back(L"KNOCKOUT");
+
+		if (pEntity->InCond(TF_COND_RUNE_IMBALANCE))
+			szCond.emplace_back(L"IMBALANCE");
+
+		if (pEntity->InCond(TF_COND_RUNE_KING))
+			szCond.emplace_back(L"KING");
+
+		if (pEntity->InCond(TF_COND_RUNE_PLAGUE))
+			szCond.emplace_back(L"PLAGUE");
+
+		if (pEntity->InCond(TF_COND_RUNE_SUPERNOVA))
+			szCond.emplace_back(L"SUPERNOVA");
+
+		if (pEntity->InCond(TF_COND_PLAGUE))
+			szCond.emplace_back(L"PLAGUED");
+
+		if (pEntity->InCond(TF_COND_KING_BUFFED))
+			szCond.emplace_back(L"KING BUFF");
+
+
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_IN_HELL))
+			szCond.emplace_back(L"HELL");
+
+		if (pEntity->InCond(TF_COND_PURGATORY))
+			szCond.emplace_back(L"PURGATORY");
+
+		if (pEntity->InCond(TF_COND_PASSTIME_INTERCEPTION))
+			szCond.emplace_back(L"INTERCEPTION");
+
+		if (pEntity->InCond(TF_COND_TEAM_GLOWS))
+			szCond.emplace_back(L"TEAM GLOWS");
+
+
+
+		if (pEntity->InCond(TF_COND_PREVENT_DEATH))
+			szCond.emplace_back(L"PREVENT DEATH");
+
+		if (pEntity->InCond(TF_COND_GRAPPLINGHOOK))
+			szCond.emplace_back(L"GRAPPLE");
+
+		if (pEntity->InCond(TF_COND_GRAPPLINGHOOK_SAFEFALL))
+			szCond.emplace_back(L"SAFEFALL");
+
+		if (pEntity->InCond(TF_COND_GRAPPLINGHOOK_LATCHED))
+			szCond.emplace_back(L"LATCHED");
+
+		if (pEntity->InCond(TF_COND_GRAPPLED_TO_PLAYER))
+			szCond.emplace_back(L"TO PLAYER");
+
+		if (pEntity->InCond(TF_COND_GRAPPLED_BY_PLAYER))
+			szCond.emplace_back(L"BY PLAYER");
+
+		if (pEntity->InCond(TF_COND_TELEPORTED))
+			szCond.emplace_back(L"TELEPORT");
+
+		if (pEntity->InCond(TF_COND_SELECTED_TO_TELEPORT))
+			szCond.emplace_back(L"TELEPORTING");
+
+		if (pEntity->InCond(TF_COND_MEDIGUN_DEBUFF))
+			szCond.emplace_back(L"MEDIGUN DEBUFF");
+
+		if (pEntity->InCond(TF_COND_SAPPED))
+			szCond.emplace_back(L"SAPPED");
+
+		if (pEntity->InCond(TF_COND_DISGUISED_AS_DISPENSER))
+			szCond.emplace_back(L"DISPENSER");
+
+		if (pEntity->InCond(TF_COND_TAUNTING))
+			szCond.emplace_back(L"TAUNT");
+
+		if (pEntity->InCond(TF_COND_HALLOWEEN_THRILLER))
+			szCond.emplace_back(L"THRILLER");
+
+		if (pEntity->InCond(TF_COND_FREEZE_INPUT))
+			szCond.emplace_back(L"FREEZE INPUT");
+
+		if (pEntity->InCond(TF_COND_REPROGRAMMED))
+			szCond.emplace_back(L"REPROGRAMMED");
+
+	//	if (pEntity->InCond(TF_COND_COMPETITIVE_WINNER))
+	//		szCond.emplace_back(L"WIN");
+
+	//	if (pEntity->InCond(TF_COND_COMPETITIVE_LOSER))
+	//		szCond.emplace_back(L"LOSS");
 	}
 	
 	return szCond;

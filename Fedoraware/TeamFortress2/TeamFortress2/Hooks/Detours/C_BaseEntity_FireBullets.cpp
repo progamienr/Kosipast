@@ -157,15 +157,16 @@ MAKE_HOOK(C_BaseEntity_FireBullets, g_Pattern.Find(L"client.dll", L"55 8B EC 81 
 		const int iAttachment = pWeapon->LookupAttachment("muzzle");
 		pWeapon->GetAttachment(iAttachment, trace.vStartPos);
 
+		/*
 		if (Vars::Visuals::BulletTracer.Value)
 		{
-			const Color_t tracerColor = Vars::Visuals::BulletTracerRainbow.Value ? Utils::Rainbow() : Colors::BulletTracer;
+			const Color_t tracerColor = Colors::BulletTracer;
 
 			F::Visuals.AddBulletTracer(trace.vStartPos, trace.vEndPos, tracerColor);
 
-			/*I::DebugOverlay->AddLineOverlayAlpha(trace.vStartPos, trace.vEndPos, tracerColor.r, tracerColor.g, tracerColor.b,
-												 Colors::BulletTracer.a, true, 5);*/
+			//I::DebugOverlay->AddLineOverlayAlpha(trace.vStartPos, trace.vEndPos, tracerColor.r, tracerColor.g, tracerColor.b, Colors::BulletTracer.a, true, 5);
 		}
+		*/
 		if (!pLocal->IsInValidTeam())
 		{
 			return;

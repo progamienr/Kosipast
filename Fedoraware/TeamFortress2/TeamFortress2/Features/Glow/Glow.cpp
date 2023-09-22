@@ -35,7 +35,8 @@ void CGlowEffect::SetScale(int nScale, bool bReset = false)
 	}
 	else if (pVar)
 	{
-		pVar->SetIntValue(nScale);
+		//pVar->SetIntValue(nScale);
+		pVar->SetFloatValue(float(nScale) / 2.f);
 	}
 }
 
@@ -181,14 +182,14 @@ void CGlowEffect::Render()
 			StencilState.m_bEnable = true;
 			StencilState.m_nReferenceValue = 1;
 			StencilState.m_CompareFunc = STENCILCOMPARISONFUNCTION_ALWAYS;
-			StencilState.m_PassOp = STENCILOPERATION_REPLACE;
+			StencilState.m_PassOp = STENCILOPERATION_KEEP;
 			StencilState.m_FailOp = STENCILOPERATION_KEEP;
-			StencilState.m_ZFailOp = STENCILOPERATION_REPLACE;
+			StencilState.m_ZFailOp = STENCILOPERATION_KEEP;
 			StencilState.SetStencilState(pRenderContext);
 		}
 
-		I::RenderView->SetBlend(1.0f);
 		I::RenderView->SetColorModulation(1.0f, 1.0f, 1.0f);
+		I::RenderView->SetBlend(1.0f);
 
 
 
@@ -295,18 +296,6 @@ void CGlowEffect::Render()
 			}
 		}
 
-		if (Vars::Glow::Misc::MovementSimLine.Value)
-		{
-			F::Visuals.DrawMovesimLine();
-		}
-		if (Vars::Glow::Misc::Sightlines.Value)
-		{
-			F::Visuals.DrawSightlines();
-		}
-		if (Vars::Glow::Misc::BulletTracers.Value)
-		{
-			F::Visuals.DrawBulletTracers();
-		}
 		if (Vars::Glow::Buildings::Active.Value)
 		{
 			for (const auto& Building : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL))
@@ -427,7 +416,7 @@ void CGlowEffect::Render()
 
 		StencilStateDisable.SetStencilState(pRenderContext);
 
-		if (m_vecGlowEntities.empty() && F::Visuals.m_SightLines.empty() && F::Visuals.m_vecBulletTracers.empty() && G::PredictionLines.empty())
+		if (m_vecGlowEntities.empty() && F::Visuals.m_SightLines.empty() && F::Visuals.m_vecBulletTracers.empty())
 			return;
 
 		I::ModelRender->ForcedMaterialOverride(m_pMatGlowColor);
@@ -441,24 +430,11 @@ void CGlowEffect::Render()
 
 			for (const auto& GlowEntity : m_vecGlowEntities)
 			{
-				I::RenderView->SetBlend(GlowEntity.m_flAlpha);
 				I::RenderView->SetColorModulation(Color::TOFLOAT(GlowEntity.m_Color.r),
 				                                            Color::TOFLOAT(GlowEntity.m_Color.g),
 				                                            Color::TOFLOAT(GlowEntity.m_Color.b));
+				I::RenderView->SetBlend(Color::TOFLOAT(GlowEntity.m_Color.a));
 				DrawModel(GlowEntity.m_pEntity, STUDIO_RENDER | STUDIO_NOSHADOWS, false);
-			}
-
-			if (Vars::Glow::Misc::MovementSimLine.Value)
-			{
-				F::Visuals.DrawMovesimLine();
-			}
-			if (Vars::Glow::Misc::Sightlines.Value)
-			{
-				F::Visuals.DrawSightlines();
-			}
-			if (Vars::Glow::Misc::BulletTracers.Value)
-			{
-				F::Visuals.DrawBulletTracers();
 			}
 
 			StencilStateDisable.SetStencilState(pRenderContext);
@@ -500,28 +476,20 @@ void CGlowEffect::Render()
 			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
 			break;
 		}
-		case 1:{
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -1, -1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -1, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, -1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, 1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 1, 1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 1, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 1, -1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -1, 1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			break;
-		}
-		case 2:{
-			const float flScale = (Vars::Glow::Main::Scale.Value * 0.05f);
-			pRenderContext->DrawScreenSpaceRectangle( m_pMatHaloAddToScreen, 0, 0, w, h, +flScale, +flScale, (float)nViewportWidth / 4 - 1, (float)nViewportHeight/ 4 - 1, m_pRtQuarterSize1->GetActualWidth(), m_pRtQuarterSize1->GetActualHeight() );
-			pRenderContext->DrawScreenSpaceRectangle( m_pMatHaloAddToScreen, 0, 0, w, h, -flScale, -flScale, (float)nViewportWidth / 4 - 1, (float)nViewportHeight/ 4 - 1, m_pRtQuarterSize1->GetActualWidth(), m_pRtQuarterSize1->GetActualHeight() );
-			break;
-		}
-		case 3:{
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -1, -1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -1, 1, w, h, 0.0f, 0.0f, w - 1, h + 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 1, -1, w, h, 0.0f, 0.0f, w - 1, h + 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 1, 1, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		case 1: { //[implement]
+			int side = int(float(Vars::Glow::Main::Scale.Value) / 2 + 0.5f);
+			int corner = int(float(Vars::Glow::Main::Scale.Value) / 2);
+			if (corner)
+			{
+				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -corner, -corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, corner, corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, corner, -corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -corner, corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			}
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -side, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, -side, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, side, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, side, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
 			break;
 		}
 		}

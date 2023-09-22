@@ -3,7 +3,7 @@
 #include "../Vars.h"
 
 #include "AutoShoot/AutoShoot.h"
-#include "AutoStab/AutoStab.h"
+//#include "AutoStab/AutoStab.h"
 #include "AutoDetonate/AutoDetonate.h"
 #include "AutoBlast/AutoBlast.h"
 #include "AutoUber/AutoUber.h"
@@ -34,13 +34,15 @@ bool CAuto::ShouldRun(CBaseEntity* pLocal)
 
 void CAuto::Run(CUserCmd* pCmd)
 {
+	/*
 	if (Vars::Triggerbot::Stab::Disguise.Value && F::AutoStab.m_bShouldDisguise)
 	{
 		I::EngineClient->ClientCmd_Unrestricted("lastdisguise");
 	}
+	*/
 
-	G::AutoBackstabRunning = false;
-	F::AutoStab.m_bShouldDisguise = false;
+	//G::AutoBackstabRunning = false;
+	//F::AutoStab.m_bShouldDisguise = false;
 
 	const auto pLocal = g_EntityCache.GetLocal();
 	const auto pWeapon = g_EntityCache.GetWeapon();
@@ -50,7 +52,7 @@ void CAuto::Run(CUserCmd* pCmd)
 		if (ShouldRun(pLocal))
 		{
 			F::AutoShoot.Run(pLocal, pWeapon, pCmd);
-			F::AutoStab.Run(pLocal, pWeapon, pCmd);
+			//F::AutoStab.Run(pLocal, pWeapon, pCmd);
 			F::AutoDetonate.Run(pLocal, pWeapon, pCmd);
 			F::AutoAirblast.Run(pLocal, pWeapon, pCmd);
 			F::AutoUber.Run(pLocal, pWeapon, pCmd);
