@@ -525,7 +525,7 @@ void CVisuals::DrawBulletLines()
 	}
 	else
 	{
-		for (auto& Line : G::LinesStorage)
+		for (auto& Line : G::BulletsStorage)
 		{
 			Line.m_flTime = -10.f;
 		}

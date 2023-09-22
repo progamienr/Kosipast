@@ -39,16 +39,13 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 		if (pEntity && pEntity->GetClassID() == ETFClassID::CTFPlayer)
 		{
 			if (!pEntity->IsAlive())
-			{
 				return;
-			}
+
 			if (!F::Glow.m_bRendering && !F::Chams.m_bRendering)
 			{
 				if (Vars::Backtrack::BtChams::EnemyOnly.Value && g_EntityCache.GetLocal() && pEntity->GetTeamNum() ==
 					g_EntityCache.GetLocal()->GetTeamNum())
-				{
 					return;
-				}
 
 				IMaterial* chosenMat = nullptr; // fake latency material
 				if (Vars::Backtrack::BtChams::Material.Value == 9)
@@ -76,14 +73,14 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 				I::RenderView->SetBlend(Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.a));
 
 				const auto& vRecords = F::Backtrack.GetRecords(pEntity);
+				if (!vRecords || vRecords->empty())
+					return;
+
 				if (Vars::Backtrack::BtChams::LastOnly.Value)
 				{
 					std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
-					if (vLastRec &&
-						pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
-					{
+					if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
 						OriginalFn(ecx, edx, pState, pInfo, (matrix3x4*)(&vLastRec->BoneMatrix));
-					}
 				}
 				else
 				{

@@ -205,6 +205,12 @@ public: //Everything else, lol
 		return GetVFunc<int(__thiscall*)(CGameTrace&)>(this, 454)(Trace);
 	}
 
+	__inline bool DoSwingTraceInternal(CGameTrace& Trace)
+	{
+		static auto DoSwingTraceInternalFn = reinterpret_cast<bool(__thiscall*)(decltype(this), CGameTrace&, bool, void*)>(g_Pattern.Find(L"client.dll", L"53 8B DC 83 EC ? 83 E4 ? 83 C4 ? 55 8B 6B ? 89 6C 24 ? 8B EC 81 EC ? ? ? ? A1 ? ? ? ? 56 8B F1"));
+		return DoSwingTraceInternalFn(this, Trace, false, nullptr);
+	}
+
 	__inline int LookupAttachment(const char* pAttachmentName)
 	{
 		const auto pRend = Renderable();

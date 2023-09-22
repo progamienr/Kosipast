@@ -326,6 +326,7 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Aimbot::Projectile::AimFOV);
 				SAVE_VAR(Vars::Aimbot::Projectile::SortMethod);
 				SAVE_VAR(Vars::Aimbot::Projectile::AimMethod);
+				SAVE_VAR(Vars::Aimbot::Projectile::SmoothingAmount);
 				SAVE_VAR(Vars::Aimbot::Projectile::SplashPrediction);
 				SAVE_VAR(Vars::Aimbot::Projectile::PredictionTime);
 				SAVE_VAR(Vars::Aimbot::Projectile::ChargeLooseCannon);
@@ -631,6 +632,7 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Aimbot::Projectile::AimFOV);
 				LOAD_VAR(Vars::Aimbot::Projectile::SortMethod);
 				LOAD_VAR(Vars::Aimbot::Projectile::AimMethod);
+				LOAD_VAR(Vars::Aimbot::Projectile::SmoothingAmount);
 				LOAD_VAR(Vars::Aimbot::Projectile::SplashPrediction);
 				LOAD_VAR(Vars::Aimbot::Projectile::PredictionTime);
 				LOAD_VAR(Vars::Aimbot::Projectile::ChargeLooseCannon);

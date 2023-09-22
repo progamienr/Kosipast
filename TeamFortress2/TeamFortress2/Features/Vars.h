@@ -81,10 +81,10 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<float> AimFOV{ 19.f };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
+			inline CVar<int> SmoothingAmount{ 25 };
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
 			inline CVar<int> Hitboxes{ 0b00111 }; // {legs, arms, body, pelvis, head}
 			inline CVar<float> PointScale{ .54f };
-			inline CVar<int> SmoothingAmount{ 4 };
 			inline CVar<int> TapFire{ 0 }; //0 - Off, 1 - Distance, 2 - Always
 			inline CVar<float> TapFireDist{ 1000.f };
 			inline CVar<bool> ScanBuildings{ false };
@@ -100,7 +100,8 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<float> AimFOV{ 26.f };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
-			inline CVar<int> AimMethod{ 1 }; //0 - Normal,	1 - Silent
+			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
+			inline CVar<int> SmoothingAmount{ 25 };
 			inline CVar<float> ScanScale{ 0.78f }; // how to scale the points. 0.78 is a good number, huntsman bugs at anything below 0.76
 			inline CVar<bool> SplashPrediction{ false };
 			inline Color_t PredictionColor{ 255, 255, 255, 255 };
@@ -120,7 +121,7 @@ namespace Vars
 			inline CVar<float> AimFOV{ 180.f };
 			inline CVar<int> SortMethod{ 1 }; //0 - FOV, 1 - Distance
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
-			inline CVar<int> SmoothingAmount{ 8 };
+			inline CVar<int> SmoothingAmount{ 25 };
 			inline CVar<bool> PredictSwing{ false };
 			inline CVar<bool> AutoBackstab{ true };
 			inline CVar<bool> IgnoreRazorback{ true };

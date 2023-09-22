@@ -188,42 +188,6 @@ int CAimbotMelee::GetSwingTime(CBaseCombatWeapon* pWeapon)
 	return 13;
 }
 
-bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 eyeAngles)
-{
-	if (!pLocal || !pTarget)
-		return false;
-
-	Vector vecToTarget;
-	vecToTarget = pTarget->GetAbsOrigin() - pLocal->GetAbsOrigin();
-	vecToTarget.z = 0.0f;
-	float vecDist = vecToTarget.Length();
-	vecToTarget.NormalizeInPlace();
-
-	Vector vecOwnerForward;
-	Math::AngleVectors(eyeAngles, &vecOwnerForward);
-	vecOwnerForward.z = 0.0f;
-	vecOwnerForward.NormalizeInPlace();
-
-	Vector vecTargetForward;
-	Math::AngleVectors(F::Backtrack.noInterpEyeAngles[pTarget->GetIndex()], &vecTargetForward);
-	vecTargetForward.z = 0.0f;
-	vecTargetForward.NormalizeInPlace();
-
-	float flPosVsTargetViewDot = vecToTarget.Dot(vecTargetForward); // Behind?
-	float flPosVsOwnerViewDot = vecToTarget.Dot(vecOwnerForward); // Facing?
-	float flViewAnglesDot = vecTargetForward.Dot(vecOwnerForward); // Facestab?
-
-	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->GetClassNum() == CLASS_SNIPER)
-	{
-		auto pWeapon = pTarget->GetWeaponFromSlot(SLOT_SECONDARY);
-		if (pWeapon && pWeapon->GetItemDefIndex() == Sniper_s_TheRazorback)
-			return false;
-	}
-
-	return (vecDist >= 1.f &&
-		flPosVsTargetViewDot > 0.01f && flPosVsOwnerViewDot > 0.51 && flViewAnglesDot > -0.29f);
-}
-
 // to do: warp to
 void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, std::vector<Target_t> targets, 
 								   Vec3& vEyePos, std::unordered_map<CBaseEntity*, std::deque<TickRecord>>& pRecordMap,
@@ -280,6 +244,43 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 			F::MoveSim.Restore(targetStorage[target.m_pEntity]);
 	}
 }
+
+bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 eyeAngles)
+{
+	if (!pLocal || !pTarget)
+		return false;
+
+	Vector vecToTarget;
+	vecToTarget = pTarget->GetAbsOrigin() - pLocal->GetAbsOrigin();
+	vecToTarget.z = 0.0f;
+	float vecDist = vecToTarget.Length();
+	vecToTarget.NormalizeInPlace();
+
+	Vector vecOwnerForward;
+	Math::AngleVectors(eyeAngles, &vecOwnerForward);
+	vecOwnerForward.z = 0.0f;
+	vecOwnerForward.NormalizeInPlace();
+
+	Vector vecTargetForward;
+	Math::AngleVectors(F::Backtrack.noInterpEyeAngles[pTarget->GetIndex()], &vecTargetForward);
+	vecTargetForward.z = 0.0f;
+	vecTargetForward.NormalizeInPlace();
+
+	float flPosVsTargetViewDot = vecToTarget.Dot(vecTargetForward); // Behind?
+	float flPosVsOwnerViewDot = vecToTarget.Dot(vecOwnerForward); // Facing?
+	float flViewAnglesDot = vecTargetForward.Dot(vecOwnerForward); // Facestab?
+
+	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->GetClassNum() == CLASS_SNIPER)
+	{
+		auto pWeapon = pTarget->GetWeaponFromSlot(SLOT_SECONDARY);
+		if (pWeapon && pWeapon->GetItemDefIndex() == Sniper_s_TheRazorback)
+			return false;
+	}
+
+	return (vecDist >= 1.f &&
+		flPosVsTargetViewDot > 0.f && flPosVsOwnerViewDot > 0.5 && flViewAnglesDot > -0.3f);
+}
+
 bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)
 {
 	static Vec3 vecSwingMins = { -18.0f, -18.0f, -18.0f };
@@ -340,7 +341,7 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 		target.m_pEntity->SetAbsOrigin(pTick.vOrigin);
 
 		target.m_vPos = pTick.vOrigin + vecDiff;
-		target.m_vAngleTo = Math::CalcAngle(vEyePos, target.m_vPos);
+		target.m_vAngleTo = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, target.m_vPos));
 
 		Vec3 vecForward = Vec3();
 		Math::AngleVectors(target.m_vAngleTo, &vecForward);
@@ -353,6 +354,24 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 			Utils::TraceHull(vEyePos, vecTraceEnd, vecSwingMins, vecSwingMaxs, MASK_SHOT, &filter, &trace);
 			bReturn = (trace.entity && trace.entity == target.m_pEntity);
 		}
+		/* does not respect aimbot viewangles, not using for now but seems promising ?
+		bool bReturn = false;
+		{
+			const Vec3 vPos = pLocal->GetAbsOrigin();
+			const Vec3 vAng = pLocal->GetEyeAngles();
+
+			pLocal->SetAbsOrigin(vEyePos - pLocal->m_vecViewOffset());
+			pLocal->GetEyeAngles() = vAngleTo;
+
+			CGameTrace trace;
+			bReturn = pWeapon->DoSwingTraceInternal(trace);
+			if (bReturn)
+				bReturn = trace.entity == target.m_pEntity;
+
+			pLocal->SetAbsOrigin(vPos);
+			pLocal->GetEyeAngles() = vAng;
+		}
+		*/
 
 		if (bReturn && Vars::Aimbot::Melee::AutoBackstab.Value && pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		{
@@ -397,48 +416,53 @@ bool CAimbotMelee::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	return TIME_TO_TICKS(pWeapon->GetSmackTime()) + 2 == I::GlobalVars->tickcount; // seems to work most (?) of the time, would like to not have arbitrary number
 }
 
+// assume angle calculated outside with other overload
 void CAimbotMelee::Aim(CUserCmd* pCmd, Vec3& vAngle)
 {
-	vAngle -= G::PunchAngles;
-	Math::ClampAngles(vAngle);
+	if (Vars::Aimbot::Melee::AimMethod.Value != 2)
+	{
+		pCmd->viewangles = vAngle;
+		I::EngineClient->SetViewAngles(pCmd->viewangles);
+	}
+	else if (G::IsAttacking)
+	{
+		pCmd->viewangles = vAngle;
+		Utils::FixMovement(pCmd, pCmd->viewangles);
+		G::SilentTime = true;
+	}
+}
+
+Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle)
+{
+	Vec3 vReturn = {};
+
+	vToAngle -= G::PunchAngles;
+	Math::ClampAngles(vToAngle);
 
 	switch (Vars::Aimbot::Melee::AimMethod.Value)
 	{
-		case 0: //Plain
-		{
-			pCmd->viewangles = vAngle;
-			I::EngineClient->SetViewAngles(pCmd->viewangles);
+	case 0: // Plain
+		vReturn = vToAngle;
+		break;
+
+	case 1: //Smooth
+		if (Vars::Aimbot::Melee::SmoothingAmount.Value == 0)
+		{ // plain aim at 0 smoothing factor
+			vReturn = vToAngle;
 			break;
 		}
+		//a + (b - a) * t [lerp]
+		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Melee::SmoothingAmount.Value / 100.f);
+		break;
 
-		case 1: //Smooth
-		{
-			if (Vars::Aimbot::Melee::SmoothingAmount.Value == 0)
-			{
-				// plain aim at 0 smoothing factor
-				pCmd->viewangles = vAngle;
-				I::EngineClient->SetViewAngles(pCmd->viewangles);
-				break;
-			}
-			//a + (b - a) * t [lerp]
-			pCmd->viewangles = pCmd->viewangles + (vAngle - pCmd->viewangles) * (1.f - (float)Vars::Aimbot::Hitscan::SmoothingAmount.Value / 100.f);
-			I::EngineClient->SetViewAngles(pCmd->viewangles);
-			break;
-		}
+	case 2: // Silent
+		vReturn = vToAngle;
+		break;
 
-		case 2: //Silent
-		{
-			if (G::IsAttacking)
-			{
-				Utils::FixMovement(pCmd, vAngle);
-				pCmd->viewangles = vAngle;
-				G::SilentTime = true;
-			}
-			break;
-		}
-
-		default: break;
+	default: break;
 	}
+
+	return vReturn;
 }
 
 void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
@@ -450,10 +474,12 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 	}
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
-	if (!bShouldAim && !lockedTarget.m_pEntity) return;
+	if (!bShouldAim && !lockedTarget.m_pEntity)
+		return;
 
 	auto targets = SortTargets(pLocal, pWeapon);
-	if (targets.empty()) return;
+	if (targets.empty())
+		return;
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;
@@ -479,7 +505,6 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 
 		if (G::IsAttacking && target.pTick)
 		{
-			// Set the target tickcount (Backtrack)
 			if (target.ShouldBacktrack)
 				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
 
@@ -487,7 +512,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			{
 				G::LinesStorage.clear();
 				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime, Vars::Aimbot::Projectile::ProjectileColor });
-				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor});
+				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor}); // not working for whatever reason
 			}
 
 			if (Vars::Visuals::BulletTracer.Value)

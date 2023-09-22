@@ -284,6 +284,8 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 		}
 	}
 
+	target.m_pEntity->SetAbsOrigin(vOriginal);
+
 	return false;
 }
 
@@ -300,7 +302,8 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 	const bool bPlayer = target.m_TargetType == ETargetType::PLAYER;
 	const Vec3 vEyePos = pLocal->GetShootPos();
-	Vec3 vTargetPos = target.m_pEntity->GetAbsOrigin(), vOffset = {};
+	const Vec3 vOriginalPos = target.m_pEntity->GetAbsOrigin();
+	Vec3 vTargetPos = vOriginalPos, vOffset = {};
 	float flMaxTime = Vars::Aimbot::Projectile::PredictionTime.Value;
 	{
 		if (!F::ProjSim.GetInfo(pLocal, pWeapon, {}, projInfo))
@@ -348,11 +351,9 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	}
 
 	bool bSimulate = true;
-	if (!bPlayer || target.m_pEntity->m_fFlags() & FL_ONGROUND && target.m_pEntity->m_vecVelocity().IsZero())
-		bSimulate = false;
 
 	PlayerStorage storage;
-	if (bSimulate && !F::MoveSim.Initialize(target.m_pEntity, storage))
+	if (!F::MoveSim.Initialize(target.m_pEntity, storage))
 		bSimulate = false;
 
 	Vec3 vAngleTo;
@@ -409,8 +410,8 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				iEndTick = i + vPoints.size() - 1;
 			}
 
-			Vec3 vAngles = { -RAD2DEG(solution.m_flPitch), RAD2DEG(solution.m_flYaw), 0.0f };
-			if (TestAngle(pLocal, pWeapon, target, storage.m_PlayerData.m_vecOrigin, vTargetPos, vAngles, i - TIME_TO_TICKS(flLatency)))
+			const Vec3 vAngles = Aim(G::CurrentUserCmd->viewangles, { -RAD2DEG(solution.m_flPitch), RAD2DEG(solution.m_flYaw), 0.0f });
+			if (TestAngle(pLocal, pWeapon, target, vOriginalPos, vTargetPos, vAngles, i - TIME_TO_TICKS(flLatency)))
 			{
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
@@ -423,9 +424,12 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 	G::MoveLines = storage.PredictionLines;
 
-	F::MoveSim.Restore(storage);
+	if (bSimulate)
+		F::MoveSim.Restore(storage);
 
-	if (iLowestPriority != 3)
+	if (iLowestPriority != 3 &&
+		target.m_TargetType != ETargetType::PLAYER ||
+		target.m_TargetType == ETargetType::PLAYER && bSimulate) // don't attempt to aim at players when movesim fails
 	{
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
@@ -542,41 +546,62 @@ bool CAimbotProjectile::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWe
 	return false;
 }
 
+// assume angle calculated outside with other overload
 void CAimbotProjectile::Aim(CUserCmd* pCmd, Vec3& vAngle)
 {
-	vAngle -= G::PunchAngles;
-	Math::ClampAngles(vAngle);
-
-	switch (Vars::Aimbot::Projectile::AimMethod.Value)
+	if (Vars::Aimbot::Projectile::AimMethod.Value != 2)
 	{
-	case 0:
-	{
-		// Plain
 		pCmd->viewangles = vAngle;
 		I::EngineClient->SetViewAngles(pCmd->viewangles);
-		break;
 	}
-
-	case 1:
+	else if (G::IsAttacking)
 	{
-		// Silent
-		Utils::FixMovement(pCmd, vAngle);
 		pCmd->viewangles = vAngle;
+		Utils::FixMovement(pCmd, pCmd->viewangles);
 		//if (bFlameThrower)
 		//	G::UpdateView = false;
 		//else
 			G::SilentTime = true;
-		break;
 	}
+}
+
+Vec3 CAimbotProjectile::Aim(Vec3 vCurAngle, Vec3 vToAngle)
+{
+	Vec3 vReturn = {};
+
+	vToAngle -= G::PunchAngles;
+	Math::ClampAngles(vToAngle);
+
+	switch (Vars::Aimbot::Projectile::AimMethod.Value)
+	{
+	case 0: // Plain
+		vReturn = vToAngle;
+		break;
+
+	case 1: //Smooth
+		if (Vars::Aimbot::Projectile::SmoothingAmount.Value == 0)
+		{ // plain aim at 0 smoothing factor
+			vReturn = vToAngle;
+			break;
+		}
+		//a + (b - a) * t [lerp]
+		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Projectile::SmoothingAmount.Value / 100.f);
+		break;
+
+	case 2: // Silent
+		vReturn = vToAngle;
+		break;
 
 	default: break;
 	}
+
+	return vReturn;
 }
 
 void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
 	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && bLastTickAttack;
-	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 1 && !G::ShouldShift && !bKeepFiring)
+	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 2 && !G::ShouldShift && !bKeepFiring)
 	{
 		Exit(pLocal, pWeapon, pCmd); return;
 	}
@@ -674,6 +699,8 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		{
 			if (Vars::Visuals::SimLine.Value)
 			{
+				F::Visuals.ClearBulletLines();
+
 				G::LinesStorage.clear();
 				G::LinesStorage.push_back({ G::MoveLines, I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor });
 				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor });

@@ -579,38 +579,52 @@ bool CAimbotHitscan::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapo
 	return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
 }
 
+// assume angle calculated outside with other overload
 void CAimbotHitscan::Aim(CUserCmd* pCmd, Vec3& vAngle)
 {
-	vAngle -= G::PunchAngles;
-	Math::ClampAngles(vAngle);
-
-	switch (Vars::Aimbot::Hitscan::AimMethod.Value)
+	if (Vars::Aimbot::Hitscan::AimMethod.Value != 2)
 	{
-	case 0: //Plain
 		pCmd->viewangles = vAngle;
 		I::EngineClient->SetViewAngles(pCmd->viewangles);
+	}
+	else if (G::IsAttacking)
+	{
+		pCmd->viewangles = vAngle;
+		Utils::FixMovement(pCmd, pCmd->viewangles);
+	}
+}
+
+Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle)
+{
+	Vec3 vReturn = {};
+
+	vToAngle -= G::PunchAngles;
+	Math::ClampAngles(vToAngle);
+
+	switch (Vars::Aimbot::Melee::AimMethod.Value)
+	{
+	case 0: // Plain
+		vReturn = vToAngle;
 		break;
 
 	case 1: //Smooth
-		if (Vars::Aimbot::Hitscan::SmoothingAmount.Value == 0)
-		{
-			pCmd->viewangles = vAngle;
-			I::EngineClient->SetViewAngles(pCmd->viewangles);
+		if (Vars::Aimbot::Melee::SmoothingAmount.Value == 0)
+		{ // plain aim at 0 smoothing factor
+			vReturn = vToAngle;
 			break;
 		}
 		//a + (b - a) * t [lerp]
-		pCmd->viewangles = pCmd->viewangles + (vAngle - pCmd->viewangles) * (1.f - (float)Vars::Aimbot::Hitscan::SmoothingAmount.Value / 100.f);
-		I::EngineClient->SetViewAngles(pCmd->viewangles);
+		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Melee::SmoothingAmount.Value / 100.f);
 		break;
 
-	case 2: //Silent
-		if (G::ShouldShift || G::IsAttacking)
-		{
-			Utils::FixMovement(pCmd, vAngle);
-			pCmd->viewangles = vAngle;
-		}
+	case 2: // Silent
+		vReturn = vToAngle;
 		break;
+
+	default: break;
 	}
+
+	return vReturn;
 }
 
 void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
@@ -751,7 +765,6 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 
 			if (target.pTick)
 			{
-				// Set the target tickcount (Backtrack)
 				if (target.ShouldBacktrack)
 					pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
 
@@ -767,7 +780,9 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 			}
 		}
 
-		Aim(pCmd, target.m_vAngleTo);
+		// todo: move into canhit & possibly do Math::RayToOBB instead of vischeck ?
+		auto vAngle = Aim(pCmd->viewangles, target.m_vAngleTo);
+		Aim(pCmd, vAngle);
 
 		break;
 	}

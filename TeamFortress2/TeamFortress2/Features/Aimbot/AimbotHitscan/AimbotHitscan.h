@@ -12,6 +12,7 @@ class CAimbotHitscan
 	bool CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
 	bool ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const Target_t& target);
 	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
 	void Exit(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
