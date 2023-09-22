@@ -32,7 +32,7 @@ struct PlayerStorage
 
 	float m_flAverageYaw = 0.f;
 
-	std::vector<std::pair<Vec3, Vec3>> PredictionLines;
+	std::deque<std::pair<Vec3, Vec3>> PredictionLines;
 };
 
 class CMovementSimulation

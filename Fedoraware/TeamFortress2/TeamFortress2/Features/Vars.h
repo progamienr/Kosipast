@@ -493,7 +493,8 @@ namespace Vars
 
 		inline CVar<bool> BulletTracer{ false };
 
-		inline CVar<bool> SimLine{ false };
+		inline CVar<bool> SimLines{ false };
+		inline CVar<bool> ClearLines{ false };
 		inline CVar<bool> SimSeperators{ false };
 		inline CVar<int> SeperatorLength{ 12 };
 		inline CVar<int> SeperatorSpacing{ 6 };

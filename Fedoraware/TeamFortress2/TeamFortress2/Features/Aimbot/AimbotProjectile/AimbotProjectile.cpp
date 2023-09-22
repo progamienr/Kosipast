@@ -357,8 +357,8 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		bSimulate = false;
 
 	Vec3 vAngleTo;
-	int iLowestPriority = 3, iEndTick = 0; // time to point valid, end in some ticks
-	for (int i = 0; i < TIME_TO_TICKS(flMaxTime); i++)
+	int i = 0, iLowestPriority = 3, iEndTick = 0; // time to point valid, end in some ticks
+	for (;i < TIME_TO_TICKS(flMaxTime); i++)
 	{
 		if (bSimulate)
 		{
@@ -428,13 +428,13 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		F::MoveSim.Restore(storage);
 
 	if (iLowestPriority != 3 &&
-		target.m_TargetType != ETargetType::PLAYER ||
-		target.m_TargetType == ETargetType::PLAYER && bSimulate) // don't attempt to aim at players when movesim fails
+		(target.m_TargetType != ETargetType::PLAYER ||
+		target.m_TargetType == ETargetType::PLAYER && bSimulate)) // don't attempt to aim at players when movesim fails
 	{
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
 		{
-			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos);
+			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + TICKS_TO_TIME(i));
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
@@ -467,7 +467,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				Vec3 matrixOrigin;
 				Math::GetMatrixOrigin(matrix, matrixOrigin);
 
-				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime, Colors::HitboxEdge, Colors::HitboxFace });
+				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + TICKS_TO_TIME(i), Colors::HitboxEdge, Colors::HitboxFace });
 			}
 		}
 		return true;
@@ -697,13 +697,14 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 
 		if (G::IsAttacking)
 		{
-			if (Vars::Visuals::SimLine.Value)
+			if (Vars::Visuals::SimLines.Value)
 			{
 				F::Visuals.ClearBulletLines();
 
 				G::LinesStorage.clear();
-				G::LinesStorage.push_back({ G::MoveLines, I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor });
-				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor });
+
+				G::LinesStorage.push_back({ G::MoveLines, Vars::Visuals::ClearLines.Value ? -1.f : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor});
+				G::LinesStorage.push_back({ G::ProjLines, Vars::Visuals::ClearLines.Value ? -1.f - F::Backtrack.GetReal() : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor});
 			}
 		}
 

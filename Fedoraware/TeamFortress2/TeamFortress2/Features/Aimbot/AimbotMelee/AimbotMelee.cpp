@@ -191,7 +191,7 @@ int CAimbotMelee::GetSwingTime(CBaseCombatWeapon* pWeapon)
 // to do: warp to
 void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, std::vector<Target_t> targets, 
 								   Vec3& vEyePos, std::unordered_map<CBaseEntity*, std::deque<TickRecord>>& pRecordMap,
-								   std::unordered_map<CBaseEntity*, std::vector<std::pair<Vec3, Vec3>>>& simLines)
+								   std::unordered_map<CBaseEntity*, std::deque<std::pair<Vec3, Vec3>>>& simLines)
 {
 	for (auto& target : targets)
 		pRecordMap[target.m_pEntity] = {};
@@ -483,7 +483,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;
-	std::unordered_map<CBaseEntity*, std::vector<std::pair<Vec3, Vec3>>> simLines;
+	std::unordered_map<CBaseEntity*, std::deque<std::pair<Vec3, Vec3>>> simLines;
 	SimulatePlayers(pLocal, pWeapon, targets, vEyePos, pRecordMap, simLines);
 
 	for (auto& target : targets)
@@ -511,14 +511,14 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			if (Vars::Visuals::SwingLines.Value)
 			{
 				G::LinesStorage.clear();
-				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime, Vars::Aimbot::Projectile::ProjectileColor });
-				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime, Vars::Aimbot::Projectile::PredictionColor}); // not working for whatever reason
+				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
+				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor}); // not working for whatever reason
 			}
 
 			if (Vars::Visuals::BulletTracer.Value)
 			{
 				F::Visuals.ClearBulletLines();
-				G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime, Colors::BulletTracer });
+				G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Colors::BulletTracer });
 			}
 			if (Vars::Aimbot::Global::ShowHitboxes.Value)
 				F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);

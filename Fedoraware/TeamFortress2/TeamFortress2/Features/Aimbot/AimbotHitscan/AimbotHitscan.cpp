@@ -771,7 +771,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 				if (Vars::Visuals::BulletTracer.Value)
 				{
 					F::Visuals.ClearBulletLines();
-					G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime, Colors::BulletTracer });
+					G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Colors::BulletTracer });
 				}
 				if (Vars::Aimbot::Global::ShowHitboxes.Value)
 				{

@@ -319,7 +319,7 @@ void CMisc::PingReducer()
 	{
 		int iTarget = cl_cmdrate->GetInt();
 		if (Vars::Misc::PingReducer.Value)
-		{ //[implement]
+		{
 			iTarget = Vars::Misc::PingTarget.Value;
 		}
 		if (iTarget == iLastCmdrate) return;
@@ -340,7 +340,7 @@ void CMisc::FakeInterp()
 
 	static Timer interpTimer{};
 	if (interpTimer.Run(500))
-	{ //[implement]
+	{
 		float flTarget = F::Backtrack.GetLerp();
 		if (flTarget == F::Backtrack.flWishInterp) return;
 		F::Backtrack.flWishInterp = flTarget;
@@ -766,7 +766,7 @@ const std::string SPAM_CH[] = {
 	"Cathook - ca(n)t stop me meow!"
 };
 
-bool CMisc::TauntControl(CUserCmd* pCmd) // [implement]
+bool CMisc::TauntControl(CUserCmd* pCmd)
 {
 	bool bReturn = true;
 	// Handle Taunt Slide

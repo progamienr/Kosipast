@@ -17,7 +17,7 @@ struct ProjectileInfo
 
 	float m_lifetime = 10.f;
 
-	std::vector<std::pair<Vec3, Vec3>> PredictionLines;
+	std::deque<std::pair<Vec3, Vec3>> PredictionLines;
 };
 
 class CProjectileSimulation

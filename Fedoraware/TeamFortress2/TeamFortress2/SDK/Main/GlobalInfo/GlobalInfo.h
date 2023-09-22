@@ -33,7 +33,7 @@ struct DrawBullet {
 };
 
 struct DrawLine {
-	std::vector<std::pair<Vec3, Vec3>> m_line;
+	std::deque<std::pair<Vec3, Vec3>> m_line;
 	float m_flTime;
 	Color_t m_color;
 };
@@ -103,8 +103,8 @@ namespace G
 	/* Prediction */
 	inline Vec3 PredictedPos = {};
 	inline Vec3 LinearPredLine = {};
-	inline std::vector<std::pair<Vec3, Vec3>> MoveLines;
-	inline std::vector<std::pair<Vec3, Vec3>> ProjLines;
+	inline std::deque<std::pair<Vec3, Vec3>> MoveLines;
+	inline std::deque<std::pair<Vec3, Vec3>> ProjLines;
 	inline std::vector<DrawLine> LinesStorage;
 
 	/* Boxes */

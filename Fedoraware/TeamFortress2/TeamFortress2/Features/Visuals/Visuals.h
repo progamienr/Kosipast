@@ -35,7 +35,7 @@ public:
 	void OverrideWorldTextures();
 	void PickupTimers();
 	void DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity);
-	void DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin);
+	void DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime);
 
 	void DrawOnScreenConditions(CBaseEntity* pLocal);
 	void DrawOnScreenPing(CBaseEntity* pLocal);
@@ -50,7 +50,7 @@ public:
 	void DrawBulletLines();
 	void ClearBulletLines();
 	void RevealBulletLines();
-	void DrawSimLine(std::vector<std::pair<Vec3, Vec3>> Line, Color_t Color, bool Separators = false);
+	void DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators = false);
 	void DrawSimLines();
 	void RevealSimLines();
 	void DrawBoxes();

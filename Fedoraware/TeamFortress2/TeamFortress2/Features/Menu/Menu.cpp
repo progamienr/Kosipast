@@ -1121,9 +1121,10 @@ void CMenu::MenuVisuals()
 					ColorPickerL("Bullet tracer colour", Colors::BulletTracer);
 
 					SectionTitle("Simulation");
-					WToggle("Enabled", &Vars::Visuals::SimLine.Value);
+					WToggle("Enabled", &Vars::Visuals::SimLines.Value);
 					ColorPickerL("Prediction Line Color", Vars::Aimbot::Projectile::PredictionColor);
 					ColorPickerL("Projectile Line Color", Vars::Aimbot::Projectile::ProjectileColor, 1);
+					WToggle("Clear Lines", &Vars::Visuals::ClearLines.Value);
 					WToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
 					if (Vars::Visuals::SimSeperators.Value)
 					{

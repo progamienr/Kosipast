@@ -452,7 +452,7 @@ public: //Everything else, lol.
 		return pCC ? ETFClassID(pCC->m_ClassID) : ETFClassID(0);
 	}
 
-	__inline CTFPlayerAnimState* GetAnimState() //[implement]
+	__inline CTFPlayerAnimState* GetAnimState()
 	{
 		return *reinterpret_cast<CTFPlayerAnimState**>(this + 0x1D88);
 	}

@@ -54,6 +54,22 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 			G::BulletTracerFix = true;
 			G::LocalSpectated = false;
 			F::Visuals.PruneBulletTracers();
+			for (auto& Line : G::LinesStorage)
+			{
+				if (Line.m_flTime < 0.f)
+				{
+					if (Line.m_line.empty())
+						continue;
+
+					if (Line.m_flTime < -1.f)
+					{
+						Line.m_flTime = std::min(-1.f, Line.m_flTime + I::GlobalVars->interval_per_tick);
+						continue;
+					}
+
+					Line.m_line.pop_front();
+				}
+			}
 			if (const auto& pLocal = g_EntityCache.GetLocal())
 			{
 				for (const auto& teammate : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))

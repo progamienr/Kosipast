@@ -36,18 +36,18 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity)
 		Vec3 matrixOrigin;
 		Math::GetMatrixOrigin(matrix, matrixOrigin);
 
-		G::BoxesStorage.push_back({ matrixOrigin, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime, Colors::HitboxEdge, Colors::HitboxFace });
+		G::BoxesStorage.push_back({ matrixOrigin, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + 5.f, Colors::HitboxEdge, Colors::HitboxFace });
 	}
 }
 
-void CVisuals::DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin)
+void CVisuals::DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime)
 {
 	G::BoxesStorage.clear();
 
-	G::BoxesStorage.push_back({ vOrigin, pTarget->GetCollideableMins(), pTarget->GetCollideableMaxs(), Vec3(), I::GlobalVars->curtime, Colors::HitboxEdge, Colors::HitboxFace});
+	G::BoxesStorage.push_back({ vOrigin, pTarget->GetCollideableMins(), pTarget->GetCollideableMaxs(), Vec3(), flTime, Colors::HitboxEdge, Colors::HitboxFace});
 }
 
-void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal) //[implement]
+void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
 {
 	if (!Vars::Visuals::DrawOnScreenConditions.Value) { return; }
 	if (!pLocal->IsAlive() || pLocal->IsAGhost()) { return; }
@@ -81,7 +81,7 @@ void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal) //[implement]
 	}
 }
 
-void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) { //[implement]
+void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 	if (!Vars::Visuals::DrawOnScreenPing.Value) { return; }
 
 	if (!pLocal || !pLocal->IsAlive()) { return; }
@@ -231,7 +231,7 @@ void CVisuals::FOV(CViewSetup* pView)
 	}
 }
 
-void CVisuals::ThirdPerson(CViewSetup* pView) //[implement]
+void CVisuals::ThirdPerson(CViewSetup* pView)
 {
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
@@ -324,7 +324,8 @@ void CVisuals::ProjectileTrace() // make it ignore other projectiles
 {
 	const auto& pLocal = g_EntityCache.GetLocal();
 	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (!pWeapon || !pLocal) return;
+	if (!pWeapon || !pLocal)
+		return;
 
 	ProjectileInfo projInfo = {};
 	if (!F::ProjSim.GetInfo(pLocal, pWeapon, I::EngineClient->GetViewAngles(), projInfo, true))
@@ -360,9 +361,7 @@ void CVisuals::ProjectileTrace() // make it ignore other projectiles
 		}
 	}
 
-	G::ProjLines = projInfo.PredictionLines;
-
-	DrawSimLine(G::ProjLines, Vars::Aimbot::Projectile::ProjectileColor);
+	DrawSimLine(projInfo.PredictionLines, Vars::Aimbot::Projectile::ProjectileColor);
 }
 
 void DebugLine(const char* title, const char* value, std::pair<int, int> offsets, Color_t clr = { 255, 255, 255, 255 })
@@ -436,7 +435,7 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 
 void CVisuals::DrawTickbaseText()
 {
-	if (Vars::Misc::CL_Move::Enabled.Value) //[implement]
+	if (Vars::Misc::CL_Move::Enabled.Value)
 	{
 		const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
 		if (!pLocal || !pLocal->IsAlive())
@@ -456,7 +455,7 @@ void CVisuals::DrawTickbaseText()
 }
 void CVisuals::DrawTickbaseBars()
 {
-	if (Vars::Misc::CL_Move::Enabled.Value) //[implement]
+	if (Vars::Misc::CL_Move::Enabled.Value)
 	{
 		const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
 		if (!pLocal || !pLocal->IsAlive())
@@ -518,7 +517,7 @@ void CVisuals::DrawBulletLines()
 	{
 		for (auto& Line : G::BulletsStorage)
 		{
-			if (Line.m_flTime + 5.f < I::GlobalVars->curtime) continue;
+			if (Line.m_flTime < I::GlobalVars->curtime) continue;
 
 			RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color, false);
 		}
@@ -533,7 +532,7 @@ void CVisuals::DrawBulletLines()
 	*/
 	for (auto& Line : G::BulletsStorage)
 	{
-		if (Line.m_flTime + 5.f < I::GlobalVars->curtime) continue;
+		if (Line.m_flTime < I::GlobalVars->curtime) continue;
 
 		RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color, false);
 	}
@@ -560,9 +559,9 @@ void CVisuals::RevealBulletLines()
 	}
 }
 
-void CVisuals::DrawSimLine(std::vector<std::pair<Vec3, Vec3>> Line, Color_t Color, bool Separators)
+void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators)
 {
-	if (!Separators)
+	if (!bSeparators)
 	{
 		for (size_t i = 1; i < Line.size(); i++)
 		{
@@ -591,7 +590,7 @@ void CVisuals::DrawSimLines()
 	{
 		for (auto& Line : G::LinesStorage)
 		{
-			if (Line.m_flTime + 5.f < I::GlobalVars->curtime) continue;
+			if (Line.m_flTime < I::GlobalVars->curtime) continue;
 
 			DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::SimSeperators.Value);
 		}
@@ -606,7 +605,8 @@ void CVisuals::DrawSimLines()
 	*/
 	for (auto& Line : G::LinesStorage)
 	{
-		if (Line.m_flTime + 5.f < I::GlobalVars->curtime) continue;
+		if (Line.m_flTime > 0.f && Line.m_flTime < I::GlobalVars->curtime)
+			continue;
 
 		DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::SimSeperators.Value);
 	}
@@ -629,7 +629,7 @@ void CVisuals::DrawBoxes()
 	{
 		for (auto& Box : G::BoxesStorage)
 		{
-			if (Box.m_flTime + 5.f < I::GlobalVars->curtime) continue;
+			if (Box.m_flTime < I::GlobalVars->curtime) continue;
 
 			RenderBox(Box.m_vecPos, Box.m_vecMins, Box.m_vecMaxs, Box.m_vecOrientation, Box.m_colorEdge, Box.m_colorFace);
 		}
@@ -644,7 +644,7 @@ void CVisuals::DrawBoxes()
 	*/
 	for (auto& Box : G::BoxesStorage)
 	{
-		if (Box.m_flTime + 5.f < I::GlobalVars->curtime) continue;
+		if (Box.m_flTime < I::GlobalVars->curtime) continue;
 
 		RenderBox(Box.m_vecPos, Box.m_vecMins, Box.m_vecMaxs, Box.m_vecOrientation, Box.m_colorEdge, Box.m_colorFace);
 	}

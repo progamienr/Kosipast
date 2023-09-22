@@ -476,7 +476,7 @@ void CGlowEffect::Render()
 			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
 			break;
 		}
-		case 1: { //[implement]
+		case 1: {
 			int side = int(float(Vars::Glow::Main::Scale.Value) / 2 + 0.5f);
 			int corner = int(float(Vars::Glow::Main::Scale.Value) / 2);
 			if (corner)

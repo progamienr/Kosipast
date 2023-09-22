@@ -1068,7 +1068,8 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::DoPostProcessing);
 		SAVE_VAR(Vars::Visuals::EquipRegionUnlock);
 		SAVE_VAR(Vars::Visuals::BulletTracer);
-		SAVE_VAR(Vars::Visuals::SimLine);
+		SAVE_VAR(Vars::Visuals::SimLines);
+		SAVE_VAR(Vars::Visuals::ClearLines);
 		SAVE_VAR(Vars::Visuals::SimSeperators);
 		SAVE_VAR(Vars::Visuals::SeperatorLength);
 		SAVE_VAR(Vars::Visuals::SeperatorSpacing);
@@ -1422,7 +1423,8 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 
 		LOAD_VAR(Vars::Visuals::BulletTracer);
 
-		LOAD_VAR(Vars::Visuals::SimLine);
+		LOAD_VAR(Vars::Visuals::SimLines);
+		LOAD_VAR(Vars::Visuals::ClearLines);
 		LOAD_VAR(Vars::Visuals::SimSeperators);
 		LOAD_VAR(Vars::Visuals::SeperatorLength);
 		LOAD_VAR(Vars::Visuals::SeperatorSpacing);

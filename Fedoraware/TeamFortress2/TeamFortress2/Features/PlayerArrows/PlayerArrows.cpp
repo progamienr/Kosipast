@@ -1,6 +1,6 @@
 #include "PlayerArrows.h"
 #include "../Vars.h"
-// [implement]
+
 bool CPlayerArrows::ShouldRun(CBaseEntity* pLocal)
 {
 	if (!Vars::Visuals::OutOfFOVArrows.Value || I::EngineVGui->IsGameUIVisible())

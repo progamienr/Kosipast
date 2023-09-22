@@ -69,7 +69,7 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 	return !Spectators.empty();
 }
 
-void CSpectatorList::Run() // [implement]
+void CSpectatorList::Run()
 {
 	if (!Vars::Visuals::SpectatorList.Value)
 	{
