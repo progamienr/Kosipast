@@ -435,50 +435,48 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 
 void CVisuals::DrawTickbaseText()
 {
-	if (Vars::Misc::CL_Move::Enabled.Value)
-	{
-		const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
-		if (!pLocal || !pLocal->IsAlive())
-			return;
-		
-		const int ticks = G::ShiftedTicks + G::ChokedTicks;
-		const DragBox_t DTBox = Vars::Misc::CL_Move::DTIndicator;
+	if (!Vars::Misc::CL_Move::Indicator.Value)
+		return;
 
-		const auto fontHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
-		g_Draw.String(FONT_INDICATORS, DTBox.c, DTBox.y + 15 - fontHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", ticks, Vars::Misc::CL_Move::DTTicks.Value);
-		if (G::WaitForShift || !G::ShiftedTicks || G::Recharging)
-		{
-			g_Draw.String(FONT_INDICATORS, DTBox.c, DTBox.y + fontHeight + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Not Ready");
-		}
+	const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
+	if (!pLocal || !pLocal->IsAlive())
+		return;
 		
+	const int ticks = G::ShiftedTicks + G::ChokedTicks;
+	const DragBox_t DTBox = Vars::Misc::CL_Move::DTIndicator;
+
+	const auto fontHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
+	g_Draw.String(FONT_INDICATORS, DTBox.c, DTBox.y + 15 - fontHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", ticks, Vars::Misc::CL_Move::DTTicks.Value);
+	if (G::WaitForShift || !G::ShiftedTicks || G::Recharging)
+	{
+		g_Draw.String(FONT_INDICATORS, DTBox.c, DTBox.y + fontHeight + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Not Ready");
 	}
 }
 void CVisuals::DrawTickbaseBars()
 {
-	if (Vars::Misc::CL_Move::Enabled.Value)
+	if (!Vars::Misc::CL_Move::Indicator.Value)
+		return;
+
+	const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
+	if (!pLocal || !pLocal->IsAlive())
+		return;
+
+	const int ticks = G::ShiftedTicks + G::ChokedTicks;
+	const DragBox_t DTBox = Vars::Misc::CL_Move::DTIndicator;
+	const float ratioCurrent = std::clamp(((float)ticks / (float)Vars::Misc::CL_Move::DTTicks.Value), 0.0f, 1.0f);
+
+	ImGui::GetBackgroundDrawList()->AddRectFilled(
+		ImVec2(DTBox.x, DTBox.y + 18), ImVec2(DTBox.x + 100, DTBox.y + 30),
+		ImColor(Colors::DtOutline.r, Colors::DtOutline.g, Colors::DtOutline.b, Colors::DtOutline.a), 10
+	);
+	if (ticks && ratioCurrent)
 	{
-		const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
-		if (!pLocal || !pLocal->IsAlive())
-			return;
-
-		const int ticks = G::ShiftedTicks + G::ChokedTicks;
-		const DragBox_t DTBox = Vars::Misc::CL_Move::DTIndicator;
-		const float ratioCurrent = std::clamp(((float)ticks / (float)Vars::Misc::CL_Move::DTTicks.Value), 0.0f, 1.0f);
-
+		ImGui::GetBackgroundDrawList()->PushClipRect(ImVec2(DTBox.x + 2, DTBox.y + 20), ImVec2(DTBox.x + 2 + 96 * ratioCurrent, DTBox.y + 28), true);
 		ImGui::GetBackgroundDrawList()->AddRectFilled(
-			ImVec2(DTBox.x, DTBox.y + 18), ImVec2(DTBox.x + 100, DTBox.y + 30),
-			ImColor(Colors::DtOutline.r, Colors::DtOutline.g, Colors::DtOutline.b, Colors::DtOutline.a), 10
+			ImVec2(DTBox.x + 2, DTBox.y + 20), ImVec2(DTBox.x + 98, DTBox.y + 28),
+			ImColor(Vars::Menu::MenuAccent.r, Vars::Menu::MenuAccent.g, Vars::Menu::MenuAccent.b, Vars::Menu::MenuAccent.a), 10
 		);
-		if (ticks && ratioCurrent)
-		{
-			ImGui::GetBackgroundDrawList()->PushClipRect(ImVec2(DTBox.x + 2, DTBox.y + 20), ImVec2(DTBox.x + 2 + 96 * ratioCurrent, DTBox.y + 28), true);
-			ImGui::GetBackgroundDrawList()->AddRectFilled(
-				ImVec2(DTBox.x + 2, DTBox.y + 20), ImVec2(DTBox.x + 98, DTBox.y + 28),
-				ImColor(Vars::Menu::MenuAccent.r, Vars::Menu::MenuAccent.g, Vars::Menu::MenuAccent.b, Vars::Menu::MenuAccent.a), 10
-			);
-			ImGui::GetBackgroundDrawList()->PopClipRect();
-		}
-		
+		ImGui::GetBackgroundDrawList()->PopClipRect();
 	}
 }
 

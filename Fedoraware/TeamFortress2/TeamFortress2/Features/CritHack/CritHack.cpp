@@ -26,13 +26,17 @@ bool CCritHack::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 {
 	if (pWeapon->GetItemDefIndex() == Soldier_m_TheBeggarsBazooka)
 	{
-		static bool bLoading = false;
+		static bool bLoading = false, bFiring = false;
 
-		if (pWeapon->GetClip1() > 0)
+		if (pWeapon->GetClip1() == 0)
+			bLoading = false,
+			bFiring = false;
+		else if (!bFiring)
 			bLoading = true;
 
-		if (!(pCmd->buttons & IN_ATTACK) && bLoading)
+		if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::WeaponCanAttack)
 		{
+			bFiring = true;
 			bLoading = false;
 			return true;
 		}

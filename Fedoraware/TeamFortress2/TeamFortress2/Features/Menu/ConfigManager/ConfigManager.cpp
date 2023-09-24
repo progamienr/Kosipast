@@ -875,9 +875,9 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		WriteTree.clear();
 
 		SAVE_OTHER(Vars::Menu::CheatName);
-		SAVE_OTHER(Vars::Menu::CheatPrefix);	
-		SAVE_VAR(Vars::Misc::CL_Move::DTBarStyle);
+		SAVE_OTHER(Vars::Menu::CheatPrefix);
 		SAVE_OTHER(Vars::Misc::CL_Move::DTIndicator);
+		SAVE_VAR(Vars::Misc::CL_Move::Indicator);
 		SAVE_VAR(Vars::Backtrack::BtChams::Enabled);
 		SAVE_VAR(Vars::Backtrack::BtChams::LastOnly);
 		SAVE_VAR(Vars::Backtrack::BtChams::EnemyOnly);
@@ -1109,8 +1109,6 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::RagdollEffects::RagdollForceUp);
 		SAVE_OTHER(Vars::Menu::MenuAccent);
 		SAVE_OTHER(Colors::OutlineESP);
-		SAVE_OTHER(Colors::DTBarIndicatorsCharged);
-		SAVE_OTHER(Colors::DTBarIndicatorsCharging);
 		SAVE_OTHER(Colors::GradientHealthBar);
 		SAVE_OTHER(Colors::GradientOverhealBar);
 		SAVE_OTHER(Colors::Cond);
@@ -1215,8 +1213,8 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 
 		LOAD_OTHER(Vars::Menu::CheatName);
 		LOAD_OTHER(Vars::Menu::CheatPrefix);
-		LOAD_VAR(Vars::Misc::CL_Move::DTBarStyle);
 		LOAD_OTHER(Vars::Misc::CL_Move::DTIndicator);
+		LOAD_VAR(Vars::Misc::CL_Move::Indicator);
 		LOAD_VAR(Vars::Backtrack::BtChams::Enabled);
 		LOAD_VAR(Vars::Backtrack::BtChams::LastOnly);
 		LOAD_VAR(Vars::Backtrack::BtChams::EnemyOnly);
@@ -1464,8 +1462,6 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_OTHER(Vars::Menu::MenuAccent);
 
 		LOAD_OTHER(Colors::OutlineESP);
-		LOAD_OTHER(Colors::DTBarIndicatorsCharged);
-		LOAD_OTHER(Colors::DTBarIndicatorsCharging);
 		LOAD_OTHER(Colors::GradientHealthBar);
 		LOAD_OTHER(Colors::GradientOverhealBar);
 		LOAD_OTHER(Colors::Cond);

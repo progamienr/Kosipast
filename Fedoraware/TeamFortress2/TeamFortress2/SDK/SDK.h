@@ -149,9 +149,7 @@ namespace Colors
 {
 	inline Color_t White =						{ 255, 255, 255, 255 };
 	inline Color_t OutlineESP =					{ 0, 0, 0, 255 };
-	inline Gradient_t DTBarIndicatorsCharged = { {106, 255, 131, 180}, {106, 255, 250, 180} };
-	inline Gradient_t DTBarIndicatorsCharging = { {255, 192, 81, 180}, {255, 134, 81, 180} };
-	inline Gradient_t GradientHealthBar =				{ { 255, 0, 0, 255 }, { 0, 202, 124, 255 } };
+	inline Gradient_t GradientHealthBar =		{ { 255, 0, 0, 255 }, { 0, 202, 124, 255 } };
 	inline Gradient_t GradientOverhealBar =		{ { 0, 202, 124, 255 }, { 167, 255, 237, 255 } };
 	inline Gradient_t UberchargeBar =			{ { 255, 255, 255, 255 }, { 255, 0, 228, 255 } };
 	inline Color_t Cond =						{ 254, 202, 87, 255 };
@@ -695,14 +693,17 @@ namespace Utils
 
 		if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
 		{
-			static bool bLoading = false;
+			static bool bLoading = false, bFiring = false;
 
-			if (pWeapon->GetClip1() > 0)
-			{
+			if (pWeapon->GetClip1() == 0)
+				bLoading = false,
+				bFiring = false;
+			else if (!bFiring)
 				bLoading = true;
-			}
 
-			if (!(pCmd->buttons & IN_ATTACK) && bLoading) {
+			if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::WeaponCanAttack)
+			{
+				bFiring = true;
 				bLoading = false;
 				return true;
 			}

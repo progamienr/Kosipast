@@ -33,7 +33,7 @@ void CMovementSimulation::FillVelocities()
 				const float flLastYaw = Math::VelocityToAngles(vRecord.m_vecVelocity).y;
 				const float flYaw = Math::VelocityToAngles(vLast.m_vecVelocity).y;
 				const float flDelta = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flLastYaw), DEG2RAD(flYaw)));
-				if (fabsf(flDelta) > 10.f)
+				if (fabsf(flDelta) > 45.f)
 					m_Velocities[iEntIndex].clear();
 
 				if (vRecord.m_bGrounded != vLast.m_bGrounded)
@@ -67,7 +67,6 @@ void CMovementSimulation::FillVelocities()
 	}
 }
 
-//const bool shouldPredict = playerStorage.m_pPlayer->OnSolid() ? Vars::Aimbot::Projectile::StrafePredictionGround.Value : Vars::Aimbot::Projectile::StrafePredictionAir.Value;
 bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& playerStorageOut, bool cancelStrafe)
 {
 	if (!pPlayer || !pPlayer->IsPlayer() || pPlayer->deadflag())
@@ -100,7 +99,6 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	m_bOldInPrediction = I::Prediction->m_bInPrediction;
 	m_bOldFirstTimePredicted = I::Prediction->m_bFirstTimePredicted;
 	m_flOldFrametime = I::GlobalVars->frametime;
-	bDontPredict = false;
 
 	//the hacks that make it work
 	{
@@ -114,28 +112,22 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			pPlayer->m_bInDuckJump() = false;
 		}
 
-		//if (pPlayer != g_EntityCache.GetLocal())
-		//{
-		//	pPlayer->m_hGroundEntity() = -1; //this is bs you don't need this
-		//} 
-
 		pPlayer->m_flModelScale() -= 0.03125f; //fixes issues with corners
 
 		if (pPlayer->m_fFlags() & FL_ONGROUND)
 			pPlayer->SetAbsOrigin(pPlayer->GetAbsOrigin() + Vector(0, 0, 0.03125f)); //to prevent getting stuck in the ground
 		else
-			pPlayer->m_hGroundEntity() = -1; // fix for velocity being set to 0 even if in air
+		{
+			const auto pLocal = g_EntityCache.GetLocal();
+			if (pLocal && pPlayer != pLocal)
+				pPlayer->m_hGroundEntity() = -1; // fix for velocity being set to 0 even if in air
+		}
 
 		//for some reason if xy vel is zero it doesn't predict
 		if (fabsf(pPlayer->m_vecVelocity().x) < 0.01f)
-		{
 			pPlayer->m_vecVelocity().x = 0.015f;
-		}
-
 		if (fabsf(pPlayer->m_vecVelocity().y) < 0.01f)
-		{
 			pPlayer->m_vecVelocity().y = 0.015f;
-		}
 	}
 
 	// setup move data
@@ -156,16 +148,20 @@ void CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	playerStorage.m_MoveData.m_bFirstRunOfFunctions = false;
 	playerStorage.m_MoveData.m_bGameCodeMovedPlayer = false;
 	playerStorage.m_MoveData.m_nPlayerHandle = reinterpret_cast<IHandleEntity*>(playerStorage.m_pPlayer)->GetRefEHandle();
-	playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();	//	m_vecBaseVelocity hits -1950?
+	playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();	//	m_vecBaseVelocity hits -1950? // sometimes seems completely wrong ?
 	if (playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND && !playerStorage.m_MoveData.m_vecVelocity.IsZero())
 		playerStorage.m_MoveData.m_vecVelocity.z = 0.f; // step fix
 	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->GetAbsOrigin();
 	playerStorage.m_MoveData.m_flMaxSpeed = playerStorage.m_pPlayer->TeamFortress_CalculateMaxSpeed();
+	if (playerStorage.m_pPlayer->InCond(TF_COND_SHIELD_CHARGE)) // demo charge fix for swing pred
+	{
+		const auto pLocal = g_EntityCache.GetLocal();
+		if (pLocal && playerStorage.m_pPlayer == pLocal)
+			playerStorage.m_MoveData.m_flMaxSpeed = playerStorage.m_pPlayer->TeamFortress_CalculateMaxSpeed(true);
+	}
 
 	if (playerStorage.m_PlayerData.m_fFlags & FL_DUCKING)
-	{
 		playerStorage.m_MoveData.m_flMaxSpeed *= 0.3333f;
-	}
 
 	playerStorage.m_MoveData.m_flClientMaxSpeed = playerStorage.m_MoveData.m_flMaxSpeed;
 
@@ -181,16 +177,16 @@ void CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 
 void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 {
-	if (!(playerStorage.m_pPlayer->OnSolid() ? Vars::Aimbot::Projectile::StrafePredictionGround.Value : Vars::Aimbot::Projectile::StrafePredictionAir.Value)) 
+	if (!(playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND/*playerStorage.m_pPlayer->OnSolid()*/ ? Vars::Aimbot::Projectile::StrafePredictionGround.Value : Vars::Aimbot::Projectile::StrafePredictionAir.Value))
 		return;
 
 	const int iEntIndex = playerStorage.m_pPlayer->GetIndex();
 
 	const auto& mVelocityRecords = m_Velocities[iEntIndex];
 
-	if (mVelocityRecords.size() < 4)
+	if (mVelocityRecords.size() < 6)
 		return;
-	const int iSamples = fmin(3, mVelocityRecords.size());
+	const int iSamples = fmin(5, mVelocityRecords.size());
 	if (!iSamples)
 		return;
 
@@ -239,27 +235,20 @@ void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 	}	//	ugly fix for sweaty pricks
 
 	if (Vars::Debug::DebugInfo.Value)
-	{
-		Utils::ConLog("MovementSimulation", tfm::format("flAverageYaw calculated to %f", flAverageYaw).c_str(), { 83, 255, 83, 255 });
-	}
+		Utils::ConLog("MovementSimulation", tfm::format("flAverageYaw calculated to %f from %i", flAverageYaw, iSamples).c_str(), { 83, 255, 83, 255 });
 
 	if (flAverageYaw == 0.f)
 		return;
 
+	if (playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND/*playerStorage.m_pPlayer->OnSolid()*/)
+		playerStorage.m_MoveData.m_vecViewAngles.y += 22.5f * (flAverageYaw > 0.f ? 1.f : -1.f); // fix for ground strafe delay
 	playerStorage.m_flAverageYaw = flAverageYaw;
 }
 
 void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 {
-	if (!playerStorage.m_pPlayer || bDontPredict)
-	{
+	if (!playerStorage.m_pPlayer || playerStorage.m_pPlayer->GetClassID() != ETFClassID::CTFPlayer)
 		return;
-	}
-
-	if (playerStorage.m_pPlayer->GetClassID() != ETFClassID::CTFPlayer)
-	{
-		return;
-	}
 
 	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecAbsOrigin, Math::GetRotatedPosition( playerStorage.m_MoveData.m_vecAbsOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value ) });
 
@@ -271,13 +260,10 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	float airCorrection = 0.f;
 	if (playerStorage.m_flAverageYaw)
 	{
-		float flYaw = playerStorage.m_flAverageYaw;
-		if (!playerStorage.m_pPlayer->OnSolid() && playerStorage.m_flAverageYaw)
+		if (!(playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND)/*!playerStorage.m_pPlayer->OnSolid()*/ && playerStorage.m_flAverageYaw)
 			airCorrection += 90.f * (playerStorage.m_flAverageYaw > 0.f ? 1.f : -1.f);
-		else
-			flYaw *= 1.5f; // dumb fix (?), ground strafing seems a bit slow
 
-		playerStorage.m_MoveData.m_vecViewAngles.y += flYaw + airCorrection;
+		playerStorage.m_MoveData.m_vecViewAngles.y += playerStorage.m_flAverageYaw + airCorrection;
 		//playerStorage.m_MoveData.m_vecViewAngles = { 0.0f, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity).y, 0.0f };
 	}
 

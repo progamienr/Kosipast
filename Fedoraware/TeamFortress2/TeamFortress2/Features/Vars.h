@@ -113,6 +113,8 @@ namespace Vars
 			inline CVar<bool> StrafePredictionAir{ false };
 			inline CVar<int> StrafePredictionMaxDistance{ 1000 };
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
+			inline CVar<float> LatOff{ 0.f };
+			inline CVar<float> PhyOff{ 0.f };
 		}
 
 		namespace Melee
@@ -631,6 +633,8 @@ namespace Vars
 		namespace CL_Move
 		{
 			inline CVar<bool> Enabled{ false };
+			inline CVar<bool> Indicator{ false };
+			inline DragBox_t DTIndicator{ g_ScreenSize.c, g_ScreenSize.c };
 			inline CVar<bool> Doubletap{ false };
 			inline CVar<bool> SafeTick{ false };
 			inline CVar<bool> SafeTickAirOverride{ false };
@@ -652,8 +656,6 @@ namespace Vars
 			inline CVar<bool> AutoRecharge{ false }; //H
 			inline CVar<bool> AntiWarp{ false }; //H
 			inline CVar<int> DTMode{ 0 }; // 0 - On Key, 1 - Always DT, 2 - Disable on key, 3 - Disabled
-			inline CVar<int> DTBarStyle{ 3 };
-			inline DragBox_t DTIndicator{ g_ScreenSize.c, g_ScreenSize.c };
 			inline CVar<int> DTTicks{ 21 };
 			inline CVar<bool> WaitForDT{ false };
 			inline CVar<bool> Fakelag{ false };

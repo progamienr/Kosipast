@@ -216,20 +216,22 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 
 		if (!bFail)
 		{
-			for (int i = 0; i < iTicks; i++) {
+			for (int i = 0; i < iTicks; i++) // intended for plocal to collide with targets but doesn't seem to always work
+			{
 				F::MoveSim.RunTick(localStorage);
 				for (auto& target : targets)
 				{
 					F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
+					target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
+
 					pRecordMap[target.m_pEntity].push_front({
 						target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
 						I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
 						I::GlobalVars->tickcount + i + 1,
 						false,
 						BoneMatrixes{},
-						targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin
+						target.m_pEntity->GetAbsOrigin()
 					});
-					target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
 				}
 			}
 			vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->GetViewOffset();
@@ -315,10 +317,8 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 			pRecords = *records;
 	}
 
-	bool targetLock = false;
 	if (!newRecords.empty())
 	{
-		targetLock = true;
 		for (TickRecord& pTick : newRecords)
 		{
 			pRecords.pop_back(); pRecords.push_front({ pTick.flSimTime, pTick.flCreateTime, pTick.iTickCount, false, *reinterpret_cast<BoneMatrixes*>(&bones), pTick.vOrigin });
@@ -385,9 +385,6 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 
 		if (bReturn)
 		{
-			if (targetLock)
-				lockedTarget = target;
-
 			if (target.m_TargetType == ETargetType::PLAYER)
 			{
 				target.pTick = &pTick;
@@ -505,15 +502,11 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 
 		if (G::IsAttacking && target.pTick)
 		{
+			if (!pRecordMap[target.m_pEntity].empty() && !lockedTarget.m_pEntity)
+				lockedTarget = target;
+
 			if (target.ShouldBacktrack)
 				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
-
-			if (Vars::Visuals::SwingLines.Value)
-			{
-				G::LinesStorage.clear();
-				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
-				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor}); // not working for whatever reason
-			}
 
 			if (Vars::Visuals::BulletTracer.Value)
 			{
@@ -522,6 +515,12 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			}
 			if (Vars::Aimbot::Global::ShowHitboxes.Value)
 				F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
+		}
+		if ((G::IsAttacking || !Vars::Aimbot::Global::AutoShoot.Value) && target.pTick && Vars::Visuals::SwingLines.Value)
+		{
+			G::LinesStorage.clear();
+			G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
+			G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor }); // not working for whatever reason
 		}
 
 		Aim(pCmd, target.m_vAngleTo);

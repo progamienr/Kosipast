@@ -356,6 +356,8 @@ void CMenu::MenuAimbot()
 				WSlider("Smooth factor###ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("How smooth the aimbot should be");
 			WSlider("Prediction Time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, "%.1f");
 			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
+			WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
+			WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
 
 			SectionTitle("Preferences");
 			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value); HelpMarker("Will charge your loose cannon in order to double donk");
@@ -1210,15 +1212,6 @@ void CMenu::MenuVisuals()
 					WSlider("VM Off Z", &Vars::Visuals::VMOffsets.z, -45.f, 45.f);
 					WSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
 
-					SectionTitle("DT Indicator");
-					WCombo("DT indicator style", &Vars::Misc::CL_Move::DTBarStyle.Value, { "Off", "Default", "Nitro", "Rijin", "SEOwned", "Numeric", "DeadFlag" }); HelpMarker("What style the bar should draw in.");
-					Text("Charging Gradient");
-					ColorPickerL("DT charging right", Colors::DTBarIndicatorsCharging.endColour);
-					ColorPickerL("DT charging left", Colors::DTBarIndicatorsCharging.startColour, 1);
-					Text("Charged Gradient");
-					ColorPickerL("DT charged right", Colors::DTBarIndicatorsCharged.endColour);
-					ColorPickerL("DT charged left", Colors::DTBarIndicatorsCharged.startColour, 1);
-
 					SectionTitle("Ragdolls");
 					WToggle("No Gibs", &Vars::Visuals::RagdollEffects::NoGib.Value);
 					WToggle("Enemy only###RagdollEnemyOnly", &Vars::Visuals::RagdollEffects::EnemyOnly.Value); HelpMarker("Only runs it on enemies");
@@ -1363,6 +1356,7 @@ void CMenu::MenuHvH()
 			/* Section: Tickbase Exploits */
 			SectionTitle("Tickbase Exploits");
 			WToggle("Enable Tickbase Exploits", &Vars::Misc::CL_Move::Enabled.Value); HelpMarker("Allows tickbase shifting");
+			WToggle("Indicator", &Vars::Misc::CL_Move::Indicator.Value);
 			ColorPickerL("DT bar outline colour", Colors::DtOutline);
 			InputKeybind("Recharge key", Vars::Misc::CL_Move::RechargeKey); HelpMarker("Recharges ticks for shifting");
 			InputKeybind("Teleport key", Vars::Misc::CL_Move::TeleportKey); HelpMarker("Shifts ticks to warp");
@@ -2212,7 +2206,7 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	if (IsOpen)
 	{
 		DrawMenu();
-		AddDraggable("Doubletap", Vars::Misc::CL_Move::DTIndicator, Vars::Misc::CL_Move::DTBarStyle.Value);
+		AddDraggable("Doubletap", Vars::Misc::CL_Move::DTIndicator, Vars::Misc::CL_Move::Indicator.Value);
 		AddDraggable("Crithack", Vars::CritHack::IndicatorPos, Vars::CritHack::Indicators.Value);
 		AddDraggable("Spectators", Vars::Visuals::SpectatorPos, Vars::Visuals::SpectatorList.Value);
 		AddDraggable("Conditions", Vars::Visuals::OnScreenConditions, Vars::Visuals::DrawOnScreenConditions.Value);

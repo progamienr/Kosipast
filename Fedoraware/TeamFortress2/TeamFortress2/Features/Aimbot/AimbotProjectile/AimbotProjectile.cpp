@@ -206,8 +206,8 @@ int CAimbotProjectile::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBase
 bool CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTargetPos, const float& flVelocity, const float& flGravity, Solution_t& out)
 {
 	const Vec3 vDelta = vTargetPos - vLocalPos;
-	const float flHyp = sqrt(vDelta.x * vDelta.x + vDelta.y * vDelta.y);
-	const float flDist = vDelta.z;
+	const float flDist = vDelta.Length2D();
+	const float flHeight = vDelta.z;
 	const float flGrav = g_ConVars.sv_gravity->GetFloat() * flGravity;
 
 	if (!flGrav)
@@ -218,15 +218,13 @@ bool CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTarge
 	}
 	else
 	{ // arch
-		const float fRoot = pow(flVelocity, 4) - flGrav * (flGrav * pow(flHyp, 2) + 2.f * flDist * pow(flVelocity, 2));
+		const float fRoot = pow(flVelocity, 4) - flGrav * (flGrav * pow(flDist, 2) + 2.f * flHeight * pow(flVelocity, 2));
 		if (fRoot < 0.f)
-		{
 			return false;
-		}
-		out.m_flPitch = atan((pow(flVelocity, 2) - sqrt(fRoot)) / (flGrav * flHyp));
+		out.m_flPitch = atan((pow(flVelocity, 2) - sqrt(fRoot)) / (flGrav * flDist));
 		out.m_flYaw = atan2(vDelta.y, vDelta.x);
 	}
-	out.m_flTime = flHyp / (cos(out.m_flPitch) * flVelocity);
+	out.m_flTime = flDist / (cos(out.m_flPitch) * flVelocity);
 
 	return true;
 }
@@ -313,7 +311,10 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 			flMaxTime = projInfo.m_lifetime;
 	}
 	//const int iLatency = TIME_TO_TICKS(F::Backtrack.GetReal());
-	const float flLatency = iNetChan->GetLatency(FLOW_OUTGOING) + I::GlobalVars->interval_per_tick;
+	//const float flLatency = iNetChan->GetLatency(FLOW_OUTGOING) + I::GlobalVars->interval_per_tick;
+	const float flLatency = iNetChan->GetLatency(FLOW_OUTGOING);
+	const float latOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::LatOff.Value;
+	const float phyOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::PhyOff.Value;
 
 	switch (pWeapon->GetWeaponID()) // fix for this use
 	{
@@ -405,13 +406,13 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 			if (!iEndTick)
 			{
-				if (solution.m_flTime + flLatency > TICKS_TO_TIME(i)) // TICKS_TO_TIME(flLatency)
+				if (solution.m_flTime + flLatency + latOff > TICKS_TO_TIME(i)) // TICKS_TO_TIME(flLatency)
 					continue;
 				iEndTick = i + vPoints.size() - 1;
 			}
 
 			const Vec3 vAngles = Aim(G::CurrentUserCmd->viewangles, { -RAD2DEG(solution.m_flPitch), RAD2DEG(solution.m_flYaw), 0.0f });
-			if (TestAngle(pLocal, pWeapon, target, vOriginalPos, vTargetPos, vAngles, i - TIME_TO_TICKS(flLatency)))
+			if (TestAngle(pLocal, pWeapon, target, vOriginalPos, vTargetPos, vAngles, i - TIME_TO_TICKS(flLatency + phyOff)))
 			{
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
@@ -482,15 +483,17 @@ bool CAimbotProjectile::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWe
 {
 	if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
 	{
-		static bool bLoading = false;
+		static bool bLoading = false, bFiring = false;
 
-		if (pWeapon->GetClip1() > 0)
-		{
+		if (pWeapon->GetClip1() == 0)
+			bLoading = false,
+			bFiring = false;
+		else if (!bFiring)
 			bLoading = true;
-		}
 
-		if (!(pCmd->buttons & IN_ATTACK) && bLoading)
+		if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::WeaponCanAttack)
 		{
+			bFiring = true;
 			bLoading = false;
 			return true;
 		}
@@ -607,7 +610,9 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	}
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
-	if (!bShouldAim)
+	if (!bShouldAim &&
+		(Vars::Aimbot::Global::AutoShoot.Value ||
+		!Vars::Aimbot::Global::AutoShoot.Value && !bLastTickAttack))
 	{
 		Exit(pLocal, pWeapon, pCmd); return;
 	}
@@ -620,8 +625,8 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		Exit(pLocal, pWeapon, pCmd); return;
 	}
 
-	if (nWeaponID == TF_WEAPON_COMPOUND_BOW ||
-		nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER || nWeaponID == TF_WEAPON_CANNON)
+	if (bShouldAim && (nWeaponID == TF_WEAPON_COMPOUND_BOW ||
+		nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER || nWeaponID == TF_WEAPON_CANNON))
 		pCmd->buttons |= IN_ATTACK;
 
 	for (auto& target : targets)
@@ -695,17 +700,14 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 
 		G::IsAttacking = IsAttacking(pCmd, pWeapon);
 
-		if (G::IsAttacking)
+		if ((G::IsAttacking || !Vars::Aimbot::Global::AutoShoot.Value) && Vars::Visuals::SimLines.Value)
 		{
-			if (Vars::Visuals::SimLines.Value)
-			{
-				F::Visuals.ClearBulletLines();
+			F::Visuals.ClearBulletLines();
+			G::LinesStorage.clear();
 
-				G::LinesStorage.clear();
-
-				G::LinesStorage.push_back({ G::MoveLines, Vars::Visuals::ClearLines.Value ? -1.f : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor});
+			G::LinesStorage.push_back({ G::MoveLines, Vars::Visuals::ClearLines.Value ? -1.f : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor});
+			if (G::IsAttacking)
 				G::LinesStorage.push_back({ G::ProjLines, Vars::Visuals::ClearLines.Value ? -1.f - F::Backtrack.GetReal() : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor});
-			}
 		}
 
 		Aim(pCmd, target.m_vAngleTo);
@@ -722,7 +724,7 @@ void CAimbotProjectile::Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CU
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if ((bCancel || bEarly) && bLastTickAttack) // add user toggle to control whether to cancel or not
+	if ((bCancel || bEarly) && bLastTickAttack && !(pCmd->buttons & IN_ATTACK) && Vars::Aimbot::Global::AutoShoot.Value) // add user toggle to control whether to cancel or not
 	{
 		switch (pWeapon->GetWeaponID())
 		{
