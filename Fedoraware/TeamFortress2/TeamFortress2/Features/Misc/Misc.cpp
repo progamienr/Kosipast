@@ -198,7 +198,9 @@ void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	static bool pos = true;
 	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
-	if (G::IsAttacking || G::ShouldShift || G::AntiAim.second) { return; }
+	if (G::IsAttacking || G::ShouldShift || G::AntiAim.second || !Vars::AntiHack::AntiAim::Active.Value)
+		return;
+
 	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && Vars::AntiHack::AntiAim::LegJitter.Value/* && I::GlobalVars->tickcount % 2*/)
 	{
 		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;

@@ -113,8 +113,9 @@ namespace Vars
 			inline CVar<bool> StrafePredictionAir{ false };
 			inline CVar<int> StrafePredictionMaxDistance{ 1000 };
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
-			inline CVar<float> LatOff{ 0.f };
-			inline CVar<float> PhyOff{ 0.f };
+			inline CVar<float> LatOff{ 0.f }; // debug
+			inline CVar<float> PhyOff{ 0.f }; // debug
+			inline CVar<float> CustomDrag{ 0.f }; // debug
 		}
 
 		namespace Melee
@@ -514,8 +515,8 @@ namespace Vars
 			}
 			namespace Tracers
 			{
-				inline CVar<int> ParticleTracer{ 2 };
-				inline CVar<int> ParticleTracerCrits{ 2 };
+				inline CVar<int> ParticleTracer{ 0 };
+				inline CVar<int> ParticleTracerCrits{ 0 };
 				inline std::string ParticleName = "merasmus_zap_beam01"; // dont save these as vars its pointless
 				inline std::string ParticleNameCrits = "merasmus_zap_beam01";
 			}

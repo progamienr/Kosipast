@@ -173,6 +173,65 @@ bool CanSplash(CBaseCombatWeapon* pWeapon)
 	return false;
 }
 
+bool IsPipe(CBaseCombatWeapon* pWeapon)
+{
+	switch (pWeapon->GetWeaponID())
+	{
+	case TF_WEAPON_GRENADELAUNCHER:
+	case TF_WEAPON_PIPEBOMBLAUNCHER:
+	case TF_WEAPON_STICKBOMB:
+	case TF_WEAPON_STICKY_BALL_LAUNCHER: return true;
+	}
+
+	return false;
+}
+
+float SolveProjectileSpeed(ProjectileInfo projInfo, CBaseCombatWeapon* pWeapon, const Vec3& vLocalPos, const Vec3& vTargetPos)
+{
+	const float flVelocity = projInfo.m_velocity;
+	const float flGrav = 800.0f * projInfo.m_gravity;
+	if (!IsPipe(pWeapon) || !flGrav)
+		return flVelocity;
+
+	const Vec3 vDelta = vTargetPos - vLocalPos;
+	const float flDist = vDelta.Length2D();
+
+	const float flRoot = pow(flVelocity, 4) - flGrav * (flGrav * pow(flDist, 2) + 2.f * vDelta.z * pow(flVelocity, 2));
+	if (flRoot < 0.f)
+		return 0.f;
+
+	const float flPitch = atan((pow(flVelocity, 2) - sqrt(flRoot)) / (flGrav * flDist));
+	const float flTime = flDist / (cos(flPitch) * flVelocity);
+
+	float flDrag = 1.f;
+	switch (pWeapon->GetItemDefIndex())
+	{
+	case Demoman_m_GrenadeLauncher:
+	case Demoman_m_GrenadeLauncherR:
+	case Demoman_m_FestiveGrenadeLauncher:
+	case Demoman_m_TheIronBomber:
+	case Demoman_m_Autumn:
+	case Demoman_m_MacabreWeb:
+	case Demoman_m_Rainbow:
+	case Demoman_m_SweetDreams:
+	case Demoman_m_CoffinNail:
+	case Demoman_m_TopShelf:
+	case Demoman_m_Warhawk:
+	case Demoman_m_ButcherBird: flDrag = 0.12f; break;
+	case Demoman_m_TheLochnLoad: flDrag = 0.07f;  break;
+	case Demoman_m_TheLooseCannon: flDrag = 0.49f; break;
+	case Demoman_s_StickybombLauncher:
+	case Demoman_s_StickybombLauncherR:
+	case Demoman_s_FestiveStickybombLauncher:
+	case Demoman_s_TheQuickiebombLauncher:
+	case Demoman_s_TheScottishResistance: flDrag = 0.2f; break;
+	}
+	if (Vars::Aimbot::Projectile::CustomDrag.Value)
+		flDrag = Vars::Aimbot::Projectile::CustomDrag.Value;
+
+	return flVelocity - (flVelocity * flTime) * flDrag;
+}
+
 int CAimbotProjectile::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& target)
 {
 	bool bHeadshot = target.m_TargetType == ETargetType::PLAYER && pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW;
@@ -203,11 +262,10 @@ int CAimbotProjectile::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBase
 	return 3;
 };
 
-bool CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTargetPos, const float& flVelocity, const float& flGravity, Solution_t& out)
+bool CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTargetPos, const float flVelocity, const float flGravity, Solution_t& out)
 {
 	const Vec3 vDelta = vTargetPos - vLocalPos;
 	const float flDist = vDelta.Length2D();
-	const float flHeight = vDelta.z;
 	const float flGrav = g_ConVars.sv_gravity->GetFloat() * flGravity;
 
 	if (!flGrav)
@@ -218,10 +276,10 @@ bool CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTarge
 	}
 	else
 	{ // arch
-		const float fRoot = pow(flVelocity, 4) - flGrav * (flGrav * pow(flDist, 2) + 2.f * flHeight * pow(flVelocity, 2));
-		if (fRoot < 0.f)
+		const float flRoot = pow(flVelocity, 4) - flGrav * (flGrav * pow(flDist, 2) + 2.f * vDelta.z * pow(flVelocity, 2));
+		if (flRoot < 0.f)
 			return false;
-		out.m_flPitch = atan((pow(flVelocity, 2) - sqrt(fRoot)) / (flGrav * flDist));
+		out.m_flPitch = atan((pow(flVelocity, 2) - sqrt(flRoot)) / (flGrav * flDist));
 		out.m_flYaw = atan2(vDelta.y, vDelta.x);
 	}
 	out.m_flTime = flDist / (cos(out.m_flPitch) * flVelocity);
@@ -316,18 +374,20 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	const float latOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::LatOff.Value;
 	const float phyOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::PhyOff.Value;
 
+	/*
 	switch (pWeapon->GetWeaponID()) // fix for this use
 	{
 	case TF_WEAPON_PARTICLE_CANNON: // temp
 		Utils::ConLog("Particle cannon", " ", {255, 255, 255, 255}); break;
 	case TF_WEAPON_CANNON:
-	case TF_WEAPON_GRENADELAUNCHER: projInfo.m_gravity = 0.75f; break;
+	case TF_WEAPON_GRENADELAUNCHER: projInfo.m_gravity = 0.5f; break;
 	case TF_WEAPON_PIPEBOMBLAUNCHER: {
 		float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
 		projInfo.m_gravity = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.5f, 0.1f);
 		break;
 	}
 	}
+	*/
 
 	std::vector<Vec3> vPoints = {};
 	{
@@ -366,29 +426,6 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 			F::MoveSim.RunTick(storage);
 			vTargetPos = storage.m_MoveData.m_vecAbsOrigin;
 		}
-		
-		// demoman angle offset
-		switch (pWeapon->GetWeaponID())
-		{
-		case TF_WEAPON_GRENADELAUNCHER:
-		case TF_WEAPON_PIPEBOMBLAUNCHER:
-		case TF_WEAPON_STICKBOMB:
-		case TF_WEAPON_STICKY_BALL_LAUNCHER:
-		if (bSimulate || !bSimulate && !i)
-		{
-			Vec3 vDelta = (vTargetPos - vEyePos);
-			const float fRange = Math::VectorNormalize(vDelta);
-			const float fElevationAngle = std::min(fRange * (G::CurItemDefIndex == Demoman_m_TheLochnLoad ? 0.0075f : 0.013f), 45.f);
-			// if our angle is above 45 degree will we even hit them? shouldn't we just return???
-
-			float sin = 0.0f, cos = 0.0f;
-			Math::SinCos((fElevationAngle * PI / 180.0f), &sin, &cos);
-
-			const float fElevation = (fRange * (sin / cos));
-			vOffset.z = (cos > 0.0f ? fElevation : 0.0f);
-		}
-		break;
-		}
 
 		// actually test points
 		Solution_t solution;
@@ -401,7 +438,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 			if (iPriority == iLowestPriority || !iLowestPriority)
 				break;
 
-			if (!CalculateAngle(vEyePos, vTargetPos + vOffset + vPoint, projInfo.m_velocity, projInfo.m_gravity, solution))
+			if (!CalculateAngle(vEyePos, vTargetPos + vOffset + vPoint, SolveProjectileSpeed(projInfo, pWeapon, vEyePos, vTargetPos), projInfo.m_gravity, solution))
 				continue;
 
 			if (!iEndTick)
@@ -411,7 +448,18 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				iEndTick = i + vPoints.size() - 1;
 			}
 
-			const Vec3 vAngles = Aim(G::CurrentUserCmd->viewangles, { -RAD2DEG(solution.m_flPitch), RAD2DEG(solution.m_flYaw), 0.0f });
+			Vec3 vAngles = Aim(G::CurrentUserCmd->viewangles, { -RAD2DEG(solution.m_flPitch), RAD2DEG(solution.m_flYaw), 0.0f });
+			if (IsPipe(pWeapon)) // demoman offset fix
+			{
+				Vec3 forward = {}, up = {};
+				Math::AngleVectors(Vec3(vAngles.x, vAngles.y, 0.f), &forward, nullptr, &up);
+
+				Vec3 velocity = ((forward * projInfo.m_velocity) - (up * 200.f)), angle = {};
+				Math::VectorAngles(velocity, angle);
+
+				vAngles.x = angle.x;
+			}
+
 			if (TestAngle(pLocal, pWeapon, target, vOriginalPos, vTargetPos, vAngles, i - TIME_TO_TICKS(flLatency + phyOff)))
 			{
 				iLowestPriority = iPriority;
@@ -724,7 +772,7 @@ void CAimbotProjectile::Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CU
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if ((bCancel || bEarly) && bLastTickAttack && !(pCmd->buttons & IN_ATTACK) && Vars::Aimbot::Global::AutoShoot.Value) // add user toggle to control whether to cancel or not
+	if ((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && bLastTickAttack && Vars::Aimbot::Global::AutoShoot.Value) // add user toggle to control whether to cancel or not
 	{
 		switch (pWeapon->GetWeaponID())
 		{

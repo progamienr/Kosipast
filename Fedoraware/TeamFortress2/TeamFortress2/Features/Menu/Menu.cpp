@@ -358,6 +358,7 @@ void CMenu::MenuAimbot()
 			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
 			WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
 			WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
+			WSlider("drag", &Vars::Aimbot::Projectile::CustomDrag.Value, 0.f, 1.f, "%.2f");
 
 			SectionTitle("Preferences");
 			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value); HelpMarker("Will charge your loose cannon in order to double donk");
@@ -1093,8 +1094,8 @@ void CMenu::MenuVisuals()
 					WToggle("Viewmodel sway", &Vars::Visuals::ViewmodelSway.Value);
 					if (Vars::Visuals::ViewmodelSway.Value)
 					{
-						WSlider("Viewmodel Sway Scale", &Vars::Visuals::ViewmodelSwayScale.Value, 0.01, 5, "%.2f");
-						WSlider("Viewmodel Sway Interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01, 1, "%.2f"); HelpMarker("How long until the viewmodel returns to its original position (in seconds)");
+						WSlider("Viewmodel Sway Scale", &Vars::Visuals::ViewmodelSwayScale.Value, 0.01, 5, "%.1f");
+						WSlider("Viewmodel Sway Interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01, 1, "%.1f"); HelpMarker("How long until the viewmodel returns to its original position (in seconds)");
 					}
 					{
 						static std::vector flagNames{ "Text", "Console", "Chat", "Party", "Verbose" };
@@ -1150,7 +1151,7 @@ void CMenu::MenuVisuals()
 						}
 						if (Vars::Visuals::Particles::Colors::Type.Value == 2)
 						{
-							WSlider("Rainbow Speed", &Vars::Visuals::Particles::Colors::RainbowSpeed.Value, 0, 5, "%.2f");
+							WSlider("Rainbow Speed", &Vars::Visuals::Particles::Colors::RainbowSpeed.Value, 0, 5, "%.1f");
 						}
 						WCombo("Particle tracer", &Vars::Visuals::Particles::Tracers::ParticleTracer.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
 						if (Vars::Visuals::Particles::Tracers::ParticleTracer.Value == 8)
@@ -1222,13 +1223,13 @@ void CMenu::MenuVisuals()
 					WToggle("Use Separate Vector Forces", &Vars::Visuals::RagdollEffects::SeparateVectors.Value);
 					if (Vars::Visuals::RagdollEffects::SeparateVectors.Value)
 					{
-						WSlider("Ragdoll Force Forwards", &Vars::Visuals::RagdollEffects::RagdollForceForwards.Value, -10.f, 10.f, "%.2f"); HelpMarker("Multipler for the force applied to a ragdoll's forward vector, where positive is backwards and negative is forwards.");
-						WSlider("Ragdoll Force Sideways", &Vars::Visuals::RagdollEffects::RagdollForceSides.Value, -10.f, 10.f, "%.2f"); HelpMarker("Multipler for the force applied to a ragdoll's side vector, where negative is right and positive is left.");
-						WSlider("Ragdoll Force Up", &Vars::Visuals::RagdollEffects::RagdollForceUp.Value, -10.f, 10.f, "%.2f"); HelpMarker("Multipler for the force applied to a ragdoll's up vector, where negative is up and positive is down.");
+						WSlider("Ragdoll Force Forwards", &Vars::Visuals::RagdollEffects::RagdollForceForwards.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll's forward vector, where positive is backwards and negative is forwards.");
+						WSlider("Ragdoll Force Sideways", &Vars::Visuals::RagdollEffects::RagdollForceSides.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll's side vector, where negative is right and positive is left.");
+						WSlider("Ragdoll Force Up", &Vars::Visuals::RagdollEffects::RagdollForceUp.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll's up vector, where negative is up and positive is down.");
 					}
 					else
 					{
-						WSlider("Ragdoll Force", &Vars::Visuals::RagdollEffects::RagdollForce.Value, -10.f, 10.f, "%.2f"); HelpMarker("Multipler for the force applied to a ragdoll.");
+						WSlider("Ragdoll Force", &Vars::Visuals::RagdollEffects::RagdollForce.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll.");
 					}
 				} EndChild();
 
@@ -1430,7 +1431,7 @@ void CMenu::MenuHvH()
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 1))
 				{
-					WSlider("Analytical High Score Mult", &Vars::Misc::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, "%.2f"); HelpMarker("How much to multiply the average score to treat as a max score per second.");
+					WSlider("Analytical High Score Mult", &Vars::Misc::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, "%.1f"); HelpMarker("How much to multiply the average score to treat as a max score per second.");
 				}
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 3 | 1 << 2))
@@ -1477,11 +1478,11 @@ void CMenu::MenuHvH()
 			WCombo("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Random", "Spin", "Edge", "On Hurt", "Custom", "Invert", "Jitter", "Jitter Random", "Jitter Flip", "Manual" }); HelpMarker("Which way to appear to look horizontally");
 			if (Vars::AntiHack::AntiAim::Pitch.Value == 9 || Vars::AntiHack::AntiAim::Pitch.Value == 10)
 			{
-				WSlider("Custom Real Pitch", &Vars::AntiHack::AntiAim::CustomRealPitch.Value, -89.f, 89.f, "%.1f", 0);
+				WSlider("Custom Real Pitch", &Vars::AntiHack::AntiAim::CustomRealPitch.Value, -90.f, 90.f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
 			}
 			if (Vars::AntiHack::AntiAim::Pitch.Value == 6 || Vars::AntiHack::AntiAim::YawFake.Value == 6 || Vars::AntiHack::AntiAim::YawReal.Value == 6)
 			{
-				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.1f", 0); HelpMarker("You spin me right 'round, baby, right 'round");
+				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.0f"); HelpMarker("You spin me right 'round, baby, right 'round");
 			}
 			if (Vars::AntiHack::AntiAim::Pitch.Value == 6 || Vars::AntiHack::AntiAim::YawFake.Value == 5 || Vars::AntiHack::AntiAim::YawReal.Value == 5)
 			{
@@ -1489,7 +1490,7 @@ void CMenu::MenuHvH()
 			}
 			if (Vars::AntiHack::AntiAim::BaseYawMode.Value != 1)
 			{
-				WSlider("Base Yaw Offset", &Vars::AntiHack::AntiAim::BaseYawOffset.Value, -180, 180);
+				WSlider("Base Yaw Offset", &Vars::AntiHack::AntiAim::BaseYawOffset.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
 			}
 			if (Vars::AntiHack::AntiAim::YawFake.Value == 10 || Vars::AntiHack::AntiAim::YawReal.Value == 10)
 			{
@@ -1501,17 +1502,17 @@ void CMenu::MenuHvH()
 			}
 			switch (Vars::AntiHack::AntiAim::YawFake.Value)
 			{
-				case 9: { WSlider("Custom fake yaw", &Vars::AntiHack::AntiAim::CustomFakeYaw.Value, -180, 180); break; }
+				case 9: { WSlider("Custom fake yaw", &Vars::AntiHack::AntiAim::CustomFakeYaw.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
 				case 11:
 				case 12:
-				case 13: { WSlider("Fake Jitter Amt", &Vars::AntiHack::AntiAim::FakeJitter.Value, -180, 180); break; }
+				case 13: { WSlider("Fake Jitter Amt", &Vars::AntiHack::AntiAim::FakeJitter.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
 			}
 			switch (Vars::AntiHack::AntiAim::YawReal.Value)
 			{
-				case 9: { WSlider("Custom Real yaw", &Vars::AntiHack::AntiAim::CustomRealYaw.Value, -180, 180); break; }
+				case 9: { WSlider("Custom Real yaw", &Vars::AntiHack::AntiAim::CustomRealYaw.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
 				case 11:
 				case 12:
-				case 13: { WSlider("Real Jitter Amt", &Vars::AntiHack::AntiAim::RealJitter.Value, -180, 180); break; }
+				case 13: { WSlider("Real Jitter Amt", &Vars::AntiHack::AntiAim::RealJitter.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
 			}
 			MultiCombo({ "AntiOverlap", "Jitter Legs", "HidePitchOnShot", "Anti-Backstab" }, { &Vars::AntiHack::AntiAim::AntiOverlap.Value, &Vars::AntiHack::AntiAim::LegJitter.Value, &Vars::AntiHack::AntiAim::InvalidShootPitch.Value, &Vars::AntiHack::AntiAim::AntiBackstab.Value }, "Misc.");
 

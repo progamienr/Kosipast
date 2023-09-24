@@ -152,8 +152,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		{
 			F::Aimbot.Run(pCmd);
 			F::Auto.Run(pCmd);
-			F::AntiAim.Run(pCmd, pSendPacket);
 			F::FakeLag.OnTick(pCmd, pSendPacket, nOldGroundEnt, nOldFlags);
+			F::AntiAim.Run(pCmd, pSendPacket);
 		}
 		F::EnginePrediction.End(pCmd);
 
@@ -202,7 +202,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			G::ForceChokePacket = false;
 		} // check after force send to prevent timing out possibly
 	}
-	else { AttackingUpdate(); }
+	else
+		AttackingUpdate();
 
 	// do this at the end just in case aimbot / triggerbot fired.
 	if (const auto& pWeapon = g_EntityCache.GetWeapon(); const auto & pLocal = g_EntityCache.GetLocal())
@@ -210,13 +211,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		if (pCmd->buttons & IN_ATTACK && (Vars::Misc::CL_Move::SafeTick.Value || (Vars::Misc::CL_Move::SafeTickAirOverride.Value && !pLocal->OnSolid())))
 		{
 			if (G::NextSafeTick > I::GlobalVars->tickcount && G::ShouldShift && G::ShiftedTicks)
-			{
 				pCmd->buttons &= ~IN_ATTACK;
-			}
 			else
-			{
 				G::NextSafeTick = I::GlobalVars->tickcount + g_ConVars.sv_maxusrcmdprocessticks_holdaim->GetInt() + 1;
-			}
 		}
 	}
 
