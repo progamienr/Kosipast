@@ -25,7 +25,7 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 0.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		else
 			Utils::GetProjectileFireSetup(player, vAngles, Vec3(23.5f, 12.f, ducking ? 8.f : -3.f), pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_ROCKET, pos, ang, { 0.f, 0.f, 0.f }, bQuick ? 1081344.f : Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon), 0.f, true };
+		out = { TF_PROJECTILE_ROCKET, pos, ang, { 1.f, 1.f, 1.f /*0.f, 0.f, 0.f i think is real size*/ }, bQuick ? 1081344.f : Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon), 0.f, true };
 		return true;
 	}
 	case TF_WEAPON_GRENADELAUNCHER:

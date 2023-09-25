@@ -5,7 +5,7 @@ MAKE_HOOK(CMatchInviteNotification_OnTick, g_Pattern.Find(L"client.dll", L"55 8B
 {
 	static auto CMatchInviteNotification_AcceptMatch = reinterpret_cast<void(__thiscall*)(void*)>(g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 10 56 8B F1 8B 86 ? ? ? ? 83 E8 00"));
 
-	if (Vars::Misc::InstantAccept.Value == 2)
+	if (Vars::Misc::FreezeQueue.Value)
 	{
 		*reinterpret_cast<double*>(reinterpret_cast<DWORD>(ecx) + 424) = 0.0;
 		// v3 = *(double*)(this + 424);
@@ -14,8 +14,8 @@ MAKE_HOOK(CMatchInviteNotification_OnTick, g_Pattern.Find(L"client.dll", L"55 8B
 
 	Hook.Original<FN>()(ecx, edx);
 
-	if (Vars::Misc::InstantAccept.Value == 1)
-	{
-		CMatchInviteNotification_AcceptMatch(ecx);
-	}
+	//if (Vars::Misc::InstantAccept.Value == 1)
+	//{
+	//	CMatchInviteNotification_AcceptMatch(ecx);
+	//}
 }

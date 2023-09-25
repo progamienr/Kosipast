@@ -438,7 +438,7 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 			SAVE_VAR(Vars::Misc::RegionChanger);
 			SAVE_VAR(Vars::Misc::RegionsAllowed);
 			SAVE_VAR(Vars::Misc::AutoCasualQueue);
-			SAVE_VAR(Vars::Misc::InstantAccept);
+			SAVE_VAR(Vars::Misc::FreezeQueue);
 			SAVE_VAR(Vars::Misc::AntiAutobalance);
 
 			// Cheater Detection
@@ -480,7 +480,7 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Misc::CL_Move::AutoRecharge);
 				SAVE_VAR(Vars::Misc::CL_Move::AntiWarp);
 				SAVE_VAR(Vars::Misc::CL_Move::DTMode);
-				SAVE_VAR(Vars::Misc::CL_Move::Fakelag); // { 0x52, L"Recharge Key" }; //R
+				SAVE_VAR(Vars::Misc::CL_Move::Fakelag);
 				SAVE_VAR(Vars::Misc::CL_Move::FakelagMin);
 				SAVE_VAR(Vars::Misc::CL_Move::FakelagMax);
 				SAVE_VAR(Vars::Misc::CL_Move::FakelagMode);
@@ -489,9 +489,9 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Misc::CL_Move::WhileUnducking);
 				SAVE_VAR(Vars::Misc::CL_Move::WhileVisible);
 				SAVE_VAR(Vars::Misc::CL_Move::PredictVisibility);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagOnKey); // { 0x52, L"Recharge Key" }; //
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagKey); // { 0x52, L"Recharge Key" }; //R
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagValue); // { 0x52, L"Recharge Key" }; //R
+				SAVE_VAR(Vars::Misc::CL_Move::FakelagKey);
+				SAVE_VAR(Vars::Misc::CL_Move::FakelagHold);
+				SAVE_VAR(Vars::Misc::CL_Move::FakelagValue);
 				SAVE_VAR(Vars::Misc::CL_Move::DTTicks);
 				SAVE_VAR(Vars::Misc::CL_Move::AutoPeekKey);
 				SAVE_VAR(Vars::Misc::CL_Move::AutoPeekDistance);
@@ -744,7 +744,7 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 			LOAD_VAR(Vars::Misc::RegionChanger);
 			LOAD_VAR(Vars::Misc::RegionsAllowed);
 			LOAD_VAR(Vars::Misc::AutoCasualQueue);
-			LOAD_VAR(Vars::Misc::InstantAccept);
+			LOAD_VAR(Vars::Misc::FreezeQueue);
 			LOAD_VAR(Vars::Misc::AntiAutobalance);
 
 			// Cheater Detection
@@ -784,9 +784,9 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Misc::CL_Move::RechargeWhileDead);
 				LOAD_VAR(Vars::Misc::CL_Move::AutoRecharge);
 				LOAD_VAR(Vars::Misc::CL_Move::AntiWarp);
-				LOAD_VAR(Vars::Misc::CL_Move::DoubletapKey); // { 0x52, L"Recharge Key" }; //R
+				LOAD_VAR(Vars::Misc::CL_Move::DoubletapKey);
 				LOAD_VAR(Vars::Misc::CL_Move::DTMode);
-				LOAD_VAR(Vars::Misc::CL_Move::Fakelag); // { 0x52, L"Recharge Key" }; //R
+				LOAD_VAR(Vars::Misc::CL_Move::Fakelag);
 				LOAD_VAR(Vars::Misc::CL_Move::FakelagMin);
 				LOAD_VAR(Vars::Misc::CL_Move::FakelagMax);
 				LOAD_VAR(Vars::Misc::CL_Move::FakelagMode);
@@ -795,9 +795,9 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Misc::CL_Move::WhileUnducking);
 				LOAD_VAR(Vars::Misc::CL_Move::WhileVisible);
 				LOAD_VAR(Vars::Misc::CL_Move::PredictVisibility);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagOnKey); // { 0x52, L"Recharge Key" }; //R
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagKey); // { 0x52, L"Recharge Key" }; //R
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagValue); // { 0x52, L"Recharge Key" }; //R
+				LOAD_VAR(Vars::Misc::CL_Move::FakelagKey);
+				LOAD_VAR(Vars::Misc::CL_Move::FakelagHold);
+				LOAD_VAR(Vars::Misc::CL_Move::FakelagValue);
 				LOAD_VAR(Vars::Misc::CL_Move::DTTicks);
 				LOAD_VAR(Vars::Misc::CL_Move::AutoPeekKey);
 				LOAD_VAR(Vars::Misc::CL_Move::AutoPeekDistance);

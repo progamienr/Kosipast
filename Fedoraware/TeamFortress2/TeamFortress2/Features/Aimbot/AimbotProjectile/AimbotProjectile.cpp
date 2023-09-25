@@ -226,8 +226,6 @@ float SolveProjectileSpeed(ProjectileInfo projInfo, CBaseCombatWeapon* pWeapon, 
 	case Demoman_s_TheQuickiebombLauncher:
 	case Demoman_s_TheScottishResistance: flDrag = 0.2f; break;
 	}
-	if (Vars::Aimbot::Projectile::CustomDrag.Value)
-		flDrag = Vars::Aimbot::Projectile::CustomDrag.Value;
 
 	return flVelocity - (flVelocity * flTime) * flDrag;
 }

@@ -115,7 +115,6 @@ namespace Vars
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
 			inline CVar<float> LatOff{ 0.f }; // debug
 			inline CVar<float> PhyOff{ 0.f }; // debug
-			inline CVar<float> CustomDrag{ 0.f }; // debug
 		}
 
 		namespace Melee
@@ -612,7 +611,7 @@ namespace Vars
 		inline CVar<bool> RegionChanger{ false };
 		inline CVar<int> RegionsAllowed{ 0 };
 		inline CVar<int> AutoCasualQueue{ 0 };
-		inline CVar<int> InstantAccept{ false };
+		inline CVar<bool> FreezeQueue{ false };
 		inline CVar<bool> ScoreboardPlayerlist{ false };
 
 		namespace CheaterDetection
@@ -660,6 +659,8 @@ namespace Vars
 			inline CVar<int> DTTicks{ 21 };
 			inline CVar<bool> WaitForDT{ false };
 			inline CVar<bool> Fakelag{ false };
+			inline CVar<int> FakelagKey{ 0x54 };
+			inline CVar<bool> FakelagHold{ false };
 			inline CVar<int> FakelagMode{ 0 }; // 0 - plain, 1 - random
 			inline CVar<bool> WhileMoving{ false };
 			inline CVar<bool> WhileVisible{ false };
@@ -668,8 +669,6 @@ namespace Vars
 			inline CVar<bool> WhileInAir{ false };
 			inline CVar<int> FakelagMin{ 1 }; //	only show when FakelagMode=2
 			inline CVar<int> FakelagMax{ 22 };
-			inline CVar<bool> FakelagOnKey{ false }; // dont show when fakelagmode=2|3
-			inline CVar<int> FakelagKey{ 0x54 }; //T
 			inline CVar<int> FakelagValue{ 1 }; // dont show when fakelagmode=2
 			inline CVar<int> AutoPeekKey{ false };
 			inline CVar<float> AutoPeekDistance{ 200.f };

@@ -2,6 +2,11 @@
 
 #include "../../../SDK/SDK.h"
 
+struct PositionData
+{
+	Vec3 m_vecOrigin = {};
+	float m_flSimTime = 0.f;
+};
 struct VelocityData
 {
 	Vec3 m_vecVelocity = {};
@@ -39,7 +44,8 @@ class CMovementSimulation
 {
 private:
 	//void SetCurrentCommand(CBaseEntity* pPlayer, CUserCmd* pCmd);
-	void SetupMoveData(PlayerStorage& playerStorage);
+	bool GetVelocity(CBaseEntity* pEntity, Vec3& vVelOut, bool bMoveData = false);
+	bool SetupMoveData(PlayerStorage& playerStorage);
 
 private:
 	bool m_bOldInPrediction = false;
@@ -48,9 +54,10 @@ private:
 	int iTick = 0;
 
 	std::map<int, std::deque<VelocityData>> m_Velocities;
+	std::map<int, std::deque<PositionData>> m_Positions;
 
 public:
-	void FillVelocities();
+	void FillInfo();
 
 	bool Initialize(CBaseEntity* pPlayer, PlayerStorage& playerStorageOut, bool cancelStrafe = false);
 	void StrafePrediction(PlayerStorage& playerStorage);

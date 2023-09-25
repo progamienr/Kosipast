@@ -60,7 +60,7 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 
 	// Is a fakelag key set and pressed?
 	static KeyHelper fakelagKey{ &Vars::Misc::CL_Move::FakelagKey.Value };
-	if (!fakelagKey.Down() && Vars::Misc::CL_Move::FakelagOnKey.Value)
+	if (!fakelagKey.Down() && Vars::Misc::CL_Move::FakelagHold.Value)
 		return false;
 
 	// Do we have enough velocity for velocity mode?
@@ -127,6 +127,10 @@ void CFakeLag::Prediction(const int nOldGroundInt, const int nOldFlags, CUserCmd
 
 void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt, const int nOldFlags)
 {
+	static KeyHelper fakelagKey{ &Vars::Misc::CL_Move::FakelagKey.Value };
+	if (fakelagKey.Pressed() && !Vars::Misc::CL_Move::FakelagHold.Value)
+		Vars::Misc::CL_Move::Fakelag.Value = !Vars::Misc::CL_Move::Fakelag.Value;
+
 	Prediction(nOldGroundInt, nOldFlags, pCmd);
 	G::IsChoking = false;	//	do this first
 	if (G::ShouldShift)

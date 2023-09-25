@@ -358,7 +358,6 @@ void CMenu::MenuAimbot()
 			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
 			WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
 			WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
-			WSlider("drag", &Vars::Aimbot::Projectile::CustomDrag.Value, 0.f, 1.f, "%.2f");
 
 			SectionTitle("Preferences");
 			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value); HelpMarker("Will charge your loose cannon in order to double donk");
@@ -1153,12 +1152,12 @@ void CMenu::MenuVisuals()
 						{
 							WSlider("Rainbow Speed", &Vars::Visuals::Particles::Colors::RainbowSpeed.Value, 0, 5, "%.1f");
 						}
-						WCombo("Particle tracer", &Vars::Visuals::Particles::Tracers::ParticleTracer.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
+						WCombo("Bullet trail", &Vars::Visuals::Particles::Tracers::ParticleTracer.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
 						if (Vars::Visuals::Particles::Tracers::ParticleTracer.Value == 8)
 						{
 							WInputText("Custom Tracer", &Vars::Visuals::Particles::Tracers::ParticleName);
 						}
-						WCombo("Particle tracer (Crits)", &Vars::Visuals::Particles::Tracers::ParticleTracerCrits.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
+						WCombo("Crit trail", &Vars::Visuals::Particles::Tracers::ParticleTracerCrits.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
 						if (Vars::Visuals::Particles::Tracers::ParticleTracerCrits.Value == 8)
 						{
 							WInputText("Custom Crit Tracer", &Vars::Visuals::Particles::Tracers::ParticleNameCrits);
@@ -1385,13 +1384,10 @@ void CMenu::MenuHvH()
 
 			/* Section: Fakelag */
 			SectionTitle("Fakelag");
-			WToggle("Retain BlastJump", &Vars::Misc::CL_Move::RetainBlastJump.Value); HelpMarker("Will attempt to retain the blast jumping condition as soldier and runs independently of fakelag.");
 			WToggle("Enable Fakelag", &Vars::Misc::CL_Move::Fakelag.Value);
-			MultiCombo({ "While Moving", "On Key", "While Visible", "Predict Visibility", "While Unducking", "While Airborne" }, { &Vars::Misc::CL_Move::WhileMoving.Value, &Vars::Misc::CL_Move::FakelagOnKey.Value, &Vars::Misc::CL_Move::WhileVisible.Value, &Vars::Misc::CL_Move::PredictVisibility.Value, &Vars::Misc::CL_Move::WhileUnducking.Value, &Vars::Misc::CL_Move::WhileInAir.Value }, "Flags###FakeLagFlags");
-			if (Vars::Misc::CL_Move::FakelagOnKey.Value)
-			{
-				InputKeybind("Fakelag key", Vars::Misc::CL_Move::FakelagKey); HelpMarker("The key to activate fakelag as long as it's held");
-			}
+			InputKeybind("Fakelag key", Vars::Misc::CL_Move::FakelagKey);
+			WToggle("Hold", &Vars::Misc::CL_Move::FakelagHold.Value); HelpMarker("While held vs toggle");
+			MultiCombo({ "While Moving", "While Visible", "Predict Visibility", "While Unducking", "While Airborne" }, { &Vars::Misc::CL_Move::WhileMoving.Value, &Vars::Misc::CL_Move::WhileVisible.Value, &Vars::Misc::CL_Move::PredictVisibility.Value, &Vars::Misc::CL_Move::WhileUnducking.Value, &Vars::Misc::CL_Move::WhileInAir.Value }, "Flags###FakeLagFlags");
 			WCombo("Fakelag Mode###FLmode", &Vars::Misc::CL_Move::FakelagMode.Value, { "Plain", "Random", "Adaptive" }); HelpMarker("Controls how fakelag will be controlled.");
 
 			switch (Vars::Misc::CL_Move::FakelagMode.Value)
@@ -1406,7 +1402,7 @@ void CMenu::MenuHvH()
 			}	//	add more here if you add your own fakelag modes :D
 			WToggle("Unchoke On Attack", &Vars::Misc::CL_Move::UnchokeOnAttack.Value); HelpMarker("Will exit a fakelag cycle if you are attacking.");
 
-
+			WToggle("Retain BlastJump", &Vars::Misc::CL_Move::RetainBlastJump.Value); HelpMarker("Will attempt to retain the blast jumping condition as soldier and runs independently of fakelag.");
 		} EndChild();
 
 		if (TableColumnChild("HvHCol2"))
@@ -1576,7 +1572,7 @@ void CMenu::MenuMisc()
 				&Vars::Misc::RegionsAllowed.Value,
 				"Regions"
 			);
-			WCombo("Match accept notification", &Vars::Misc::InstantAccept.Value, { "Default", "Instant join", "Freeze timer" }); HelpMarker("Will skip the 10 second delay before joining a match or let you never join");
+			WToggle("Freeze queue timer", &Vars::Misc::FreezeQueue.Value);
 			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" }); HelpMarker("Automatically starts queueuing for casual");
 
 			SectionTitle("Exploits");
@@ -2155,7 +2151,7 @@ void CMenu::DrawKeybinds()
 		drawOption("Auto Shoot", Vars::Aimbot::Global::AutoShoot.Value);
 		drawOption("Double Tap", isActive(Vars::Misc::CL_Move::DTMode.Value != 3, Vars::Misc::CL_Move::DTMode.Value == 0, Vars::Misc::CL_Move::DoubletapKey.Value));
 		drawOption("Anti Aim", Vars::AntiHack::AntiAim::Active.Value);
-		drawOption("Fakelag", isActive(Vars::Misc::CL_Move::Fakelag.Value, Vars::Misc::CL_Move::FakelagOnKey.Value, Vars::Misc::CL_Move::FakelagKey.Value));
+		drawOption("Fakelag", isActive(Vars::Misc::CL_Move::Fakelag.Value, Vars::Misc::CL_Move::FakelagHold.Value, Vars::Misc::CL_Move::FakelagKey.Value));
 		drawOption("Triggerbot", isActive(Vars::Triggerbot::Global::Active.Value, Vars::Triggerbot::Global::TriggerKey.Value, Vars::Triggerbot::Global::TriggerKey.Value));
 
 		ImGui::End();

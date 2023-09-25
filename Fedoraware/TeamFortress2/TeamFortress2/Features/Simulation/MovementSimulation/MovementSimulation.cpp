@@ -5,21 +5,83 @@
 //we'll use this to set current player's command, without it CGameMovement::CheckInterval will try to access a nullptr
 static CUserCmd DummyCmd = {};
 
-void CMovementSimulation::FillVelocities()
+bool CMovementSimulation::GetVelocity(CBaseEntity* pEntity, Vec3& vVelOut, bool bMoveData)
 {
-	if (Vars::Aimbot::Projectile::StrafePredictionGround.Value || Vars::Aimbot::Projectile::StrafePredictionAir.Value)
+	if (!pEntity)
+		return false;
+
+	const int iEntIndex = pEntity->GetIndex();
+	if (m_Positions[iEntIndex].size() > 1)
 	{
-		auto FillVelocity = [](CBaseEntity* pEntity, std::map<int, std::deque<VelocityData>>& m_Velocities)
+		const auto vRecord1 = m_Positions[iEntIndex][0];
+		const auto vRecord2 = m_Positions[iEntIndex][1];
+
+		vVelOut = (vRecord1.m_vecOrigin - vRecord2.m_vecOrigin) / (vRecord1.m_flSimTime - vRecord2.m_flSimTime);
+		if (bMoveData)
+		{
+			if (fabsf(vVelOut.x) < 0.01f) // maybe fixes lag ?
+				vVelOut.x = 0.015f;
+			if (fabsf(vVelOut.y) < 0.01f)
+				vVelOut.y = 0.015f;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void CMovementSimulation::FillInfo()
+{
+	{ // hopefully this is more reliable
+		auto FillPositions = [](CBaseEntity* pEntity, std::map<int, std::deque<PositionData>>& m_Positions)
 		{
 			const int iEntIndex = pEntity->GetIndex();
-			if (!pEntity->IsAlive() || pEntity->GetDormant() || pEntity->GetVelocity().IsZero())
+			if (!pEntity->IsAlive() || pEntity->GetDormant())
+			{
+				m_Positions[iEntIndex].clear();
+				return;
+			}
+
+			const PositionData vRecord = { pEntity->GetAbsOrigin(), pEntity->GetSimulationTime() };
+			if (m_Positions[iEntIndex].size() > 0)
+			{
+				const PositionData vLast = m_Positions[iEntIndex][0];
+				if (vRecord.m_flSimTime <= vLast.m_flSimTime)
+					return;
+			}
+
+			m_Positions[iEntIndex].push_front(vRecord);
+
+			if (m_Positions[iEntIndex].size() > 2)
+				m_Positions[iEntIndex].pop_back();
+		};
+
+		const auto pLocal = g_EntityCache.GetLocal();
+		if (pLocal)
+		{
+			for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+			{
+				if (pEntity && pEntity != pLocal) // only appears when in thirdperson ?
+					FillPositions(pEntity, m_Positions);
+			}
+			FillPositions(pLocal, m_Positions);
+		}
+	}
+
+	if (Vars::Aimbot::Projectile::StrafePredictionGround.Value || Vars::Aimbot::Projectile::StrafePredictionAir.Value)
+	{
+		auto FillVelocity = [](CBaseEntity* pEntity, std::map<int, std::deque<VelocityData>>& m_Velocities, Vec3 vVelocity)
+		{
+			const int iEntIndex = pEntity->GetIndex();
+			if (!pEntity->IsAlive() || pEntity->GetDormant() || vVelocity.IsZero())
 			{
 				m_Velocities[iEntIndex].clear();
 				return;
 			}
 
 			const VelocityData vRecord = {
-				pEntity->GetVelocity(),
+				vVelocity,
 				pEntity->GetSimulationTime(),
 				bool(pEntity->GetFlags() & FL_ONGROUND)
 			};
@@ -55,10 +117,18 @@ void CMovementSimulation::FillVelocities()
 		{
 			for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 			{
-				if (pEntity != pLocal) // only appears when in thirdperson ?
-					FillVelocity(pEntity, m_Velocities);
+				if (pEntity && pEntity != pLocal) // only appears when in thirdperson ?
+				{
+					Vec3 vVelocity = {};
+					if (GetVelocity(pEntity, vVelocity))
+						FillVelocity(pEntity, m_Velocities, vVelocity);
+				}
 			}
-			FillVelocity(pLocal, m_Velocities);
+			{
+				Vec3 vVelocity = {};
+				if (GetVelocity(pLocal, vVelocity))
+					FillVelocity(pLocal, m_Velocities, vVelocity);
+			}
 		}
 	}
 	else
@@ -131,7 +201,8 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	}
 
 	// setup move data
-	SetupMoveData(playerStorageOut);
+	if (!SetupMoveData(playerStorageOut))
+		return false;
 
 	// calculate strafe if desired
 	if (!cancelStrafe)
@@ -140,15 +211,18 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	return true;
 }
 
-void CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
+bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 {
 	if (!playerStorage.m_pPlayer)
-		return;
+		return false;
+
+	if (!GetVelocity(playerStorage.m_pPlayer, playerStorage.m_MoveData.m_vecVelocity, true))
+		return false;
 
 	playerStorage.m_MoveData.m_bFirstRunOfFunctions = false;
 	playerStorage.m_MoveData.m_bGameCodeMovedPlayer = false;
 	playerStorage.m_MoveData.m_nPlayerHandle = reinterpret_cast<IHandleEntity*>(playerStorage.m_pPlayer)->GetRefEHandle();
-	playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();	//	m_vecBaseVelocity hits -1950? // sometimes seems completely wrong ?
+	//playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();	//	m_vecBaseVelocity hits -1950? // seems generally unreliable
 	if (playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND && !playerStorage.m_MoveData.m_vecVelocity.IsZero())
 		playerStorage.m_MoveData.m_vecVelocity.z = 0.f; // step fix
 	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->GetAbsOrigin();
@@ -173,6 +247,8 @@ void CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 
 	playerStorage.m_MoveData.m_flForwardMove = (playerStorage.m_MoveData.m_vecVelocity.y - vRight.y / vRight.x * playerStorage.m_MoveData.m_vecVelocity.x) / (vForward.y - vRight.y / vRight.x * vForward.x);
 	playerStorage.m_MoveData.m_flSideMove = (playerStorage.m_MoveData.m_vecVelocity.x - vForward.x * playerStorage.m_MoveData.m_flForwardMove) / vRight.x;
+
+	return true;
 }
 
 void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
@@ -186,7 +262,7 @@ void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 
 	if (mVelocityRecords.size() < 6)
 		return;
-	const int iSamples = fmin(5, mVelocityRecords.size());
+	const int iSamples = fmin(10, mVelocityRecords.size());
 	if (!iSamples)
 		return;
 
