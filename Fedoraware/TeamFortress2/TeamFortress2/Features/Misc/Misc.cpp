@@ -383,7 +383,7 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 		return;
 	}
 
-	if (G::Recharging || G::RechargeQueued || G::Frozen)
+	if (G::Recharging || G::Recharge || G::Frozen)
 	{
 		return;
 	}
@@ -836,8 +836,8 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (pLocal && pLocal->IsAlive() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned() && pLocal->GetVelocity().Length2D() > 5.f)
 	{
 		const int stopType = (
-			G::ShouldShift && G::ShiftedTicks && Vars::Misc::CL_Move::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0
-			); // 0 none, 1 ground
+			G::ShouldShift && G::ShiftedTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0
+		); // 0 none, 1 ground
 		static Vec3 prediction = {};
 		static Vec3 origin = {};
 		static Vec3 angles = {};
@@ -945,8 +945,8 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 	static Vec3 peekStart;
 	static Vec3 peekVector;
 
-	static KeyHelper peekKey{ &Vars::Misc::CL_Move::AutoPeekKey.Value };
-	if (pLocal->IsAlive() && Vars::Misc::CL_Move::AutoPeekKey.Value && peekKey.Down())
+	static KeyHelper peekKey{ &Vars::CL_Move::AutoPeekKey.Value };
+	if (pLocal->IsAlive() && Vars::CL_Move::AutoPeekKey.Value && peekKey.Down())
 	{
 		const Vec3 localPos = pLocal->GetAbsOrigin();
 
@@ -969,7 +969,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 		}
 
 		// We need a peek direction (A / D)
-		if (!Vars::Misc::CL_Move::AutoPeekFree.Value && !hasDirection && pLocal->OnSolid())
+		if (!Vars::CL_Move::AutoPeekFree.Value && !hasDirection && pLocal->OnSolid())
 		{
 			const Vec3 viewAngles = I::EngineClient->GetViewAngles();
 			Vec3 vForward, vRight, vUp, vDirection;
@@ -983,11 +983,11 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 				if (GetAsyncKeyState(VK_A) & 0x8000 || GetAsyncKeyState(VK_W) & 0x8000)
 				{
-					vDirection = pLocal->GetEyePosition() - vRight * Vars::Misc::CL_Move::AutoPeekDistance.Value; // Left
+					vDirection = pLocal->GetEyePosition() - vRight * Vars::CL_Move::AutoPeekDistance.Value; // Left
 				}
 				else if (GetAsyncKeyState(VK_D) & 0x8000 || GetAsyncKeyState(VK_S) & 0x8000)
 				{
-					vDirection = pLocal->GetEyePosition() + vRight * Vars::Misc::CL_Move::AutoPeekDistance.Value; // Right
+					vDirection = pLocal->GetEyePosition() + vRight * Vars::CL_Move::AutoPeekDistance.Value; // Right
 				}
 
 				traceRay.Init(pLocal->GetEyePosition(), vDirection);
@@ -999,7 +999,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 		}
 
 		// Should we peek?
-		if (!Vars::Misc::CL_Move::AutoPeekFree.Value && hasDirection)
+		if (!Vars::CL_Move::AutoPeekFree.Value && hasDirection)
 		{
 			bool targetFound = false;
 			for (int i = 10; i < 100; i += 10)
@@ -1035,9 +1035,9 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 			if (localPos.DistTo(PeekReturnPos) < 7.f)
 			{
 				// We reached our destination. Recharge DT if wanted
-				if (Vars::Misc::CL_Move::AutoRecharge.Value && isReturning && !G::ShouldShift && !G::ShiftedTicks)
+				if (Vars::CL_Move::DoubleTap::AutoRecharge.Value && isReturning && !G::ShouldShift && !G::ShiftedTicks)
 				{
-					G::RechargeQueued = true;
+					G::Recharge = true;
 				}
 				isReturning = false;
 				return;

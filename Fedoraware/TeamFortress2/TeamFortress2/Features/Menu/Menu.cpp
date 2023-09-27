@@ -1353,56 +1353,54 @@ void CMenu::MenuHvH()
 		/* Column 1 */
 		if (TableColumnChild("HvHCol1"))
 		{
-			/* Section: Tickbase Exploits */
-			SectionTitle("Tickbase Exploits");
-			WToggle("Enable Tickbase Exploits", &Vars::Misc::CL_Move::Enabled.Value); HelpMarker("Allows tickbase shifting");
-			WToggle("Indicator", &Vars::Misc::CL_Move::Indicator.Value);
-			ColorPickerL("DT bar outline colour", Colors::DtOutline);
-			InputKeybind("Recharge key", Vars::Misc::CL_Move::RechargeKey); HelpMarker("Recharges ticks for shifting");
-			InputKeybind("Teleport key", Vars::Misc::CL_Move::TeleportKey); HelpMarker("Shifts ticks to warp");
-			if (Vars::Misc::CL_Move::DTMode.Value == 0 || Vars::Misc::CL_Move::DTMode.Value == 2)
-			{
-				InputKeybind("Doubletap key", Vars::Misc::CL_Move::DoubletapKey); HelpMarker("Only doubletap when the key is pressed. Leave as (None) for always active.");
-			}
+			const int iVar = g_ConVars.sv_maxusrcmdprocessticks->GetInt();
+			const int iTicks = iVar ? iVar : 21;
 
-			WCombo("Teleport Mode", &Vars::Misc::CL_Move::TeleportMode.Value, { "Plain", "Smooth" }); HelpMarker("How the teleport should be done");
-			if (Vars::Misc::CL_Move::TeleportMode.Value)
+			/* Section: Tickbase Exploits */
+			SectionTitle("Doubletap");
+			WToggle("Enabled", &Vars::CL_Move::DoubleTap::Enabled.Value);
+			WSlider("Tick limit", &Vars::CL_Move::DoubleTap::TickLimit.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
+			WSlider("Warp rate", &Vars::CL_Move::DoubleTap::WarpRate.Value, 2, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
+			WSlider("Passive recharge", &Vars::CL_Move::DoubleTap::PassiveRecharge.Value, 0, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
+			WCombo("Mode###DTmode", &Vars::CL_Move::DoubleTap::Mode.Value, { "Always", "Hold", "Toggle" });
+			if (Vars::CL_Move::DoubleTap::Mode.Value != 0)
+				InputKeybind("Doubletap key", Vars::CL_Move::DoubleTap::DoubletapKey);
+			InputKeybind("Recharge key", Vars::CL_Move::DoubleTap::RechargeKey);
+			InputKeybind("Teleport key", Vars::CL_Move::DoubleTap::TeleportKey);
+			MultiCombo({ "Wait for DT", "Anti-warp", "Avoid airborne", "Auto retain", "Auto Recharge", "Recharge While Dead", "Safe Tick", "Safe Tick Airborne" }, { &Vars::CL_Move::DoubleTap::WaitReady.Value, &Vars::CL_Move::DoubleTap::AntiWarp.Value, &Vars::CL_Move::DoubleTap::NotInAir.Value, &Vars::CL_Move::DoubleTap::AutoRetain.Value, &Vars::CL_Move::DoubleTap::AutoRecharge.Value, &Vars::CL_Move::DoubleTap::RechargeWhileDead.Value, &Vars::CL_Move::DoubleTap::SafeTick.Value, &Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value }, "Options");
+			WToggle("Indicator", &Vars::CL_Move::DoubleTap::Indicator.Value);
+			ColorPickerL("DT bar outline colour", Colors::DtOutline);
+
+			SectionTitle("Speed hack");
+			WToggle("Speed hack", &Vars::CL_Move::SpeedEnabled.Value); HelpMarker("Speedhack Master Switch");
+			if (Vars::CL_Move::SpeedEnabled.Value)
 			{
-				WSlider("Smooth Teleport Factor", &Vars::Misc::CL_Move::TeleportFactor.Value, 2, 6, "%d");
-			}
-			MultiCombo({ "Recharge While Dead", "Auto Recharge", "Wait for DT", "Anti-warp", "Avoid airborne", "Retain Fakelag", "Stop Recharge Movement", "Safe Tick", "Safe Tick Airborne", "Auto Retain" }, { &Vars::Misc::CL_Move::RechargeWhileDead.Value, &Vars::Misc::CL_Move::AutoRecharge.Value, &Vars::Misc::CL_Move::WaitForDT.Value, &Vars::Misc::CL_Move::AntiWarp.Value, &Vars::Misc::CL_Move::NotInAir.Value, &Vars::Misc::CL_Move::RetainFakelag.Value, &Vars::Misc::CL_Move::StopMovement.Value, &Vars::Misc::CL_Move::SafeTick.Value, &Vars::Misc::CL_Move::SafeTickAirOverride.Value, &Vars::Misc::CL_Move::AutoRetain.Value }, "Options"); HelpMarker("Enable various features regarding tickbase exploits");
-			WCombo("Doubletap Mode", &Vars::Misc::CL_Move::DTMode.Value, { "On key", "Always", "Disable on key", "Disabled" }); HelpMarker("How should DT behave");
-			const int ticksMax = g_ConVars.sv_maxusrcmdprocessticks->GetInt();
-			WSlider("Ticks to shift", &Vars::Misc::CL_Move::DTTicks.Value, 1, ticksMax ? ticksMax : 22, "%d"); HelpMarker("How many ticks to shift");
-			WSlider("Passive Recharge Factor", &Vars::Misc::CL_Move::PassiveRecharge.Value, 0, 22, "%d");
-			WToggle("SpeedHack", &Vars::Misc::CL_Move::SEnabled.Value); HelpMarker("Speedhack Master Switch");
-			if (Vars::Misc::CL_Move::SEnabled.Value)
-			{
-				WSlider("SpeedHack Factor", &Vars::Misc::CL_Move::SFactor.Value, 1, 66, "%d");
+				WSlider("SpeedHack factor", &Vars::CL_Move::SpeedFactor.Value, 1, 66, "%d");
 			}
 			HelpMarker("High values are not recommended");
 
 			/* Section: Fakelag */
 			SectionTitle("Fakelag");
-			WToggle("Enable Fakelag", &Vars::Misc::CL_Move::Fakelag.Value);
-			InputKeybind("Fakelag key", Vars::Misc::CL_Move::FakelagKey);
-			WToggle("Hold", &Vars::Misc::CL_Move::FakelagHold.Value); HelpMarker("While held vs toggle");
-			MultiCombo({ "While Moving", "While Visible", "Predict Visibility", "While Unducking", "While Airborne" }, { &Vars::Misc::CL_Move::WhileMoving.Value, &Vars::Misc::CL_Move::WhileVisible.Value, &Vars::Misc::CL_Move::PredictVisibility.Value, &Vars::Misc::CL_Move::WhileUnducking.Value, &Vars::Misc::CL_Move::WhileInAir.Value }, "Flags###FakeLagFlags");
-			WCombo("Fakelag Mode###FLmode", &Vars::Misc::CL_Move::FakelagMode.Value, { "Plain", "Random", "Adaptive" }); HelpMarker("Controls how fakelag will be controlled.");
+			WToggle("Enable Fakelag", &Vars::CL_Move::FakeLag::Enabled.Value);
+			WCombo("Mode###FLmode", &Vars::CL_Move::FakeLag::Mode.Value, { "Always", "Hold", "Toggle" });
+			if (Vars::CL_Move::FakeLag::Mode.Value != 0)
+				InputKeybind("Fakelag key", Vars::CL_Move::FakeLag::Key);
+			WCombo("Type###FLtype", &Vars::CL_Move::FakeLag::Type.Value, { "Plain", "Random", "Adaptive" });
 
-			switch (Vars::Misc::CL_Move::FakelagMode.Value)
+			switch (Vars::CL_Move::FakeLag::Type.Value)
 			{
-				case 0: { WSlider("Fakelag value", &Vars::Misc::CL_Move::FakelagValue.Value, 1, ticksMax - 3, "%d"); HelpMarker("How much lag you should fake(?)"); break; }
+				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, iTicks - 2, "%d", ImGuiSliderFlags_AlwaysClamp); break;
 				case 1:
 				{
-					WSlider("Random max###flRandMax", &Vars::Misc::CL_Move::FakelagMax.Value, Vars::Misc::CL_Move::FakelagMin.Value + 1, ticksMax, "%d"); HelpMarker("Maximum random fakelag value");
-					WSlider("Random min###flRandMin", &Vars::Misc::CL_Move::FakelagMin.Value, 1, Vars::Misc::CL_Move::FakelagMax.Value - 1, "%d"); HelpMarker("Minimum random fakelag value");
+					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, iTicks - 2, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Maximum random fakelag value");
+					WSlider("Random min###flRandMin", &Vars::CL_Move::FakeLag::Min.Value, 1, Vars::CL_Move::FakeLag::Max.Value - 1, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Minimum random fakelag value");
 					break;
 				}
 			}	//	add more here if you add your own fakelag modes :D
-			WToggle("Unchoke On Attack", &Vars::Misc::CL_Move::UnchokeOnAttack.Value); HelpMarker("Will exit a fakelag cycle if you are attacking.");
+			MultiCombo({ "While Moving", "While Visible", "Predict Visibility", "While Unducking", "While Airborne" }, { &Vars::CL_Move::FakeLag::WhileMoving.Value, &Vars::CL_Move::FakeLag::WhileVisible.Value, &Vars::CL_Move::FakeLag::PredictVisibility.Value, &Vars::CL_Move::FakeLag::WhileUnducking.Value, &Vars::CL_Move::FakeLag::WhileInAir.Value }, "Flags###FakeLagFlags");
+			WToggle("Unchoke On Attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value); HelpMarker("Will exit a fakelag cycle if you are attacking.");
 
-			WToggle("Retain BlastJump", &Vars::Misc::CL_Move::RetainBlastJump.Value); HelpMarker("Will attempt to retain the blast jumping condition as soldier and runs independently of fakelag.");
+			WToggle("Retain BlastJump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value); HelpMarker("Will attempt to retain the blast jumping condition as soldier and runs independently of fakelag.");
 		} EndChild();
 
 		if (TableColumnChild("HvHCol2"))
@@ -1514,9 +1512,9 @@ void CMenu::MenuHvH()
 
 			/* Section: Auto Peek */
 			SectionTitle("Auto Peek");
-			InputKeybind("Autopeek Key", Vars::Misc::CL_Move::AutoPeekKey); HelpMarker("Hold this key while peeking and use A/D to set the peek direction");
-			WSlider("Max Distance", &Vars::Misc::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, "%.0f"); HelpMarker("Maximum distance that auto peek can walk");
-			WToggle("Free move", &Vars::Misc::CL_Move::AutoPeekFree.Value); HelpMarker("Allows you to move freely while peeking");
+			InputKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey); HelpMarker("Hold this key while peeking and use A/D to set the peek direction");
+			WSlider("Max Distance", &Vars::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, "%.0f"); HelpMarker("Maximum distance that auto peek can walk");
+			WToggle("Free move", &Vars::CL_Move::AutoPeekFree.Value); HelpMarker("Allows you to move freely while peeking");
 		} EndChild();
 
 		EndTable();
@@ -2149,9 +2147,9 @@ void CMenu::DrawKeybinds()
 
 		drawOption("Aimbot", isActive(Vars::Aimbot::Global::Active.Value, Vars::Aimbot::Global::AimKey.Value, Vars::Aimbot::Global::AimKey.Value));
 		drawOption("Auto Shoot", Vars::Aimbot::Global::AutoShoot.Value);
-		drawOption("Double Tap", isActive(Vars::Misc::CL_Move::DTMode.Value != 3, Vars::Misc::CL_Move::DTMode.Value == 0, Vars::Misc::CL_Move::DoubletapKey.Value));
+		drawOption("Double Tap", isActive(Vars::CL_Move::DoubleTap::Enabled.Value, Vars::CL_Move::DoubleTap::Mode.Value == 1, Vars::CL_Move::DoubleTap::DoubletapKey.Value));
 		drawOption("Anti Aim", Vars::AntiHack::AntiAim::Active.Value);
-		drawOption("Fakelag", isActive(Vars::Misc::CL_Move::Fakelag.Value, Vars::Misc::CL_Move::FakelagHold.Value, Vars::Misc::CL_Move::FakelagKey.Value));
+		drawOption("Fakelag", isActive(Vars::CL_Move::FakeLag::Enabled.Value, Vars::CL_Move::FakeLag::Mode.Value == 1, Vars::CL_Move::FakeLag::Key.Value));
 		drawOption("Triggerbot", isActive(Vars::Triggerbot::Global::Active.Value, Vars::Triggerbot::Global::TriggerKey.Value, Vars::Triggerbot::Global::TriggerKey.Value));
 
 		ImGui::End();
@@ -2203,7 +2201,7 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	if (IsOpen)
 	{
 		DrawMenu();
-		AddDraggable("Doubletap", Vars::Misc::CL_Move::DTIndicator, Vars::Misc::CL_Move::Indicator.Value);
+		AddDraggable("Doubletap", Vars::CL_Move::DoubleTap::Position, Vars::CL_Move::DoubleTap::Indicator.Value);
 		AddDraggable("Crithack", Vars::CritHack::IndicatorPos, Vars::CritHack::Indicators.Value);
 		AddDraggable("Spectators", Vars::Visuals::SpectatorPos, Vars::Visuals::SpectatorList.Value);
 		AddDraggable("Conditions", Vars::Visuals::OnScreenConditions, Vars::Visuals::DrawOnScreenConditions.Value);

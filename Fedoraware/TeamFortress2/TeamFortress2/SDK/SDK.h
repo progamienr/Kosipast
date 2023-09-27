@@ -687,7 +687,7 @@ namespace Utils
 				return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
 			}
 
-			return fabs(pWeapon->GetSmackTime() - I::GlobalVars->curtime) < I::GlobalVars->interval_per_tick * 2.0f;
+			return TIME_TO_TICKS(pWeapon->GetSmackTime()) + 2 == I::GlobalVars->tickcount;
 		}
 
 
@@ -750,12 +750,14 @@ namespace Utils
 				}
 			case TF_WEAPON_MINIGUN:
 				{
-					return pWeapon->GetMinigunState() != AC_STATE_FIRING;
+					if (pWeapon->GetMinigunState() != AC_STATE_IDLE && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
+						return true;
+					break;
 				}
 			default:
 				{
 					if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
-					{ return true; }
+						return true;
 					break;
 				}
 			}

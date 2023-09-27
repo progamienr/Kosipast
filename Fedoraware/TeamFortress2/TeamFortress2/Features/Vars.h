@@ -580,6 +580,72 @@ namespace Vars
 		}
 	}
 
+	namespace CL_Move
+	{
+		namespace DoubleTap
+		{
+			inline CVar<bool> Enabled{ false };
+
+			inline CVar<int> TickLimit{ 21 };
+			inline CVar<int> WarpRate{ 21 };
+			inline CVar<int> PassiveRecharge{ 0 };
+
+			inline CVar<int> Mode{ 1 }; // 0 - Always, 1 - Hold, 2 - Toggle (only for doubletap)
+			inline CVar<int> DoubletapKey{ 0x56 };
+			inline CVar<int> RechargeKey{ 0x48 };
+			inline CVar<int> TeleportKey{ 0x52 };
+
+			inline CVar<bool> WaitReady{ false };
+			inline CVar<bool> AntiWarp{ false };
+			inline CVar<bool> NotInAir{ false };
+			inline CVar<bool> AutoRetain{ true };
+			inline CVar<bool> AutoRecharge{ false };
+			inline CVar<bool> RechargeWhileDead{ false };
+			inline CVar<bool> SafeTick{ false };
+			inline CVar<bool> SafeTickAirOverride{ false };
+
+			inline CVar<bool> Indicator{ false };
+			inline DragBox_t Position{ g_ScreenSize.c, g_ScreenSize.c };
+		}
+
+		inline CVar<bool> SpeedEnabled{ false };
+		inline CVar<int> SpeedFactor{ 1 };
+
+		namespace FakeLag
+		{
+			inline CVar<bool> Enabled{ false };
+
+			inline CVar<int> Key{ 0x54 };
+			inline CVar<int> Mode{ 1 }; // 0 - Always, 1 - Hold, 2 - Toggle
+
+			inline CVar<int> Type{ 0 }; // 0 - plain, 1 - random
+			inline CVar<int> Min{ 1 };
+			inline CVar<int> Max{ 1 };
+			inline CVar<int> Value{ 1 };
+
+			inline CVar<bool> WhileMoving{ false };
+			inline CVar<bool> WhileVisible{ false };
+			inline CVar<bool> PredictVisibility{ false };
+			inline CVar<bool> WhileUnducking{ false };
+			inline CVar<bool> WhileInAir{ false };
+
+			inline CVar<bool> UnchokeOnAttack{ false };
+			inline CVar<bool> RetainBlastJump{ false };
+		}
+
+		inline CVar<int> AutoPeekKey{ false };
+		inline CVar<float> AutoPeekDistance{ 200.f };
+		inline CVar<bool> AutoPeekFree{ false };
+
+		namespace FLGChams
+		{
+			inline CVar<bool> Enabled{ false };
+			inline CVar<int> Material{ 1 };
+			inline Color_t FakelagColor{ 255, 255, 255, 255 };
+		}
+	}
+
+
 	namespace Misc
 	{
 		inline CVar<bool> FastDeltaStrafe{ false };
@@ -628,58 +694,6 @@ namespace Vars
 			inline CVar<float> MaximumNoise{ 5.f };			//	max mouse noise prior to a flick to mark somebody
 			inline CVar<float> MinimumAimbotFoV{ 3.f };		//	scaled with how many ticks a player has choked up to ->
 			inline CVar<float> MaxScaledAimbotFoV{ 20.f };	//	self explanatory
-		}
-
-		namespace CL_Move
-		{
-			inline CVar<bool> Enabled{ false };
-			inline CVar<bool> Indicator{ false };
-			inline DragBox_t DTIndicator{ g_ScreenSize.c, g_ScreenSize.c };
-			inline CVar<bool> Doubletap{ false };
-			inline CVar<bool> SafeTick{ false };
-			inline CVar<bool> SafeTickAirOverride{ false };
-			inline CVar<int> PassiveRecharge{ 0 };
-			inline CVar<bool> SEnabled{ false };
-			inline CVar<int> SFactor{ 1 };
-			inline CVar<bool> NotInAir{ false };
-			inline CVar<bool> StopMovement{ false };
-			inline CVar<int> TeleportKey{ 0x52 }; //R
-			inline CVar<int> TeleportMode{ 0 };
-			inline CVar<int> TeleportFactor{ 2 };
-			inline CVar<int> RechargeKey{ 0x48 }; //H
-			inline CVar<int> DoubletapKey{ 0x56 }; //V
-			inline CVar<bool> AutoRetain{ true };
-			inline CVar<bool> RetainFakelag{ false };
-			inline CVar<bool> RetainBlastJump{ false };
-			inline CVar<bool> UnchokeOnAttack{ false };
-			inline CVar<bool> RechargeWhileDead{ false };
-			inline CVar<bool> AutoRecharge{ false }; //H
-			inline CVar<bool> AntiWarp{ false }; //H
-			inline CVar<int> DTMode{ 0 }; // 0 - On Key, 1 - Always DT, 2 - Disable on key, 3 - Disabled
-			inline CVar<int> DTTicks{ 21 };
-			inline CVar<bool> WaitForDT{ false };
-			inline CVar<bool> Fakelag{ false };
-			inline CVar<int> FakelagKey{ 0x54 };
-			inline CVar<bool> FakelagHold{ false };
-			inline CVar<int> FakelagMode{ 0 }; // 0 - plain, 1 - random
-			inline CVar<bool> WhileMoving{ false };
-			inline CVar<bool> WhileVisible{ false };
-			inline CVar<bool> PredictVisibility{ false };
-			inline CVar<bool> WhileUnducking{ false };
-			inline CVar<bool> WhileInAir{ false };
-			inline CVar<int> FakelagMin{ 1 }; //	only show when FakelagMode=2
-			inline CVar<int> FakelagMax{ 22 };
-			inline CVar<int> FakelagValue{ 1 }; // dont show when fakelagmode=2
-			inline CVar<int> AutoPeekKey{ false };
-			inline CVar<float> AutoPeekDistance{ 200.f };
-			inline CVar<bool> AutoPeekFree{ false };
-
-			namespace FLGChams
-			{
-				inline CVar<bool> Enabled{ false };
-				inline CVar<int> Material{ 1 };
-				inline Color_t FakelagColor{ 255, 255, 255, 255 };
-			}
 		}
 
 		namespace Steam

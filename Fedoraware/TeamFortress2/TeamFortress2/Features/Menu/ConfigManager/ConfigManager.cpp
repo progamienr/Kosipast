@@ -459,46 +459,42 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 
 			// CL_Move
 			{
-				SAVE_VAR(Vars::Misc::CL_Move::Enabled); //Enabled
-				SAVE_VAR(Vars::Misc::CL_Move::Doubletap); // { true, L"Doubletap" };
-				SAVE_VAR(Vars::Misc::CL_Move::SafeTick);
-				SAVE_VAR(Vars::Misc::CL_Move::SafeTickAirOverride);
-				SAVE_VAR(Vars::Misc::CL_Move::PassiveRecharge);
-				SAVE_VAR(Vars::Misc::CL_Move::WaitForDT); // { true, L"Doubletap" };
-				SAVE_VAR(Vars::Misc::CL_Move::NotInAir); // { true, L"Doubletap" };
-				SAVE_VAR(Vars::Misc::CL_Move::StopMovement);
-				SAVE_VAR(Vars::Misc::CL_Move::DoubletapKey); // { true, L"Doubletap" };
-				SAVE_VAR(Vars::Misc::CL_Move::TeleportKey); // { 0x46, L"Teleport Key" }; //F
-				SAVE_VAR(Vars::Misc::CL_Move::TeleportMode);
-				SAVE_VAR(Vars::Misc::CL_Move::TeleportFactor);
-				SAVE_VAR(Vars::Misc::CL_Move::RechargeKey); // { 0x52, L"Recharge Key" }; //R
-				SAVE_VAR(Vars::Misc::CL_Move::AutoRetain);
-				SAVE_VAR(Vars::Misc::CL_Move::RetainFakelag);
-				SAVE_VAR(Vars::Misc::CL_Move::RetainBlastJump);
-				SAVE_VAR(Vars::Misc::CL_Move::UnchokeOnAttack);
-				SAVE_VAR(Vars::Misc::CL_Move::RechargeWhileDead);
-				SAVE_VAR(Vars::Misc::CL_Move::AutoRecharge);
-				SAVE_VAR(Vars::Misc::CL_Move::AntiWarp);
-				SAVE_VAR(Vars::Misc::CL_Move::DTMode);
-				SAVE_VAR(Vars::Misc::CL_Move::Fakelag);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagMin);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagMax);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagMode);
-				SAVE_VAR(Vars::Misc::CL_Move::WhileMoving);
-				SAVE_VAR(Vars::Misc::CL_Move::WhileInAir);
-				SAVE_VAR(Vars::Misc::CL_Move::WhileUnducking);
-				SAVE_VAR(Vars::Misc::CL_Move::WhileVisible);
-				SAVE_VAR(Vars::Misc::CL_Move::PredictVisibility);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagKey);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagHold);
-				SAVE_VAR(Vars::Misc::CL_Move::FakelagValue);
-				SAVE_VAR(Vars::Misc::CL_Move::DTTicks);
-				SAVE_VAR(Vars::Misc::CL_Move::AutoPeekKey);
-				SAVE_VAR(Vars::Misc::CL_Move::AutoPeekDistance);
-				SAVE_VAR(Vars::Misc::CL_Move::AutoPeekFree);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::Enabled);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::TickLimit);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::WarpRate);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::PassiveRecharge);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::Mode);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::DoubletapKey);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::RechargeKey);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::TeleportKey);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::WaitReady);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::AntiWarp);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::NotInAir);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::AutoRetain);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::AutoRecharge);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::RechargeWhileDead);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::SafeTick);
+				SAVE_VAR(Vars::CL_Move::DoubleTap::SafeTickAirOverride);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Enabled);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Mode);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Key);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Type);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Min);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Max);
+				SAVE_VAR(Vars::CL_Move::FakeLag::Value);
+				SAVE_VAR(Vars::CL_Move::FakeLag::WhileMoving);
+				SAVE_VAR(Vars::CL_Move::FakeLag::WhileVisible);
+				SAVE_VAR(Vars::CL_Move::FakeLag::PredictVisibility);
+				SAVE_VAR(Vars::CL_Move::FakeLag::WhileUnducking);
+				SAVE_VAR(Vars::CL_Move::FakeLag::WhileInAir);
+				SAVE_VAR(Vars::CL_Move::FakeLag::UnchokeOnAttack);
+				SAVE_VAR(Vars::CL_Move::FakeLag::RetainBlastJump);
+				SAVE_VAR(Vars::CL_Move::AutoPeekKey);
+				SAVE_VAR(Vars::CL_Move::AutoPeekDistance);
+				SAVE_VAR(Vars::CL_Move::AutoPeekFree);
 				{
-					SAVE_VAR(Vars::Misc::CL_Move::FLGChams::Material);
-					SAVE_OTHER(Vars::Misc::CL_Move::FLGChams::FakelagColor);
+					SAVE_VAR(Vars::CL_Move::FLGChams::Material);
+					SAVE_OTHER(Vars::CL_Move::FLGChams::FakelagColor);
 				}
 			}
 			//Steam
@@ -765,46 +761,42 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 
 			// CL_Move
 			{
-				LOAD_VAR(Vars::Misc::CL_Move::Enabled); //Enabled
-				LOAD_VAR(Vars::Misc::CL_Move::Doubletap); // { true, L"Doubletap" };
-				LOAD_VAR(Vars::Misc::CL_Move::SafeTick);
-				LOAD_VAR(Vars::Misc::CL_Move::SafeTickAirOverride);
-				LOAD_VAR(Vars::Misc::CL_Move::PassiveRecharge);
-				LOAD_VAR(Vars::Misc::CL_Move::WaitForDT); // { true, L"Doubletap" };
-				LOAD_VAR(Vars::Misc::CL_Move::NotInAir); // { true, L"Doubletap" };
-				LOAD_VAR(Vars::Misc::CL_Move::StopMovement);
-				LOAD_VAR(Vars::Misc::CL_Move::TeleportKey); // { 0x46, L"Teleport Key" }; //F
-				LOAD_VAR(Vars::Misc::CL_Move::TeleportMode);
-				LOAD_VAR(Vars::Misc::CL_Move::TeleportFactor);
-				LOAD_VAR(Vars::Misc::CL_Move::RechargeKey); // { 0x52, L"Recharge Key" }; //R
-				LOAD_VAR(Vars::Misc::CL_Move::AutoRetain);
-				LOAD_VAR(Vars::Misc::CL_Move::RetainFakelag);
-				LOAD_VAR(Vars::Misc::CL_Move::RetainBlastJump);
-				LOAD_VAR(Vars::Misc::CL_Move::UnchokeOnAttack);
-				LOAD_VAR(Vars::Misc::CL_Move::RechargeWhileDead);
-				LOAD_VAR(Vars::Misc::CL_Move::AutoRecharge);
-				LOAD_VAR(Vars::Misc::CL_Move::AntiWarp);
-				LOAD_VAR(Vars::Misc::CL_Move::DoubletapKey);
-				LOAD_VAR(Vars::Misc::CL_Move::DTMode);
-				LOAD_VAR(Vars::Misc::CL_Move::Fakelag);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagMin);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagMax);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagMode);
-				LOAD_VAR(Vars::Misc::CL_Move::WhileMoving);
-				LOAD_VAR(Vars::Misc::CL_Move::WhileInAir);
-				LOAD_VAR(Vars::Misc::CL_Move::WhileUnducking);
-				LOAD_VAR(Vars::Misc::CL_Move::WhileVisible);
-				LOAD_VAR(Vars::Misc::CL_Move::PredictVisibility);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagKey);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagHold);
-				LOAD_VAR(Vars::Misc::CL_Move::FakelagValue);
-				LOAD_VAR(Vars::Misc::CL_Move::DTTicks);
-				LOAD_VAR(Vars::Misc::CL_Move::AutoPeekKey);
-				LOAD_VAR(Vars::Misc::CL_Move::AutoPeekDistance);
-				LOAD_VAR(Vars::Misc::CL_Move::AutoPeekFree);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::Enabled);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::TickLimit);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::WarpRate);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::PassiveRecharge);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::Mode);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::DoubletapKey);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::RechargeKey);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::TeleportKey);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::WaitReady);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::AntiWarp);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::NotInAir);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::AutoRetain);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::AutoRecharge);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::RechargeWhileDead);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::SafeTick);
+				LOAD_VAR(Vars::CL_Move::DoubleTap::SafeTickAirOverride);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Enabled);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Mode);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Key);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Type);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Min);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Max);
+				LOAD_VAR(Vars::CL_Move::FakeLag::Value);
+				LOAD_VAR(Vars::CL_Move::FakeLag::WhileMoving);
+				LOAD_VAR(Vars::CL_Move::FakeLag::WhileVisible);
+				LOAD_VAR(Vars::CL_Move::FakeLag::PredictVisibility);
+				LOAD_VAR(Vars::CL_Move::FakeLag::WhileUnducking);
+				LOAD_VAR(Vars::CL_Move::FakeLag::WhileInAir);
+				LOAD_VAR(Vars::CL_Move::FakeLag::UnchokeOnAttack);
+				LOAD_VAR(Vars::CL_Move::FakeLag::RetainBlastJump);
+				LOAD_VAR(Vars::CL_Move::AutoPeekKey);
+				LOAD_VAR(Vars::CL_Move::AutoPeekDistance);
+				LOAD_VAR(Vars::CL_Move::AutoPeekFree);
 				{
-					LOAD_VAR(Vars::Misc::CL_Move::FLGChams::Material);
-					LOAD_OTHER(Vars::Misc::CL_Move::FLGChams::FakelagColor);
+					LOAD_VAR(Vars::CL_Move::FLGChams::Material);
+					LOAD_OTHER(Vars::CL_Move::FLGChams::FakelagColor);
 				}
 			}
 			//Steam
@@ -876,8 +868,8 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 
 		SAVE_OTHER(Vars::Menu::CheatName);
 		SAVE_OTHER(Vars::Menu::CheatPrefix);
-		SAVE_OTHER(Vars::Misc::CL_Move::DTIndicator);
-		SAVE_VAR(Vars::Misc::CL_Move::Indicator);
+		SAVE_VAR(Vars::CL_Move::DoubleTap::Indicator);
+		SAVE_OTHER(Vars::CL_Move::DoubleTap::Position);
 		SAVE_VAR(Vars::Backtrack::BtChams::Enabled);
 		SAVE_VAR(Vars::Backtrack::BtChams::LastOnly);
 		SAVE_VAR(Vars::Backtrack::BtChams::EnemyOnly);
@@ -1213,8 +1205,8 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 
 		LOAD_OTHER(Vars::Menu::CheatName);
 		LOAD_OTHER(Vars::Menu::CheatPrefix);
-		LOAD_OTHER(Vars::Misc::CL_Move::DTIndicator);
-		LOAD_VAR(Vars::Misc::CL_Move::Indicator);
+		LOAD_VAR(Vars::CL_Move::DoubleTap::Indicator);
+		LOAD_OTHER(Vars::CL_Move::DoubleTap::Position);
 		LOAD_VAR(Vars::Backtrack::BtChams::Enabled);
 		LOAD_VAR(Vars::Backtrack::BtChams::LastOnly);
 		LOAD_VAR(Vars::Backtrack::BtChams::EnemyOnly);

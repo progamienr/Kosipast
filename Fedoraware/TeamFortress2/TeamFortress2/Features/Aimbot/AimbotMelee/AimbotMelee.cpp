@@ -488,6 +488,9 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (!CanHit(target, pLocal, pWeapon, vEyePos, pRecordMap[target.m_pEntity])) continue;
 
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
+		if (!pRecordMap[target.m_pEntity].empty() && !lockedTarget.m_pEntity)
+			lockedTarget = target;
+
 		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
 		{
 			G::AimPos = target.m_vPos;
@@ -502,9 +505,6 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 
 		if (G::IsAttacking && target.pTick)
 		{
-			if (!pRecordMap[target.m_pEntity].empty() && !lockedTarget.m_pEntity)
-				lockedTarget = target;
-
 			if (target.ShouldBacktrack)
 				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
 

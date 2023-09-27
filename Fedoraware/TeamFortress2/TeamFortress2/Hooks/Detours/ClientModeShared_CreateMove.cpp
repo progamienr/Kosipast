@@ -88,7 +88,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 				if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->GetClip1() || (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart()))
 				{
-					G::WaitForShift = Vars::Misc::CL_Move::DTTicks.Value;
+					G::WaitForShift = Vars::CL_Move::DoubleTap::WaitReady.Value;
 				}
 
 				G::CurItemDefIndex = nItemDefIndex;
@@ -112,23 +112,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 							G::WeaponCanAttack = false;
 						}
 					}
-				}
-			}
-
-			if (Vars::Misc::CL_Move::RechargeWhileDead.Value)
-			{
-				if (!pLocal->IsAlive() && G::ShiftedTicks)
-				{
-					G::RechargeQueued = true;
-				}
-			}
-
-
-			if (Vars::Misc::CL_Move::AutoRecharge.Value && !G::ShouldShift && !G::Recharging && !G::ShiftedTicks)
-			{
-				if (pLocal->GetVecVelocity().Length2D() < 5.0f && !(pCmd->buttons))
-				{
-					G::RechargeQueued = true;
 				}
 			}
 		}
@@ -167,7 +150,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (*pSendPacket)
 	{
 		F::FakeAng.Run(pCmd);
-		F::FakeAng.DrawChams = Vars::AntiHack::AntiAim::Active.Value || Vars::Misc::CL_Move::Fakelag.Value;
+		F::FakeAng.DrawChams = Vars::AntiHack::AntiAim::Active.Value || Vars::CL_Move::FakeLag::Enabled.Value;
 	}
 
 	G::ViewAngles = pCmd->viewangles;
@@ -208,7 +191,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	// do this at the end just in case aimbot / triggerbot fired.
 	if (const auto& pWeapon = g_EntityCache.GetWeapon(); const auto & pLocal = g_EntityCache.GetLocal())
 	{
-		if (pCmd->buttons & IN_ATTACK && (Vars::Misc::CL_Move::SafeTick.Value || (Vars::Misc::CL_Move::SafeTickAirOverride.Value && !pLocal->OnSolid())))
+		if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || (Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid())))
 		{
 			if (G::NextSafeTick > I::GlobalVars->tickcount && G::ShouldShift && G::ShiftedTicks)
 				pCmd->buttons &= ~IN_ATTACK;

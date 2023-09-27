@@ -52,22 +52,38 @@ MAKE_HOOK(CNetChan_SendNetMsg, g_Pattern.Find(L"engine.dll", L"55 8B EC 57 8B F9
 
 		case clc_Move:
 		{
-			// doesn't seem to work above 21 ticks (can dt but shot seems off, plus aimbot will make it not work?)
-			// also possibly make fakelag choke more than 21 ticks
-			static int iOldShift = G::ShiftedTicks;
-			const int iAllowedNewCommands = g_ConVars.sv_maxusrcmdprocessticks->GetInt();//fmax(fmin(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, g_ConVars.sv_maxusrcmdprocessticks->GetInt()), 0);
-			const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
-			const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands;
-			if (iCmdCount > iAllowedNewCommands)
+			/*
+			// Charge
+			if (G::Recharge && G::ShiftedTicks < g_ConVars.sv_maxusrcmdprocessticks->GetInt())
 			{
-				if (Vars::Debug::DebugInfo.Value)
-				{
-					Utils::ConLog("clc_Move", tfm::format("%d sent <%d | %d>, max was %d.", iCmdCount, moveMsg.m_nNewCommands, moveMsg.m_nBackupCommands, iAllowedNewCommands).c_str(), { 0, 222, 255, 255 });
-				}
-				G::ShiftedTicks -= iCmdCount - iAllowedNewCommands;
-				F::Ticks.iDeficit = iCmdCount - iAllowedNewCommands;
+				auto moveMsg = (CLC_Move*)&msg;
+
+				moveMsg->m_nBackupCommands = 0;
+				moveMsg->m_nNewCommands = 0;
+				moveMsg->m_DataOut.Reset();
+				moveMsg->m_DataOut.m_nDataBits = 0;
+				moveMsg->m_DataOut.m_nDataBytes = 0;
+				moveMsg->m_DataOut.m_iCurBit = 0;
+
+				G::ShiftedTicks++;
+				G::WaitForShift = G::ShiftedTicks;
 			}
-			iOldShift = G::ShiftedTicks;
+			else
+			*/
+			{ // >21 seems to cause some issues, i think we have access to those?
+				const int iAllowedNewCommands = fmax(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, 0); // g_ConVars.sv_maxusrcmdprocessticks->GetInt();
+				const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
+				const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands - 3;
+				if (iCmdCount > iAllowedNewCommands)
+				{
+					if (Vars::Debug::DebugInfo.Value)
+					{
+						Utils::ConLog("clc_Move", tfm::format("%d sent <%d | %d>, max was %d.", iCmdCount, moveMsg.m_nNewCommands, moveMsg.m_nBackupCommands, iAllowedNewCommands).c_str(), { 0, 222, 255, 255 });
+					}
+					G::ShiftedTicks -= iCmdCount - iAllowedNewCommands;
+					F::Ticks.iDeficit = iCmdCount - iAllowedNewCommands;
+				}
+			}
 			break;
 		}
 	}

@@ -435,45 +435,55 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 
 void CVisuals::DrawTickbaseText()
 {
-	if (!Vars::Misc::CL_Move::Indicator.Value)
+	if (!Vars::CL_Move::DoubleTap::Indicator.Value)
 		return;
 
 	const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
 	if (!pLocal || !pLocal->IsAlive())
 		return;
-		
-	const int ticks = G::ShiftedTicks + G::ChokedTicks;
-	const DragBox_t DTBox = Vars::Misc::CL_Move::DTIndicator;
+
+	//const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, Vars::CL_Move::DoubleTap::TickLimit.Value);
+	const int ticks = G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/;
+	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position;
 
 	const auto fontHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
-	g_Draw.String(FONT_INDICATORS, DTBox.c, DTBox.y + 15 - fontHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", ticks, Vars::Misc::CL_Move::DTTicks.Value);
+	g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + 15 - fontHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", ticks, Vars::CL_Move::DoubleTap::TickLimit.Value);
 	if (G::WaitForShift || !G::ShiftedTicks || G::Recharging)
 	{
-		g_Draw.String(FONT_INDICATORS, DTBox.c, DTBox.y + fontHeight + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Not Ready");
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Not Ready");
+	}
+
+	if (Vars::Debug::DebugInfo.Value)
+	{
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 2 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharge: %d", G::Recharge);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 3 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharging: %d", G::Recharging);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 4 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShouldShift: %d", G::ShouldShift);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 5 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Teleporting: %d", G::Teleporting);
 	}
 }
 void CVisuals::DrawTickbaseBars()
 {
-	if (!Vars::Misc::CL_Move::Indicator.Value)
+	if (!Vars::CL_Move::DoubleTap::Indicator.Value)
 		return;
 
 	const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	const int ticks = G::ShiftedTicks + G::ChokedTicks;
-	const DragBox_t DTBox = Vars::Misc::CL_Move::DTIndicator;
-	const float ratioCurrent = std::clamp(((float)ticks / (float)Vars::Misc::CL_Move::DTTicks.Value), 0.0f, 1.0f);
+	//const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, Vars::CL_Move::DoubleTap::TickLimit.Value);
+	const int ticks = G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/;
+	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position;
+	const float ratioCurrent = (float)ticks / (float)Vars::CL_Move::DoubleTap::TickLimit.Value;
 
 	ImGui::GetBackgroundDrawList()->AddRectFilled(
-		ImVec2(DTBox.x, DTBox.y + 18), ImVec2(DTBox.x + 100, DTBox.y + 30),
+		ImVec2(dtPos.x, dtPos.y + 18), ImVec2(dtPos.x + 100, dtPos.y + 30),
 		ImColor(Colors::DtOutline.r, Colors::DtOutline.g, Colors::DtOutline.b, Colors::DtOutline.a), 10
 	);
 	if (ticks && ratioCurrent)
 	{
-		ImGui::GetBackgroundDrawList()->PushClipRect(ImVec2(DTBox.x + 2, DTBox.y + 20), ImVec2(DTBox.x + 2 + 96 * ratioCurrent, DTBox.y + 28), true);
+		ImGui::GetBackgroundDrawList()->PushClipRect(ImVec2(dtPos.x + 2, dtPos.y + 20), ImVec2(dtPos.x + 2 + 96 * ratioCurrent, dtPos.y + 28), true);
 		ImGui::GetBackgroundDrawList()->AddRectFilled(
-			ImVec2(DTBox.x + 2, DTBox.y + 20), ImVec2(DTBox.x + 98, DTBox.y + 28),
+			ImVec2(dtPos.x + 2, dtPos.y + 20), ImVec2(dtPos.x + 98, dtPos.y + 28),
 			ImColor(Vars::Menu::MenuAccent.r, Vars::Menu::MenuAccent.g, Vars::Menu::MenuAccent.b, Vars::Menu::MenuAccent.a), 10
 		);
 		ImGui::GetBackgroundDrawList()->PopClipRect();
