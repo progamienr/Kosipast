@@ -750,7 +750,7 @@ namespace Utils
 				}
 			case TF_WEAPON_MINIGUN:
 				{
-					if (pWeapon->GetMinigunState() != AC_STATE_IDLE && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
+					if (pWeapon->GetMinigunState() == AC_STATE_FIRING && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
 						return true;
 					break;
 				}
@@ -817,7 +817,8 @@ namespace Utils
 	__inline void StopMovement(CUserCmd* pCmd, bool safe = true) { //credits to fourteen
 		if (safe && G::IsAttacking) { return; }
 
-		if (CBaseEntity* pLocal = g_EntityCache.GetLocal()) {
+		if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
+		{
 			QAngle direction;
 			Vector forward;
 

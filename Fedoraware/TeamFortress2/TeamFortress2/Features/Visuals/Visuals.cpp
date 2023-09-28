@@ -442,23 +442,23 @@ void CVisuals::DrawTickbaseText()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	//const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, Vars::CL_Move::DoubleTap::TickLimit.Value);
-	const int ticks = G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/;
+	const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, G::MaxShift);
 	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position;
 
 	const auto fontHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
-	g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + 15 - fontHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", ticks, Vars::CL_Move::DoubleTap::TickLimit.Value);
-	if (G::WaitForShift || !G::ShiftedTicks || G::Recharging)
+	g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + 15 - fontHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", ticks, G::MaxShift);
+	if (G::WaitForShift)
 	{
 		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Not Ready");
 	}
 
 	if (Vars::Debug::DebugInfo.Value)
 	{
-		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 2 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharge: %d", G::Recharge);
-		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 3 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharging: %d", G::Recharging);
-		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 4 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShouldShift: %d", G::ShouldShift);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 3 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharge: %d", G::Recharge);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 4 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharging: %d", G::Recharging);
 		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 5 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Teleporting: %d", G::Teleporting);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 6 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShouldShift: %d", G::ShouldShift);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 7 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::AntiWarp: %d", G::AntiWarp);
 	}
 }
 void CVisuals::DrawTickbaseBars()
@@ -470,10 +470,9 @@ void CVisuals::DrawTickbaseBars()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	//const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, Vars::CL_Move::DoubleTap::TickLimit.Value);
-	const int ticks = G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/;
+	const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, G::MaxShift);
 	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position;
-	const float ratioCurrent = (float)ticks / (float)Vars::CL_Move::DoubleTap::TickLimit.Value;
+	const float ratioCurrent = (float)ticks / (float)G::MaxShift;
 
 	ImGui::GetBackgroundDrawList()->AddRectFilled(
 		ImVec2(dtPos.x, dtPos.y + 18), ImVec2(dtPos.x + 100, dtPos.y + 30),

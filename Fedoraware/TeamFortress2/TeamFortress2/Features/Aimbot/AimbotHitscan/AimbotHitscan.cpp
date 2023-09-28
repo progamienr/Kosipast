@@ -633,7 +633,10 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2 && !G::ShouldShift && !bKeepFiring)
 	{
 		bLastTickHeld = false;
-		Exit(pWeapon, pCmd); return;
+		if (pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() != AC_STATE_IDLE)
+		{
+			Exit(pWeapon, pCmd); return;
+		}
 	}
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());

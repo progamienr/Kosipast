@@ -319,17 +319,63 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 				{
 					const Vec3 vOffset = (trace.vEndPos - New) + (vOriginal - vPredict);
 
-					Old = F::ProjSim.GetOrigin() + vOffset;
+					Vec3 vOld = F::ProjSim.GetOrigin() + vOffset;
 					F::ProjSim.RunTick(projInfo);
-					New = F::ProjSim.GetOrigin() + vOffset;
+					Vec3 vNew = F::ProjSim.GetOrigin() + vOffset;
 
-					Utils::Trace(Old, New, MASK_SHOT, &filter, &trace);
-					trace.vEndPos -= vOffset;
+					CGameTrace cTrace = {};
+					Utils::Trace(vOld, vNew, MASK_SHOT, &filter, &cTrace);
+					cTrace.vEndPos -= vOffset;
 
-					if (trace.DidHit() && !(trace.entity && trace.entity == target.m_pEntity && trace.hitbox == HITBOX_HEAD))
+					//Utils::ConLog("cTrace", tfm::format("DidHit: %i, hitbox: %i", cTrace.DidHit(), cTrace.hitbox).c_str(), { 224, 255, 131, 255 });
+					if (cTrace.DidHit() && (!cTrace.entity || cTrace.entity != target.m_pEntity || cTrace.hitbox != HITBOX_HEAD))
 						return false;
 					
-					// possibly add loop for closest hitbox
+					if (!cTrace.DidHit()) // loop and see if closest hitbox is head
+					{ // i think this is right
+						const model_t* pModel = target.m_pEntity->GetModel();
+						if (!pModel) return false;
+						const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
+						if (!pHDR) return false;
+						const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->GetHitboxSet());
+						if (!pSet) return false;
+
+						matrix3x4 BoneMatrix[128];
+						if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->GetSimulationTime()))
+							return false;
+
+						QAngle direction; Vector forward;
+						Math::VectorAngles(Old - New, direction);
+						Math::AngleVectors(direction, &forward);
+						const Vec3 vPos = trace.vEndPos + forward * 16 + vOriginal - vPredict;
+
+						//F::Visuals.ClearBulletLines();
+						//G::BulletsStorage.push_back({ {pLocal->GetShootPos(), vPos}, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor });
+
+						float closestDist; int closestId = -1;
+						for (int i = 0; i < pSet->numhitboxes; ++i)
+						{
+							const mstudiobbox_t* bbox = pSet->hitbox(i);
+							if (!bbox)
+								continue;
+
+							matrix3x4 rotMatrix;
+							Math::AngleMatrix(bbox->angle, rotMatrix);
+							matrix3x4 matrix;
+							Math::ConcatTransforms(BoneMatrix[bbox->bone], rotMatrix, matrix);
+							Vec3 mOrigin;
+							Math::GetMatrixOrigin(matrix, mOrigin);
+
+							//G::BulletsStorage.push_back({ {mOrigin, vPos}, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
+							const float flDist = vPos.DistTo(mOrigin);
+							if (closestId != -1 && flDist < closestDist || closestId == -1)
+							{
+								closestDist = flDist;
+								closestId = i;
+							}
+						}
+						return closestId == 0;
+					}
 				}
 
 				return true;
@@ -367,8 +413,8 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 			flMaxTime = projInfo.m_lifetime;
 	}
 	//const int iLatency = TIME_TO_TICKS(F::Backtrack.GetReal());
-	//const float flLatency = iNetChan->GetLatency(FLOW_OUTGOING) + I::GlobalVars->interval_per_tick;
-	const float flLatency = iNetChan->GetLatency(FLOW_OUTGOING);
+	//const float flLatency = F::Backtrack.GetReal()/*iNetChan->GetLatency(FLOW_OUTGOING)*/ + I::GlobalVars->interval_per_tick;
+	const float flLatency = F::Backtrack.GetReal()/*iNetChan->GetLatency(FLOW_OUTGOING)*/;
 	const float latOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::LatOff.Value;
 	const float phyOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::PhyOff.Value;
 
@@ -481,7 +527,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
 		{
-			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + TICKS_TO_TIME(i));
+			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + (Vars::Visuals::ClearLines.Value ? TICKS_TO_TIME(i) : 5.f));
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
@@ -514,7 +560,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				Vec3 matrixOrigin;
 				Math::GetMatrixOrigin(matrix, matrixOrigin);
 
-				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + TICKS_TO_TIME(i), Colors::HitboxEdge, Colors::HitboxFace });
+				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + (Vars::Visuals::ClearLines.Value ? TICKS_TO_TIME(i) : 5.f), Colors::HitboxEdge, Colors::HitboxFace });
 			}
 		}
 		return true;

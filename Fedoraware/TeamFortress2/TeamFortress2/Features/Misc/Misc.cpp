@@ -46,11 +46,14 @@ void CMisc::RunPost(CUserCmd* pCmd, bool* pSendPacket)
 
 void CMisc::StopMovement(CUserCmd* pCmd, bool* pSendPacket)
 {
-	if (!G::ShouldStop) { return; }
+	if (!G::ShouldStop)
+		return;
 	Utils::StopMovement(pCmd);
-	if (G::ShouldStop) { return; }
+	if (G::ShouldStop)
+		return;
 	G::UpdateView = false; bMovementStopped = true; bMovementScuffed = true;
-	if (G::Recharging) { return; }
+	if (G::Recharging)
+		return;
 	*pSendPacket = false;
 }
 
@@ -835,24 +838,13 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	if (pLocal && pLocal->IsAlive() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned() && pLocal->GetVelocity().Length2D() > 5.f)
 	{
-		const int stopType = (
-			G::ShouldShift && G::ShiftedTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0
-		); // 0 none, 1 ground
 		static Vec3 prediction = {};
 		static Vec3 origin = {};
 		static Vec3 angles = {};
 		static int nShiftTickG = 0;
 		static int nShiftTickA = 0;
 
-		switch (stopType)
-		{
-		case 0:
-		{
-			nShiftTickG = 0;
-			nShiftTickA = 0;
-			return;
-		}
-		case 1:
+		if (G::AntiWarp && G::ShiftedTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid())
 		{
 			/*
 			pCmd->forwardmove = 0.f; pCmd->sidemove = 0.f;
@@ -902,6 +894,11 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 			//	alot of things worked better than (1/dist) as the scale, but caused issues on different classes, for now this is the best I can get it to.
 			return;
 		}
+		else
+		{
+			nShiftTickG = 0;
+			nShiftTickA = 0;
+			return;
 		}
 	}
 }

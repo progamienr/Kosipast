@@ -54,7 +54,7 @@ MAKE_HOOK(CNetChan_SendNetMsg, g_Pattern.Find(L"engine.dll", L"55 8B EC 57 8B F9
 		{
 			/*
 			// Charge
-			if (G::Recharge && G::ShiftedTicks < g_ConVars.sv_maxusrcmdprocessticks->GetInt())
+			if (G::Recharge && G::ShiftedTicks < G::MaxShift)
 			{
 				auto moveMsg = (CLC_Move*)&msg;
 
@@ -70,7 +70,7 @@ MAKE_HOOK(CNetChan_SendNetMsg, g_Pattern.Find(L"engine.dll", L"55 8B EC 57 8B F9
 			}
 			else
 			*/
-			{ // >21 seems to cause some issues, i think we have access to those?
+			{
 				const int iAllowedNewCommands = fmax(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, 0); // g_ConVars.sv_maxusrcmdprocessticks->GetInt();
 				const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
 				const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands - 3;

@@ -23,7 +23,8 @@
 
 void AttackingUpdate()
 {
-	if (!G::IsAttacking) { return; }
+	if (!G::IsAttacking)
+		return;
 
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
@@ -42,8 +43,10 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	G::SilentTime = false;
 	G::IsAttacking = false;
 
-	if (!pCmd || !pCmd->command_number) { return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd); }
-	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd)) { I::Prediction->SetLocalViewAngles(pCmd->viewangles); }
+	if (!pCmd || !pCmd->command_number)
+		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
+	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd))
+		I::Prediction->SetLocalViewAngles(pCmd->viewangles);
 
 	// Get the pointer to pSendPacket
 	uintptr_t _bp;
@@ -87,9 +90,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 				const int nItemDefIndex = pWeapon->GetItemDefIndex();
 
 				if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->GetClip1() || (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart()))
-				{
-					G::WaitForShift = Vars::CL_Move::DoubleTap::WaitReady.Value;
-				}
+					G::WaitForShift = 1; //Vars::CL_Move::DoubleTap::WaitReady.Value;
 
 				G::CurItemDefIndex = nItemDefIndex;
 				G::WeaponCanHeadShot = pWeapon->CanWeaponHeadShot();
@@ -101,17 +102,13 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 				if (pWeapon->GetSlot() != SLOT_MELEE)
 				{
 					if (pWeapon->IsInReload())
-					{
 						G::WeaponCanAttack = true;
-					}
 
-					if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka)
-					{
-						if (pWeapon->GetClip1() == 0)
-						{
-							G::WeaponCanAttack = false;
-						}
-					}
+					if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() == AC_STATE_IDLE)
+						G::WeaponCanAttack = false;
+
+					if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->GetClip1() == 0)
+						G::WeaponCanAttack = false;
 				}
 			}
 		}

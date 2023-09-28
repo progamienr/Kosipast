@@ -83,7 +83,7 @@ bool CCritHack::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 		}
 		case TF_WEAPON_MINIGUN:
 		{
-			if (pWeapon->GetMinigunState() != AC_STATE_IDLE && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
+			if (pWeapon->GetMinigunState() == AC_STATE_FIRING && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
 				return true;
 			break;
 		}
@@ -270,7 +270,8 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) /
 			int iCrits = 0;
 
 			float bucket = Bucket - BucketBottom, flCost = Storage[pWeapon->GetSlot()].BaseCost;
-			for (int i = 0; i < Storage[pWeapon->GetSlot()].PotentialCrits + 1; i++)
+			const int iAttempts = std::min(Storage[pWeapon->GetSlot()].PotentialCrits + 1, 100); // just in case
+			for (int i = 0; i < iAttempts; i++)
 			{
 				flMult = Math::RemapValClamped((float)crits / (float)shots, 0.1f, 1.f, 1.f, 3.f);
 
@@ -742,7 +743,7 @@ void CCritHack::Draw()
 
 		if (Vars::Debug::DebugInfo.Value)
 		{
-			const int height = Vars::Fonts::FONT_INDICATORS::nTall.Value + 2;
+			const int height = Vars::Fonts::FONT_INDICATORS::nTall.Value;
 			g_Draw.String(FONT_INDICATORS, x, y + height * 3, { 255, 255, 255, 255 }, align, tfm::format("AllDamage: %i, CritDamage: %i", AllDamage, CritDamage).c_str());
 			g_Draw.String(FONT_INDICATORS, x, y + height * 4, { 255, 255, 255, 255 }, align, tfm::format("Bucket: %i", Storage[slot].Bucket).c_str());
 			g_Draw.String(FONT_INDICATORS, x, y + height * 5, { 255, 255, 255, 255 }, align, tfm::format("Base: %.2f, Damage: %.2f, Cost: %.2f", Storage[slot].BaseDamage, Storage[slot].Damage, Storage[slot].Cost).c_str());

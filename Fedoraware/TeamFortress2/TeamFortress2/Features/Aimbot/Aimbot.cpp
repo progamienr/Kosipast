@@ -9,16 +9,19 @@
 bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
 	// Don't run while freecam is active
-	if (G::FreecamActive) { return false; }
+	if (G::FreecamActive)
+		return false;
 
 	// Don't run if aimbot is disabled
 	//if (!Vars::Aimbot::Global::Active.Value) { return false; }
 
 	// Don't run in menus
-	if (I::EngineVGui->IsGameUIVisible() || I::VGuiSurface->IsCursorVisible()) { return false; }
+	if (I::EngineVGui->IsGameUIVisible() || I::VGuiSurface->IsCursorVisible())
+		return false;
 
 	// Don't run if we are frozen in place.
-	if (G::Frozen) { return false; }
+	if (G::Frozen)
+		return false;
 
 	if (!pLocal->IsAlive() ||
 		pLocal->IsTaunting() ||
@@ -27,18 +30,13 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 		pLocal->IsCloaked() ||
 		pLocal->IsInBumperKart() ||
 		pLocal->IsAGhost())
-	{
 		return false;
-	}
 
 	switch (G::CurItemDefIndex)
 	{
 		case Soldier_m_RocketJumper:
 		case Demoman_s_StickyJumper: 
-		{
 			return false;
-		}
-		default: break;
 	}
 
 	switch (pWeapon->GetWeaponID())
@@ -52,10 +50,7 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 		case TF_WEAPON_INVIS:
 		case TF_WEAPON_BUFF_ITEM:
 		case TF_WEAPON_GRAPPLINGHOOK:
-		{
 			return false;
-		}
-		default: break;
 	}
 
 /*	//	weapon data check for null damage
@@ -63,9 +58,7 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	{
 		WeaponData_t sWeaponData = sWeaponInfo->m_WeaponData[0];
 		if (sWeaponData.m_nDamage < 1)
-		{
 			return false;
-		}
 	}*/
 
 	return true;
@@ -79,39 +72,27 @@ void CAimbot::Run(CUserCmd* pCmd)
 	G::HitscanSilentActive = false;
 	G::AimPos = Vec3();
 
-	if (F::Misc.bMovementStopped || F::Misc.bFastAccel) { return; }
+	if (F::Misc.bMovementStopped || F::Misc.bFastAccel)
+		return;
 
 	const auto pLocal = g_EntityCache.GetLocal();
 	const auto pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon) { return; }
+	if (!pLocal || !pWeapon)
+		return;
 
-	if (!ShouldRun(pLocal, pWeapon)) { return; }
+	if (!ShouldRun(pLocal, pWeapon))
+		return;
 
 	if (SandvichAimbot::bIsSandvich = SandvichAimbot::IsSandvich())
-	{
-		G::CurWeaponType = EWeaponType::HITSCAN;
-	}
+		G::CurWeaponType = EWeaponType::PROJECTILE;
 
 	switch (G::CurWeaponType)
 	{
 		case EWeaponType::HITSCAN:
-		{
-			F::AimbotHitscan.Run(pLocal, pWeapon, pCmd);
-			break;
-		}
-
+			F::AimbotHitscan.Run(pLocal, pWeapon, pCmd); break;
 		case EWeaponType::PROJECTILE:
-		{
-			F::AimbotProjectile.Run(pLocal, pWeapon, pCmd);
-			break;
-		}
-
+			F::AimbotProjectile.Run(pLocal, pWeapon, pCmd); break;
 		case EWeaponType::MELEE:
-		{
-			F::AimbotMelee.Run(pLocal, pWeapon, pCmd);
-			break;
-		}
-
-		default: break;
+			F::AimbotMelee.Run(pLocal, pWeapon, pCmd); break;
 	}
 }
