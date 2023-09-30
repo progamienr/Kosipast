@@ -39,6 +39,7 @@ struct PlayerStorage
 
 	std::deque<std::pair<Vec3, Vec3>> PredictionLines;
 
+	bool m_bFailed = false;
 	bool m_bInitFailed = false;
 };
 

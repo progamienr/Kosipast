@@ -186,7 +186,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	const auto pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pPlayer || !pPlayer->IsPlayer() || pPlayer->deadflag())
 	{
-		playerStorageOut.m_bInitFailed = true;
+		playerStorageOut.m_bInitFailed = playerStorageOut.m_bFailed = true;
 		return false;
 	}
 
@@ -253,7 +253,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	// setup move data
 	if (!SetupMoveData(playerStorageOut))
 	{
-		playerStorageOut.m_bInitFailed = true;
+		playerStorageOut.m_bFailed = true;
 		return false;
 	}
 
@@ -288,7 +288,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 
 		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value)
 		{
-			playerStorageOut.m_bInitFailed = true;
+			playerStorageOut.m_bFailed = true;
 			return false;
 		}
 	}
@@ -438,7 +438,7 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 
 void CMovementSimulation::Restore(PlayerStorage& playerStorage)
 {
-	if (/*playerStorage.m_bInitFailed || */!playerStorage.m_pPlayer)
+	if (playerStorage.m_bInitFailed || !playerStorage.m_pPlayer)
 		return;
 
 	playerStorage.m_pPlayer->SetCurrentCmd(nullptr);

@@ -469,7 +469,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	int i = 0, iLowestPriority = 3, iEndTick = 0; // time to point valid, end in n ticks
 	for (;i < TIME_TO_TICKS(flMaxTime); i++)
 	{
-		if (!storage.m_bInitFailed)
+		if (!storage.m_bFailed)
 		{
 			F::MoveSim.RunTick(storage);
 			vTargetPos = storage.m_MoveData.m_vecAbsOrigin;
@@ -523,10 +523,9 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 	F::MoveSim.Restore(storage);
 
-	Utils::ConLog("m_bInitFailed", tfm::format("%i", storage.m_bInitFailed).c_str(), { 224, 255, 131, 255 });
 	if (iLowestPriority != 3 &&
 		(target.m_TargetType != ETargetType::PLAYER ||
-		target.m_TargetType == ETargetType::PLAYER && !storage.m_bInitFailed)) // don't attempt to aim at players when movesim fails
+		target.m_TargetType == ETargetType::PLAYER && !storage.m_bFailed)) // don't attempt to aim at players when movesim fails
 	{
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
