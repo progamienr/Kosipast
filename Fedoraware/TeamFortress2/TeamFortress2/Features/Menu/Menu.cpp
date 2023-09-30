@@ -356,8 +356,19 @@ void CMenu::MenuAimbot()
 				WSlider("Smooth factor###ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("How smooth the aimbot should be");
 			WSlider("Prediction Time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, "%.1f");
 			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
-			WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
-			WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
+
+			if (Vars::Debug::DebugInfo.Value)
+			{
+				SectionTitle("debug");
+				WSlider("samples", &Vars::Aimbot::Projectile::iSamples.Value, 2, 66);
+				WCombo("vel mode", &Vars::Aimbot::Projectile::VelMode.Value, { "custom", "m_vecVelocity", "GetVelocity", "GetVecVelocity", "EstimateAbsVelocity" });
+				WSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, "%.1f");
+				WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
+				WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
+				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift up", "from top" });
+				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1)
+					WSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, "%.1f");
+			}
 
 			SectionTitle("Preferences");
 			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value); HelpMarker("Will charge your loose cannon in order to double donk");
@@ -367,6 +378,7 @@ void CMenu::MenuAimbot()
 			MultiCombo({ "Air", "Ground" }, { &Vars::Aimbot::Projectile::StrafePredictionAir.Value, &Vars::Aimbot::Projectile::StrafePredictionGround.Value }, "Strafe Prediction");
 			WSlider("Minimum deviation", &Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value, 0, 180); HelpMarker("How big the angle difference of the predicted strafe has to be to apply");
 			WSlider("Maximum distance", &Vars::Aimbot::Projectile::StrafePredictionMaxDistance.Value, 100.f, 10000.f); HelpMarker("Max distance to apply strafe prediction (lower is better)");
+			WSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0.f, 1.f);
 		} EndChild();
 
 		/* End */

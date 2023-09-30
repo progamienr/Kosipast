@@ -6,9 +6,12 @@
 
 bool CCritHack::IsEnabled()
 {
-	if (!Vars::CritHack::Active.Value) { return false; }
-	if (!AreRandomCritsEnabled()) { return false; }
-	if (!I::EngineClient->IsInGame()) { return false; }
+	if (!Vars::CritHack::Active.Value)
+		return false;
+	if (!AreRandomCritsEnabled())
+		return false;
+	if (!I::EngineClient->IsInGame())
+		return false;
 
 	return true;
 }
@@ -16,9 +19,7 @@ bool CCritHack::IsEnabled()
 bool CCritHack::AreRandomCritsEnabled()
 {
 	if (static auto tf_weapon_criticals = g_ConVars.FindVar("tf_weapon_criticals"); tf_weapon_criticals)
-	{
 		return tf_weapon_criticals->GetBool();
-	}
 	return true;
 }
 
@@ -108,9 +109,7 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops
 	static int starting_num = pCmd->command_number;
 
 	if (/*Utils::*/IsAttacking(pCmd, pWeapon) && G::WeaponCanAttack/* || pCmd->buttons & IN_ATTACK*/)
-	{
 		return;
-	}
 
 	if (prev_weapon != pWeapon->GetIndex())
 	{
@@ -124,7 +123,8 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops
 	//const int seed_backup = MD5_PseudoRandom(pCmd->command_number) & 0x7FFFFFFF;
 	for (int i = 0; i < loops; i++)
 	{
-		if (ForceCmds.size() >= 15) break;
+		if (ForceCmds.size() >= 15)
+			break;
 
 		const int cmd_num = starting_num + i;
 
@@ -133,7 +133,8 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops
 	}
 	for (int i = 0; i < loops; i++)
 	{
-		if (SkipCmds.size() >= 15) break;
+		if (SkipCmds.size() >= 15)
+			break;
 
 		const int cmd_num = starting_num + i;
 
@@ -202,16 +203,12 @@ bool CCritHack::IsCritCommand(const i32 command_number, const bool crit)
 u32 CCritHack::DecryptOrEncryptSeed(CBaseCombatWeapon* pWeapon, u32 seed)
 {
 	if (!pWeapon)
-	{
 		return 0;
-	}
 
 	unsigned int iMask = pWeapon->GetIndex() << 8 | I::EngineClient->GetLocalPlayer();
 
 	if (pWeapon->GetSlot() == SLOT_MELEE)
-	{
 		iMask <<= 8;
-	}
 
 	return iMask ^ seed;
 }
@@ -331,9 +328,7 @@ void CCritHack::FixHeavyRevBug(CUserCmd* pCmd)
 	const auto& pLocal = g_EntityCache.GetLocal();
 	const auto& pWeapon = g_EntityCache.GetWeapon();
 	if (!pLocal || !pWeapon || pLocal->deadflag())
-	{
 		return;
-	}
 
 	if (!pLocal->IsClass(CLASS_HEAVY) || pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN)
 		return;
@@ -427,7 +422,8 @@ void CCritHack::ResetWeapon(CBaseCombatWeapon* pWeapon)
 {
 	const auto slot = pWeapon->GetSlot();
 	const auto index = pWeapon->GetItemDefIndex();
-	if (Storage[slot].DefIndex == index) return;
+	if (Storage[slot].DefIndex == index)
+		return;
 
 	if (Vars::Debug::DebugInfo.Value)
 		I::Cvar->ConsoleColorPrintf({ 0, 255, 255, 255 }, "Resetting weapon.\n");
@@ -520,13 +516,9 @@ void CCritHack::Run(CUserCmd* pCmd)
 		if (IsEnabled())
 		{
 			if (pressed && Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && closestCrit >= 0 && !bStreamWait && !bStreamEnd)
-			{
 				pCmd->command_number = closestCrit;
-			}
 			else if (Vars::CritHack::AvoidRandom.Value && closestSkip >= 0)
-			{
 				pCmd->command_number = closestSkip;
-			}
 		}
 
 		if (bRapidFire)
@@ -565,9 +557,7 @@ out:
 	*I::RandomSeed = MD5_PseudoRandom(pCmd->command_number) & 0x7FFFFFFF;
 
 	if (!G::ShouldShift)
-	{
 		GetTotalCrits(pLocal, pWeapon);
-	}
 
 	if (pCmd->command_number == closestCrit)
 		ForceCmds.pop_front();
@@ -587,9 +577,7 @@ bool CCritHack::CalcIsAttackCriticalHandler(CBaseEntity* pLocal, CBaseCombatWeap
 		static int s_nPreviousTickcount = 0;
 
 		if (s_nPreviousTickcount == I::GlobalVars->tickcount)
-		{
 			return false;
-		}
 
 		s_nPreviousTickcount = I::GlobalVars->tickcount;
 	}
@@ -706,9 +694,7 @@ void CCritHack::Draw()
 		if (Storage[slot].BaseDamage > 0)
 		{
 			if (pLocal->IsCritBoosted())
-			{
 				g_Draw.String(FONT_INDICATORS, x, y, { 100, 255, 255, 255 }, align, "Crit Boosted");
-			}
 			else if (bRapidFire && Storage[slot].StreamEnd > 0)
 			{
 				const float time = TICKS_TO_TIME(Storage[slot].StreamEnd - I::GlobalVars->tickcount);

@@ -14,9 +14,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 	if (lockedTarget.m_pEntity)
 	{
 		if (!lockedTarget.m_pEntity->IsAlive() || lockedTarget.m_pEntity->IsAGhost())
-		{
 			lockedTarget.m_pEntity = nullptr;
-		}
 		else
 		{
 			Vec3 vPos = lockedTarget.m_pEntity->GetHitboxPos(HITBOX_PELVIS);
@@ -40,20 +38,17 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 		{
 			// Is the target valid and alive?
 			if (!pTarget->IsAlive() || pTarget->IsAGhost() || pTarget == pLocal)
-			{
 				continue;
-			}
 
-			if (F::AimbotGlobal.ShouldIgnore(pTarget, true)) { continue; }
+			if (F::AimbotGlobal.ShouldIgnore(pTarget, true))
+				continue;
 
 			Vec3 vPos = pTarget->GetHitboxPos(HITBOX_PELVIS);
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
-			{
 				continue;
-			}
 
 			const auto& priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -79,9 +74,12 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			bool isDispenser = pObject->GetClassID() == ETFClassID::CObjectDispenser;
 			bool isTeleporter = pObject->GetClassID() == ETFClassID::CObjectTeleporter;
 
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry) continue;
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser) continue;
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter) continue;
+			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry)
+				continue;
+			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser)
+				continue;
+			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter)
+				continue;
 
 			const auto& pBuilding = reinterpret_cast<CBaseObject*>(pObject);
 			if (!pBuilding || !pObject->IsAlive())
@@ -126,9 +124,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
 			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
-			{
 				continue;
-			}
 
 			validTargets.push_back({ pNPC, ETargetType::NPC, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -140,9 +136,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 bool CAimbotMelee::AimFriendlyBuilding(CBaseObject* pBuilding)
 {
 	if (pBuilding->GetLevel() != 3 || pBuilding->GetSapped() || pBuilding->GetHealth() < pBuilding->GetMaxHealth())
-	{
 		return true;
-	}
 
 	if (pBuilding->IsSentrygun())
 	{
@@ -159,7 +153,8 @@ bool CAimbotMelee::AimFriendlyBuilding(CBaseObject* pBuilding)
 
 std::vector<Target_t> CAimbotMelee::SortTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
-	if (lockedTarget.m_pEntity) return { lockedTarget };
+	if (lockedTarget.m_pEntity)
+		return { lockedTarget };
 
 	auto validTargets = GetTargets(pLocal, pWeapon);
 
@@ -183,8 +178,8 @@ std::vector<Target_t> CAimbotMelee::SortTargets(CBaseEntity* pLocal, CBaseCombat
 
 int CAimbotMelee::GetSwingTime(CBaseCombatWeapon* pWeapon)
 {
-	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE) return 0;
-
+	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
+		return 0;
 	return 13;
 }
 
@@ -203,42 +198,48 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 		PlayerStorage localStorage;
 		std::unordered_map<CBaseEntity*, PlayerStorage> targetStorage;
 
-		bool bFail = false;
-
-		if (!F::MoveSim.Initialize(g_EntityCache.GetLocal(), localStorage))
-			bFail = true;
+		F::MoveSim.Initialize(pLocal, localStorage, false);
 		for (auto& target : targets)
 		{
 			targetStorage[target.m_pEntity] = {};
-			if (!F::MoveSim.Initialize(target.m_pEntity, targetStorage[target.m_pEntity]))
-				bFail = true;
+			F::MoveSim.Initialize(target.m_pEntity, targetStorage[target.m_pEntity], false);
 		}
 
-		if (!bFail)
+		for (int i = 0; i < iTicks; i++) // intended for plocal to collide with targets but doesn't seem to always work
 		{
-			for (int i = 0; i < iTicks; i++) // intended for plocal to collide with targets but doesn't seem to always work
-			{
-				F::MoveSim.RunTick(localStorage);
-				for (auto& target : targets)
-				{
-					F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
-					target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
-
-					pRecordMap[target.m_pEntity].push_front({
-						target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
-						I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
-						I::GlobalVars->tickcount + i + 1,
-						false,
-						BoneMatrixes{},
-						target.m_pEntity->GetAbsOrigin()
-					});
-				}
-			}
-			vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->GetViewOffset();
-
-			G::ProjLines = localStorage.PredictionLines;
+			F::MoveSim.RunTick(localStorage);
 			for (auto& target : targets)
-				simLines[target.m_pEntity] = targetStorage[target.m_pEntity].PredictionLines;
+			{
+				F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
+				target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
+
+				pRecordMap[target.m_pEntity].push_front({
+					target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
+					I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
+					I::GlobalVars->tickcount + i + 1,
+					false,
+					BoneMatrixes{},
+					target.m_pEntity->GetAbsOrigin()
+				});
+			}
+		}
+		vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->GetViewOffset();
+
+		if (Vars::Visuals::SwingLines.Value)
+		{
+			if (Vars::Aimbot::Global::AutoShoot.Value)
+			{
+				G::ProjLines = localStorage.PredictionLines;
+				for (auto& target : targets)
+					simLines[target.m_pEntity] = targetStorage[target.m_pEntity].PredictionLines;
+			}
+			else
+			{
+				G::LinesStorage.clear();
+				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
+				for (auto& target : targets)
+					G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor });
+			}
 		}
 
 		F::MoveSim.Restore(localStorage);
@@ -389,9 +390,7 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 			{
 				target.pTick = &pTick;
 				if (Vars::Backtrack::Enabled.Value)
-				{
 					target.ShouldBacktrack = true;
-				}
 			}
 
 			return true;
@@ -406,9 +405,7 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 bool CAimbotMelee::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 {
 	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
-	{
 		return pCmd->buttons & IN_ATTACK;
-	}
 
 	return TIME_TO_TICKS(pWeapon->GetSmackTime()) + 2 == I::GlobalVars->tickcount; // seems to work most (?) of the time, would like to not have arbitrary number
 }
@@ -444,7 +441,7 @@ Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 
 	case 1: //Smooth
 		if (Vars::Aimbot::Melee::SmoothingAmount.Value == 0)
-		{ // plain aim at 0 smoothing factor
+		{
 			vReturn = vToAngle;
 			break;
 		}
@@ -492,14 +489,10 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			lockedTarget = target;
 
 		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
-		{
 			G::AimPos = target.m_vPos;
-		}
 
 		if (Vars::Aimbot::Global::AutoShoot.Value)
-		{
 			pCmd->buttons |= IN_ATTACK;
-		}
 
 		G::IsAttacking = IsAttacking(pCmd, pWeapon);
 
@@ -516,7 +509,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			if (Vars::Aimbot::Global::ShowHitboxes.Value)
 				F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
 		}
-		if ((G::IsAttacking || !Vars::Aimbot::Global::AutoShoot.Value) && target.pTick && Vars::Visuals::SwingLines.Value)
+		if (Vars::Visuals::SwingLines.Value && target.pTick && Vars::Aimbot::Global::AutoShoot.Value && G::IsAttacking)
 		{
 			G::LinesStorage.clear();
 			G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });

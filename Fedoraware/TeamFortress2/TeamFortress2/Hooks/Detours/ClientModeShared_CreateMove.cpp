@@ -109,6 +109,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 					if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->GetClip1() == 0)
 						G::WeaponCanAttack = false;
+
+					if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
+						G::WeaponCanAttack = false;
 				}
 			}
 		}

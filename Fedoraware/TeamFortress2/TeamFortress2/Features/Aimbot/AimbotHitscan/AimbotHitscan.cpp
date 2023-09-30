@@ -29,39 +29,29 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 		{
 			// Is the target valid and alive?
 			if (!pTarget->IsAlive() || pTarget->IsAGhost() || pTarget == pLocal)
-			{
 				continue;
-			}
 
 			// Can we extinguish a teammate using the piss rifle?
 			if (hasPissRifle && (pTarget->GetTeamNum() == pLocal->GetTeamNum()))
 			{
 				if (!Vars::Aimbot::Hitscan::ExtinguishTeam.Value || !pTarget->IsOnFire())
-				{
 					continue;
-				}
 			}
 
 			// Can the medigun reach the target?
 			if (bIsMedigun && (pLocal->GetWorldSpaceCenter().DistTo(pTarget->GetWorldSpaceCenter()) > 472.f))
-			{
 				continue;
-			}
 
 			// Should we ignore the target?
 			if (F::AimbotGlobal.ShouldIgnore(pTarget, bIsMedigun))
-			{
 				continue;
-			}
 
 			Vec3 vPos = pTarget->GetHitboxPos(HITBOX_PELVIS);
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
-			{
 				continue;
-			}
 
 			const auto& priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -78,21 +68,23 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			bool isDispenser = pBuilding->GetClassID() == ETFClassID::CObjectDispenser;
 			bool isTeleporter = pBuilding->GetClassID() == ETFClassID::CObjectTeleporter;
 
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry) { continue; }
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser) { continue; }
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter) { continue; }
+			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry)
+				continue;
+			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser)
+				continue;
+			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter)
+				continue;
 
 			// Is the building valid and alive?
-			if (!pBuilding || !pBuilding->IsAlive()) { continue; }
+			if (!pBuilding || !pBuilding->IsAlive())
+				continue;
 
 			Vec3 vPos = pBuilding->GetWorldSpaceCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
-			{
 				continue;
-			}
 
 			// The target is valid! Add it to the target vector.
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -107,26 +99,21 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 		{
 			// Is the projectile a sticky?
 			if (!(pProjectile->GetPipebombType() == TYPE_STICKY))
-			{
 				continue;
-			}
 
 			const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(reinterpret_cast<int>(pProjectile->GetThrower()));
-			if (!pOwner) { continue; }
+			if (!pOwner)
+				continue;
 
 			if ((!pProjectile->GetTouched()) || (pOwner->GetTeamNum() == pLocal->GetTeamNum()))
-			{
 				continue;
-			}
 
 			Vec3 vPos = pProjectile->GetWorldSpaceCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
-			{
 				continue;
-			}
 
 			// The target is valid! Add it to the target vector.
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -144,9 +131,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
-			{
 				continue;
-			}
 
 			// The target is valid! Add it to the target vector.
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -167,9 +152,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
-			{
 				continue;
-			}
 
 			// The target is valid! Add it to the target vector.
 			validTargets.push_back({ pBomb, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });

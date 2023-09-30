@@ -683,9 +683,7 @@ namespace Utils
 		if (pWeapon->GetSlot() == SLOT_MELEE)
 		{
 			if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
-			{
 				return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
-			}
 
 			return TIME_TO_TICKS(pWeapon->GetSmackTime()) + 2 == I::GlobalVars->tickcount;
 		}
@@ -762,6 +760,12 @@ namespace Utils
 				}
 			}
 		}
+
+		//pssst..
+		//Dragon's Fury has a gauge (seen on the weapon model) maybe it would help for pSilent hmm..
+		/*
+		if (pWeapon->GetWeaponID() == 109) {
+		}*/
 
 		return false;
 	}

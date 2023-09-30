@@ -334,6 +334,7 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Aimbot::Projectile::StrafePredictionGround);
 				SAVE_VAR(Vars::Aimbot::Projectile::StrafePredictionMinDifference);
 				SAVE_VAR(Vars::Aimbot::Projectile::StrafePredictionMaxDistance);
+				SAVE_VAR(Vars::Aimbot::Projectile::StrafePredictionHitchance);
 			}
 
 			//Melee
@@ -636,6 +637,7 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Aimbot::Projectile::StrafePredictionGround);
 				LOAD_VAR(Vars::Aimbot::Projectile::StrafePredictionMinDifference);
 				LOAD_VAR(Vars::Aimbot::Projectile::StrafePredictionMaxDistance);
+				LOAD_VAR(Vars::Aimbot::Projectile::StrafePredictionHitchance);
 			}
 
 			//Melee

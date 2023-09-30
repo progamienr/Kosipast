@@ -26,23 +26,20 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 		for (const auto& pTarget : g_EntityCache.GetGroup(groupType))
 		{
 			if (!pTarget->IsAlive() || pTarget->IsAGhost() || pTarget == pLocal)
-			{
 				continue;
-			}
 
 			// Check if weapon should shoot at friendly players
 			if ((groupType == EGroupType::PLAYERS_ALL || groupType == EGroupType::PLAYERS_TEAMMATES) &&
 				pTarget->GetTeamNum() == pLocal->GetTeamNum())
 			{
 				if (pTarget->GetHealth() >= pTarget->GetMaxHealth())
-				{
 					continue;
-				}
 			}
 
 			if (pTarget->GetTeamNum() != pLocal->GetTeamNum())
 			{
-				if (F::AimbotGlobal.ShouldIgnore(pTarget)) { continue; }
+				if (F::AimbotGlobal.ShouldIgnore(pTarget))
+					continue;
 			}
 
 			Vec3 vPos = pTarget->GetWorldSpaceCenter();
@@ -50,9 +47,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
-			{
 				continue;
-			}
 
 			const float flDistTo = (sortMethod == ESortMethod::DISTANCE) ? vLocalPos.DistTo(vPos) : 0.0f;
 			const auto& priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
@@ -69,9 +64,12 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 		bool isDispenser = pBuilding->GetClassID() == ETFClassID::CObjectDispenser;
 		bool isTeleporter = pBuilding->GetClassID() == ETFClassID::CObjectTeleporter;
 
-		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry) { continue; }
-		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser) { continue; }
-		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter) { continue; }
+		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry)
+			continue;
+		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser)
+			continue;
+		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter)
+			continue;
 
 		const auto& Building = reinterpret_cast<CBaseObject*>(pBuilding);
 
@@ -80,7 +78,8 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 		// Check if the Rescue Ranger should shoot at friendly buildings
 		if (bIsRescueRanger && (pBuilding->GetTeamNum() == pLocal->GetTeamNum()))
 		{
-			if (Building->GetHealth() >= Building->GetMaxHealth()) { continue; }
+			if (Building->GetHealth() >= Building->GetMaxHealth())
+				continue;
 		}
 
 		Vec3 vPos = pBuilding->GetWorldSpaceCenter();
@@ -88,9 +87,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 		const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
 		if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
-		{
 			continue;
-		}
 		const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 		validTargets.push_back({ pBuilding, isSentry ? ETargetType::SENTRY : (isDispenser ? ETargetType::DISPENSER : ETargetType::TELEPORTER), vPos, vAngleTo, flFOVTo, flDistTo });
 	}
@@ -107,9 +104,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
 			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
-			{
 				continue;
-			}
 
 			validTargets.push_back({ NPC, ETargetType::NPC, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -128,9 +123,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
 			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
-			{
 				continue;
-			}
 
 			validTargets.push_back({ Bombs, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -327,7 +320,6 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 					Utils::Trace(vOld, vNew, MASK_SHOT, &filter, &cTrace);
 					cTrace.vEndPos -= vOffset;
 
-					//Utils::ConLog("cTrace", tfm::format("DidHit: %i, hitbox: %i", cTrace.DidHit(), cTrace.hitbox).c_str(), { 224, 255, 131, 255 });
 					if (cTrace.DidHit() && (!cTrace.entity || cTrace.entity != target.m_pEntity || cTrace.hitbox != HITBOX_HEAD))
 						return false;
 					
@@ -366,7 +358,6 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 							Vec3 mOrigin;
 							Math::GetMatrixOrigin(matrix, mOrigin);
 
-							//G::BulletsStorage.push_back({ {mOrigin, vPos}, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
 							const float flDist = vPos.DistTo(mOrigin);
 							if (closestId != -1 && flDist < closestDist || closestId == -1)
 							{
@@ -444,28 +435,41 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				{
 					switch (n)
 					{
-					case 0: vPoints.push_back(bPlayer && target.m_nAimedHitbox == HITBOX_HEAD ?
-											  Utils::GetHeadOffset(target.m_pEntity, { 0, -6.f, 0 }) : // i think this is the right axis
-											  Vec3(0, 0, vMaxs.z - 10.f)); break;
+					case 0:
+						/*
+						vPoints.push_back(bPlayer && target.m_nAimedHitbox == HITBOX_HEAD ?
+										  Utils::GetHeadOffset(target.m_pEntity, { 0, -6.f, 0 }) : // i think this is the right axis
+										  Vec3(0, 0, vMaxs.z - 10.f)); break;
+						*/
+						if (bPlayer && target.m_nAimedHitbox == HITBOX_HEAD)
+						{
+							switch (Vars::Aimbot::Projectile::HuntermanMode.Value)
+							{
+							case 0: vPoints.push_back(Utils::GetHeadOffset(target.m_pEntity)); break;
+							case 1: vPoints.push_back(Utils::GetHeadOffset(target.m_pEntity, { 0, -Vars::Aimbot::Projectile::HuntermanShift.Value, 0 })); break;
+							case 2: { const Vec3 vOff = Utils::GetHeadOffset(target.m_pEntity);
+									  vPoints.push_back(Vec3(vOff.x, vOff.y, std::max(vMaxs.z - Vars::Aimbot::Projectile::VerticalShift.Value, vOff.z))); break; }
+							}
+						}
+						else
+							vPoints.push_back(Vec3(0, 0, vMaxs.z - Vars::Aimbot::Projectile::VerticalShift.Value));
+						break;
 					case 1: vPoints.push_back(Vec3(0, 0, (vMins.z + vMaxs.z) / 2)); break;
-					case 2: vPoints.push_back(Vec3(0, 0, vMins.z + 10.f)); break;
+					case 2: vPoints.push_back(Vec3(0, 0, vMins.z + Vars::Aimbot::Projectile::VerticalShift.Value)); break;
 					}
 				}
 			}
 		}
 	}
 
-	bool bSimulate = true;
-
 	PlayerStorage storage;
-	if (!F::MoveSim.Initialize(target.m_pEntity, storage))
-		bSimulate = false;
+	F::MoveSim.Initialize(target.m_pEntity, storage);
 
 	Vec3 vAngleTo;
-	int i = 0, iLowestPriority = 3, iEndTick = 0; // time to point valid, end in some ticks
+	int i = 0, iLowestPriority = 3, iEndTick = 0; // time to point valid, end in n ticks
 	for (;i < TIME_TO_TICKS(flMaxTime); i++)
 	{
-		if (bSimulate)
+		if (!storage.m_bInitFailed)
 		{
 			F::MoveSim.RunTick(storage);
 			vTargetPos = storage.m_MoveData.m_vecAbsOrigin;
@@ -517,12 +521,12 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 	G::MoveLines = storage.PredictionLines;
 
-	if (bSimulate)
-		F::MoveSim.Restore(storage);
+	F::MoveSim.Restore(storage);
 
+	Utils::ConLog("m_bInitFailed", tfm::format("%i", storage.m_bInitFailed).c_str(), { 224, 255, 131, 255 });
 	if (iLowestPriority != 3 &&
 		(target.m_TargetType != ETargetType::PLAYER ||
-		target.m_TargetType == ETargetType::PLAYER && bSimulate)) // don't attempt to aim at players when movesim fails
+		target.m_TargetType == ETargetType::PLAYER && !storage.m_bInitFailed)) // don't attempt to aim at players when movesim fails
 	{
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
@@ -570,76 +574,6 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 }
 
 
-
-bool CAimbotProjectile::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
-{
-	if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
-	{
-		static bool bLoading = false, bFiring = false;
-
-		if (pWeapon->GetClip1() == 0)
-			bLoading = false,
-			bFiring = false;
-		else if (!bFiring)
-			bLoading = true;
-
-		if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::WeaponCanAttack)
-		{
-			bFiring = true;
-			bLoading = false;
-			return true;
-		}
-	}
-	else
-	{
-		if (pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER)
-		{
-			static bool bCharging = false;
-
-			if (pWeapon->GetChargeBeginTime() > 0.0f)
-			{
-				bCharging = true;
-			}
-
-			if (!(pCmd->buttons & IN_ATTACK) && bCharging)
-			{
-				bCharging = false;
-				return true;
-			}
-		}
-		else if (pWeapon->GetWeaponID() == TF_WEAPON_CANNON)
-		{
-			static bool Charging = false;
-
-			if (pWeapon->GetDetonateTime() > 0.0f)
-			{
-				Charging = true;
-			}
-
-			if (!(pCmd->buttons & IN_ATTACK) && Charging)
-			{
-				Charging = false;
-				return true;
-			}
-		}
-
-		//pssst..
-		//Dragon's Fury has a gauge (seen on the weapon model) maybe it would help for pSilent hmm..
-		/*
-		if (pWeapon->GetWeaponID() == 109) {
-		}*/
-
-		else
-		{
-			if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
 
 // assume angle calculated outside with other overload
 void CAimbotProjectile::Aim(CUserCmd* pCmd, Vec3& vAngle)
@@ -733,9 +667,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
 		if (Vars::Aimbot::Projectile::AimMethod.Value == 1)
-		{
 			G::AimPos = target.m_vPos;
-		}
 
 		if (Vars::Aimbot::Global::AutoShoot.Value)
 		{
@@ -744,9 +676,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 			if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
 			{
 				if (pWeapon->GetClip1() > 0)
-				{
 					pCmd->buttons &= ~IN_ATTACK;
-				}
 			}
 			else
 			{
@@ -773,24 +703,18 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 						if (target.m_pEntity->GetHealth() > 50) // check if we even need to double donk to kill first
 						{
 							if (pWeapon->GetDetonateTime() - I::GlobalVars->curtime <= bestCharge)
-							{
 								pCmd->buttons &= ~IN_ATTACK;
-							}
 						}
 						else
-						{
 							pCmd->buttons &= ~IN_ATTACK;
-						}
 					}
 					else
-					{
 						pCmd->buttons &= ~IN_ATTACK;
-					}
 				}
 			}
 		}
 
-		G::IsAttacking = IsAttacking(pCmd, pWeapon);
+		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
 
 		if ((G::IsAttacking || !Vars::Aimbot::Global::AutoShoot.Value) && Vars::Visuals::SimLines.Value)
 		{
@@ -816,7 +740,7 @@ void CAimbotProjectile::Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CU
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if ((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && bLastTickAttack && Vars::Aimbot::Global::AutoShoot.Value) // add user toggle to control whether to cancel or not
+	if ((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && bLastTickAttack/* && Vars::Aimbot::Global::AutoShoot.Value*/) // add user toggle to control whether to cancel or not
 	{
 		switch (pWeapon->GetWeaponID())
 		{

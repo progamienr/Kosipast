@@ -32,7 +32,6 @@ class CAimbotProjectile
 
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
 	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
-	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
 	void Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, bool bEarly = true);
 
 	bool bLastTickAttack = false;

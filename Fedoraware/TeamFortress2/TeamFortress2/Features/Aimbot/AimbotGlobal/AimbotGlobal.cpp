@@ -75,14 +75,18 @@ bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun)
 	CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
 
 	PlayerInfo_t pInfo{};
-	if (!pTarget) { return true; }
-	if (pTarget == pLocal) { return true; }
-	if (!I::EngineClient->GetPlayerInfo(pTarget->GetIndex(), &pInfo)) { return true; }
-	if (pTarget->GetDormant()) { return true; }
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DEADRINGER) && pTarget->GetFeignDeathReady()) { return true; }
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (TAUNTING) && pTarget->IsTaunting()) { return true; }
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DISGUISED) && pTarget->IsDisguised()) { return true; }
-	if (pow(pTarget->TickVelocity2D(), 2) > 4096.f && G::CurWeaponType != EWeaponType::PROJECTILE) { return true; }
+	if (!pTarget || pTarget == pLocal || pTarget->GetDormant())
+		return true;
+	if (!I::EngineClient->GetPlayerInfo(pTarget->GetIndex(), &pInfo))
+		return true;
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DEADRINGER) && pTarget->GetFeignDeathReady())
+		return true;
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & (TAUNTING) && pTarget->IsTaunting())
+		return true;
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DISGUISED) && pTarget->IsDisguised())
+		return true;
+	if (pow(pTarget->TickVelocity2D(), 2) > 4096.f && G::CurWeaponType != EWeaponType::PROJECTILE)
+		return true;
 
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (INVUL) && !pTarget->IsVulnerable())
 	{
@@ -92,17 +96,17 @@ bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun)
 
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (CLOAKED) && pTarget->IsVisible())
 	{
-		if (pTarget->GetInvisPercentage() > Vars::Aimbot::Global::IgnoreCloakPercentage.Value)
-		{
+		if (pTarget->GetInvisPercentage() >= Vars::Aimbot::Global::IgnoreCloakPercentage.Value)
 			return true;
-		}
 	}
 
 	// Special conditions for mediguns //
 	if (!hasMedigun || (pLocal && pLocal->GetTeamNum() != pTarget->GetTeamNum()))
 	{
-		if (G::IsIgnored(pInfo.friendsID)) { return true; }
-		if (Vars::Aimbot::Global::IgnoreOptions.Value & (FRIENDS) && g_EntityCache.IsFriend(pTarget->GetIndex())) { return true; }
+		if (G::IsIgnored(pInfo.friendsID))
+			return true;
+		if (Vars::Aimbot::Global::IgnoreOptions.Value & (FRIENDS) && g_EntityCache.IsFriend(pTarget->GetIndex()))
+			return true;
 	}
 
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (VACCINATOR))
@@ -112,9 +116,7 @@ bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun)
 			case EWeaponType::HITSCAN:
 			{
 				if (G::CurItemDefIndex != Spy_m_TheEnforcer && pTarget->IsBulletResist())
-				{
 					return true;
-				}
 
 				break;
 			}
@@ -123,23 +125,17 @@ bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun)
 				if (pWeapon->GetWeaponID() == TF_WEAPON_FLAMETHROWER || pWeapon->GetWeaponID() == TF_WEAPON_FLAREGUN)
 				{
 					if (pTarget->IsFireResist())
-					{
 						return true;
-					}
 				}
 				else if (pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW) //Right?
 				{
 					if (pTarget->IsBulletResist())
-					{
 						return true;
-					}
 				}
 				else
 				{
 					if (pTarget->IsBlastResist())
-					{
 						return true;
-					}
 				}
 
 				break;

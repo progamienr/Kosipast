@@ -27,7 +27,8 @@ float CBacktrack::GetFake()
 float CBacktrack::GetReal()
 {
 	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!iNetChan) { return -1.f; }
+	if (!iNetChan)
+		return -1.f;
 
 	return iNetChan->GetLatency(FLOW_INCOMING) + iNetChan->GetLatency(FLOW_OUTGOING) - GetFake();
 }
@@ -58,7 +59,8 @@ bool CBacktrack::IsSimulationReliable(CBaseEntity* pEntity)
 bool CBacktrack::WithinRewind(const TickRecord& record)
 {
 	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!iNetChan) { return false; }
+	if (!iNetChan)
+		return false;
 
 	int iTarget = TIME_TO_TICKS(record.flSimTime);
 	int iLerpTicks = TIME_TO_TICKS(flFakeInterp);
@@ -95,20 +97,20 @@ bool CBacktrack::CanHitOriginal(CBaseEntity* pEntity) {
 std::deque<TickRecord>* CBacktrack::GetRecords(CBaseEntity* pEntity)
 {
 	if (mRecords[pEntity].empty())
-	{
 		return nullptr;
-	}
 
 	return &mRecords[pEntity];
 }
 
 std::optional<TickRecord> CBacktrack::GetLastRecord(CBaseEntity* pEntity)
 {
-	if (mRecords[pEntity].empty()) { return std::nullopt; }
+	if (mRecords[pEntity].empty())
+		return std::nullopt;
 	std::optional<TickRecord> rReturnRecord = std::nullopt;
 	for (const auto& rCurQuery : mRecords[pEntity])
 	{
-		if (!IsTracked(rCurQuery) || !WithinRewind(rCurQuery) || IsEarly(pEntity, rCurQuery)) { continue; }
+		if (!IsTracked(rCurQuery) || !WithinRewind(rCurQuery) || IsEarly(pEntity, rCurQuery))
+			continue;
 		rReturnRecord = rCurQuery;
 	}
 	return rReturnRecord;
@@ -138,7 +140,8 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::de
 	case BacktrackMode::ALL:
 		for (auto& pTick : pRecords)
 		{
-			if (!WithinRewind(pTick) || !IsTracked(pTick) || IsEarly(pEntity, pTick)) { continue; }
+			if (!WithinRewind(pTick) || !IsTracked(pTick) || IsEarly(pEntity, pTick))
+				continue;
 
 			validRecords.push_back(pTick);
 		}
@@ -148,7 +151,8 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::de
 	case BacktrackMode::LAST:
 		for (auto pTick = pRecords.rbegin(); pTick != pRecords.rend(); ++pTick)
 		{
-			if (!WithinRewind(*pTick) || !IsTracked(*pTick) || IsEarly(pEntity, *pTick)) { continue; }
+			if (!WithinRewind(*pTick) || !IsTracked(*pTick) || IsEarly(pEntity, *pTick))
+				continue;
 			
 			validRecords.push_back(*pTick);
 			break;
@@ -161,7 +165,8 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::de
 
 		for (auto& pTick : pRecords)
 		{
-			if (!WithinRewind(pTick) || !IsTracked(pTick) || IsEarly(pEntity, pTick)) { continue; }
+			if (!WithinRewind(pTick) || !IsTracked(pTick) || IsEarly(pEntity, pTick))
+				continue;
 
 			if (pTick.bOnShot)
 				frontRecords.push_back(pTick);
@@ -187,7 +192,8 @@ void CBacktrack::CleanRecords()
 	for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity) { continue; }
+		if (!pEntity)
+			continue;
 
 		if (pEntity->GetDormant() || !pEntity->IsAlive() || !pEntity->IsPlayer())
 		{
@@ -195,27 +201,34 @@ void CBacktrack::CleanRecords()
 			continue;
 		}
 
-		if (mRecords[pEntity].empty()) { continue; }
-		if (!IsTracked(mRecords[pEntity].back())) { mRecords[pEntity].pop_back(); }
-		if (mRecords[pEntity].size() > 67) { mRecords[pEntity].pop_back(); }
+		if (mRecords[pEntity].empty())
+			continue;
+		if (!IsTracked(mRecords[pEntity].back()))
+			mRecords[pEntity].pop_back();
+		if (mRecords[pEntity].size() > 67)
+			mRecords[pEntity].pop_back();
 	}
 }
 
 void CBacktrack::MakeRecords()
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal) { return; }
+	if (!pLocal)
+		return;
 
 	const float flCurTime = I::GlobalVars->curtime;
 	const int iTickcount = I::GlobalVars->tickcount;
-	if (iLastCreationTick == iTickcount) { return; }
+	if (iLastCreationTick == iTickcount)
+		return;
 	iLastCreationTick = iTickcount;
 
 	for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity || n == pLocal->GetIndex()) { continue; }
-		if (!pEntity->IsPlayer()) { return; }
+		if (!pEntity || n == pLocal->GetIndex())
+			continue;
+		if (!pEntity->IsPlayer())
+			return;
 
 		noInterpEyeAngles[pEntity->GetIndex()] = pEntity->GetEyeAngles();
 
@@ -229,9 +242,7 @@ void CBacktrack::MakeRecords()
 			const Vec3 vPrevOrigin = mRecords[pEntity].front().vOrigin;
 			const Vec3 vDelta = vOrigin - vPrevOrigin;
 			if (vDelta.Length2DSqr() > 4096.f)
-			{
 				mRecords[pEntity].clear();
-			}
 		}
 
 		//fix unchokepred
@@ -239,7 +250,8 @@ void CBacktrack::MakeRecords()
 		{
 			//	create record on simulated players
 			matrix3x4 bones[128];
-			if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flSimTime)) { continue; }
+			if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flSimTime))
+				continue;
 
 			mRecords[pEntity].push_front({
 				flSimTime,
@@ -250,13 +262,14 @@ void CBacktrack::MakeRecords()
 				vOrigin
 			});
 		}
-		else if (Vars::Backtrack::UnchokePrediction.Value) {	//	user is choking, predict location of next record.
+		else if (Vars::Backtrack::UnchokePrediction.Value) {	// user is choking, predict location of next record.
 			//	IF THE CHEAT LAGS HERE, IT CAN CREATE A PREDICTED RECORD FOR AFTER A PLAYER HAS EXITED A CHOKE, WHICH IS BAD (probably)!!!!
 			const Vec3 vOriginalPos = pEntity->GetAbsOrigin();
 			const Vec3 vOriginalEyeAngles = pEntity->GetEyeAngles();
 			const float flNextSimTime = flSimTime + I::GlobalVars->interval_per_tick;
 			const float flDeltaRecorded = flNextSimTime - mRecords[pEntity].empty() ? flSimTime : mRecords[pEntity].front().flSimTime;
-			if (flDeltaRecorded < I::GlobalVars->interval_per_tick) { continue; }	//	maybe they are smooth warping???.
+			if (flDeltaRecorded < I::GlobalVars->interval_per_tick) // maybe they are smooth warping???.
+				continue;
 			//if (pEntity->GetVelocity().Length2D() > 4096.f) { continue; }	//	this will only happen on people that are stuck or it will be caught elsewhere, dont use
 			
 			PlayerStorage storage;
@@ -271,7 +284,8 @@ void CBacktrack::MakeRecords()
 				pEntity->SetEyeAngles(storage.m_MoveData.m_vecViewAngles);
 
 				matrix3x4 bones[128];
-				if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flNextSimTime)) { //	if we fail bones we fail lyfe
+				if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flNextSimTime)) // if we fail bones we fail lyfe
+				{
 					pEntity->SetAbsOrigin(vOriginalPos);
 					pEntity->SetEyeAngles(vOriginalEyeAngles);
 					continue;
@@ -320,7 +334,8 @@ void CBacktrack::FrameStageNotify()
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!pLocal || !iNetChan) { return Restart(); }
+	if (!pLocal || !iNetChan)
+		return Restart();
 
 	flLatencyRampup = std::min(1.f, flLatencyRampup += I::GlobalVars->interval_per_tick);
 	MakeRecords();
@@ -330,7 +345,8 @@ void CBacktrack::FrameStageNotify()
 void CBacktrack::ReportShot(int iIndex)
 {
 	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(iIndex);
-	if (!pEntity) { return; }
+	if (!pEntity)
+		return;
 	mDidShoot[pEntity->GetIndex()] = true;
 }
 
@@ -341,7 +357,8 @@ std::optional<TickRecord> CBacktrack::GetHitRecord(CUserCmd* pCmd, CBaseEntity* 
 
 	for (const auto& rCurQuery : mRecords[pEntity])
 	{
-		if (!WithinRewind(rCurQuery)) { continue; }
+		if (!WithinRewind(rCurQuery))
+			continue;
 		for (int iCurHitbox = 0; iCurHitbox < 18; iCurHitbox++)
 		{
 			//	it's possible to set entity positions and bones back to this record and then see what hitbox we will hit and rewind to that record, bt i dont wanna

@@ -43,7 +43,7 @@ void CTickshiftHandler::Recharge(CUserCmd* pCmd, CBaseEntity* pLocal)
 	else if (iDeficit)
 		iDeficit = 0;
 
-	static KeyHelper kRecharge{ &Vars::CL_Move::DoubleTap::RechargeKey.Value }; // keyhelper causing crash with grapple for some fucking reason ????
+	static KeyHelper kRecharge{ &Vars::CL_Move::DoubleTap::RechargeKey.Value };
 	G::Recharge = (kRecharge.Down() || G::Recharging || bPassive) && !G::Teleporting && !G::ShouldShift && G::ShiftedTicks < G::MaxShift && !bSpeedhack;
 
 	if (!G::Recharge)
@@ -151,8 +151,7 @@ void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 	{
 		if (G::ShiftedTicks <= G::MaxShift)
 		{
-			static KeyHelper kContinue{ &Vars::CL_Move::DoubleTap::RechargeKey.Value };
-			if (!kContinue.Down() && !G::Recharging)
+			if (!bool(GetAsyncKeyState(Vars::CL_Move::DoubleTap::RechargeKey.Value) & 0x8000) && !G::Recharging)
 				G::Recharge = false;
 
 			G::WaitForShift = G::ShiftedTicks; //iTickRate - G::ShiftedTicks;
@@ -199,6 +198,10 @@ void CTickshiftHandler::CreateMove(CUserCmd* pCmd)
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
+		return;
+
+	CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
+	if (pWeapon && pWeapon->GetWeaponID() == TF_WEAPON_GRAPPLINGHOOK) // crash fix, don't know why this is necessary
 		return;
 
 	Recharge(pCmd, pLocal);

@@ -4,19 +4,13 @@
 bool CPlayerArrows::ShouldRun(CBaseEntity* pLocal)
 {
 	if (!Vars::Visuals::OutOfFOVArrows.Value || I::EngineVGui->IsGameUIVisible())
-	{
 		return false;
-	}
 
 	if (!pLocal->IsAlive() || pLocal->IsStunned())
-	{
 		return false;
-	}
 
 	if (pLocal->IsInBumperKart() || pLocal->IsAGhost())
-	{
 		return false;
-	}
 
 	return true;
 }
@@ -58,9 +52,8 @@ void CPlayerArrows::DrawArrowTo(const Vec3& vecFromPos, const Vec3& vecToPos, Co
 		color.a = static_cast<byte>(std::max(static_cast<float>(color.a) - transparency * 255.f, 0.f));
 	}
 
-	if (color.a == 0) {
+	if (color.a == 0)
 		return;
-	}
 
 	Vec2
 		p1 = { static_cast<float>(-Vars::Visuals::FovArrowsDist.Value), 12.5f },
@@ -86,42 +79,32 @@ void CPlayerArrows::Run()
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
 		if (!ShouldRun(pLocal))
-		{
 			return;
-		}
 
 		const Vec3 vLocalPos = pLocal->GetEyePosition();
 
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
 			if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsCloaked() || pEnemy->IsAGhost())
-			{
 				continue;
-			}
+
 			Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
 
 			Color_t color;
 			if (!Vars::ESP::Main::EnableTeamEnemyColors.Value)
 			{
 				if (pLocal->GetTeamNum() == 2)
-				{
 					color = Colors::TeamBlu;
-				}
 				else
-				{
 					color = Colors::TeamRed;
-				}
 			}
 			else
-			{
 				color = Colors::Enemy;
-			}
 			auto MapFloat = [&](float x, float in_min, float in_max, float out_min, float out_max) -> float
 			{
 				return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 			};
-			const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::MaxDist.Value,
-				Vars::Visuals::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
+			const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::MaxDist.Value, Vars::Visuals::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
 			color.a = static_cast<byte>(fMap * 255.f);
 
 			DrawArrowTo(vLocalPos, vEnemyPos, color);

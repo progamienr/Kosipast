@@ -38,6 +38,8 @@ struct PlayerStorage
 	float m_flAverageYaw = 0.f;
 
 	std::deque<std::pair<Vec3, Vec3>> PredictionLines;
+
+	bool m_bInitFailed = false;
 };
 
 class CMovementSimulation
@@ -46,6 +48,8 @@ private:
 	//void SetCurrentCommand(CBaseEntity* pPlayer, CUserCmd* pCmd);
 	bool GetVelocity(CBaseEntity* pEntity, Vec3& vVelOut, bool bMoveData = false);
 	bool SetupMoveData(PlayerStorage& playerStorage);
+	float GetAverageYaw(const int iSamples, PlayerStorage& playerStorage);
+	void StrafePrediction(PlayerStorage& playerStorage);
 
 private:
 	bool m_bOldInPrediction = false;
@@ -59,8 +63,7 @@ private:
 public:
 	void FillInfo();
 
-	bool Initialize(CBaseEntity* pPlayer, PlayerStorage& playerStorageOut, bool cancelStrafe = false);
-	void StrafePrediction(PlayerStorage& playerStorage);
+	bool Initialize(CBaseEntity* pPlayer, PlayerStorage& playerStorageOut, bool useHitchance = true, bool cancelStrafe = false);
 	void RunTick(PlayerStorage& playerStorage);
 	void Restore(PlayerStorage& playerStorage);
 };

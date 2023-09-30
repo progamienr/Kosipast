@@ -113,8 +113,14 @@ namespace Vars
 			inline CVar<bool> StrafePredictionAir{ false };
 			inline CVar<int> StrafePredictionMaxDistance{ 1000 };
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
+			inline CVar<float> StrafePredictionHitchance{ 0.f };
+			inline CVar<int> iSamples{ 15 }; // debug
+			inline CVar<int> VelMode{ 0 }; // debug
+			inline CVar<float> VerticalShift{ 10.f }; // debug
 			inline CVar<float> LatOff{ 0.f }; // debug
 			inline CVar<float> PhyOff{ 0.f }; // debug
+			inline CVar<int> HuntermanMode{ 2 }; // debug
+			inline CVar<float> HuntermanShift{ 0.f }; // debug
 		}
 
 		namespace Melee
