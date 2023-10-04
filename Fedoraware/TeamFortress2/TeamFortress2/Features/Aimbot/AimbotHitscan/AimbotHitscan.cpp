@@ -319,6 +319,24 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 			pRecords = *records;
 	}
 
+	auto VisPos = [](CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to) -> bool
+	{
+		CGameTrace trace = {};
+		CTraceFilterHitscan filter = {};
+		filter.pSkip = pSkip;
+		Utils::Trace(from, to, MASK_SHOT, &filter, &trace);
+		if (trace.DidHit())
+			return trace.entity && trace.entity == pEntity;
+		return true;
+	};
+	auto RayToOBB = [](const Vec3& origin, const Vec3& direction, const Vec3& position, const Vec3& min, const Vec3& max, const matrix3x4 orientation) -> bool
+	{
+		if (Vars::Aimbot::Hitscan::AimMethod.Value != 1)
+			return true;
+
+		return Math::RayToOBB(origin, direction, position, min, max, orientation);
+	};
+
 	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER ? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value) : pRecords;
 	for (auto& pTick : validRecords)
 	{
@@ -352,39 +370,43 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 			for (auto pair : hitboxes)
 			{
 				const float flScale = Vars::Aimbot::Hitscan::PointScale.Value;
-				const Vec3 vMins = pair.first->bbmin * flScale;
-				const Vec3 vMaxs = pair.first->bbmax * flScale;
+				const Vec3 vMins = pair.first->bbmin, vMinsS = vMins * flScale;
+				const Vec3 vMaxs = pair.first->bbmax, vMaxsS = vMaxs * flScale;
 
 				std::vector<Vec3> vecPoints = { Vec3() };
 				if (flScale > 0.f)
 				{
 					vecPoints = {
 						Vec3(),
-						Vec3(vMins.x, vMins.y, vMaxs.z),
-						Vec3(vMaxs.x, vMins.y, vMaxs.z),
-						Vec3(vMins.x, vMaxs.y, vMaxs.z),
-						Vec3(vMaxs.x, vMaxs.y, vMaxs.z),
-						Vec3(vMins.x, vMins.y, vMins.z),
-						Vec3(vMaxs.x, vMins.y, vMins.z),
-						Vec3(vMins.x, vMaxs.y, vMins.z),
-						Vec3(vMaxs.x, vMaxs.y, vMins.z)
+						Vec3(vMinsS.x, vMinsS.y, vMaxsS.z),
+						Vec3(vMaxsS.x, vMinsS.y, vMaxsS.z),
+						Vec3(vMinsS.x, vMaxsS.y, vMaxsS.z),
+						Vec3(vMaxsS.x, vMaxsS.y, vMaxsS.z),
+						Vec3(vMinsS.x, vMinsS.y, vMinsS.z),
+						Vec3(vMaxsS.x, vMinsS.y, vMinsS.z),
+						Vec3(vMinsS.x, vMaxsS.y, vMinsS.z),
+						Vec3(vMaxsS.x, vMaxsS.y, vMinsS.z)
 					};
 				}
 
 				for (const auto& point : vecPoints)
 				{
-					Vec3 vTransformed = {};
+					Vec3 vCenter = {}, vTransformed = {};
+					Math::VectorTransform({}, boneMatrix[pair.first->bone], vCenter);
 					Math::VectorTransform(point, boneMatrix[pair.first->bone], vTransformed);
 
-					if (Utils::VisPosMask(pLocal, target.m_pEntity, vEyePos, vTransformed, MASK_SHOT)) // for the time being, no vischecks against other hitboxes
+					auto vAngles = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(pLocal->GetShootPos(), vTransformed));
+					Vec3 vForward = {};
+					Math::AngleVectors(vAngles, &vForward);
+
+					if (VisPos(pLocal, target.m_pEntity, vEyePos, vTransformed) &&
+						RayToOBB(vEyePos, vForward, vCenter, vMins, vMaxs, boneMatrix[pair.first->bone])) // for the time being, no vischecks against other hitboxes
 					{
 						target.pTick = &pTick;
 						if (Vars::Backtrack::Enabled.Value)
-						{
 							target.ShouldBacktrack = true;
-						}
 						target.m_vPos = vTransformed;
-						target.m_vAngleTo = Math::CalcAngle(pLocal->GetShootPos(), vTransformed);
+						target.m_vAngleTo = vAngles;
 						target.m_nAimedHitbox = pair.second;
 						if (!point.IsZero())
 							target.m_bHasMultiPointed = true;
@@ -416,13 +438,19 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 			const matrix3x4& transform = target.m_pEntity->GetRgflCoordinateFrame();
 			for (const auto& point : vecPoints)
 			{
-				Vec3 vTransformed = {};
+				Vec3 vCenter = {}, vTransformed = {};
+				Math::VectorTransform({}, transform, vCenter);
 				Math::VectorTransform(point, transform, vTransformed);
 
-				if (Utils::VisPosMask(pLocal, target.m_pEntity, vEyePos, vTransformed, MASK_SHOT)) // for the time being, no traces against other hitboxes
+				auto vAngles = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(pLocal->GetShootPos(), vTransformed));
+				Vec3 vForward = {};
+				Math::AngleVectors(vAngles, &vForward);
+
+				if (VisPos(pLocal, target.m_pEntity, vEyePos, vTransformed) &&
+					RayToOBB(vEyePos, vForward, vCenter, vMins, vMaxs, transform)) // for the time being, no vischecks against other hitboxes
 				{
 					target.m_vPos = vTransformed;
-					target.m_vAngleTo = Math::CalcAngle(pLocal->GetShootPos(), vTransformed);
+					target.m_vAngleTo = vAngles;
 					if (!point.IsZero())
 						target.m_bHasMultiPointed = true;
 					return true;
@@ -515,45 +543,6 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		break;
 	}
 
-	if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
-	{
-		Vec3 vForward = {};
-		Math::AngleVectors(pCmd->viewangles, &vForward);
-		const Vec3 vTraceStart = pLocal->GetShootPos();
-		const Vec3 vTraceEnd = (vTraceStart + (vForward * 8192.0f));
-
-		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
-		filter.pSkip = pLocal;
-
-		Utils::Trace(vTraceStart, vTraceEnd, (MASK_SHOT /* | CONTENTS_GRATE | MASK_VISIBLE*/), &filter, &trace);
-
-		if (trace.entity != target.m_pEntity)
-			return false;
-
-		if (target.m_nAimedHitbox == HITBOX_HEAD)
-		{
-			if (trace.hitbox != HITBOX_HEAD)
-				return false;
-
-			if (!target.m_bHasMultiPointed)
-			{
-				Vec3 vMins = {}, vMaxs = {}, vCenter = {};
-				matrix3x4 matrix = {};
-
-				if (!target.m_pEntity->GetHitboxMinsAndMaxsAndMatrix(HITBOX_HEAD, vMins, vMaxs, matrix, &vCenter))
-					return false;
-
-				const float flScale = Vars::Aimbot::Hitscan::PointScale.Value;
-				vMins *= flScale;
-				vMaxs *= flScale;
-
-				if (!Math::RayToOBB(vTraceStart, vForward, vCenter, vMins, vMaxs, matrix))
-					return false;
-			}
-		}
-	}
-
 	return true;
 }
 
@@ -584,20 +573,20 @@ Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 	vToAngle -= G::PunchAngles;
 	Math::ClampAngles(vToAngle);
 
-	switch (Vars::Aimbot::Melee::AimMethod.Value)
+	switch (Vars::Aimbot::Hitscan::AimMethod.Value)
 	{
 	case 0: // Plain
 		vReturn = vToAngle;
 		break;
 
 	case 1: //Smooth
-		if (Vars::Aimbot::Melee::SmoothingAmount.Value == 0)
+		if (Vars::Aimbot::Hitscan::SmoothingAmount.Value == 0)
 		{ // plain aim at 0 smoothing factor
 			vReturn = vToAngle;
 			break;
 		}
 		//a + (b - a) * t [lerp]
-		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Melee::SmoothingAmount.Value / 100.f);
+		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Hitscan::SmoothingAmount.Value / 100.f);
 		break;
 
 	case 2: // Silent
@@ -612,21 +601,20 @@ Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 
 void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && bLastTickAttack;
-	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2 && !G::ShouldShift && !bKeepFiring)
+	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && G::LastUserCmd->buttons & IN_ATTACK;
+	if (bKeepFiring && !G::WeaponCanAttack && F::AimbotGlobal.IsKeyDown())
+		pCmd->buttons |= IN_ATTACK;
+
+	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2 && !G::DoubleTap)
 	{
 		bLastTickHeld = false;
 		if (pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() != AC_STATE_IDLE)
-		{
-			Exit(pWeapon, pCmd); return;
-		}
+			return;
 	}
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
 	if (!bShouldAim)
-	{
-		Exit(pWeapon, pCmd); return;
-	}
+		return;
 
 	const int nWeaponID = pWeapon->GetWeaponID();
 
@@ -639,9 +627,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 		pCmd->buttons |= IN_ATTACK;
 		bLastTickHeld = true;
 		if (!bHeld)
-		{
-			Exit(pWeapon, pCmd); return;
-		}
+			return;
 	}
 
 	if (nWeaponID != TF_WEAPON_COMPOUND_BOW
@@ -653,20 +639,18 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 		if (Vars::Aimbot::Hitscan::AutoScope.Value && !bScoped)
 		{
 			pCmd->buttons |= IN_ATTACK2;
-			Exit(pWeapon, pCmd); return;
+			return;
 		}
 
 		if ((Vars::Aimbot::Hitscan::ScopedOnly.Value || G::CurItemDefIndex == Sniper_m_TheMachina || G::CurItemDefIndex == Sniper_m_ShootingStar) && !bScoped)
 		{
-			Exit(pWeapon, pCmd); return;
+			return;
 		}
 	}
 
 	auto targets = SortTargets(pLocal, pWeapon);
 	if (targets.empty())
-	{
-		Exit(pWeapon, pCmd); return;
-	}
+		return;
 
 	for (auto& target : targets)
 	{
@@ -677,9 +661,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 		G::HitscanSilentActive = Vars::Aimbot::Hitscan::AimMethod.Value == 2;
 
 		if (G::HitscanSilentActive)
-		{
 			G::AimPos = target.m_vPos;
-		}
 
 		bool bShouldFire = ShouldFire(pLocal, pWeapon, pCmd, target);
 
@@ -752,7 +734,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 			if (target.pTick)
 			{
 				if (target.ShouldBacktrack)
-					pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
+					pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 
 				if (Vars::Visuals::BulletTracer.Value)
 				{
@@ -766,17 +748,8 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 			}
 		}
 
-		// todo: move into canhit & possibly do Math::RayToOBB instead of vischeck ?
-		auto vAngle = Aim(pCmd->viewangles, target.m_vAngleTo);
-		Aim(pCmd, vAngle);
+		Aim(pCmd, target.m_vAngleTo);
 
 		break;
 	}
-
-	Exit(pWeapon, pCmd);
-}
-
-void CAimbotHitscan::Exit(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
-{
-	bLastTickAttack = pCmd->buttons & IN_ATTACK;
 }

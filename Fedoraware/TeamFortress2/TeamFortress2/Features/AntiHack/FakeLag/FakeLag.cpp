@@ -29,14 +29,14 @@ bool CFakeLag::IsVisible(CBaseEntity* pLocal)
 bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 {
 	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	const int doubleTapAllowed = 22 - G::ShiftedTicks;
+	const int doubleTapAllowed = G::MaxShift - G::ShiftedTicks;
 	//const bool retainFakelagTest = Vars::CL_Move::RetainFakelag.Value ? G::ShiftedTicks != 1 : !G::ShiftedTicks;
 	const bool retainFakelagTest = G::ShiftedTicks != 1;
 	if (!iNetChan) 
 		return false; // no netchannel no fakelag
 
 	// Failsafe, in case we're trying to choke too many ticks
-	if (std::max(ChokeCounter, iNetChan->m_nChokedPackets) >= 22)
+	if (std::max(G::ChokedTicks, iNetChan->m_nChokedPackets) >= G::MaxShift)
 		return false;
 
 	// Should fix an issue with getting teleported back to the ground for now, pretty ghetto imo
@@ -52,7 +52,7 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 		return true;
 
 	// Are we recharging
-	if ((ChokeCounter >= doubleTapAllowed || G::Recharging || G::Recharge || G::Teleporting || !retainFakelagTest) && Vars::CL_Move::DoubleTap::Enabled.Value)
+	if ((G::ChokedTicks >= doubleTapAllowed || G::Recharge || G::Teleport || !retainFakelagTest) && Vars::CL_Move::DoubleTap::Enabled.Value)
 		return false;
 
 	if (Vars::CL_Move::FakeLag::WhileInAir.Value && !pLocal->OnSolid())
@@ -75,7 +75,7 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 	switch (Vars::CL_Move::FakeLag::Type.Value)
 	{
 		case FL_Plain:
-		case FL_Random: return ChokeCounter < ChosenAmount;
+		case FL_Random: return G::ChokedTicks < G::ChosenTicks;
 		case FL_Adaptive:
 		{
 			const Vec3 vDelta = vLastPosition - pLocal->m_vecOrigin();
@@ -134,23 +134,26 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 
 	Prediction(nOldGroundInt, nOldFlags, pCmd);
 	G::IsChoking = false;	//	do this first
-	if (G::ShouldShift)
+	if (G::DoubleTap)
 		return;
 	if (!Vars::CL_Move::FakeLag::Enabled.Value && !bPreservingBlast)
 	{
-		ChokeCounter = 0; G::ChokedTicks = ChokeCounter;
+		G::ChokedTicks = 0;
 		return;
 	}
 
 	// Set the selected choke amount (if not random)
-	if (Vars::CL_Move::FakeLag::Type.Value != FL_Random)
-		ChosenAmount = Vars::CL_Move::FakeLag::Value.Value;
+	switch (Vars::CL_Move::FakeLag::Type.Value)
+	{
+	case FL_Plain: G::ChosenTicks = Vars::CL_Move::FakeLag::Value.Value; break;
+	case FL_Adaptive: G::ChosenTicks = G::MaxShift; break;
+	}
 
 	const auto& pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive())
 	{
 		*pSendPacket = true;
-		ChokeCounter = 0; G::ChokedTicks = 0;
+		G::ChokedTicks = 0;
 
 		return;
 	}
@@ -162,8 +165,8 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 		*pSendPacket = true;
 		// Set a new random amount (if desired)
 		if (Vars::CL_Move::FakeLag::Type.Value == FL_Random)
-			ChosenAmount = Utils::RandIntSimple(Vars::CL_Move::FakeLag::Min.Value, Vars::CL_Move::FakeLag::Max.Value);
-		ChokeCounter = 0; G::ChokedTicks = 0;
+			G::ChosenTicks = Utils::RandIntSimple(Vars::CL_Move::FakeLag::Min.Value, Vars::CL_Move::FakeLag::Max.Value);
+		G::ChokedTicks = 0;
 		pInAirTicks = {pLocal->OnSolid(), 0};
 		bUnducking = false;
 		return;
@@ -171,7 +174,7 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 
 	G::IsChoking = true;
 	*pSendPacket = false;
-	ChokeCounter++; G::ChokedTicks = ChokeCounter;
+	G::ChokedTicks++;
 
 	if (!pLocal->OnSolid())
 		pInAirTicks.second++;

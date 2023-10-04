@@ -626,29 +626,28 @@ Vec3 CAimbotProjectile::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 	return vReturn;
 }
 
-void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
+bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && bLastTickAttack;
-	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 2 && !G::ShouldShift && !bKeepFiring)
-	{
-		Exit(pLocal, pWeapon, pCmd); return;
-	}
+	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && G::LastUserCmd->buttons & IN_ATTACK;
+	if (bKeepFiring && !G::WeaponCanAttack && F::AimbotGlobal.IsKeyDown())
+		pCmd->buttons |= IN_ATTACK;
+
+	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 2 && !G::DoubleTap)
+		return true;
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
 	if (!bShouldAim &&
 		(Vars::Aimbot::Global::AutoShoot.Value ||
-		!Vars::Aimbot::Global::AutoShoot.Value && !bLastTickAttack))
+		!Vars::Aimbot::Global::AutoShoot.Value && !(G::LastUserCmd->buttons & IN_ATTACK)))
 	{
-		Exit(pLocal, pWeapon, pCmd); return;
+		return true;
 	}
 
 	const int nWeaponID = pWeapon->GetWeaponID();
 
 	auto targets = SortTargets(pLocal, pWeapon);
 	if (targets.empty())
-	{
-		Exit(pLocal, pWeapon, pCmd); return;
-	}
+		return true;
 
 	if (bShouldAim && (nWeaponID == TF_WEAPON_COMPOUND_BOW ||
 		nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER || nWeaponID == TF_WEAPON_CANNON))
@@ -659,7 +658,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		if (SandvichAimbot::bIsSandvich)
 		{
 			SandvichAimbot::RunSandvichAimbot(pLocal, pWeapon, pCmd, target.m_pEntity);
-			return;
+			return false;
 		}
 
 		if (!CanHit(target, pLocal, pWeapon)) continue;
@@ -730,16 +729,18 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		break;
 	}
 
-	Exit(pLocal, pWeapon, pCmd, false);
+	return false;
 }
 
-void CAimbotProjectile::Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, bool bEarly)
+void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
+	const bool bEarly = RunMain(pLocal, pWeapon, pCmd);
+
 	const float charge = I::GlobalVars->curtime - pWeapon->GetChargeBeginTime();
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if ((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && bLastTickAttack/* && Vars::Aimbot::Global::AutoShoot.Value*/) // add user toggle to control whether to cancel or not
+	if ((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && G::LastUserCmd->buttons & IN_ATTACK/* && Vars::Aimbot::Global::AutoShoot.Value*/) // add user toggle to control whether to cancel or not
 	{
 		switch (pWeapon->GetWeaponID())
 		{
@@ -754,9 +755,4 @@ void CAimbotProjectile::Exit(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CU
 			pCmd->buttons &= ~IN_ATTACK;
 		}
 	}
-
-	bLastTickAttack = false;
-	if (bEarly)
-		return;
-	bLastTickAttack = pCmd->buttons & IN_ATTACK;
 }

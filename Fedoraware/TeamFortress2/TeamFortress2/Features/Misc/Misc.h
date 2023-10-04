@@ -25,7 +25,7 @@ class CMisc
 	void WeaponSway();
 	void DetectChoke();
 	void ChokeCheck(bool* pSendPacket);
-	void DoubletapPacket(bool* pSendPacket);
+	void DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket);
 
 	void PrintProjAngles(CBaseEntity* pLocal);
 

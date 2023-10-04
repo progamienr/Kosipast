@@ -409,7 +409,7 @@ void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 
 void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 {
-	if (playerStorage.m_bInitFailed || !playerStorage.m_pPlayer || playerStorage.m_pPlayer->GetClassID() != ETFClassID::CTFPlayer)
+	if (playerStorage.m_bFailed || !playerStorage.m_pPlayer || playerStorage.m_pPlayer->GetClassID() != ETFClassID::CTFPlayer)
 		return;
 
 	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecAbsOrigin, Math::GetRotatedPosition( playerStorage.m_MoveData.m_vecAbsOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value ) });
@@ -423,7 +423,7 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	if (playerStorage.m_flAverageYaw)
 	{
 		if (!(playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND)/*!playerStorage.m_pPlayer->OnSolid()*/ && playerStorage.m_flAverageYaw)
-			airCorrection += 90.f * (playerStorage.m_flAverageYaw > 0.f ? 1.f : -1.f);
+			airCorrection = 90.f * (playerStorage.m_flAverageYaw > 0.f ? 1.f : -1.f);
 
 		playerStorage.m_MoveData.m_vecViewAngles.y += playerStorage.m_flAverageYaw + airCorrection;
 	}

@@ -8,14 +8,16 @@ __inline Color_t GetScoreboardColor(CBaseEntity* pEntity, bool enableOtherColors
     Color_t out = Utils::GetTeamColor(pEntity->GetTeamNum(), enableOtherColors);
     PlayerInfo_t info{}; I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &info);
 
-    if (pEntity->IsPlayer())
+    const auto& pLocal = g_EntityCache.GetLocal();
+
+    if (pEntity->IsPlayer() && pLocal)
     {
-        if (g_EntityCache.GetLocal()->GetIndex() == pEntity->GetIndex())
+        if (pLocal->GetIndex() == pEntity->GetIndex())
         {
             out = Colors::Local;
         }
 
-        else if (g_EntityCache.IsFriend(pEntity->GetIndex()) || pEntity == g_EntityCache.GetLocal())
+        else if (g_EntityCache.IsFriend(pEntity->GetIndex()) || pEntity == pLocal)
         {
             out = Colors::Friend;
         }

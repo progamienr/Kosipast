@@ -301,9 +301,16 @@ void CMenu::MenuAimbot()
 				WSlider("Fake Latency###BTLatency", &Vars::Backtrack::Latency.Value, 0, 800, "%d", ImGuiSliderFlags_AlwaysClamp);
 			}
 			WSlider("Fake Interp###BTInterp", &Vars::Backtrack::Interp.Value, 0, 800, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Will not change latency but only able to modify on spawn");
+			WSlider("Window###BTWindow", &Vars::Backtrack::Window.Value, 1, 200, "%d", ImGuiSliderFlags_AlwaysClamp);
 			WToggle("Unchoke Prediction", &Vars::Backtrack::UnchokePrediction.Value);
-			WSlider("Backtrack Window###BTProtect", &Vars::Backtrack::Protect.Value, 0, 13, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Reduces the backtrack window by n ticks");
-			WSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3, "%d"); HelpMarker("r");
+			if (Vars::Debug::DebugInfo.Value)
+			{
+				SectionTitle("debug");
+				WSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3, "%d");
+				WSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3, "%d");
+				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1, "%d", ImGuiSliderFlags_AlwaysClamp);
+				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1, "%d", ImGuiSliderFlags_AlwaysClamp);
+			}
 		} EndChild();
 
 		/* Column 2 */
@@ -1372,7 +1379,7 @@ void CMenu::MenuHvH()
 			SectionTitle("Doubletap");
 			WToggle("Enabled", &Vars::CL_Move::DoubleTap::Enabled.Value);
 			WSlider("Tick limit", &Vars::CL_Move::DoubleTap::TickLimit.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WSlider("Warp rate", &Vars::CL_Move::DoubleTap::WarpRate.Value, 2, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
+			WSlider("Warp rate", &Vars::CL_Move::DoubleTap::WarpRate.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
 			WSlider("Passive recharge", &Vars::CL_Move::DoubleTap::PassiveRecharge.Value, 0, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
 			WCombo("Mode###DTmode", &Vars::CL_Move::DoubleTap::Mode.Value, { "Always", "Hold", "Toggle" });
 			if (Vars::CL_Move::DoubleTap::Mode.Value != 0)
@@ -1401,10 +1408,10 @@ void CMenu::MenuHvH()
 
 			switch (Vars::CL_Move::FakeLag::Type.Value)
 			{
-				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, iTicks - 2, "%d", ImGuiSliderFlags_AlwaysClamp); break;
+				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp); break;
 				case 1:
 				{
-					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, iTicks - 2, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Maximum random fakelag value");
+					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Maximum random fakelag value");
 					WSlider("Random min###flRandMin", &Vars::CL_Move::FakeLag::Min.Value, 1, Vars::CL_Move::FakeLag::Max.Value - 1, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Minimum random fakelag value");
 					break;
 				}
@@ -1762,7 +1769,7 @@ void CMenu::SettingsWindow()
 			}
 
 			// Current config
-			const std::string cfgText = "Loaded: " + g_CFG.GetCurrentConfig();
+			const std::string cfgText = "Loaded: " + g_CFG.GetCurrentConfig(); // CRASH: std::length_error
 			Text(cfgText.c_str());
 
 			// Config name field

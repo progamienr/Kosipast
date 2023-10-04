@@ -488,12 +488,9 @@ void CCritHack::Run(CUserCmd* pCmd)
 	if (pLocal->deadflag() || !WeaponCanCrit(pWeapon) || pLocal->InCond(TF_COND_CRITBOOSTED)/* || !pWeapon->CanFireCriticalShot(false)*/)
 		return;
 
-	if (!G::ShouldShift)
-	{
-		CanFireCriticalShotHandler(pLocal, pWeapon);
-		GetDamageTilUnban(pLocal);
-		Fill(pWeapon, pCmd, 15);
-	}
+	CanFireCriticalShotHandler(pLocal, pWeapon);
+	GetDamageTilUnban(pLocal);
+	Fill(pWeapon, pCmd, 15);
 
 	if (Storage[pWeapon->GetSlot()].BaseDamage == 0)
 	{
@@ -508,7 +505,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 	bool pressed = critKey.Down();
 	if (!pressed && Vars::CritHack::AlwaysMelee.Value && pWeapon->GetSlot() == SLOT_MELEE)
 		pressed = true;
-	if (IsAttacking(pCmd, pWeapon) && !pWeapon->IsInReload()/*&& !CritBanned && !G::ShouldShift*/) //	is it valid & should we even use it
+	if (IsAttacking(pCmd, pWeapon) && !pWeapon->IsInReload()) //	is it valid & should we even use it
 	{
 		//ProtectData = true;
 		Storage[pWeapon->GetSlot()].ShotsCrits.first += 1;
@@ -556,8 +553,7 @@ out:
 	//ProtectData = false;
 	*I::RandomSeed = MD5_PseudoRandom(pCmd->command_number) & 0x7FFFFFFF;
 
-	if (!G::ShouldShift)
-		GetTotalCrits(pLocal, pWeapon);
+	GetTotalCrits(pLocal, pWeapon);
 
 	if (pCmd->command_number == closestCrit)
 		ForceCmds.pop_front();

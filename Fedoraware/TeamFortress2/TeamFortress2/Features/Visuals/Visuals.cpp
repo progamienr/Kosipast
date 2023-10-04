@@ -136,7 +136,10 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 	}
 	g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value + 2, { 255, 255, 255, 255 }, align, "Scoreboard %d ms", iLatencyScoreBoard);
 	if (Vars::Debug::DebugInfo.Value)
-		g_Draw.String(FONT_INDICATORS, x, y + (Vars::Fonts::FONT_INDICATORS::nTall.Value + 2) * 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
+	{
+		g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
+		g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 3, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
+	}
 }
 
 void CVisuals::SkyboxChanger()
@@ -455,10 +458,11 @@ void CVisuals::DrawTickbaseText()
 	if (Vars::Debug::DebugInfo.Value)
 	{
 		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 3 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharge: %d", G::Recharge);
-		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 4 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharging: %d", G::Recharging);
-		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 5 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Teleporting: %d", G::Teleporting);
-		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 6 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShouldShift: %d", G::ShouldShift);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 4 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::DoubleTap: %d", G::DoubleTap);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 5 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Teleport: %d", G::Teleport);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 6 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShiftedGoal: %d", G::ShiftedGoal);
 		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 7 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::AntiWarp: %d", G::AntiWarp);
+		g_Draw.String(FONT_INDICATORS, dtPos.c, dtPos.y + fontHeight * 8 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::MaxShift: %d", G::MaxShift);
 	}
 }
 void CVisuals::DrawTickbaseBars()

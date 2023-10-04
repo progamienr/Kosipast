@@ -67,10 +67,10 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 
 	float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + TICKS_TO_TIME(iLerpTicks) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
 
-	int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) - 1 + Vars::Backtrack::PassthroughOffset.Value;
+	int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) - 1 + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 	float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - iTarget);
 
-	return fabsf(flDelta) < 0.2f - TICKS_TO_TIME(Vars::Backtrack::Protect.Value + (flDelta < 0.f ? 1 : 0)); // older end seems more unreliable, possibly due to 1 tick choke ?
+	return fabsf(flDelta) < Vars::Backtrack::Window.Value / 1000.f; // - TICKS_TO_TIME(flDelta < 0.f ? 1 : 0); // older end seems more unreliable, possibly due to 1 tick choke ?
 	// in short, check if the record is +- 200ms from us
 }
 
@@ -379,6 +379,26 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 {
 	if (!Vars::Backtrack::Enabled.Value)
 		return std::nullopt;
+
+	// might not even be necessary
+	G::AnticipatedChoke = 0;
+	switch (G::CurWeaponType)
+	{
+	case EWeaponType::PROJECTILE:
+		if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
+			G::AnticipatedChoke = 1;
+		break;
+	case EWeaponType::MELEE:
+		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
+			G::AnticipatedChoke = 1;
+		break;
+	}
+	if (G::AntiAim.first || G::AntiAim.second)
+		G::AnticipatedChoke = 1;
+	if (G::ChokedTicks && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
+		//G::AnticipatedChoke = G::ChosenTicks - G::ChokedTicks;
+		G::AnticipatedChoke = G::ChokedTicks;
+
 	UpdateDatagram();
 
 	//if (G::IsAttacking)
@@ -415,7 +435,7 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 		}
 		if (cReturnTick)
 		{
-			pCmd->tick_count = TIME_TO_TICKS(cReturnTick->flSimTime) + TIME_TO_TICKS(flFakeInterp);
+			pCmd->tick_count = TIME_TO_TICKS(cReturnTick->flSimTime) + TIME_TO_TICKS(flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 			return std::nullopt;
 		}
 	}

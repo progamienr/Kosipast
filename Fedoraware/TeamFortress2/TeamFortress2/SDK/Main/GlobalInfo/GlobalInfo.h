@@ -70,20 +70,22 @@ namespace G
 	inline bool Frozen = false;	//	angles & movement are frozen.
 
 	/* Double tap / Tick shift */
-	inline int WaitForShift = 0;
 	inline int ShiftedTicks = 0; // Amount of ticks that are shifted
-	inline bool ShouldShift = false; // Should we shift now?
+	inline int ShiftedGoal = 0; // Amount of shifted ticks goal
+	inline int WaitForShift = 0;
+	inline bool DoubleTap = false;
 	inline bool AntiWarp = false;
-	inline bool Teleporting = false;
+	inline bool Teleport = false;
 	inline bool Recharge = false; // Are we currently recharging?
-	inline bool Recharging = false; // Queues a recharge
 	inline int MaxShift = 24;
 
 	/* Choking / Packets */
-	inline int ChokedTicks = 0; // Amount of ticks that are choked
+	inline int ChokedTicks = 0; // How many ticks have been choked
+	inline int ChosenTicks = 0; // How many ticks should be choked
 	inline bool ForceSendPacket = false; // might not actually be useful 
 	inline bool ForceChokePacket = false; // might not actually be useful 
 	inline bool IsChoking = false; // might not actually be useful 
+	inline int AnticipatedChoke = 0; // what the choke is expected to be (backtrack)
 
 	/* Aimbot */
 	inline bool IsAttacking = false; // this is only used by aimbot, and is also set to false at the start of a lot of functions, this is not reliable

@@ -15,9 +15,7 @@ class CAimbotHitscan
 	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
 	bool ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const Target_t& target);
 	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
-	void Exit(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 
-	bool bLastTickAttack = false;
 	bool bLastTickHeld = false; // classic
 
 public:

@@ -34,7 +34,7 @@ MAKE_HOOK(Prediction_RunCommand, Utils::GetVFuncPtr(I::Prediction, 17), void, __
 		const int backupTick = pEntity->GetTickBase();
 		const float curtimeBackup = I::GlobalVars->curtime;
 
-		if (Vars::CL_Move::DoubleTap::Enabled.Value && G::ShouldShift)
+		if (Vars::CL_Move::DoubleTap::Enabled.Value && G::DoubleTap)
 		{
 			if (pCmd->command_number == G::LastUserCmd->command_number)
 			{
@@ -46,7 +46,7 @@ MAKE_HOOK(Prediction_RunCommand, Utils::GetVFuncPtr(I::Prediction, 17), void, __
 
 		Hook.Original<FN>()(ecx, edx, pEntity, pCmd, pMoveHelper);
 
-		if (Vars::CL_Move::DoubleTap::Enabled.Value && G::ShouldShift)
+		if (Vars::CL_Move::DoubleTap::Enabled.Value && G::DoubleTap)
 		{
 			if (pCmd->command_number == G::LastUserCmd->command_number)
 			{

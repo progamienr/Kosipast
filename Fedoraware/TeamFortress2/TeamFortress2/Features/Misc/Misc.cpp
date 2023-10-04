@@ -38,7 +38,7 @@ void CMisc::RunPost(CUserCmd* pCmd, bool* pSendPacket)
 {
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
-		DoubletapPacket(pSendPacket);
+		DoubletapPacket(pCmd, pSendPacket);
 		LegJitter(pCmd, pLocal);
 		ChokeCheck(pSendPacket);
 	}
@@ -52,7 +52,7 @@ void CMisc::StopMovement(CUserCmd* pCmd, bool* pSendPacket)
 	if (G::ShouldStop)
 		return;
 	G::UpdateView = false; bMovementStopped = true; bMovementScuffed = true;
-	if (G::Recharging)
+	if (G::Recharge)
 		return;
 	*pSendPacket = false;
 }
@@ -112,12 +112,21 @@ void CMisc::ChokeCheck(bool* pSendPacket)
 	static int iChokedPackets = 0;
 	if (!*pSendPacket) { iChokedPackets++; }
 	else { iChokedPackets = 0; }
-	if (iChokedPackets > 22) { *pSendPacket = true; iChokedPackets = 0; }
+	if (iChokedPackets > G::MaxShift) { *pSendPacket = true; iChokedPackets = 0; }
 }
 
-void CMisc::DoubletapPacket(bool* pSendPacket)
+void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 {
-	*pSendPacket = (G::ShouldShift || G::Teleporting) ? G::ShiftedTicks == 1 : *pSendPacket;
+	if (G::DoubleTap || G::Teleport)
+	{
+		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
+		if (G::DoubleTap || G::LastUserCmd->buttons & IN_ATTACK)
+		{
+			const int iShiftFrom = G::ShiftedGoal + std::min(Vars::CL_Move::DoubleTap::TickLimit.Value, G::MaxShift);
+			if (iShiftFrom - 20 == G::ShiftedTicks)
+				*pSendPacket = true;
+		}
+	}
 }
 
 void CMisc::AntiAFK(CUserCmd* pCmd)
@@ -201,7 +210,7 @@ void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	static bool pos = true;
 	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
-	if (G::IsAttacking || G::ShouldShift || G::AntiAim.second || !Vars::AntiHack::AntiAim::Active.Value)
+	if (G::IsAttacking || G::DoubleTap || G::AntiAim.second || !Vars::AntiHack::AntiAim::Active.Value)
 		return;
 
 	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && Vars::AntiHack::AntiAim::LegJitter.Value/* && I::GlobalVars->tickcount % 2*/)
@@ -379,14 +388,14 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 		return;
 	}
 
-	const bool bShouldAccel = !G::ShouldShift && Vars::Misc::FastAccel.Value;
+	const bool bShouldAccel = !G::DoubleTap && Vars::Misc::FastAccel.Value;
 	const bool bShouldAccelFinal = pLocal->IsDucking() ? Vars::Misc::CrouchSpeed.Value : bShouldAccel;
 	if (!bShouldAccelFinal)
 	{
 		return;
 	}
 
-	if (G::Recharging || G::Recharge || G::Frozen)
+	if (G::Recharge || G::Frozen)
 	{
 		return;
 	}
@@ -844,7 +853,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 		static int nShiftTickG = 0;
 		static int nShiftTickA = 0;
 
-		if (G::AntiWarp && G::ShiftedTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid())
+		if (G::AntiWarp && G::ShiftedTicks && pLocal->OnSolid())
 		{
 			/*
 			pCmd->forwardmove = 0.f; pCmd->sidemove = 0.f;
@@ -1032,7 +1041,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 			if (localPos.DistTo(PeekReturnPos) < 7.f)
 			{
 				// We reached our destination. Recharge DT if wanted
-				if (Vars::CL_Move::DoubleTap::AutoRecharge.Value && isReturning && !G::ShouldShift && !G::ShiftedTicks)
+				if (Vars::CL_Move::DoubleTap::AutoRecharge.Value && isReturning && !G::DoubleTap && !G::ShiftedTicks)
 				{
 					G::Recharge = true;
 				}

@@ -66,7 +66,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Misc::DisableInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
-	if (!G::ShouldShift)
+	if (!G::DoubleTap)
 	{
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
@@ -155,7 +155,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 	G::ViewAngles = pCmd->viewangles;
 
-	if (!G::ShouldShift)
+	if (!G::DoubleTap)
 	{
 		static bool bWasSet = false;
 		if (G::SilentTime && !bWasSet)
@@ -191,9 +191,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	// do this at the end just in case aimbot / triggerbot fired.
 	if (const auto& pWeapon = g_EntityCache.GetWeapon(); const auto & pLocal = g_EntityCache.GetLocal())
 	{
-		if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || (Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid())))
+		if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid()))
 		{
-			if (G::NextSafeTick > I::GlobalVars->tickcount && G::ShouldShift && G::ShiftedTicks)
+			if (G::NextSafeTick > I::GlobalVars->tickcount && G::DoubleTap && G::ShiftedTicks)
 				pCmd->buttons &= ~IN_ATTACK;
 			else
 				G::NextSafeTick = I::GlobalVars->tickcount + g_ConVars.sv_maxusrcmdprocessticks_holdaim->GetInt() + 1;

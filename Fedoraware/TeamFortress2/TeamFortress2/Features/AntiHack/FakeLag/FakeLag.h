@@ -10,8 +10,6 @@ class CFakeLag
 		FL_Adaptive 
 	};
 
-	int ChokeCounter = 0; // How many ticks have been choked
-	int ChosenAmount = 0; // How many ticks should be choked
 	bool bPreservingBlast = false;
 	bool bUnducking = false;
 	std::pair<bool, int> pInAirTicks = {false, 0};	//	started on ground, ticks in air

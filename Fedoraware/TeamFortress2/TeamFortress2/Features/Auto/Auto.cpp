@@ -27,7 +27,7 @@ bool CAuto::ShouldRun(CBaseEntity* pLocal)
 		return false;
 	}
 
-	if (G::ShouldShift) { return false; }
+	if (G::DoubleTap) { return false; }
 
 	return true;
 }

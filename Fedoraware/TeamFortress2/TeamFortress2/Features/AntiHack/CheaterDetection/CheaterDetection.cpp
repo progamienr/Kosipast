@@ -290,7 +290,7 @@ void CCheaterDetection::OnDormancy(CBaseEntity* pEntity)
 void CCheaterDetection::OnTick()
 {
 	const auto pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !I::EngineClient->IsConnected() || G::ShouldShift || !ShouldScan())
+	if (!pLocal || !I::EngineClient->IsConnected() || G::DoubleTap || !ShouldScan())
 		return;
 	iLastScanTick = I::GlobalVars->tickcount;
 	flScanningTime = I::GlobalVars->curtime - flFirstScanTime;

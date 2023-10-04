@@ -41,11 +41,14 @@ namespace Vars
 	{
 		inline CVar<bool> Enabled{ false };
 		inline CVar<int> Method{ 0 };
-		inline CVar<bool> UnchokePrediction{ true };
 		inline CVar<int> Latency{ 0 };
 		inline CVar<int> Interp{ 0 };
-		inline CVar<int> Protect{ 1 };
+		inline CVar<int> Window{ 200 };
+		inline CVar<bool> UnchokePrediction{ true };
 		inline CVar<int> PassthroughOffset{ 0 }; // debug
+		inline CVar<int> TicksetOffset{ 0 }; // debug
+		inline CVar<int> ChokePassMod{ 0 }; // debug
+		inline CVar<int> ChokeSetMod{ 0 }; // debug
 
 		namespace BtChams
 		{
@@ -114,13 +117,13 @@ namespace Vars
 			inline CVar<int> StrafePredictionMaxDistance{ 1000 };
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
 			inline CVar<float> StrafePredictionHitchance{ 0.f };
-			inline CVar<int> iSamples{ 15 }; // debug
-			inline CVar<int> VelMode{ 0 }; // debug
+			inline CVar<int> iSamples{ 10 }; // debug
+			inline CVar<int> VelMode{ 1 }; // debug
 			inline CVar<float> VerticalShift{ 10.f }; // debug
 			inline CVar<float> LatOff{ 0.f }; // debug
 			inline CVar<float> PhyOff{ 0.f }; // debug
-			inline CVar<int> HuntermanMode{ 2 }; // debug
-			inline CVar<float> HuntermanShift{ 0.f }; // debug
+			inline CVar<int> HuntermanMode{ 0 }; // debug
+			inline CVar<float> HuntermanShift{ 2.f }; // debug
 		}
 
 		namespace Melee

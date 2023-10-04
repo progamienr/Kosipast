@@ -37,7 +37,7 @@ MAKE_HOOK(C_TFPlayer_FireEvent, g_Pattern.Find(L"client.dll", L"55 8B EC 8B 45 ?
         return Hook.Original<FN>()(ecx, edx, origin, angles, event_, options);
     }
 
-    if (Vars::Visuals::Particles::Feet::DashOnly.Value && G::Teleporting == true) //this is better than just showing when you have the key down, i guess
+    if (Vars::Visuals::Particles::Feet::DashOnly.Value && G::Teleport == true) //this is better than just showing when you have the key down, i guess
     {
         SpawnHalloweenSpellFootsteps(g_EntityCache.GetLocal(), PATTACH_ABSORIGIN, feetcolor());
     }

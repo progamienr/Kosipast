@@ -744,7 +744,7 @@ namespace Math
 	inline void VectorTransform(const Vec3& input, const matrix3x4& matrix, Vec3& output)
 	{
 		for (auto i = 0; i < 3; i++)
-			output[i] = input.Dot((Vec3&)matrix[i]) + matrix[i][3];
+			output[i] = input.Dot((Vec3&)matrix[i]) + matrix[i][3]; // CRASH: Access violation reading location
 	}
 
 

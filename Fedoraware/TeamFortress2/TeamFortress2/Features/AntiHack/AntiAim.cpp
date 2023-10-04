@@ -268,7 +268,7 @@ void CAntiAim::Run(CUserCmd* pCmd, bool* pSendPacket)
 	static KeyHelper kManual(&Vars::AntiHack::AntiAim::ManualKey.Value);
 	bManualing = kManual.Down() && (Vars::AntiHack::AntiAim::YawFake.Value == 14 || Vars::AntiHack::AntiAim::YawReal.Value == 14);
 
-	if (!Vars::AntiHack::AntiAim::Active.Value || G::ForceSendPacket || G::AvoidingBackstab || G::ShouldShift)
+	if (!Vars::AntiHack::AntiAim::Active.Value || G::ForceSendPacket || G::AvoidingBackstab || G::DoubleTap)
 		return;
 
 	if (const auto& pLocal = g_EntityCache.GetLocal())
