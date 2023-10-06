@@ -112,7 +112,7 @@ void CMisc::ChokeCheck(bool* pSendPacket)
 	static int iChokedPackets = 0;
 	if (!*pSendPacket) { iChokedPackets++; }
 	else { iChokedPackets = 0; }
-	if (iChokedPackets > G::MaxShift) { *pSendPacket = true; iChokedPackets = 0; }
+	if (iChokedPackets > 22) { *pSendPacket = true; iChokedPackets = 0; }
 }
 
 void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)

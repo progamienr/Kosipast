@@ -512,7 +512,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 
 		if (IsEnabled())
 		{
-			if (pressed && Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && closestCrit >= 0 && !bStreamWait && !bStreamEnd)
+			if (pressed && Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && closestCrit >= 0 && !bStreamWait && !bStreamEnd && !G::DoubleTap)
 				pCmd->command_number = closestCrit;
 			else if (Vars::CritHack::AvoidRandom.Value && closestSkip >= 0)
 				pCmd->command_number = closestSkip;

@@ -359,10 +359,15 @@ std::optional<TickRecord> CBacktrack::GetHitRecord(CUserCmd* pCmd, CBaseEntity* 
 	{
 		if (!WithinRewind(rCurQuery))
 			continue;
+
+		auto bones = (matrix3x4*)(&rCurQuery.BoneMatrix.BoneMatrix);
+		if (!bones)
+			continue;
+
 		for (int iCurHitbox = 0; iCurHitbox < 18; iCurHitbox++)
 		{
 			//	it's possible to set entity positions and bones back to this record and then see what hitbox we will hit and rewind to that record, bt i dont wanna
-			const Vec3 vHitboxPos = pEntity->GetHitboxPosMatrix(iCurHitbox, (matrix3x4*)(&rCurQuery.BoneMatrix.BoneMatrix));
+			const Vec3 vHitboxPos = pEntity->GetHitboxPosMatrix(iCurHitbox, bones);
 			const Vec3 vAngleTo = Math::CalcAngle(vPos, vHitboxPos);
 			const float flFOVTo = Math::CalcFov(vAngles, vAngleTo);
 			if (flFOVTo < flLastAngle)

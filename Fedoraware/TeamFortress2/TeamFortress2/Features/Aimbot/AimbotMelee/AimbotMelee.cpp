@@ -27,7 +27,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 		}
 	}
 
-	const auto sortMethod = static_cast<ESortMethod>(Vars::Aimbot::Melee::SortMethod.Value);
+	const auto sortMethod = ESortMethod::DISTANCE; //static_cast<ESortMethod>(Vars::Aimbot::Melee::SortMethod.Value);
 
 	// Players
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
@@ -158,7 +158,7 @@ std::vector<Target_t> CAimbotMelee::SortTargets(CBaseEntity* pLocal, CBaseCombat
 
 	auto validTargets = GetTargets(pLocal, pWeapon);
 
-	const auto& sortMethod = static_cast<ESortMethod>(1/*Vars::Aimbot::Melee::SortMethod.Value*/);
+	const auto& sortMethod = ESortMethod::DISTANCE; //static_cast<ESortMethod>(Vars::Aimbot::Melee::SortMethod.Value);
 	F::AimbotGlobal.SortTargets(&validTargets, sortMethod);
 
 	std::vector<Target_t> sortedTargets = {};

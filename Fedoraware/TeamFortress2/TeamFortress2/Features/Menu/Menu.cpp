@@ -259,7 +259,7 @@ void CMenu::MenuAimbot()
 			SectionTitle("Global");
 			WToggle("Aimbot", &Vars::Aimbot::Global::Active.Value); HelpMarker("Aimbot master switch");
 			ColorPickerL("Target", Colors::Target);
-			InputKeybind("Aimbot key", Vars::Aimbot::Global::AimKey); HelpMarker("The key to enable aimbot");
+			InputKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value); HelpMarker("The key to enable aimbot");
 			ColorPickerL("Aimbot FOV circle", Colors::FOVCircle);
 			WToggle("Autoshoot###AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value); HelpMarker("Automatically shoot when a target is found");
 			{
@@ -291,7 +291,7 @@ void CMenu::MenuAimbot()
 			WToggle("Crit hack", &Vars::CritHack::Active.Value);  HelpMarker("Enables the crit hack (BETA)");
 			MultiCombo({ "Indicators", "Avoid Random", "Always Melee" }, { &Vars::CritHack::Indicators.Value, &Vars::CritHack::AvoidRandom.Value, &Vars::CritHack::AlwaysMelee.Value }, "Misc###CrithackMiscOptions");
 			HelpMarker("Misc options for crithack");
-			InputKeybind("Crit key", Vars::CritHack::CritKey); HelpMarker("Will try to force crits when the key is held");
+			InputKeybind("Crit key", Vars::CritHack::CritKey.Value); HelpMarker("Will try to force crits when the key is held");
 
 			SectionTitle("Backtrack");
 			WToggle("Active", &Vars::Backtrack::Enabled.Value); HelpMarker("If you shoot at the backtrack manually it will attempt to hit it");
@@ -404,7 +404,7 @@ void CMenu::MenuTrigger()
 		{
 			SectionTitle("Global");
 			WToggle("Triggerbot", &Vars::Triggerbot::Global::Active.Value); HelpMarker("Global triggerbot master switch");
-			InputKeybind("Trigger key", Vars::Triggerbot::Global::TriggerKey); HelpMarker("The key which activates the triggerbot");
+			InputKeybind("Trigger key", Vars::Triggerbot::Global::TriggerKey.Value); HelpMarker("The key which activates the triggerbot");
 			HelpMarker("Choose which targets the Aimbot should aim at");
 			{
 				static std::vector flagNames{ "Invulnerable", "Cloaked", "Friends", "Taunting", "Unsimulated Players", "Disguised" };
@@ -1287,11 +1287,10 @@ void CMenu::MenuVisuals()
 						WInputText("Custom skybox name", &Vars::Skybox::SkyboxName); HelpMarker("Name of the skybox you want to you (tf/materials/skybox)");
 					}
 					WToggle("World Textures Override", &Vars::Visuals::OverrideWorldTextures.Value); HelpMarker("Turn this off when in-game so you don't drop fps :p");
-					WToggle("Bypass sv_pure", &Vars::Misc::BypassPure.Value); HelpMarker("Allows you to load any custom files, even if disallowed by the sv_pure setting");
 
 					SectionTitle("Thirdperson");
 					WToggle("Thirdperson", &Vars::Visuals::ThirdPerson.Value); HelpMarker("Will move your camera to be in a thirdperson view");
-					InputKeybind("Thirdperson key", Vars::Visuals::ThirdPersonKey); HelpMarker("What key to toggle thirdperson, press ESC if no bind is desired");
+					InputKeybind("Thirdperson key", Vars::Visuals::ThirdPersonKey.Value); HelpMarker("What key to toggle thirdperson, press ESC if no bind is desired");
 
 					WSlider("Thirdperson distance", &Vars::Visuals::ThirdpersonDist.Value, -500.f, 500.f, "%.1f", ImGuiSliderFlags_None);
 					WSlider("Thirdperson right", &Vars::Visuals::ThirdpersonRight.Value, -500.f, 500.f, "%.1f", ImGuiSliderFlags_None);
@@ -1373,7 +1372,7 @@ void CMenu::MenuHvH()
 		if (TableColumnChild("HvHCol1"))
 		{
 			const int iVar = g_ConVars.sv_maxusrcmdprocessticks->GetInt();
-			const int iTicks = iVar ? iVar : 21;
+			const int iTicks = iVar ? iVar : 24;
 
 			/* Section: Tickbase Exploits */
 			SectionTitle("Doubletap");
@@ -1383,9 +1382,9 @@ void CMenu::MenuHvH()
 			WSlider("Passive recharge", &Vars::CL_Move::DoubleTap::PassiveRecharge.Value, 0, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
 			WCombo("Mode###DTmode", &Vars::CL_Move::DoubleTap::Mode.Value, { "Always", "Hold", "Toggle" });
 			if (Vars::CL_Move::DoubleTap::Mode.Value != 0)
-				InputKeybind("Doubletap key", Vars::CL_Move::DoubleTap::DoubletapKey);
-			InputKeybind("Recharge key", Vars::CL_Move::DoubleTap::RechargeKey);
-			InputKeybind("Teleport key", Vars::CL_Move::DoubleTap::TeleportKey);
+				InputKeybind("Doubletap key", Vars::CL_Move::DoubleTap::DoubletapKey.Value);
+			InputKeybind("Recharge key", Vars::CL_Move::DoubleTap::RechargeKey.Value);
+			InputKeybind("Teleport key", Vars::CL_Move::DoubleTap::TeleportKey.Value);
 			MultiCombo({ "Wait for DT", "Anti-warp", "Avoid airborne", "Auto retain", "Auto Recharge", "Recharge While Dead", "Safe Tick", "Safe Tick Airborne" }, { &Vars::CL_Move::DoubleTap::WaitReady.Value, &Vars::CL_Move::DoubleTap::AntiWarp.Value, &Vars::CL_Move::DoubleTap::NotInAir.Value, &Vars::CL_Move::DoubleTap::AutoRetain.Value, &Vars::CL_Move::DoubleTap::AutoRecharge.Value, &Vars::CL_Move::DoubleTap::RechargeWhileDead.Value, &Vars::CL_Move::DoubleTap::SafeTick.Value, &Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value }, "Options");
 			WToggle("Indicator", &Vars::CL_Move::DoubleTap::Indicator.Value);
 			ColorPickerL("DT bar outline colour", Colors::DtOutline);
@@ -1403,15 +1402,15 @@ void CMenu::MenuHvH()
 			WToggle("Enable Fakelag", &Vars::CL_Move::FakeLag::Enabled.Value);
 			WCombo("Mode###FLmode", &Vars::CL_Move::FakeLag::Mode.Value, { "Always", "Hold", "Toggle" });
 			if (Vars::CL_Move::FakeLag::Mode.Value != 0)
-				InputKeybind("Fakelag key", Vars::CL_Move::FakeLag::Key);
+				InputKeybind("Fakelag key", Vars::CL_Move::FakeLag::Key.Value);
 			WCombo("Type###FLtype", &Vars::CL_Move::FakeLag::Type.Value, { "Plain", "Random", "Adaptive" });
 
 			switch (Vars::CL_Move::FakeLag::Type.Value)
 			{
-				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp); break;
+				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp); break;
 				case 1:
 				{
-					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Maximum random fakelag value");
+					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Maximum random fakelag value");
 					WSlider("Random min###flRandMin", &Vars::CL_Move::FakeLag::Min.Value, 1, Vars::CL_Move::FakeLag::Max.Value - 1, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Minimum random fakelag value");
 					break;
 				}
@@ -1484,7 +1483,7 @@ void CMenu::MenuHvH()
 			/* Section: Anti Aim */
 			SectionTitle("Anti Aim");
 			WToggle("Enable Anti-aim", &Vars::AntiHack::AntiAim::Active.Value);
-			InputKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey); HelpMarker("The key to toggle anti aim");
+			InputKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value); HelpMarker("The key to toggle anti aim");
 			WCombo("Pitch", &Vars::AntiHack::AntiAim::Pitch.Value, { "None", "Zero", "Up", "Down", "Fake up", "Fake down", "Random", "Half Up", "Jitter", "Fake Up Custom", "Fake Down Custom" }); HelpMarker("Which way to look up/down");
 			WCombo("Base Yaw", &Vars::AntiHack::AntiAim::BaseYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" });
 			WCombo("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Random", "Spin", "Edge", "On Hurt", "Custom", "Invert", "Jitter", "Jitter Random", "Jitter Flip", "Manual" }); HelpMarker("Which way to look horizontally");
@@ -1507,11 +1506,11 @@ void CMenu::MenuHvH()
 			}
 			if (Vars::AntiHack::AntiAim::YawFake.Value == 10 || Vars::AntiHack::AntiAim::YawReal.Value == 10)
 			{
-				InputKeybind("Invert Key", Vars::AntiHack::AntiAim::InvertKey);
+				InputKeybind("Invert Key", Vars::AntiHack::AntiAim::InvertKey.Value);
 			}
 			if (Vars::AntiHack::AntiAim::YawFake.Value == 14 || Vars::AntiHack::AntiAim::YawReal.Value == 14)
 			{
-				InputKeybind("Manual Key", Vars::AntiHack::AntiAim::ManualKey);
+				InputKeybind("Manual Key", Vars::AntiHack::AntiAim::ManualKey.Value);
 			}
 			switch (Vars::AntiHack::AntiAim::YawFake.Value)
 			{
@@ -1531,7 +1530,7 @@ void CMenu::MenuHvH()
 
 			/* Section: Auto Peek */
 			SectionTitle("Auto Peek");
-			InputKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey); HelpMarker("Hold this key while peeking and use A/D to set the peek direction");
+			InputKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey.Value); HelpMarker("Hold this key while peeking and use A/D to set the peek direction");
 			WSlider("Max Distance", &Vars::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, "%.0f"); HelpMarker("Maximum distance that auto peek can walk");
 			WToggle("Free move", &Vars::CL_Move::AutoPeekFree.Value); HelpMarker("Allows you to move freely while peeking");
 		} EndChild();
@@ -1593,7 +1592,8 @@ void CMenu::MenuMisc()
 			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" }); HelpMarker("Automatically starts queueuing for casual");
 
 			SectionTitle("Exploits");
-			WToggle("Pure bypass", &Vars::Misc::CheatsBypass.Value); HelpMarker("Allows you to use some sv_cheats commands(clientside)");
+			WToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value); HelpMarker("Allows you to use some sv_cheats commands(clientside)");
+			WToggle("Pure bypass", &Vars::Misc::BypassPure.Value); HelpMarker("Allows you to load any custom files, even if disallowed by the sv_pure setting");
 			WToggle("Ping reducer", &Vars::Misc::PingReducer.Value); HelpMarker("Reduces your ping on the scoreboard");
 			if (Vars::Misc::PingReducer.Value)
 			{
@@ -1718,7 +1718,7 @@ void CMenu::SettingsWindow()
 		WInputText("Chat Info Prefix", &Vars::Menu::CheatPrefix);
 
 		SetNextItemWidth(100);
-		InputKeybind("Extra Menu key", Vars::Menu::MenuKey, true, true);
+		InputKeybind("Extra Menu key", Vars::Menu::MenuKey.Value, true);
 
 		Dummy({ 0, 5 });
 

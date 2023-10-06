@@ -43,7 +43,7 @@ namespace Vars
 		inline CVar<int> Method{ 0 };
 		inline CVar<int> Latency{ 0 };
 		inline CVar<int> Interp{ 0 };
-		inline CVar<int> Window{ 200 };
+		inline CVar<int> Window{ 175 };
 		inline CVar<bool> UnchokePrediction{ true };
 		inline CVar<int> PassthroughOffset{ 0 }; // debug
 		inline CVar<int> TicksetOffset{ 0 }; // debug
@@ -120,8 +120,8 @@ namespace Vars
 			inline CVar<int> iSamples{ 10 }; // debug
 			inline CVar<int> VelMode{ 1 }; // debug
 			inline CVar<float> VerticalShift{ 10.f }; // debug
-			inline CVar<float> LatOff{ 0.f }; // debug
-			inline CVar<float> PhyOff{ 0.f }; // debug
+			inline CVar<float> LatOff{ 1.f }; // debug
+			inline CVar<float> PhyOff{ 1.f }; // debug
 			inline CVar<int> HuntermanMode{ 0 }; // debug
 			inline CVar<float> HuntermanShift{ 2.f }; // debug
 		}
@@ -606,7 +606,7 @@ namespace Vars
 
 			inline CVar<bool> WaitReady{ false };
 			inline CVar<bool> AntiWarp{ false };
-			inline CVar<bool> NotInAir{ false };
+			inline CVar<bool> NotInAir{ true };
 			inline CVar<bool> AutoRetain{ true };
 			inline CVar<bool> AutoRecharge{ false };
 			inline CVar<bool> RechargeWhileDead{ false };

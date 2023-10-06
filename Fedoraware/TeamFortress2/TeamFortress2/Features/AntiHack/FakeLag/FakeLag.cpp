@@ -29,14 +29,14 @@ bool CFakeLag::IsVisible(CBaseEntity* pLocal)
 bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 {
 	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	const int doubleTapAllowed = G::MaxShift - G::ShiftedTicks;
+	const int doubleTapAllowed = 22 - G::ShiftedTicks;
 	//const bool retainFakelagTest = Vars::CL_Move::RetainFakelag.Value ? G::ShiftedTicks != 1 : !G::ShiftedTicks;
 	const bool retainFakelagTest = G::ShiftedTicks != 1;
 	if (!iNetChan) 
 		return false; // no netchannel no fakelag
 
 	// Failsafe, in case we're trying to choke too many ticks
-	if (std::max(G::ChokedTicks, iNetChan->m_nChokedPackets) >= G::MaxShift)
+	if (std::max(G::ChokedTicks, iNetChan->m_nChokedPackets) >= 22)
 		return false;
 
 	// Should fix an issue with getting teleported back to the ground for now, pretty ghetto imo
@@ -146,7 +146,7 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 	switch (Vars::CL_Move::FakeLag::Type.Value)
 	{
 	case FL_Plain: G::ChosenTicks = Vars::CL_Move::FakeLag::Value.Value; break;
-	case FL_Adaptive: G::ChosenTicks = G::MaxShift; break;
+	case FL_Adaptive: G::ChosenTicks = 22; break;
 	}
 
 	const auto& pLocal = g_EntityCache.GetLocal();

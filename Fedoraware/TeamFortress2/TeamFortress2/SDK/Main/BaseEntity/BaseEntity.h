@@ -738,7 +738,7 @@ public: //Everything else, lol.
 					if (const auto& pBox = pSet->hitbox(nHitbox))
 					{
 						Vec3 vPos = (pBox->bbmin + pBox->bbmax) * 0.5f, vOut;
-						Math::VectorTransform(vPos, BoneMatrix[pBox->bone], vOut);
+						Math::VectorTransform(vPos, BoneMatrix[pBox->bone], vOut); // CRASH: Access violation reading location (Backtrack.Run() -> GetHitRecord(); might have fixed ?)
 						return vOut;
 					}
 				}

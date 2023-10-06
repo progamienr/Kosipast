@@ -635,7 +635,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 2 && !G::DoubleTap)
 		return true;
 
-	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
+	const bool bShouldAim = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 	if (!bShouldAim &&
 		(Vars::Aimbot::Global::AutoShoot.Value ||
 		!Vars::Aimbot::Global::AutoShoot.Value && !(G::LastUserCmd->buttons & IN_ATTACK)))
@@ -740,7 +740,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if ((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && G::LastUserCmd->buttons & IN_ATTACK/* && Vars::Aimbot::Global::AutoShoot.Value*/) // add user toggle to control whether to cancel or not
+	if (((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && G::LastUserCmd->buttons & IN_ATTACK) && bLastTickHeld) // add user toggle to control whether to cancel or not
 	{
 		switch (pWeapon->GetWeaponID())
 		{
@@ -755,4 +755,6 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 			pCmd->buttons &= ~IN_ATTACK;
 		}
 	}
+
+	bLastTickHeld = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 }

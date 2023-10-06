@@ -8,9 +8,7 @@ void CTickshiftHandler::Speedhack(CUserCmd* pCmd)
 	if (!bSpeedhack)
 		return;
 
-	G::DoubleTap = false;
-	G::Teleport = false;
-	G::Recharge = false;
+	G::DoubleTap = G::Teleport = G::Recharge = false;
 }
 
 void CTickshiftHandler::Recharge(CUserCmd* pCmd, CBaseEntity* pLocal) // occasionally breaks ??
@@ -21,7 +19,7 @@ void CTickshiftHandler::Recharge(CUserCmd* pCmd, CBaseEntity* pLocal) // occasio
 	if (Vars::CL_Move::DoubleTap::RechargeWhileDead.Value && !pLocal->IsAlive())
 		bPassive = true;
 
-	if (Vars::CL_Move::DoubleTap::AutoRecharge.Value && !G::DoubleTap && G::Teleport && !G::Recharge && G::ShiftedTicks > G::MaxShift && pLocal->GetVecVelocity().Length2D() < 5.0f && !(pCmd->buttons))
+	if (Vars::CL_Move::DoubleTap::AutoRecharge.Value && !G::DoubleTap && !G::Teleport && G::ShiftedTicks < G::MaxShift && pLocal->GetVecVelocity().Length2D() < 5.0f && !(pCmd->buttons))
 		bPassive = true;
 
 	if (I::GlobalVars->tickcount >= iNextPassiveTick && Vars::CL_Move::DoubleTap::PassiveRecharge.Value)
@@ -38,11 +36,9 @@ void CTickshiftHandler::Recharge(CUserCmd* pCmd, CBaseEntity* pLocal) // occasio
 	else if (iDeficit)
 		iDeficit = 0;
 
-	static KeyHelper kRecharge{ &Vars::CL_Move::DoubleTap::RechargeKey.Value };
-	G::Recharge = (kRecharge.Down() || bPassive) && !G::Teleport && !G::DoubleTap && G::ShiftedTicks < G::MaxShift && !bSpeedhack;
-	if (kRecharge.Down())
-		Utils::ConLog("fix this", tfm::format("%i, %i, %i, %i, %i", bPassive, !G::Teleport, !G::DoubleTap, G::ShiftedTicks < G::MaxShift, !bSpeedhack).c_str(), { 224, 255, 131, 255 });
-
+	static KeyHelper rechargeKey{ &Vars::CL_Move::DoubleTap::RechargeKey.Value };
+	G::Recharge = (rechargeKey.Down() || bPassive) && !G::DoubleTap && !G::Teleport && G::ShiftedTicks < G::MaxShift && !bSpeedhack;
+		
 	if (G::Recharge && bGoalReached)
 		G::ShiftedGoal = G::ShiftedTicks + 1;
 }
@@ -51,11 +47,11 @@ void CTickshiftHandler::Teleport(CUserCmd* pCmd)
 {
 	G::Teleport = false;
 
-	if (!G::ShiftedTicks || G::Recharge || G::DoubleTap || bSpeedhack)
+	if (!G::ShiftedTicks || G::DoubleTap || G::Recharge || bSpeedhack)
 		return;
 
-	static KeyHelper kTeleport{ &Vars::CL_Move::DoubleTap::TeleportKey.Value };
-	G::Teleport = kTeleport.Down();
+	static KeyHelper teleportKey{ &Vars::CL_Move::DoubleTap::TeleportKey.Value };
+	G::Teleport = teleportKey.Down();
 
 	if (G::Teleport && bGoalReached)
 		G::ShiftedGoal = std::max(G::ShiftedTicks - Vars::CL_Move::DoubleTap::WarpRate.Value, 0);
@@ -71,8 +67,8 @@ void CTickshiftHandler::Doubletap(const CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (G::WaitForShift && Vars::CL_Move::DoubleTap::WaitReady.Value)
 		return;
 
-	static KeyHelper kDoubletap{ &Vars::CL_Move::DoubleTap::DoubletapKey.Value };
-	if (!kDoubletap.Down() && Vars::CL_Move::DoubleTap::Mode.Value == 1)
+	static KeyHelper doubletapKey{ &Vars::CL_Move::DoubleTap::DoubletapKey.Value };
+	if (!doubletapKey.Down() && Vars::CL_Move::DoubleTap::Mode.Value == 1)
 		return;
 
 	if (G::WeaponCanAttack && (G::IsAttacking || G::CurWeaponType == EWeaponType::MELEE && pCmd->buttons & IN_ATTACK) &&
@@ -88,13 +84,13 @@ bool CTickshiftHandler::MeleeDoubletapCheck(CBaseEntity* pLocal) // this is dumb
 	if (!Vars::CL_Move::DoubleTap::Enabled.Value || G::ShiftedTicks < std::min(Vars::CL_Move::DoubleTap::TickLimit.Value, G::MaxShift))
 		return false;
 
-	if (G::Teleport || G::DoubleTap || G::Recharge || bSpeedhack/*|| (G::ShiftedTicks < Vars::CL_Move::DTTicks.Value)*/)
+	if (G::DoubleTap || G::Teleport || G::Recharge || bSpeedhack/*|| (G::ShiftedTicks < Vars::CL_Move::DTTicks.Value)*/)
 		return false;
 	if (G::WaitForShift && Vars::CL_Move::DoubleTap::WaitReady.Value)
 		return false;
 
-	static KeyHelper kDoubletap{ &Vars::CL_Move::DoubleTap::DoubletapKey.Value };
-	if (!kDoubletap.Down() && Vars::CL_Move::DoubleTap::Mode.Value == 1)
+	static KeyHelper doubletapKey{ &Vars::CL_Move::DoubleTap::DoubletapKey.Value };
+	if (!doubletapKey.Down() && Vars::CL_Move::DoubleTap::Mode.Value == 1)
 		return false;
 
 	return Vars::CL_Move::DoubleTap::NotInAir.Value ? pLocal->OnSolid() : true;
@@ -158,6 +154,7 @@ void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 	*/
 
 	// shiftedticks might not be fully accurate immediately
+	G::ShiftedGoal = std::clamp(G::ShiftedGoal, 0, G::MaxShift);
 	if (G::ShiftedTicks - 1 > G::ShiftedGoal) // doubletap/teleport
 	{
 		if (G::DoubleTap && Vars::CL_Move::DoubleTap::AntiWarp.Value)
@@ -192,8 +189,8 @@ void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 
 void CTickshiftHandler::CreateMove(CUserCmd* pCmd)
 {
-	static KeyHelper kDoubletap{ &Vars::CL_Move::DoubleTap::DoubletapKey.Value };
-	if (kDoubletap.Pressed() && Vars::CL_Move::DoubleTap::Mode.Value == 2)
+	static KeyHelper doubletapKey{ &Vars::CL_Move::DoubleTap::DoubletapKey.Value };
+	if (doubletapKey.Pressed() && Vars::CL_Move::DoubleTap::Mode.Value == 2)
 		Vars::CL_Move::DoubleTap::Enabled.Value = !Vars::CL_Move::DoubleTap::Enabled.Value;
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();

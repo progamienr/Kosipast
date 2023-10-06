@@ -87,84 +87,72 @@ namespace ImGui
 		return pressed;
 	}
 
-	__inline bool InputKeybind(const char* label, CVar<int>& output, bool bAllowNone = true, bool bAllowSpecial = false)
+	__inline bool InputKeybind(const char* label, int& output, bool bAllowNone = true)
 	{
-		auto VK2STR = [&](const short key) -> const char*
+		auto VK2STR = [&](const short key) -> std::string
 		{
 			switch (key)
 			{
-				case VK_LBUTTON: return "LMB";
-				case VK_RBUTTON: return "RMB";
-				case VK_MBUTTON: return "MMB";
-				case VK_XBUTTON1: return "Mouse4";
-				case VK_XBUTTON2: return "Mouse5";
-				case VK_SPACE: return "Space";
-				case 0x0: return "None";
-				case VK_A: return "A";
-				case VK_B: return "B";
-				case VK_C: return "C";
-				case VK_D: return "D";
-				case VK_E: return "E";
-				case VK_F: return "F";
-				case VK_G: return "G";
-				case VK_H: return "H";
-				case VK_I: return "I";
-				case VK_J: return "J";
-				case VK_K: return "K";
-				case VK_L: return "L";
-				case VK_M: return "M";
-				case VK_N: return "N";
-				case VK_O: return "O";
-				case VK_P: return "P";
-				case VK_Q: return "Q";
-				case VK_R: return "R";
-				case VK_S: return "S";
-				case VK_T: return "T";
-				case VK_U: return "U";
-				case VK_V: return "V";
-				case VK_W: return "W";
-				case VK_X: return "X";
-				case VK_Y: return "Y";
-				case VK_Z: return "Z";
-				case VK_0: return "0";
-				case VK_1: return "1";
-				case VK_2: return "2";
-				case VK_3: return "3";
-				case VK_4: return "4";
-				case VK_5: return "5";
-				case VK_6: return "6";
-				case VK_7: return "7";
-				case VK_8: return "8";
-				case VK_9: return "9";
-				case VK_ESCAPE: return "Escape";
-				case VK_SHIFT: return "Shift";
-				case VK_LSHIFT: return "LShift";
-				case VK_RSHIFT: return "RShift";
-				case VK_CONTROL: return "Control";
-				case VK_MENU: return "LAlt";
-				case VK_PRIOR: return "Page Up";
-				case VK_NEXT: return "Page Down";
-				case VK_INSERT: return "Insert";
-				case VK_DELETE: return "Delete";
-				case VK_HOME: return "Home";
-				case VK_END: return "End";
-				case VK_F9: return "F9";
-				case VK_F10: return "F10";
-				case VK_F11: return "F11";
-				case VK_F12: return "F12";
-				default: break;
+				case 0x0: return "none";
+				case VK_LBUTTON: return "mouse1";
+				case VK_RBUTTON: return "mouse2";
+				case VK_MBUTTON: return "mouse3";
+				case VK_XBUTTON1: return "mouse4";
+				case VK_XBUTTON2: return "mouse5";
+				case VK_CONTROL:
+				case VK_LCONTROL:
+				case VK_RCONTROL: return "control";
+				case VK_DELETE: return "delete";
+				case VK_NUMPAD0: return "num0";
+				case VK_NUMPAD1: return "num1";
+				case VK_NUMPAD2: return "num2";
+				case VK_NUMPAD3: return "num3";
+				case VK_NUMPAD4: return "num4";
+				case VK_NUMPAD5: return "num5";
+				case VK_NUMPAD6: return "num6";
+				case VK_NUMPAD7: return "num7";
+				case VK_NUMPAD8: return "num8";
+				case VK_NUMPAD9: return "num9";
+				case VK_PRIOR: return "pgup";
+				case VK_NEXT: return "pgdown";
+				case VK_HOME: return "home";
+				case VK_END: return "end";
+				case VK_CLEAR: return "clear";
+				case VK_UP: return "up";
+				case VK_DOWN: return "down";
+				case VK_LEFT: return "left";
+				case VK_RIGHT: return "right";
+				case VK_ESCAPE: return "escape";
+				case VK_F13: return "f13";
+				case VK_F14: return "f14";
+				case VK_F15: return "f15";
+				case VK_F16: return "f16";
+				case VK_F17: return "f17";
+				case VK_F18: return "f18";
+				case VK_F19: return "f19";
+				case VK_F20: return "f20";
+				case VK_F21: return "f21";
+				case VK_F22: return "f22";
+				case VK_F23: return "f23";
+				case VK_F24: return "f24";
+				case VK_PAUSE: return "pause";
 			}
 
-			WCHAR output[16] = { L"\0" };
-			if (const int result = GetKeyNameTextW(MapVirtualKeyW(key, MAPVK_VK_TO_VSC) << 16, output, 16))
-			{
-				char outputt[128];
-				sprintf(outputt, "%ws", output);
-				return outputt;
-			}
+			std::string str = "unknown";
 
-			return "Unknown";
+			CHAR output[16] = { "\0" };
+			if (GetKeyNameTextA(MapVirtualKeyA(key, MAPVK_VK_TO_VSC) << 16, output, 16))
+				str = output;
+
+			std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+			str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
+
+			return str;
 		};
+
+		static bool bCanceled = false;
+		if (bCanceled && !IsMouseDown(0) && !IsMouseReleased(0))
+			bCanceled = false;
 
 		const auto id = GetID(label);
 		PushID(label);
@@ -173,84 +161,30 @@ namespace ImGui
 		{
 			Button("...", ImVec2(100, 20));
 
-			static float time = I::EngineClient->Time();
-			const float elapsed = I::EngineClient->Time() - time;
-			static CVar<int>* curr = nullptr, * prevv = curr;
-			if (curr != prevv)
+			for (short n = 0; n < 256; n++)
 			{
-				time = I::EngineClient->Time();
-				prevv = curr;
-			}
-
-			if (curr == nullptr && elapsed > 0.1f)
-			{
-				for (short n = 0; n < 256; n++)
+				if (n != VK_INSERT && n != VK_F3 && GetAsyncKeyState(n) & 0x8000)
 				{
-					if ((n > 0x0 && n < 0x7) ||
-						(n > L'A' - 1 && n < L'Z' + 1) ||
-						(n > L'0' - 1 && n < L'9' + 1) ||
-						n == VK_LSHIFT ||
-						n == VK_RSHIFT ||
-						n == VK_SHIFT ||
-						n == VK_ESCAPE ||
-						n == VK_HOME ||
-						n == VK_CONTROL ||
-						n == VK_MENU ||
-						n == VK_PRIOR ||
-						n == VK_NEXT ||
-						n == VK_DELETE ||
-						n == VK_HOME ||
-						n == VK_END ||
-						bAllowSpecial && (
-						n == VK_INSERT ||
-						n == VK_F9 ||
-						n == VK_F10 ||
-						n == VK_F12
-						))
+					if (IsItemHovered() && n == VK_LBUTTON)
 					{
-						if ((!IsItemHovered() && GetIO().MouseClicked[0]))
-						{
-							ClearActiveID();
-							break;
-						}
-						if (GetAsyncKeyState(n) & 0x8000)
-						{
-							if (n == VK_HOME || n == VK_INSERT)
-							{
-								break;
-							}
+						bCanceled = true;
+						ClearActiveID();
+						break;
+					}
 
-							if (n == VK_ESCAPE && bAllowNone)
-							{
-								ClearActiveID();
-								output.Value = 0x0;
-								break;
-							}
+					output = n;
+					if (n == VK_ESCAPE && bAllowNone)
+						output = 0x0;
 
-							output.Value = n;
-							ClearActiveID();
-							break;
-						}
-					} //loop
+					ClearActiveID();
+					break;
 				}
 			}
 
-			if (curr != prevv)
-			{
-				time = I::EngineClient->Time();
-				prevv = curr;
-			}
-
 			GetCurrentContext()->ActiveIdAllowOverlap = true;
-			if ((!IsItemHovered() && GetIO().MouseClicked[0]))
-			{
-				ClearActiveID();
-			}
 		}
-		else if (Button(VK2STR(output.Value), ImVec2(100, 20)))
-		{
+		else if (!bCanceled && Button(VK2STR(output).c_str(), ImVec2(100, 20)))
 			SetActiveID(id, GetCurrentWindow());
-		}
 
 		SameLine();
 		Text("%s", label);

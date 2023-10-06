@@ -167,7 +167,7 @@ std::vector<Target_t> CAimbotHitscan::SortTargets(CBaseEntity* pLocal, CBaseComb
 {
 	auto validTargets = GetTargets(pLocal, pWeapon);
 
-	const auto& sortMethod = static_cast<ESortMethod>(1/*Vars::Aimbot::Melee::SortMethod.Value*/);
+	const auto& sortMethod = static_cast<ESortMethod>(Vars::Aimbot::Hitscan::SortMethod.Value);
 	F::AimbotGlobal.SortTargets(&validTargets, sortMethod);
 	F::AimbotGlobal.SortPriority(&validTargets, sortMethod);
 
