@@ -398,11 +398,8 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 			G::AnticipatedChoke = 1;
 		break;
 	}
-	if (G::AntiAim.first || G::AntiAim.second)
-		G::AnticipatedChoke = 1;
 	if (G::ChokedTicks && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
-		//G::AnticipatedChoke = G::ChosenTicks - G::ChokedTicks;
-		G::AnticipatedChoke = G::ChokedTicks;
+		G::AnticipatedChoke = G::ChosenTicks - G::ChokedTicks;
 
 	UpdateDatagram();
 
@@ -440,7 +437,7 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 		}
 		if (cReturnTick)
 		{
-			pCmd->tick_count = TIME_TO_TICKS(cReturnTick->flSimTime) + TIME_TO_TICKS(flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+			pCmd->tick_count = TIME_TO_TICKS(cReturnTick->flSimTime) + TIME_TO_TICKS(flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokeSetMod.Value;
 			return std::nullopt;
 		}
 	}

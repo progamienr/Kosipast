@@ -211,16 +211,19 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 			for (auto& target : targets)
 			{
 				F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
-				target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
+				if (!targetStorage[target.m_pEntity].m_bFailed)
+				{
+					target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
 
-				pRecordMap[target.m_pEntity].push_front({
-					target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
-					I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
-					I::GlobalVars->tickcount + i + 1,
-					false,
-					BoneMatrixes{},
-					target.m_pEntity->GetAbsOrigin()
-				});
+					pRecordMap[target.m_pEntity].push_front({
+						target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
+						I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
+						I::GlobalVars->tickcount + i + 1,
+						false,
+						BoneMatrixes{},
+						target.m_pEntity->GetAbsOrigin()
+						});
+				}
 			}
 		}
 		vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->GetViewOffset();
@@ -499,7 +502,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (G::IsAttacking && target.pTick)
 		{
 			if (target.ShouldBacktrack)
-				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokeSetMod.Value;
 
 			if (Vars::Visuals::BulletTracer.Value)
 			{

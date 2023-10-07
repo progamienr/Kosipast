@@ -308,8 +308,8 @@ void CMenu::MenuAimbot()
 				SectionTitle("debug");
 				WSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3, "%d");
 				WSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3, "%d");
-				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1, "%d", ImGuiSliderFlags_AlwaysClamp);
-				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1, "%d", ImGuiSliderFlags_AlwaysClamp);
+				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1, "%d");
+				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1, "%d");
 			}
 		} EndChild();
 
@@ -1601,20 +1601,25 @@ void CMenu::MenuMisc()
 			}
 			WToggle("Equip region unlock", &Vars::Visuals::EquipRegionUnlock.Value); HelpMarker("This doesn't let you add the equip regions back once you turn it on."); // why is this in visuals
 
-			SectionTitle("Convar spoofer");
-			WInputText("Convar", &Vars::Misc::ConvarName);
-			WInputText("Value", &Vars::Misc::ConvarValue);
-			if (Button("Send", ImVec2(GetWindowSize().x - 2 * GetStyle().WindowPadding.x, 20)))
+			if (Vars::Debug::DebugInfo.Value)
 			{
-				CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-				if (netChannel == nullptr) { return; }
+				{
+					SectionTitle("Convar spoofer");
+					WInputText("Convar", &Vars::Misc::ConvarName);
+					WInputText("Value", &Vars::Misc::ConvarValue);
+					if (Button("Send", ImVec2(GetWindowSize().x - 2 * GetStyle().WindowPadding.x, 20)))
+					{
+						CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
+						if (netChannel == nullptr) { return; }
 
-				Utils::ConLog("Convar", tfm::format("Set %s to %s", Vars::Misc::ConvarName, Vars::Misc::ConvarValue).c_str(), { 255, 0, 255, 255 });
-				NET_SetConVar cmd(Vars::Misc::ConvarName.c_str(), Vars::Misc::ConvarValue.c_str());
-				netChannel->SendNetMsg(cmd);
+						Utils::ConLog("Convar", tfm::format("Set %s to %s", Vars::Misc::ConvarName, Vars::Misc::ConvarValue).c_str(), { 255, 0, 255, 255 });
+						NET_SetConVar cmd(Vars::Misc::ConvarName.c_str(), Vars::Misc::ConvarValue.c_str());
+						netChannel->SendNetMsg(cmd);
 
-				//Vars::Misc::ConvarName = "";
-				//Vars::Misc::ConvarValue = "";
+						//Vars::Misc::ConvarName = "";
+						//Vars::Misc::ConvarValue = "";
+					}
+				}
 			}
 		} EndChild();
 

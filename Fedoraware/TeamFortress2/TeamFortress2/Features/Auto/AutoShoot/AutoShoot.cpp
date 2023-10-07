@@ -160,7 +160,7 @@ void CAutoShoot::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* 
 
 		if (fSimTime && Vars::Misc::DisableInterpolation.Value && G::WeaponCanAttack)
 		{
-			pCmd->tick_count = TIME_TO_TICKS(fSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+			pCmd->tick_count = TIME_TO_TICKS(fSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokeSetMod.Value;
 		}
 	}
 }
