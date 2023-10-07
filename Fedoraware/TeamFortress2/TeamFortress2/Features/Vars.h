@@ -45,7 +45,7 @@ namespace Vars
 		inline CVar<int> Interp{ 0 };
 		inline CVar<int> Window{ 175 };
 		inline CVar<bool> UnchokePrediction{ true };
-		inline CVar<int> PassthroughOffset{ 1 }; // debug
+		inline CVar<int> PassthroughOffset{ 0 }; // debug
 		inline CVar<int> TicksetOffset{ 0 }; // debug
 		inline CVar<int> ChokePassMod{ 1 }; // debug
 		inline CVar<int> ChokeSetMod{ 0 }; // debug

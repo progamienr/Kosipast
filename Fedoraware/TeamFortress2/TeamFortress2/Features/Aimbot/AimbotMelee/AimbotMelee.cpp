@@ -180,7 +180,7 @@ int CAimbotMelee::GetSwingTime(CBaseCombatWeapon* pWeapon)
 {
 	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		return 0;
-	return 13;
+	return 14;
 }
 
 // to do: warp to
@@ -207,7 +207,8 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 
 		for (int i = 0; i < iTicks; i++) // intended for plocal to collide with targets but doesn't seem to always work
 		{
-			F::MoveSim.RunTick(localStorage);
+			if (i < iTicks - 1)
+				F::MoveSim.RunTick(localStorage);
 			for (auto& target : targets)
 			{
 				F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
