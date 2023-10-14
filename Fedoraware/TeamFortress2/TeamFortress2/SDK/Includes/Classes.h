@@ -784,6 +784,33 @@ public:
 	}
 };
 
+//credits to KGB
+class CEntitySphereQuery
+{
+public:
+	CEntitySphereQuery(const Vec3& center, const float radius, const int flagMask = 0,
+		const int partitionMask = PARTITION_CLIENT_NON_STATIC_EDICTS)
+	{
+		static DWORD dwAddress = g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 14 D9 45 0C");
+		reinterpret_cast<void(__thiscall*)(void*, const Vec3&, float, int, int)>(dwAddress)(
+			this, center, radius, flagMask, partitionMask);
+	}
+
+	CBaseEntity* GetCurrentEntity()
+	{
+		return (m_nListIndex < m_nListCount) ? m_pList[m_nListIndex] : nullptr;
+	}
+
+	void NextEntity()
+	{
+		m_nListIndex++;
+	}
+
+private:
+	int m_nListIndex, m_nListCount;
+	CBaseEntity* m_pList[MAX_SPHERE_QUERY];
+};
+
 struct StartSoundParams_t
 {
 	bool			staticsound;

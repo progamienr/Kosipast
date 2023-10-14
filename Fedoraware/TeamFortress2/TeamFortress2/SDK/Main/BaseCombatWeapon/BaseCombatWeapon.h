@@ -54,7 +54,7 @@ public: //Virtuals
 	M_VIRTUALGET(BulletSpread, Vec3&, this, Vec3& (__thiscall*)(void*), 286)
 
 public: //Everything else, lol
-	__inline float GetSmackTime()
+	__inline float& GetSmackTime()
 	{
 //credits to KGB
 		static auto dwOffset = g_NetVars.get_offset("DT_TFWeaponBase", "m_nInspectStage") + 0x1C;

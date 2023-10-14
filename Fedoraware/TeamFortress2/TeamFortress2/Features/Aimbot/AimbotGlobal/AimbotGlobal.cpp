@@ -37,8 +37,7 @@ namespace SandvichAimbot
 
 bool CAimbotGlobal::IsKeyDown()
 {
-	static KeyHelper aimKey{ &Vars::Aimbot::Global::AimKey.Value };
-	return !Vars::Aimbot::Global::AimKey.Value ? true : aimKey.Down();
+	return !Vars::Aimbot::Global::AimKey.Value ? true : F::KeyHandler.Down(Vars::Aimbot::Global::AimKey.Value);
 }
 
 void CAimbotGlobal::SortTargets(std::vector<Target_t>* targets, const ESortMethod& method)
@@ -157,4 +156,40 @@ Priority CAimbotGlobal::GetPriority(int targetIdx)
 	}
 
 	return { };
+}
+
+// will not predict for projectile weapons
+bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
+{
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (!pLocal)
+		return false;
+
+	CBaseEntity* pTarget;
+	for (CEntitySphereQuery sphere(pBomb->GetAbsOrigin(), 250.f);
+		(pTarget = sphere.GetCurrentEntity()) != nullptr;
+		sphere.NextEntity())
+	{
+		if (!pTarget || !pTarget->IsAlive() || pTarget->GetTeamNum() == pLocal->GetTeamNum())
+			continue;
+
+		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & (PLAYER) && pTarget->IsPlayer();
+		const bool isSentry = Vars::Aimbot::Global::AimAt.Value & (SENTRY) && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
+		const bool isDispenser = Vars::Aimbot::Global::AimAt.Value & (DISPENSER) && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
+		const bool isTeleporter = Vars::Aimbot::Global::AimAt.Value & (TELEPORTER) && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
+		const bool isNPC = Vars::Aimbot::Global::AimAt.Value & (NPC) && pTarget->IsNPC();
+
+		if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC)
+		{
+			if (isPlayer && F::AimbotGlobal.ShouldIgnore(pTarget))
+				continue;
+
+			if (!Utils::VisPosMask(pBomb, pTarget, pBomb->GetAbsOrigin(), pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+				continue;
+
+			return true;
+		}
+	}
+
+	return false;
 }

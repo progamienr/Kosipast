@@ -4,11 +4,10 @@
 
 bool CAutoGlobal::IsKeyDown()
 {
-	static KeyHelper autoKey{ &Vars::Triggerbot::Global::TriggerKey.Value };
 	switch (Vars::Triggerbot::Global::TriggerKey.Value)
 	{
 		case 0x0: return true;
-		default: return autoKey.Down();
+		default: return F::KeyHandler.Down(Vars::Triggerbot::Global::TriggerKey.Value);
 	}
 }
 

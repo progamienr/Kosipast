@@ -9,6 +9,7 @@
 #include "../Backtrack/Backtrack.h"
 
 #include "ImGui/imgui_impl_win32.h"
+#include "ImGui/imgui_impl_dx9.h"
 #include "ImGui/imgui_stdlib.h"
 #include "Fonts/IconsMaterialDesign.h"
 #include "Playerlist/Playerlist.h"
@@ -23,6 +24,8 @@
 
 int unuPrimary = 0;
 int unuSecondary = 0;
+
+constexpr auto SIZE_FULL_WIDTH = ImVec2(-1, 20);
 
 /* The main menu */
 void CMenu::DrawMenu()
@@ -310,6 +313,8 @@ void CMenu::MenuAimbot()
 				WSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3, "%d");
 				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1, "%d");
 				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1, "%d");
+				WSlider("new window sub", &Vars::Backtrack::NWindowSub.Value, 0, 200, "%d");
+				WSlider("old window sub", &Vars::Backtrack::OWindowSub.Value, 0, 200, "%d");
 			}
 		} EndChild();
 
@@ -432,7 +437,7 @@ void CMenu::MenuTrigger()
 			WToggle("Silent###triggerblastsilent", &Vars::Triggerbot::Blast::Silent.Value); HelpMarker("Aim changes made by the rage mode setting aren't visible");
 			WToggle("Extinguish Players###TriggerExtinguishPlayers", &Vars::Triggerbot::Blast::ExtinguishPlayers.Value); HelpMarker("Will automatically extinguish burning players");
 			WToggle("Disable on Attack###TriggerDisableOnAttack", &Vars::Triggerbot::Blast::DisableOnAttack.Value); HelpMarker("Will not air blast while attacking");
-			WSlider("FOV####AirBlastFov", &Vars::Triggerbot::Blast::Fov.Value, 0.f, 90.f, "%.f", ImGuiSliderFlags_AlwaysClamp);
+			WSlider("FOV####AirBlastFov", &Vars::Triggerbot::Blast::Fov.Value, 0.f, 90.f, "%d", ImGuiSliderFlags_AlwaysClamp);
 
 			SectionTitle("Auto Detonate");
 			WToggle("Autodetonate###TriggerDet", &Vars::Triggerbot::Detonate::Active.Value);
@@ -468,6 +473,10 @@ void CMenu::MenuTrigger()
 			WSlider("Health left (%)###TriggerUberHealthLeft", &Vars::Triggerbot::Uber::HealthLeft.Value, 1.f, 99.f, "%.0f%%", 1.0f); HelpMarker("The amount of health the heal target must be below to actiavte");
 			WSlider("Reaction FoV###TriggerUberReactFoV", &Vars::Triggerbot::Uber::ReactFoV.Value, 0, 90, "%d", 1); HelpMarker("Checks whether you are within a certain FoV from legit players before auto ubering.");
 			WToggle("Activate charge trigger", &Vars::Triggerbot::Uber::VoiceCommand.Value); HelpMarker("Will ubercharge regardless of anything if your target says activate charge");
+
+			SectionTitle("Auto Jump");
+			InputKeybind("Auto rocket jump", Vars::Triggerbot::Jump::JumpKey.Value); HelpMarker("Unfinished");
+			InputKeybind("Auto CTap", Vars::Triggerbot::Jump::CTapKey.Value);
 		} EndChild();
 
 		EndTable();
@@ -816,7 +825,7 @@ void CMenu::MenuVisuals()
 						ColorPickerL("Glow Colour", currentStruct.overlayColour, 1);
 						WToggle("Rainbow Glow", &currentStruct.overlayRainbow);
 						WToggle("Pulse Glow", &currentStruct.overlayPulse);
-						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput);
+						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 					}
 				} EndChild();
 
@@ -941,7 +950,7 @@ void CMenu::MenuVisuals()
 						ColorPickerL("Glow Colour", currentStruct.overlayColour, 1);
 						WToggle("Rainbow Glow", &currentStruct.overlayRainbow);
 						WToggle("Pulse Glow", &currentStruct.overlayPulse);
-						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput);
+						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 					}
 				} EndChild();
 
@@ -1104,6 +1113,7 @@ void CMenu::MenuVisuals()
 					}
 					MultiCombo({ "Scope", /*"Zoom",*/ "Disguises", "Taunts", "Interpolation", "View Punch", "MOTD", "Screen Effects", "Angle Forcing", "Ragdolls", "Screen Overlays", "DSP", "Convar Queries" }, { &Vars::Visuals::RemoveScope.Value, /*&Vars::Visuals::RemoveZoom.Value,*/ &Vars::Visuals::RemoveDisguises.Value, &Vars::Visuals::RemoveTaunts.Value, &Vars::Misc::DisableInterpolation.Value, &Vars::Visuals::RemovePunch.Value, &Vars::Visuals::RemoveMOTD.Value, &Vars::Visuals::RemoveScreenEffects.Value, &Vars::Visuals::PreventForcedAngles.Value, &Vars::Visuals::RemoveRagdolls.Value, &Vars::Visuals::RemoveScreenOverlays.Value, &Vars::Visuals::RemoveDSP.Value, &Vars::Visuals::RemoveConvarQueries.Value}, "Removals");
 					HelpMarker("Select what you want to remove");
+					WToggle("Reveal Scoreboard", &Vars::Visuals::RevealScoreboard.Value);
 					WToggle("Scoreboard Colours", &Vars::Visuals::ScoreboardColours.Value);
 					WToggle("Scoreboard Playerlist", &Vars::Misc::ScoreboardPlayerlist.Value);
 					WToggle("Clean Screenshots", &Vars::Visuals::CleanScreenshots.Value);
@@ -1612,7 +1622,7 @@ void CMenu::MenuMisc()
 						CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
 						if (netChannel == nullptr) { return; }
 
-						Utils::ConLog("Convar", tfm::format("Set %s to %s", Vars::Misc::ConvarName, Vars::Misc::ConvarValue).c_str(), { 255, 0, 255, 255 });
+						Utils::ConLog("Convar", tfm::format("Sent %s as %s", Vars::Misc::ConvarName, Vars::Misc::ConvarValue).c_str(), { 255, 0, 255, 255 });
 						NET_SetConVar cmd(Vars::Misc::ConvarName.c_str(), Vars::Misc::ConvarValue.c_str());
 						netChannel->SendNetMsg(cmd);
 
@@ -1638,65 +1648,56 @@ void CMenu::MenuMisc()
 			WInputInt("Group size", &Vars::Misc::Steam::GroupSize.Value); HelpMarker("Sets party size");
 
 			SectionTitle("Utilities");
-			const auto btnWidth = GetWindowSize().x - 2 * GetStyle().WindowPadding.x;
-			if (Button("Full update", ImVec2(btnWidth, 20)))
+			if (Button("Full update", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("cl_fullupdate");
-			if (Button("Reload HUD", ImVec2(btnWidth, 20)))
+			if (Button("Reload HUD", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("hud_reloadscheme");
-			if (Button("Restart sound", ImVec2(btnWidth, 20)))
+			if (Button("Restart sound", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("snd_restart");
-			if (Button("Stop sound", ImVec2(btnWidth, 20)))
+			if (Button("Stop sound", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("stopsound");
-			if (Button("Status", ImVec2(btnWidth, 20)))
+			if (Button("Status", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("status");
-			if (Button("Ping", ImVec2(btnWidth, 20)))
+			if (Button("Ping", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("ping");
-			if (Button("Retry", ImVec2(btnWidth, 20)))
+			if (Button("Retry", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("retry");
-			if (Button("Exit", ImVec2(btnWidth, 20)))
+			if (Button("Exit", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("exit");
-			if (Button("Console", ImVec2(btnWidth, 20)))
+			if (Button("Console", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("showconsole");
-			if (Button("Demo playback", ImVec2(btnWidth, 20)))
+			if (Button("Demo playback", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("demoui");
-			if (Button("Demo trackbar", ImVec2(btnWidth, 20)))
+			if (Button("Demo trackbar", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("demoui2");
-			if (Button("Itemtest", ImVec2(btnWidth, 20)))
+			if (Button("Itemtest", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("itemtest");
-			if (Button("Fix Chams", ImVec2(btnWidth, 20)))
+			if (Button("Fix Chams", SIZE_FULL_WIDTH))
 			{
 				F::DMEChams.CreateMaterials();
 				F::Glow.CreateMaterials();
 			}
-			if (Button("Reveal bullet lines", ImVec2(btnWidth, 20)))
-			{
+			if (Button("Print Hashes", SIZE_FULL_WIDTH))
+				Hash::PrintHash();
+			if (Button("Reveal bullet lines", SIZE_FULL_WIDTH))
 				F::Visuals.RevealBulletLines();
-			}
-			if (Button("Reveal prediction lines", ImVec2(btnWidth, 20)))
-			{
+			if (Button("Reveal prediction lines", SIZE_FULL_WIDTH))
 				F::Visuals.RevealSimLines();
-			}
-			if (Button("Reveal boxes", ImVec2(btnWidth, 20)))
-			{
+			if (Button("Reveal boxes", SIZE_FULL_WIDTH))
 				F::Visuals.RevealBoxes();
-			}
 #ifdef DEBUG
-			if (Button("Dump Classes", ImVec2(btnWidth, 20)))
-			{
+			if (Button("Dump Classes", SIZE_FULL_WIDTH))
 				F::Misc.DumpClassIDS();
-			}
 #endif
-			//if (Button("CPrint", ImVec2(btnWidth, 20))){
+			//if (Button("CPrint", SIZE_FULL_WIDTH))
 			//	I::CenterPrint->Print((char*)"niggaz");
-			//}
-
 
 			if (!I::EngineClient->IsConnected())
 			{
-				if (Button("Unlock all achievements", ImVec2(btnWidth, 20)))
-				{
+				if (Button("Unlock all achievements", SIZE_FULL_WIDTH))
 					F::Misc.UnlockAchievements();
-				}
+				if (Button("Lock all achievements", SIZE_FULL_WIDTH))
+					F::Misc.LockAchievements();
 			}
 		} EndChild();
 
@@ -1713,29 +1714,37 @@ void CMenu::SettingsWindow()
 
 	PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 12));
 	PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(10, 10));
+	SetNextWindowSize(ImVec2(230.f, 0.f));
 
-	if (Begin("Settings", &ShowSettings, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse))
+	if (Begin("Settings", &ShowSettings, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
 	{
-		if (ColorPicker("Menu accent", Vars::Menu::MenuAccent)) { LoadStyle(); } SameLine(); Text("Menu accent");
-		if (Checkbox("Alternative Design", &Vars::Menu::ModernDesign)) { LoadStyle(); }
+		PushItemWidth(-1);
 
-		WInputText("Cheat Name", &Vars::Menu::CheatName);
-		WInputText("Chat Info Prefix", &Vars::Menu::CheatPrefix);
+		if (CollapsingHeader("Menu Settings"))
+		{
+			if (ColorPicker("Menu accent", Vars::Menu::MenuAccent))
+				LoadStyle();
+			SameLine(); Text("Menu accent");
+			if (Checkbox("Alternative Design", &Vars::Menu::ModernDesign))
+				LoadStyle();
 
-		SetNextItemWidth(100);
-		InputKeybind("Extra Menu key", Vars::Menu::MenuKey.Value, true);
+			WInputText("Cheat Name", &Vars::Menu::CheatName);
+			WInputText("Chat Info Prefix", &Vars::Menu::CheatPrefix);
+
+			SetNextItemWidth(100);
+			InputKeybind("Extra Menu key", Vars::Menu::MenuKey.Value, true);
+		}
 
 		Dummy({ 0, 5 });
 
-		if (Button("Open configs folder", ImVec2(200, 0)))
-		{
+		if (Button("Open configs folder", SIZE_FULL_WIDTH))
 			ShellExecuteA(NULL, NULL, g_CFG.GetConfigPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
-		}
-		if (Button("Open visuals folder", ImVec2(200, 0)))
-		{
+		if (Button("Open visuals folder", SIZE_FULL_WIDTH))
 			ShellExecuteA(NULL, NULL, g_CFG.GetVisualsPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
-		}
+
 		Dummy({ 0, 5 });
+
+		/* Config Tabs */
 		ImGui::PushFont(SectionFont);
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.f);
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 });
@@ -1743,14 +1752,10 @@ void CMenu::SettingsWindow()
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
 			if (ImGui::TabButton("General", CurrentConfigTab == ConfigTab::General))
-			{
 				CurrentConfigTab = ConfigTab::General;
-			}
 
 			if (ImGui::TabButton("Visuals", CurrentConfigTab == ConfigTab::Visuals))
-			{
 				CurrentConfigTab = ConfigTab::Visuals;
-			}
 
 			ImGui::PopStyleColor(1);
 			ImGui::EndTable();
@@ -1760,47 +1765,29 @@ void CMenu::SettingsWindow()
 
 		static std::string selected;
 		static std::string selectedvis;
-		int nConfig = 0;
 
+		/* Config list*/
 		if (CurrentConfigTab == ConfigTab::General)
 		{
-			for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetConfigPath()))
-			{
-				if (std::string(std::filesystem::path(entry).filename().string()).find(g_CFG.ConfigExtension) == std::string_view::npos)
-				{
-					continue;
-				}
-				nConfig++;
-			}
-
 			// Current config
-			const std::string cfgText = "Loaded: " + g_CFG.GetCurrentConfig(); // CRASH: std::length_error
+			const std::string cfgText = "Loaded: " + g_CFG.GetCurrentConfig();
 			Text(cfgText.c_str());
 
 			// Config name field
-			if (nConfig < 100)
+			std::string newConfigName = {};
+			if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
 			{
-				std::string newConfigName = {};
-
-				PushItemWidth(200);
-				if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
+				if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + newConfigName))
 				{
-					if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + newConfigName))
-					{
-						g_CFG.SaveConfig(newConfigName);
-					}
+					g_CFG.SaveConfig(newConfigName);
 				}
-				PopItemWidth();
 			}
 
 			// Config list
-
 			for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetConfigPath()))
 			{
-				if (std::string(std::filesystem::path(entry).filename().string()).find(g_CFG.ConfigExtension) == std::string_view::npos)
-				{
-					continue;
-				}
+				if (!entry.is_regular_file()) { continue; }
+				if (entry.path().extension() != g_CFG.ConfigExtension) { continue; }
 
 				std::string configName = entry.path().filename().string();
 				configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
@@ -1814,88 +1801,97 @@ void CMenu::SettingsWindow()
 					PushStyleColor(ImGuiCol_Button, buttonColor);
 
 					// Config name button
-					if (Button(configName.c_str(), ImVec2(200, 20)))
+					if (Button(configName.c_str(), SIZE_FULL_WIDTH))
 					{
 						selected = configName;
 					}
 					PopStyleColor();
 
-					// Save config button
-					if (Button("Save", ImVec2(61, 20)))
+					if (BeginTable("ConfigActions", 3))
 					{
-						if (configName != g_CFG.GetCurrentConfig())
+						// Save config button
+						TableNextColumn();
+						if (Button("Save", SIZE_FULL_WIDTH))
 						{
-							OpenPopup("Save config?");
+							if (configName != g_CFG.GetCurrentConfig())
+							{
+								OpenPopup("Save config?");
+							}
+							else
+							{
+								g_CFG.SaveConfig(selected);
+								selected.clear();
+							}
 						}
-						else
+
+						// Load config button
+						TableNextColumn();
+						if (Button("Load", SIZE_FULL_WIDTH))
 						{
-							g_CFG.SaveConfig(selected);
+							g_CFG.LoadConfig(selected);
 							selected.clear();
+							LoadStyle();
 						}
-					}
 
-					// Load config button
-					SameLine();
-					if (Button("Load", ImVec2(61, 20)))
-					{
-						g_CFG.LoadConfig(selected);
-						selected.clear();
-						LoadStyle();
-					}
-
-					// Remove config button
-					SameLine();
-					if (Button("Remove", ImVec2(62, 20)))
-					{
-						OpenPopup("Remove config?");
-					}
-
-					// Save config dialog
-					if (BeginPopupModal("Save config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-					{
-						Text("Do you really want to override this config?");
-
-						Separator();
-						if (Button("Yes, override!", ImVec2(150, 0)))
+						// Remove config button
+						TableNextColumn();
+						if (Button("Remove", SIZE_FULL_WIDTH))
 						{
-							g_CFG.SaveConfig(selected);
-							selected.clear();
-							CloseCurrentPopup();
+							OpenPopup("Remove config?");
 						}
 
-						SameLine();
-						if (Button("No", ImVec2(120, 0)))
+						// Dialogs
 						{
-							CloseCurrentPopup();
-						}
-						EndPopup();
-					}
+							// Save config dialog
+							if (BeginPopupModal("Save config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+							{
+								Text("Do you really want to override this config?");
 
-					// Delete config dialog
-					if (BeginPopupModal("Remove config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-					{
-						Text("Do you really want to delete this config?");
+								Separator();
+								if (Button("Yes, override!", ImVec2(150, 0)))
+								{
+									g_CFG.SaveConfig(selected);
+									selected.clear();
+									CloseCurrentPopup();
+								}
 
-						Separator();
-						if (Button("Yes, remove!", ImVec2(150, 0)))
-						{
-							g_CFG.RemoveConfig(selected);
-							selected.clear();
-							CloseCurrentPopup();
+								SameLine();
+								if (Button("No", ImVec2(120, 0)))
+								{
+									CloseCurrentPopup();
+								}
+								EndPopup();
+							}
+
+							// Delete config dialog
+							if (BeginPopupModal("Remove config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+							{
+								Text("Do you really want to delete this config?");
+
+								Separator();
+								if (Button("Yes, remove!", ImVec2(150, 0)))
+								{
+									g_CFG.RemoveConfig(selected);
+									selected.clear();
+									CloseCurrentPopup();
+								}
+								SameLine();
+								if (Button("No", ImVec2(150, 0)))
+								{
+									CloseCurrentPopup();
+								}
+								EndPopup();
+							}
 						}
-						SameLine();
-						if (Button("No", ImVec2(150, 0)))
-						{
-							CloseCurrentPopup();
-						}
-						EndPopup();
+
+						EndTable();
 					}
 				}
 				else if (configName == g_CFG.GetCurrentConfig())
 				{
 					PushStyleColor(ImGuiCol_Button, GetStyle().Colors[ImGuiCol_ButtonActive]);
 					std::string buttonText = "> " + configName + " <";
-					if (Button(buttonText.c_str(), ImVec2(200, 20)))
+					if (Button(buttonText.c_str(), SIZE_FULL_WIDTH))
 					{
 						selected = configName;
 					}
@@ -1903,7 +1899,7 @@ void CMenu::SettingsWindow()
 				}
 				else
 				{
-					if (Button(configName.c_str(), ImVec2(200, 20)))
+					if (Button(configName.c_str(), SIZE_FULL_WIDTH))
 					{
 						selected = configName;
 					}
@@ -1911,45 +1907,28 @@ void CMenu::SettingsWindow()
 			}
 
 		}
-		else
+		else if (CurrentConfigTab == ConfigTab::Visuals)
 		{
-			for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetVisualsPath()))
-			{
-				if (std::string(std::filesystem::path(entry).filename().string()).find(g_CFG.ConfigExtension) == std::string_view::npos)
-				{
-					continue;
-				}
-				nConfig++;
-			}
-
 			// Current config
 			const std::string cfgText = "Loaded: " + g_CFG.GetCurrentVisuals();
 			Text(cfgText.c_str());
 
 			// Config name field
-			if (nConfig < 100)
-			{
-				std::string newConfigName = {};
+			std::string newConfigName = {};
 
-				PushItemWidth(200);
-				if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
+			if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + newConfigName))
 				{
-					if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + newConfigName))
-					{
-						g_CFG.SaveVisual(newConfigName);
-					}
+					g_CFG.SaveVisual(newConfigName);
 				}
-				PopItemWidth();
 			}
 
-			// Config list
-
+			// Visuals list
 			for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetVisualsPath()))
 			{
-				if (std::string(std::filesystem::path(entry).filename().string()).find(g_CFG.ConfigExtension) == std::string_view::npos)
-				{
-					continue;
-				}
+				if (!entry.is_regular_file()) { continue; }
+				if (entry.path().extension() != g_CFG.ConfigExtension) { continue; }
 
 				std::string configName = entry.path().filename().string();
 				configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
@@ -1963,88 +1942,98 @@ void CMenu::SettingsWindow()
 					PushStyleColor(ImGuiCol_Button, buttonColor);
 
 					// Config name button
-					if (Button(configName.c_str(), ImVec2(200, 20)))
+					if (Button(configName.c_str(), SIZE_FULL_WIDTH))
 					{
 						selected = configName;
 					}
 					PopStyleColor();
 
-					// Save config button
-					if (Button("Save", ImVec2(61, 20)))
+					// Visuals action buttons
+					if (BeginTable("ConfigActions", 3))
 					{
-						if (configName != g_CFG.GetCurrentVisuals())
+						// Visuals config button
+						TableNextColumn();
+						if (Button("Save", SIZE_FULL_WIDTH))
 						{
-							OpenPopup("Save config?");
+							if (configName != g_CFG.GetCurrentVisuals())
+							{
+								OpenPopup("Save visuals?");
+							}
+							else
+							{
+								g_CFG.SaveVisual(selected);
+								selected.clear();
+							}
 						}
-						else
+
+						// Load visuals button
+						TableNextColumn();
+						if (Button("Load", SIZE_FULL_WIDTH))
 						{
-							g_CFG.SaveVisual(selected);
+							g_CFG.LoadVisual(selected);
 							selected.clear();
+							LoadStyle();
 						}
-					}
 
-					// Load config button
-					SameLine();
-					if (Button("Load", ImVec2(61, 20)))
-					{
-						g_CFG.LoadVisual(selected);
-						selected.clear();
-						LoadStyle();
-					}
-
-					// Remove config button
-					SameLine();
-					if (Button("Remove", ImVec2(62, 20)))
-					{
-						OpenPopup("Remove config?");
-					}
-
-					// Save config dialog
-					if (BeginPopupModal("Save config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-					{
-						Text("Do you really want to override this config?");
-
-						Separator();
-						if (Button("Yes, override!", ImVec2(150, 0)))
+						// Remove visual button
+						TableNextColumn();
+						if (Button("Remove", SIZE_FULL_WIDTH))
 						{
-							g_CFG.SaveVisual(selected);
-							selected.clear();
-							CloseCurrentPopup();
+							OpenPopup("Remove visuals?");
 						}
 
-						SameLine();
-						if (Button("No", ImVec2(120, 0)))
+						// Dialogs
 						{
-							CloseCurrentPopup();
-						}
-						EndPopup();
-					}
+							// Save config dialog
+							if (BeginPopupModal("Save visuals?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+							{
+								Text("Do you really want to override this config?");
 
-					// Delete config dialog
-					if (BeginPopupModal("Remove config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-					{
-						Text("Do you really want to delete this config?");
+								Separator();
+								if (Button("Yes, override!", ImVec2(150, 0)))
+								{
+									g_CFG.SaveVisual(selected);
+									selected.clear();
+									CloseCurrentPopup();
+								}
 
-						Separator();
-						if (Button("Yes, remove!", ImVec2(150, 0)))
-						{
-							g_CFG.RemoveVisual(selected);
-							selected.clear();
-							CloseCurrentPopup();
+								SameLine();
+								if (Button("No", ImVec2(120, 0)))
+								{
+									CloseCurrentPopup();
+								}
+								EndPopup();
+							}
+
+							// Delete config dialog
+							if (BeginPopupModal("Remove visuals?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+							{
+								Text("Do you really want to delete this config?");
+
+								Separator();
+								if (Button("Yes, remove!", ImVec2(150, 0)))
+								{
+									g_CFG.RemoveVisual(selected);
+									selected.clear();
+									CloseCurrentPopup();
+								}
+								SameLine();
+								if (Button("No", ImVec2(150, 0)))
+								{
+									CloseCurrentPopup();
+								}
+								EndPopup();
+							}
 						}
-						SameLine();
-						if (Button("No", ImVec2(150, 0)))
-						{
-							CloseCurrentPopup();
-						}
-						EndPopup();
+
+						EndTable();
 					}
 				}
 				else if (configName == g_CFG.GetCurrentVisuals())
 				{
 					PushStyleColor(ImGuiCol_Button, GetStyle().Colors[ImGuiCol_ButtonActive]);
 					std::string buttonText = "> " + configName + " <";
-					if (Button(buttonText.c_str(), ImVec2(200, 20)))
+					if (Button(buttonText.c_str(), SIZE_FULL_WIDTH))
 					{
 						selected = configName;
 					}
@@ -2052,7 +2041,7 @@ void CMenu::SettingsWindow()
 				}
 				else
 				{
-					if (Button(configName.c_str(), ImVec2(200, 20)))
+					if (Button(configName.c_str(), SIZE_FULL_WIDTH))
 					{
 						selected = configName;
 					}
@@ -2198,9 +2187,8 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
 	pDevice->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
 
-	// Toggle menu (default is 'insert' can be changed in menu)
-	static KeyHelper menuKey{ &Vars::Menu::MenuKey.Value };
-	if (menuKey.Pressed() || GetAsyncKeyState(VK_INSERT) & 0x1 || GetAsyncKeyState(VK_F3) & 0x1)
+	// Toggle menu (defaults are 'insert' and 'F3', another can be added in menu)
+	if (F::KeyHandler.Pressed(Vars::Menu::MenuKey.Value) || GetAsyncKeyState(VK_INSERT) & 0x1 || GetAsyncKeyState(VK_F3) & 0x1)
 	{
 		F::Menu.IsOpen = !F::Menu.IsOpen;
 		I::ViewRender->SetScreenOverlayMaterial(nullptr);

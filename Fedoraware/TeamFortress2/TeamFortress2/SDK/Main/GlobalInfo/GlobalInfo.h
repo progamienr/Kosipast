@@ -86,9 +86,10 @@ namespace G
 	inline bool ForceChokePacket = false; // might not actually be useful 
 	inline bool IsChoking = false; // might not actually be useful 
 	inline int AnticipatedChoke = 0; // what the choke is expected to be (backtrack)
+	inline int TickBase = 0; // for utils
 
 	/* Aimbot */
-	inline bool IsAttacking = false; // this is only used by aimbot, and is also set to false at the start of a lot of functions, this is not reliable
+	inline bool IsAttacking = false;
 	inline bool HitscanRunning = false;
 	inline bool SilentTime = false;
 	inline Vec3 AimPos = {};

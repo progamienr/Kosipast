@@ -7,7 +7,7 @@
 #include "UtlVector/UtlVector.h"
 #include "Hash/Hash.h"
 #include "CRC/CRC.h"
-#include "KeyHelper/KeyHelper.hpp"
+#include "KeyHandler/KeyHandler.hpp"
 #include "Timer/Timer.hpp"
 #include "BytePatch/BytePatch.hpp"
 

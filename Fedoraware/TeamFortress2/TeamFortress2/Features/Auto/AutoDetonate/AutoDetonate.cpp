@@ -2,33 +2,6 @@
 
 #include "../../Vars.h"
 
-//credits to KGB
-class CEntitySphereQuery
-{
-public:
-	CEntitySphereQuery(const Vec3& center, const float radius, const int flagMask = 0,
-					   const int partitionMask = PARTITION_CLIENT_NON_STATIC_EDICTS)
-	{
-		static DWORD dwAddress = g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 14 D9 45 0C");
-		reinterpret_cast<void(__thiscall*)(void*, const Vec3&, float, int, int)>(dwAddress)(
-			this, center, radius, flagMask, partitionMask);
-	}
-
-	CBaseEntity* GetCurrentEntity()
-	{
-		return (m_nListIndex < m_nListCount) ? m_pList[m_nListIndex] : nullptr;
-	}
-
-	void NextEntity()
-	{
-		m_nListIndex++;
-	}
-
-private:
-	int m_nListIndex, m_nListCount;
-	CBaseEntity* m_pList[MAX_SPHERE_QUERY];
-};
-
 bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBaseEntity*>& entityGroup, float radius, CUserCmd* pCmd)
 {
 	for (const auto& pExplosive : entityGroup)
@@ -38,26 +11,20 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 			if (!pExplosive->GetPipebombPulsed()) { continue; }
 		}
 
-		CBaseEntity* pTarget;
-
 		// Iterate through entities in sphere radius
+		CBaseEntity* pTarget;
 		for (CEntitySphereQuery sphere(pExplosive->GetWorldSpaceCenter(), radius);
 			 (pTarget = sphere.GetCurrentEntity()) != nullptr;
 			 sphere.NextEntity())
 		{
-			if (!pTarget || pTarget == pLocal || !pTarget->IsAlive() || pTarget->GetTeamNum() == pLocal->
-				GetTeamNum())
-			{
+			if (!pTarget || pTarget == pLocal || !pTarget->IsAlive() || pTarget->GetTeamNum() == pLocal->GetTeamNum())
 				continue;
-			}
 
 			const Vec3 vOrigin = pExplosive->GetWorldSpaceCenter();
-			Vec3 vPos{};
+			Vec3 vPos = {};
 			pTarget->GetCollision()->CalcNearestPoint(vOrigin, &vPos);
-			if ((vOrigin - vPos).Length() > radius) 
-			{ 
-				continue; 
-			}
+			if (vOrigin.DistTo(vPos) > radius)
+				continue;
 
 			const bool isPlayer = Vars::Triggerbot::Detonate::DetonateTargets.Value & (PLAYER) && pTarget->IsPlayer();
 			const bool isSentry = Vars::Triggerbot::Detonate::DetonateTargets.Value & (SENTRY) && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
@@ -67,29 +34,22 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 			const bool isBomb = Vars::Triggerbot::Detonate::DetonateTargets.Value & (BOMB) && pTarget->IsBomb();
 			const bool isSticky = Vars::Triggerbot::Detonate::DetonateTargets.Value & (STICKY) && (G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher || G::CurItemDefIndex == Demoman_s_TheScottishResistance);
 
-
 			if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC || isBomb || pTarget->GetPipebombType() == TYPE_STICKY && isSticky)
 			{
 				if (isPlayer && F::AutoGlobal.ShouldIgnore(pTarget))
-				{
 					continue;
-				}
 
-				CGameTrace trace = {};
-				CTraceFilterWorldAndPropsOnly traceFilter = {};
-				Utils::Trace(pExplosive->GetWorldSpaceCenter(), pTarget->GetWorldSpaceCenter(), MASK_SOLID, &traceFilter, &trace);
+				if (!Utils::VisPosMask(pExplosive, pTarget, vOrigin, pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+					continue;
 
-				if (trace.flFraction >= 0.99f || trace.entity == pTarget)
-				{
-					if (G::CurItemDefIndex == Demoman_s_TheScottishResistance)
-					{	//	super fucking ghetto holy shit
-						Vec3 vAngleTo = Math::CalcAngle(pLocal->GetWorldSpaceCenter(), pExplosive->GetWorldSpaceCenter());
-						Utils::FixMovement(pCmd, vAngleTo);
-						pCmd->viewangles = vAngleTo;
-						G::SilentTime = true;
-					}
-					return true;
+				if (G::CurItemDefIndex == Demoman_s_TheScottishResistance)
+				{	//	super fucking ghetto holy shit
+					Vec3 vAngleTo = Math::CalcAngle(pLocal->GetWorldSpaceCenter(), vOrigin);
+					Utils::FixMovement(pCmd, vAngleTo);
+					pCmd->viewangles = vAngleTo;
+					G::SilentTime = true;
 				}
+				return true;
 			}
 		}
 	}

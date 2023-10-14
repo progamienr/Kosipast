@@ -527,7 +527,9 @@ namespace Utils
 		CTraceFilterHitscan filter = {};
 		filter.pSkip = pSkip;
 		Trace(from, to, (MASK_SHOT | CONTENTS_GRATE), &filter, &trace);
-		return ((trace.entity && trace.entity == pEntity) || trace.flFraction > 0.99f);
+		if (trace.DidHit())
+			return trace.entity && trace.entity == pEntity;
+		return true;
 	}
 
 	__inline bool VisPosMask(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, unsigned int nMask)
@@ -536,7 +538,9 @@ namespace Utils
 		CTraceFilterHitscan filter = {};
 		filter.pSkip = pSkip;
 		Trace(from, to, nMask, &filter, &trace);
-		return ((trace.entity && trace.entity == pEntity) || trace.flFraction > 0.99f);
+		if (trace.DidHit())
+			return trace.entity && trace.entity == pEntity;
+		return true;
 	}
 
 	__inline bool VisPosHitboxId(CBaseEntity *pSkip, const CBaseEntity *pEntity, const Vec3 &from, const Vec3 &to, int nHitbox)
@@ -685,9 +689,8 @@ namespace Utils
 			if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 				return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
 
-			return TIME_TO_TICKS(pWeapon->GetSmackTime()) + 2 == I::GlobalVars->tickcount;
+			return TIME_TO_TICKS(pWeapon->GetSmackTime()) == G::TickBase;
 		}
-
 
 		if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
 		{
@@ -819,26 +822,29 @@ namespace Utils
 	}*/
 
 	__inline void StopMovement(CUserCmd* pCmd, bool safe = true) { //credits to fourteen
-		if (safe && G::IsAttacking) { return; }
-
-		if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
+		const auto& pLocal = g_EntityCache.GetLocal();
+		if (!pLocal || pLocal->m_vecVelocity().IsZero() || safe && G::IsAttacking)
 		{
-			QAngle direction;
-			Vector forward;
-
-			pCmd->viewangles.x = 90;
-			pCmd->viewangles.y = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
-
-			Math::VectorAngles(pLocal->GetVecVelocity(), direction);
-			direction.y = pCmd->viewangles.y - direction.y;
-			Math::AngleVectors(direction, &forward);
-
-			Vector negated_direction = forward * pLocal->GetVecVelocity().Length2D();
-			pCmd->forwardmove = negated_direction.x;
-			pCmd->sidemove = negated_direction.y;
-
-			G::ShouldStop = false;
+			pCmd->forwardmove = 0.f;
+			pCmd->sidemove = 0.f;
+			return;
 		}
+
+		QAngle direction;
+		Vector forward;
+
+		pCmd->viewangles.x = 90;
+		pCmd->viewangles.y = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
+
+		Math::VectorAngles(pLocal->GetVecVelocity(), direction);
+		direction.y = pCmd->viewangles.y - direction.y;
+		Math::AngleVectors(direction, &forward);
+
+		Vector negated_direction = forward * pLocal->GetVecVelocity().Length2D();
+		pCmd->forwardmove = negated_direction.x;
+		pCmd->sidemove = negated_direction.y;
+
+		G::ShouldStop = false;
 	}
 
 	__inline void ConLog(const char* cFunction, const char* cLog, Color_t cColour){
@@ -933,7 +939,7 @@ namespace Utils
 	__inline Vec3 GetHeadOffset(CBaseEntity* pEntity, const Vec3 vOffset = {})
 	{
 		const Vec3 headPos = pEntity->GetHitboxPos(HITBOX_HEAD, vOffset);
-		const Vec3 entPos = pEntity->GetAbsOrigin();
+		const Vec3 entPos = pEntity->GetVecOrigin(); // unsure if GetVecOrigin or GetAbsOrigin would be better for this due to interpolation
 		return headPos - entPos;
 	}
 }

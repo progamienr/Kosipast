@@ -1,8 +1,10 @@
 #include "CritHack.h"
 
 #define TF_DAMAGE_CRIT_MULTIPLIER		3.0f
+#define TF_DAMAGE_CRIT_CHANCE			0.02f
 #define TF_DAMAGE_CRIT_CHANCE_RAPID		0.02f
 #define TF_DAMAGE_CRIT_DURATION_RAPID	2.0f
+#define TF_DAMAGE_CRIT_CHANCE_MELEE		0.15f
 
 bool CCritHack::IsEnabled()
 {
@@ -215,24 +217,38 @@ u32 CCritHack::DecryptOrEncryptSeed(CBaseCombatWeapon* pWeapon, u32 seed)
 
 
 
-void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) // fix rapid cost
+void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) // this is all pretty garbo
 {
 	if (!pLocal || !pWeapon || pLocal->deadflag())
 		return;
 
-	if (!Vars::CritHack::Active.Value || Storage[pWeapon->GetSlot()].BaseDamage == 0)
+	if (!Vars::CritHack::Active.Value)
 		return;
 
-	Storage[pWeapon->GetSlot()].Damage = Storage[pWeapon->GetSlot()].BaseDamage;
+	auto tfWeaponInfo = pWeapon->GetTFWeaponInfo();
+	if (!tfWeaponInfo)
+		return;
+	auto& weaponData = tfWeaponInfo->GetWeaponData(0);
+
+	float flDamage = weaponData.m_nDamage;
+	flDamage = Utils::ATTRIB_HOOK_FLOAT(flDamage, "mult_dmg", pWeapon);
+	int nProjectilesPerShot = weaponData.m_nBulletsPerShot;
+	if (nProjectilesPerShot >= 1)
+		nProjectilesPerShot = Utils::ATTRIB_HOOK_FLOAT(nProjectilesPerShot, "mult_bullets_per_shot", pWeapon);
+	else
+		nProjectilesPerShot = 1;
+	flDamage *= nProjectilesPerShot;
+	Storage[pWeapon->GetSlot()].Damage = flDamage;
+
 	if (pWeapon->IsStreamingWeapon())
 	{
-		Storage[pWeapon->GetSlot()].Damage = Storage[pWeapon->GetSlot()].BaseDamage * TF_DAMAGE_CRIT_DURATION_RAPID / pWeapon->GetWeaponData().m_flTimeFireDelay;
+		Storage[pWeapon->GetSlot()].Damage *= TF_DAMAGE_CRIT_DURATION_RAPID / weaponData.m_flTimeFireDelay;
 
 		if (Storage[pWeapon->GetSlot()].Damage * TF_DAMAGE_CRIT_MULTIPLIER > BucketCap)
 			Storage[pWeapon->GetSlot()].Damage = BucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
 	}
 	if (pWeapon->GetSlot() == SLOT_MELEE)
-		Storage[pWeapon->GetSlot()].Damage *= 4.f / 3.f;
+		Storage[pWeapon->GetSlot()].Damage *= 35.f / 32.5f;
 
 	float flMult = 1.f;
 	if (pWeapon->GetSlot() == SLOT_MELEE)
@@ -248,17 +264,17 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) /
 	}
 	else
 	{
-		Storage[pWeapon->GetSlot()].BaseCost = Storage[pWeapon->GetSlot()].Damage * 3;
+		Storage[pWeapon->GetSlot()].BaseCost = Storage[pWeapon->GetSlot()].Damage * TF_DAMAGE_CRIT_MULTIPLIER;
 		Storage[pWeapon->GetSlot()].Cost = Storage[pWeapon->GetSlot()].BaseCost * flMult;
 	}
 
 	auto Bucket = Storage[pWeapon->GetSlot()].Bucket;
 
 	if (BucketCap)
-		Storage[pWeapon->GetSlot()].PotentialCrits = static_cast<unsigned int>((BucketCap - BucketBottom) / Storage[pWeapon->GetSlot()].BaseCost);
+		Storage[pWeapon->GetSlot()].PotentialCrits = static_cast<unsigned int>((BucketCap/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / Storage[pWeapon->GetSlot()].BaseCost);
 
 	if (pWeapon->GetSlot() == SLOT_MELEE)
-		Storage[pWeapon->GetSlot()].AvailableCrits = std::floor((Bucket - BucketBottom) / Storage[pWeapon->GetSlot()].Cost);
+		Storage[pWeapon->GetSlot()].AvailableCrits = std::floor((Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / Storage[pWeapon->GetSlot()].Cost);
 	else
 	{
 		int shots = Storage[pWeapon->GetSlot()].ShotsCrits.first, crits = Storage[pWeapon->GetSlot()].ShotsCrits.second;
@@ -266,27 +282,23 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) /
 		{
 			int iCrits = 0;
 
-			float bucket = Bucket - BucketBottom, flCost = Storage[pWeapon->GetSlot()].BaseCost;
+			float bucket = Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/, flCost = Storage[pWeapon->GetSlot()].BaseCost;
 			const int iAttempts = std::min(Storage[pWeapon->GetSlot()].PotentialCrits + 1, 100); // just in case
 			for (int i = 0; i < iAttempts; i++)
 			{
 				flMult = Math::RemapValClamped((float)crits / (float)shots, 0.1f, 1.f, 1.f, 3.f);
-
-				const float cost = flCost * flMult;
-				bucket -= cost;
-
+				bucket -= flCost * flMult;
 				if (bucket < 0.f)
 					break;
 
 				shots++; crits++;
-
 				iCrits++;
 			}
 
 			Storage[pWeapon->GetSlot()].AvailableCrits = iCrits;
 		}
 		else
-			Storage[pWeapon->GetSlot()].AvailableCrits = std::floor((Bucket - BucketBottom) / Storage[pWeapon->GetSlot()].Cost);
+			Storage[pWeapon->GetSlot()].AvailableCrits = std::floor((Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / Storage[pWeapon->GetSlot()].Cost);
 	}
 }
 
@@ -339,7 +351,6 @@ void CCritHack::FixHeavyRevBug(CUserCmd* pCmd)
 
 bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 {
-	bool result = true;
 	switch (pWeapon->GetItemDefIndex())
 	{
 	case Scout_s_MadMilk:
@@ -374,6 +385,7 @@ bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 	case Engi_t_TheSouthernHospitality:
 	case Sniper_m_TheHuntsman:
 	case Sniper_m_TheFortifiedCompound:
+	case Sniper_s_TheCleanersCarbine:
 	case Sniper_s_Jarate:
 	case Sniper_s_TheSelfAwareBeautyMark:
 	case Sniper_t_TheBushwacka:
@@ -381,10 +393,7 @@ bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 	case Spy_m_FestiveAmbassador:
 	case Spy_m_TheDiamondback:
 	case Spy_m_TheEnforcer:
-	{
-		result = false;
-		break;
-	}
+		return false;
 	default:
 	{
 		switch (pWeapon->GetWeaponID())
@@ -405,15 +414,12 @@ bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 		case TF_WEAPON_PDA_ENGINEER_DESTROY:
 		case TF_WEAPON_PARTICLE_CANNON:
 		case TF_WEAPON_LUNCHBOX:
-		{
-			result = false;
-			break;
-		}
+			return false;
 		}
 	}
 	}
 
-	return result;
+	return true;
 }
 
 
@@ -429,6 +435,7 @@ void CCritHack::ResetWeapon(CBaseCombatWeapon* pWeapon)
 		I::Cvar->ConsoleColorPrintf({ 0, 255, 255, 255 }, "Resetting weapon.\n");
 
 	Storage[slot] = {};
+	Storage[slot].Bucket = BucketDefault;
 	Storage[slot].DefIndex = index;
 }
 
@@ -492,17 +499,10 @@ void CCritHack::Run(CUserCmd* pCmd)
 	GetDamageTilUnban(pLocal);
 	Fill(pWeapon, pCmd, 15);
 
-	if (Storage[pWeapon->GetSlot()].BaseDamage == 0)
-	{
-		pWeapon->WillCrit();
-		GetTotalCrits(pLocal, pWeapon);
-	}
-
 	const int closestCrit = LastGoodCritTick(pCmd);
 	const int closestSkip = LastGoodSkipTick(pCmd);
 
-	static KeyHelper critKey{ &Vars::CritHack::CritKey.Value };
-	bool pressed = critKey.Down();
+	bool pressed = F::KeyHandler.Down(Vars::CritHack::CritKey.Value);
 	if (!pressed && Vars::CritHack::AlwaysMelee.Value && pWeapon->GetSlot() == SLOT_MELEE)
 		pressed = true;
 	if (IsAttacking(pCmd, pWeapon) && !pWeapon->IsInReload()) //	is it valid & should we even use it
@@ -512,7 +512,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 
 		if (IsEnabled())
 		{
-			if (pressed && Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && closestCrit >= 0 && !bStreamWait && !bStreamEnd && !G::DoubleTap)
+			if (pressed && Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && closestCrit >= 0 && !bStreamWait && !bStreamEnd)
 				pCmd->command_number = closestCrit;
 			else if (Vars::CritHack::AvoidRandom.Value && closestSkip >= 0)
 				pCmd->command_number = closestSkip;
@@ -537,10 +537,10 @@ void CCritHack::Run(CUserCmd* pCmd)
 			if (bRapidFire)
 				Storage[pWeapon->GetSlot()].StreamEnd = I::GlobalVars->tickcount + 2 / I::GlobalVars->interval_per_tick;
 			Storage[pWeapon->GetSlot()].ShotsCrits.second += 1;
-			Storage[pWeapon->GetSlot()].Bucket = std::max(Storage[pWeapon->GetSlot()].Bucket - Storage[pWeapon->GetSlot()].Cost, BucketBottom);
+			Storage[pWeapon->GetSlot()].Bucket = std::clamp(Storage[pWeapon->GetSlot()].Bucket - Storage[pWeapon->GetSlot()].Cost, std::max(BucketBottom, 0.f), BucketCap);
 		}
 		else
-			Storage[pWeapon->GetSlot()].Bucket = std::min(Storage[pWeapon->GetSlot()].Bucket + Storage[pWeapon->GetSlot()].Damage, BucketCap);
+			Storage[pWeapon->GetSlot()].Bucket = std::clamp(Storage[pWeapon->GetSlot()].Bucket + Storage[pWeapon->GetSlot()].Damage, std::max(BucketBottom, 0.f), BucketCap);
 	}
 	/*
 	else if (IsEnabled() && closest_skip >= 0)
@@ -687,7 +687,7 @@ void CCritHack::Draw()
 		const auto slot = pWeapon->GetSlot();
 		const auto bRapidFire = pWeapon->IsStreamingWeapon();
 
-		if (Storage[slot].BaseDamage > 0)
+		if (Storage[slot].Damage > 0)
 		{
 			if (pLocal->IsCritBoosted())
 				g_Draw.String(FONT_INDICATORS, x, y, { 100, 255, 255, 255 }, align, "Crit Boosted");
@@ -711,7 +711,7 @@ void CCritHack::Draw()
 				else
 				{
 					const float damage = Storage[slot].Damage;
-					const int shots = Storage[slot].Cost / damage - (Storage[slot].Bucket - BucketBottom) / damage + 1;
+					const int shots = Storage[slot].Cost / damage - (Storage[slot].Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / damage + 1;
 					g_Draw.String(FONT_INDICATORS, x, y, { 255, 150, 150, 255 }, align, tfm::format(shots == 1 ? "Crit in %i shot" : "Crit in %i shots", shots).c_str());
 				}
 			}
@@ -728,7 +728,7 @@ void CCritHack::Draw()
 			const int height = Vars::Fonts::FONT_INDICATORS::nTall.Value;
 			g_Draw.String(FONT_INDICATORS, x, y + height * 3, { 255, 255, 255, 255 }, align, tfm::format("AllDamage: %i, CritDamage: %i", AllDamage, CritDamage).c_str());
 			g_Draw.String(FONT_INDICATORS, x, y + height * 4, { 255, 255, 255, 255 }, align, tfm::format("Bucket: %i", Storage[slot].Bucket).c_str());
-			g_Draw.String(FONT_INDICATORS, x, y + height * 5, { 255, 255, 255, 255 }, align, tfm::format("Base: %.2f, Damage: %.2f, Cost: %.2f", Storage[slot].BaseDamage, Storage[slot].Damage, Storage[slot].Cost).c_str());
+			g_Draw.String(FONT_INDICATORS, x, y + height * 5, { 255, 255, 255, 255 }, align, tfm::format("Damage: %.2f, Cost: %.2f", Storage[slot].Damage, Storage[slot].Cost).c_str());
 			g_Draw.String(FONT_INDICATORS, x, y + height * 6, { 255, 255, 255, 255 }, align, tfm::format("Shots: %i, Crits: %i", Storage[slot].ShotsCrits.first, Storage[slot].ShotsCrits.second).c_str());
 			g_Draw.String(FONT_INDICATORS, x, y + height * 7, { 255, 255, 255, 255 }, align, tfm::format("CritBanned: %i, DamageTilUnban: %i", CritBanned, DamageTilUnban).c_str());
 			g_Draw.String(FONT_INDICATORS, x, y + height * 8, { 255, 255, 255, 255 }, align, tfm::format("CritChance: %.2f", CritChance).c_str());

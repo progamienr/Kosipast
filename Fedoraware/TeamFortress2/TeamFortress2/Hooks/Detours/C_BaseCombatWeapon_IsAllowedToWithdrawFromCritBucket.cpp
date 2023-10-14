@@ -8,12 +8,12 @@ MAKE_HOOK(C_BaseCombatWeapon_IsAllowedToWithdrawFromCritBucket, g_Pattern.Find(L
 	if (Vars::Debug::DebugInfo.Value)
 		I::Cvar->ConsoleColorPrintf({ 0, 255, 255, 255 }, "Called WithdrawFromCritBucket.\n");
 
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (pWeapon)
-	{
-		if (F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage == 0)
-			F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage = flDamage;
-	}
+	//const auto& pWeapon = g_EntityCache.GetWeapon();
+	//if (pWeapon)
+	//{
+	//	if (F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage == 0)
+	//		F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage = flDamage;
+	//}
 
 	return Hook.Original<FN>()(ecx, edx, flDamage);
 }

@@ -60,8 +60,7 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 	//	no other checks, we want this
 
 	// Is a fakelag key set and pressed?
-	static KeyHelper fakelagKey{ &Vars::CL_Move::FakeLag::Key.Value };
-	if (!fakelagKey.Down() && Vars::CL_Move::FakeLag::Mode.Value == 1)
+	if (Vars::CL_Move::FakeLag::Mode.Value == 1 && !F::KeyHandler.Down(Vars::CL_Move::FakeLag::Key.Value))
 		return false;
 
 	// Do we have enough velocity for velocity mode?
@@ -95,8 +94,7 @@ void CFakeLag::PreserveBlastJump(const int nOldGround, const int nOldFlags, CUse
 	if (!pLocal || !pLocal->IsAlive() || !pLocal->IsPlayer())
 		return;
 
-	int key = VK_SPACE; static KeyHelper spaceKey{ &key };
-	if (!spaceKey.Down() || pLocal->IsDucking())
+	if (!(GetAsyncKeyState(VK_SPACE) & 0x8000) || pLocal->IsDucking())
 		return;
 
 	if (!pLocal->OnSolid() && nOldGround < 0 && !(nOldFlags & FL_ONGROUND))
@@ -128,8 +126,7 @@ void CFakeLag::Prediction(const int nOldGroundInt, const int nOldFlags, CUserCmd
 
 void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt, const int nOldFlags)
 {
-	static KeyHelper fakelagKey{ &Vars::CL_Move::FakeLag::Key.Value };
-	if (fakelagKey.Pressed() && Vars::CL_Move::FakeLag::Mode.Value == 2)
+	if (Vars::CL_Move::FakeLag::Mode.Value == 2 && F::KeyHandler.Pressed(Vars::CL_Move::FakeLag::Key.Value))
 		Vars::CL_Move::FakeLag::Enabled.Value = !Vars::CL_Move::FakeLag::Enabled.Value;
 
 	Prediction(nOldGroundInt, nOldFlags, pCmd);

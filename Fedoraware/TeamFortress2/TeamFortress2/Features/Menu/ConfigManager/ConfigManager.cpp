@@ -230,35 +230,22 @@ void CConfigManager::LoadJson(const char* name, DragBox_t& val)
 CConfigManager::CConfigManager()
 {
 	ConfigPath = std::filesystem::current_path().string() + "\\FedFigs";
+	VisualsPath = ConfigPath + "\\Visuals";
 
 	// Create 'FedFigs' folder
 	if (!std::filesystem::exists(ConfigPath))
-	{
 		std::filesystem::create_directory(ConfigPath);
-	}
 
 	// Create 'Core' folder for Attribute-Changer & Playerlist
 	if (!std::filesystem::exists(ConfigPath + "\\Core"))
-	{
 		std::filesystem::create_directory(ConfigPath + "\\Core");
-	}
 
 	// Create 'Materials' folder for custom materials
 	if (!std::filesystem::exists(ConfigPath + "\\Materials"))
-	{
 		std::filesystem::create_directory(ConfigPath + "\\Materials");
-	}
 
-	// Create 'Lua' folder for Lua scripts
-	if (!std::filesystem::exists(ConfigPath + "\\Lua"))
-	{
-		std::filesystem::create_directory(ConfigPath + "\\Lua");
-	}
-
-	if (!std::filesystem::exists(ConfigPath + "\\Visuals"))
-	{
-		std::filesystem::create_directory(ConfigPath + "\\Visuals");
-	}
+	if (!std::filesystem::exists(VisualsPath))
+		std::filesystem::create_directory(VisualsPath);
 }
 
 bool CConfigManager::SaveConfig(const std::string& configName)
@@ -408,6 +395,12 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Triggerbot::Uber::BlastRes);
 				SAVE_VAR(Vars::Triggerbot::Uber::BulletRes);
 				SAVE_VAR(Vars::Triggerbot::Uber::FireRes);
+			}
+
+			//Jump
+			{
+				SAVE_VAR(Vars::Triggerbot::Jump::JumpKey);
+				SAVE_VAR(Vars::Triggerbot::Jump::CTapKey);
 			}
 		}
 
@@ -711,13 +704,19 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Triggerbot::Uber::BulletRes);
 				LOAD_VAR(Vars::Triggerbot::Uber::FireRes);
 			}
+
+			//Jump
+			{
+				LOAD_VAR(Vars::Triggerbot::Jump::JumpKey);
+				LOAD_VAR(Vars::Triggerbot::Jump::CTapKey);
+			}
 		}
 
 		//Misc
 		{
 			LOAD_VAR(Vars::Misc::ScoreboardPlayerlist);
-			SAVE_VAR(Vars::Misc::FastDeltaStrafe);
-			SAVE_VAR(Vars::Misc::AccurateMovement);
+			LOAD_VAR(Vars::Misc::FastDeltaStrafe);
+			LOAD_VAR(Vars::Misc::AccurateMovement);
 			LOAD_VAR(Vars::Misc::DirectionalOnlyOnMove);
 			LOAD_VAR(Vars::Misc::DirectionalOnlyOnSpace);
 			LOAD_VAR(Vars::Misc::AutoJump);
@@ -1004,6 +1003,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Radar::World::Active);
 		SAVE_VAR(Vars::Radar::World::Health);
 		SAVE_VAR(Vars::Radar::World::Ammo);
+		SAVE_VAR(Vars::Visuals::RevealScoreboard);
 		SAVE_VAR(Vars::Visuals::ScoreboardColours);
 		SAVE_VAR(Vars::Visuals::CleanScreenshots);
 		SAVE_VAR(Vars::Visuals::RemoveMOTD);
@@ -1348,6 +1348,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Radar::World::Active);
 		LOAD_VAR(Vars::Radar::World::Health);
 		LOAD_VAR(Vars::Radar::World::Ammo);
+		LOAD_VAR(Vars::Visuals::RevealScoreboard);
 		LOAD_VAR(Vars::Visuals::ScoreboardColours);
 		LOAD_VAR(Vars::Visuals::CleanScreenshots);
 		LOAD_VAR(Vars::Visuals::RemoveMOTD);

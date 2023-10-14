@@ -5,7 +5,7 @@ MAKE_HOOK(CTFPlayerShared_IsPlayerDominated, g_Pattern.Find(L"client.dll", L"55 
 {
 	const bool bResult = Hook.Original<FN>()(ecx, edx, index);
 
-	if (!bResult)
+	if (!bResult && Vars::Visuals::RevealScoreboard.Value)
 	{
 		static DWORD dwDesired = g_Pattern.Find(L"client.dll", L"84 C0 74 ? 80 7D ? ? 74 ? 8B 83");
 		static DWORD dwJump = g_Pattern.Find(L"client.dll",

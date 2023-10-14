@@ -141,7 +141,7 @@ namespace ImGui
 			std::string str = "unknown";
 
 			CHAR output[16] = { "\0" };
-			if (GetKeyNameTextA(MapVirtualKeyA(key, MAPVK_VK_TO_VSC) << 16, output, 16))
+			if (GetKeyNameTextA(MapVirtualKeyW(key, MAPVK_VK_TO_VSC) << 16, output, 16))
 				str = output;
 
 			std::transform(str.begin(), str.end(), str.begin(), ::tolower);
@@ -151,8 +151,6 @@ namespace ImGui
 		};
 
 		static bool bCanceled = false;
-		if (bCanceled && !IsMouseDown(0) && !IsMouseReleased(0))
-			bCanceled = false;
 
 		const auto id = GetID(label);
 		PushID(label);
@@ -160,22 +158,32 @@ namespace ImGui
 		if (GetActiveID() == id)
 		{
 			Button("...", ImVec2(100, 20));
+			const bool bHovered = IsItemHovered();
 
-			for (short n = 0; n < 256; n++)
+			if (bHovered && IsMouseClicked(ImGuiMouseButton_Left))
 			{
-				if (n != VK_INSERT && n != VK_F3 && GetAsyncKeyState(n) & 0x8000)
+				bCanceled = true;
+				ClearActiveID();
+			}
+			else if (IsKeyPressed(ImGuiKey_Escape) && bAllowNone)
+			{
+				output = 0x0;
+				ClearActiveID();
+			}
+			else
+			{
+				SetActiveID(id, GetCurrentWindow());
+
+				for (short key = 0; key < 255; key++)
 				{
-					if (IsItemHovered() && n == VK_LBUTTON)
-					{
-						bCanceled = true;
-						ClearActiveID();
-						break;
-					}
+					if (!(GetAsyncKeyState(key) & 0x8000))
+						continue;
+					if (key == VK_INSERT || key == VK_F3)
+						continue;
+					if (bHovered && key == VK_LBUTTON)
+						continue;
 
-					output = n;
-					if (n == VK_ESCAPE && bAllowNone)
-						output = 0x0;
-
+					output = key;
 					ClearActiveID();
 					break;
 				}
@@ -183,8 +191,11 @@ namespace ImGui
 
 			GetCurrentContext()->ActiveIdAllowOverlap = true;
 		}
-		else if (!bCanceled && Button(VK2STR(output).c_str(), ImVec2(100, 20)))
+		else if (Button(VK2STR(output).c_str(), ImVec2(100, 20)) && !bCanceled)
 			SetActiveID(id, GetCurrentWindow());
+
+		if (bCanceled && !IsMouseDown(ImGuiMouseButton_Left) && !IsMouseReleased(ImGuiMouseButton_Left))
+			bCanceled = false;
 
 		SameLine();
 		Text("%s", label);

@@ -47,6 +47,7 @@ public:
 
 	void SteamRPC();
 	void UnlockAchievements();
+	void LockAchievements();
 
 	bool bAntiWarp = false;
 	bool bFastAccel = false;

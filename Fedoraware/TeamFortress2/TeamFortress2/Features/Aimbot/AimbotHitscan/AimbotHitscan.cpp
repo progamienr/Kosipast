@@ -154,6 +154,9 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 				continue;
 
+			if (!F::AimbotGlobal.ValidBomb(pBomb))
+				continue;
+
 			// The target is valid! Add it to the target vector.
 			validTargets.push_back({ pBomb, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -248,7 +251,7 @@ int CAimbotHitscan::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCom
 
 			if (G::CurItemDefIndex == Spy_m_TheAmbassador || G::CurItemDefIndex == Spy_m_FestiveAmbassador)
 			{
-				const float flDistTo = pTarget->GetAbsOrigin().DistTo(pLocal->GetAbsOrigin());
+				const float flDistTo = pTarget->GetVecOrigin().DistTo(pLocal->GetVecOrigin());
 				const int nAmbassadorBodyshotDamage = Math::RemapValClamped(flDistTo, 90, 900, 51, 18);
 
 				if (pTarget->GetHealth() < (nAmbassadorBodyshotDamage + 2)) // whatever
@@ -319,16 +322,6 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 			pRecords = *records;
 	}
 
-	auto VisPos = [](CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to) -> bool
-	{
-		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
-		filter.pSkip = pSkip;
-		Utils::Trace(from, to, MASK_SHOT, &filter, &trace);
-		if (trace.DidHit())
-			return trace.entity && trace.entity == pEntity;
-		return true;
-	};
 	auto RayToOBB = [](const Vec3& origin, const Vec3& direction, const Vec3& position, const Vec3& min, const Vec3& max, const matrix3x4 orientation) -> bool
 	{
 		if (Vars::Aimbot::Hitscan::AimMethod.Value != 1)
@@ -399,7 +392,7 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 					Vec3 vForward = {};
 					Math::AngleVectors(vAngles, &vForward);
 
-					if (VisPos(pLocal, target.m_pEntity, vEyePos, vTransformed) &&
+					if (Utils::VisPosMask(pLocal, target.m_pEntity, vEyePos, vTransformed, MASK_SHOT) &&
 						RayToOBB(vEyePos, vForward, vCenter, vMins, vMaxs, boneMatrix[pair.first->bone])) // for the time being, no vischecks against other hitboxes
 					{
 						target.pTick = &pTick;
@@ -446,7 +439,7 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 				Vec3 vForward = {};
 				Math::AngleVectors(vAngles, &vForward);
 
-				if (VisPos(pLocal, target.m_pEntity, vEyePos, vTransformed) &&
+				if (Utils::VisPosMask(pLocal, target.m_pEntity, vEyePos, vTransformed, MASK_SHOT) &&
 					RayToOBB(vEyePos, vForward, vCenter, vMins, vMaxs, transform)) // for the time being, no vischecks against other hitboxes
 				{
 					target.m_vPos = vTransformed;

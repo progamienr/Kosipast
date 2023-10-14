@@ -7,6 +7,7 @@
 #include "AutoDetonate/AutoDetonate.h"
 #include "AutoBlast/AutoBlast.h"
 #include "AutoUber/AutoUber.h"
+#include "AutoJump/AutoJump.h"
 
 bool CAuto::ShouldRun(CBaseEntity* pLocal)
 {
@@ -57,5 +58,6 @@ void CAuto::Run(CUserCmd* pCmd)
 			F::AutoAirblast.Run(pLocal, pWeapon, pCmd);
 			F::AutoUber.Run(pLocal, pWeapon, pCmd);
 		}
+		F::AutoJump.Run(pLocal, pWeapon, pCmd);
 	}
 }

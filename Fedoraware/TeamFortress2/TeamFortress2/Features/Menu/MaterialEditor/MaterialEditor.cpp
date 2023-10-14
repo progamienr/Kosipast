@@ -132,7 +132,7 @@ void CMaterialEditor::MainWindow()
 		// Material list
 		if (BeginChild("ListChild###Materials"))
 		{
-			if (ListBoxHeader("###MaterialList", { GetWindowWidth(), GetWindowHeight() }))
+			if (BeginListBox("###MaterialList", { GetWindowWidth(), GetWindowHeight() }))
 			{
 				for (auto const& [name, mat] : MaterialMap)
 				{
@@ -145,7 +145,7 @@ void CMaterialEditor::MainWindow()
 					}
 				}
 
-				ListBoxFooter();
+				EndListBox();
 			}
 		}
 		EndChild();
@@ -161,21 +161,23 @@ void CMaterialEditor::EditorWindow()
 	using namespace ImGui;
 
 	SetNextWindowSize(ImVec2(450, 400), ImGuiCond_Once);
-	PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
 	if (Begin("Material Editor", &EditorOpen, ImGuiWindowFlags_NoCollapse))
 	{
 		// Toolbar
 		{
 			if (Button("Save"))
 			{
-				WriteMaterial(CurrentMaterial, TextEditor.GetText());
+				auto text = TextEditor.GetText();
+				text.erase(text.end() - 1, text.end()); // get rid of random newline
+				WriteMaterial(CurrentMaterial, text);
 				LoadMaterials();
 			}
 
 			SameLine();
 			if (Button("Save and close"))
 			{
-				WriteMaterial(CurrentMaterial, TextEditor.GetText());
+				auto text = TextEditor.GetText();
+				text.erase(text.end() - 1, text.end()); // get rid of random newline
 				LoadMaterials();
 				EditorOpen = false;
 			}
@@ -195,7 +197,6 @@ void CMaterialEditor::EditorWindow()
 
 		End();
 	}
-	PopStyleVar();
 }
 
 void CMaterialEditor::Render()

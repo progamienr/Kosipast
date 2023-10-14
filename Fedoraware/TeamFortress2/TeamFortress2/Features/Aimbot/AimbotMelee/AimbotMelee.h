@@ -20,6 +20,8 @@ class CAimbotMelee
 	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
 
 	Target_t lockedTarget;
+	int iDoubletapTicks = 0;
+	int iDoubletapMax = 0;
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 };

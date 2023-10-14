@@ -9,6 +9,8 @@ bool CMovementSimulation::GetVelocity(CBaseEntity* pEntity, Vec3& vVelOut, bool 
 {
 	if (!pEntity)
 		return false;
+
+	bool bReturn = false;
 	
 	switch (Vars::Aimbot::Projectile::VelMode.Value)
 	{
@@ -21,58 +23,50 @@ bool CMovementSimulation::GetVelocity(CBaseEntity* pEntity, Vec3& vVelOut, bool 
 			const auto& vRecord2 = m_Positions[iEntIndex][1];
 
 			vVelOut = (vRecord1.m_vecOrigin - vRecord2.m_vecOrigin) / (vRecord1.m_flSimTime - vRecord2.m_flSimTime);
-			if (pEntity->m_fFlags() & FL_ONGROUND && !vVelOut.IsZero())
-				vVelOut.z = 0.f; // step fix
-			if (bMoveData)
-			{
-				if (fabsf(vVelOut.x) < 0.01f)
-					vVelOut.x = 0.015f;
-				if (fabsf(vVelOut.y) < 0.01f)
-					vVelOut.y = 0.015f;
-			}
-			return true;
+			bReturn = true;
 		}
 		break;
 	}
 	case 1:
 	{
 		vVelOut = pEntity->m_vecVelocity();
-		if (fabsf(vVelOut.x) < 0.01f)
-			vVelOut.x = 0.015f;
-		if (fabsf(vVelOut.y) < 0.01f)
-			vVelOut.y = 0.015f;
-		return true;
+		bReturn = true;
+		break;
 	}
 	case 2:
 	{
 		vVelOut = pEntity->GetVelocity();
-		if (fabsf(vVelOut.x) < 0.01f)
-			vVelOut.x = 0.015f;
-		if (fabsf(vVelOut.y) < 0.01f)
-			vVelOut.y = 0.015f;
-		return true;
+		bReturn = true;
+		break;
 	}
 	case 3:
 	{
 		vVelOut = pEntity->GetVecVelocity();
-		if (fabsf(vVelOut.x) < 0.01f)
-			vVelOut.x = 0.015f;
-		if (fabsf(vVelOut.y) < 0.01f)
-			vVelOut.y = 0.015f;
-		return true;
+		bReturn = true;
+		break;
 	}
 	case 4:
 	{
 		pEntity->EstimateAbsVelocity(vVelOut);
-		if (fabsf(vVelOut.x) < 0.01f)
-			vVelOut.x = 0.015f;
-		if (fabsf(vVelOut.y) < 0.01f)
-			vVelOut.y = 0.015f;
-		return true;
+		bReturn = true;
+		break;
 	}
 	}
 
-	return false;
+	if (bReturn)
+	{
+		if (pEntity->m_fFlags() & FL_ONGROUND && !vVelOut.IsZero())
+			vVelOut.z = 0.f; // step fix
+		if (bMoveData)
+		{
+			if (fabsf(vVelOut.x) < 0.01f)
+				vVelOut.x = 0.015f;
+			if (fabsf(vVelOut.y) < 0.01f)
+				vVelOut.y = 0.015f;
+		}
+	}
+
+	return bReturn;
 }
 
 void CMovementSimulation::FillInfo()
@@ -85,7 +79,7 @@ void CMovementSimulation::FillInfo()
 		return;
 	}
 
-	{ // hopefully this is more reliable
+	{ // hopefully this is more reliable (upd: i don't think it is)
 		auto FillPositions = [](CBaseEntity* pEntity, std::map<int, std::deque<PositionData>>& m_Positions)
 		{
 			const int iEntIndex = pEntity->GetIndex();
@@ -96,7 +90,7 @@ void CMovementSimulation::FillInfo()
 				return;
 			}
 
-			const PositionData vRecord = { pEntity->GetAbsOrigin(), pEntity->GetSimulationTime() };
+			const PositionData vRecord = { pEntity->GetVecOrigin(), pEntity->GetSimulationTime() };
 			if (m_Positions[iEntIndex].size() > 0)
 			{
 				const PositionData vLast = m_Positions[iEntIndex][0];
@@ -233,11 +227,10 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 		pPlayer->m_flModelScale() -= 0.03125f; //fixes issues with corners
 
 		if (pPlayer->m_fFlags() & FL_ONGROUND)
-			pPlayer->SetAbsOrigin(pPlayer->GetAbsOrigin() + Vector(0, 0, 0.03125f)); //to prevent getting stuck in the ground
+			pPlayer->SetAbsOrigin(pPlayer->GetVecOrigin() + Vector(0, 0, 0.03125f)); //to prevent getting stuck in the ground
 		else
 		{
-			const auto pLocal = g_EntityCache.GetLocal();
-			if (pLocal && pPlayer != pLocal)
+			if (pPlayer != pLocal)
 				pPlayer->m_hGroundEntity() = -1; // fix for velocity being set to 0 even if in air
 		}
 
@@ -301,7 +294,7 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	if (!playerStorage.m_pPlayer)
 		return false;
 
-	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->GetAbsOrigin();
+	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->GetVecOrigin();
 	if (!GetVelocity(playerStorage.m_pPlayer, playerStorage.m_MoveData.m_vecVelocity, true))
 		return false;
 
@@ -312,16 +305,8 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	//if (playerStorage.m_pPlayer->m_fFlags() & FL_ONGROUND && !playerStorage.m_MoveData.m_vecVelocity.IsZero())
 	//	playerStorage.m_MoveData.m_vecVelocity.z = 0.015f; // step fix
 	playerStorage.m_MoveData.m_flMaxSpeed = playerStorage.m_pPlayer->TeamFortress_CalculateMaxSpeed();
-	if (playerStorage.m_pPlayer->InCond(TF_COND_SHIELD_CHARGE)) // demo charge fix for swing pred
-	{
-		const auto pLocal = g_EntityCache.GetLocal();
-		if (pLocal && playerStorage.m_pPlayer == pLocal)
-			playerStorage.m_MoveData.m_flMaxSpeed = playerStorage.m_pPlayer->TeamFortress_CalculateMaxSpeed(true);
-	}
-
 	if (playerStorage.m_PlayerData.m_fFlags & FL_DUCKING)
 		playerStorage.m_MoveData.m_flMaxSpeed *= 0.3333f;
-
 	playerStorage.m_MoveData.m_flClientMaxSpeed = playerStorage.m_MoveData.m_flMaxSpeed;
 
 	//need a better way to determine angles probably
@@ -430,7 +415,8 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	//else
 	//	playerStorage.m_MoveData.m_vecViewAngles.y = Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity).y;
 
-	// simulation occasionally offsets position for no apparent reason regardless of velocity
+	// occasionally offsets position
+	// fucks up velocity (might be map specific?)
 	I::TFGameMovement->ProcessMovement(playerStorage.m_pPlayer, &playerStorage.m_MoveData);
 
 	playerStorage.m_MoveData.m_vecViewAngles.y -= airCorrection;

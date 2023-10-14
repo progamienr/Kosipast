@@ -75,6 +75,7 @@ public:
 	void SortPriority(std::vector<Target_t>*, const ESortMethod& method);
 	bool ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun = false);
 	Priority GetPriority(int targetIdx);
+	bool ValidBomb(CBaseEntity* pBomb);
 };
 
 ADD_FEATURE(CAimbotGlobal, AimbotGlobal)

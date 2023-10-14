@@ -43,12 +43,14 @@ namespace Vars
 		inline CVar<int> Method{ 0 };
 		inline CVar<int> Latency{ 0 };
 		inline CVar<int> Interp{ 0 };
-		inline CVar<int> Window{ 175 };
+		inline CVar<int> Window{ 185 };
 		inline CVar<bool> UnchokePrediction{ true };
-		inline CVar<int> PassthroughOffset{ 0 }; // debug
+		inline CVar<int> PassthroughOffset{ -1 }; // debug
 		inline CVar<int> TicksetOffset{ 0 }; // debug
 		inline CVar<int> ChokePassMod{ 1 }; // debug
 		inline CVar<int> ChokeSetMod{ 0 }; // debug
+		inline CVar<int> NWindowSub{ 0 }; // debug
+		inline CVar<int> OWindowSub{ 0 }; // debug
 
 		namespace BtChams
 		{
@@ -120,8 +122,8 @@ namespace Vars
 			inline CVar<int> iSamples{ 10 }; // debug
 			inline CVar<int> VelMode{ 1 }; // debug
 			inline CVar<float> VerticalShift{ 10.f }; // debug
-			inline CVar<float> LatOff{ 1.f }; // debug
-			inline CVar<float> PhyOff{ 1.f }; // debug
+			inline CVar<float> LatOff{ 0.f }; // debug
+			inline CVar<float> PhyOff{ 0.f }; // debug
 			inline CVar<int> HuntermanMode{ 0 }; // debug
 			inline CVar<float> HuntermanShift{ 2.f }; // debug
 		}
@@ -190,6 +192,12 @@ namespace Vars
 			inline CVar<int> ReactFoV{ 25 };
 			inline CVar<bool> BulletRes{ true }; inline CVar<bool> BlastRes{ true }; inline CVar<bool> FireRes{ true };
 			inline CVar<int> ReactClasses{ 0b000000000 };	//	this is intuitive
+		}
+
+		namespace Jump // more auto than trigger idc
+		{
+			inline CVar<int> JumpKey{ 0x0 };
+			inline CVar<int> CTapKey{ 0x0 };
 		}
 	}
 
@@ -449,6 +457,7 @@ namespace Vars
 
 	namespace Visuals
 	{
+		inline CVar<bool> RevealScoreboard{ false };
 		inline CVar<bool> ScoreboardColours{ false };
 		inline CVar<bool> CleanScreenshots{ true };
 		inline CVar<bool> RemoveDisguises{ false };

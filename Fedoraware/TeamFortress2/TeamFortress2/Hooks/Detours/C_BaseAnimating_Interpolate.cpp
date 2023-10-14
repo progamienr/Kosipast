@@ -5,7 +5,7 @@ MAKE_HOOK(C_BaseAnimating_Interpolate, g_Pattern.Find(L"client.dll", L"55 8B EC 
 		  CBaseEntity* ecx, void* edx, float currentTime)
 {
 	if (Vars::Misc::DisableInterpolation.Value && ecx != g_EntityCache.GetLocal() ||
-		G::Recharge && ecx == g_EntityCache.GetLocal())
+		(G::Recharge || G::Teleport || G::DoubleTap) && ecx == g_EntityCache.GetLocal())
 		return true;
 	return Hook.Original<FN>()(ecx, edx, currentTime);
 }

@@ -95,9 +95,9 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 	// NPCs
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::NPC))
 	{
-		for (const auto& NPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
+		for (const auto& pNPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 		{
-			Vec3 vPos = NPC->GetWorldSpaceCenter();
+			Vec3 vPos = pNPC->GetWorldSpaceCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
@@ -106,7 +106,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
 				continue;
 
-			validTargets.push_back({ NPC, ETargetType::NPC, vPos, vAngleTo, flFOVTo, flDistTo });
+			validTargets.push_back({ pNPC, ETargetType::NPC, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
 	}
 
@@ -114,9 +114,9 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::BOMB))
 	{
 		//This is pretty bad with projectiles
-		for (const auto& Bombs : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
+		for (const auto& pBomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
 		{
-			Vec3 vPos = Bombs->GetWorldSpaceCenter();
+			Vec3 vPos = pBomb->GetWorldSpaceCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
@@ -125,7 +125,10 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
 				continue;
 
-			validTargets.push_back({ Bombs, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });
+			if (!F::AimbotGlobal.ValidBomb(pBomb))
+				continue;
+
+			validTargets.push_back({ pBomb, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
 	}
 
@@ -409,21 +412,6 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	const float latOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::LatOff.Value;
 	const float phyOff = I::GlobalVars->interval_per_tick * Vars::Aimbot::Projectile::PhyOff.Value;
 
-	/*
-	switch (pWeapon->GetWeaponID()) // fix for this use
-	{
-	case TF_WEAPON_PARTICLE_CANNON: // temp
-		Utils::ConLog("Particle cannon", " ", {255, 255, 255, 255}); break;
-	case TF_WEAPON_CANNON:
-	case TF_WEAPON_GRENADELAUNCHER: projInfo.m_gravity = 0.5f; break;
-	case TF_WEAPON_PIPEBOMBLAUNCHER: {
-		float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
-		projInfo.m_gravity = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.5f, 0.1f);
-		break;
-	}
-	}
-	*/
-
 	std::vector<Vec3> vPoints = {};
 	{
 		const bool bIsDucking = (target.m_pEntity->m_fFlags() & FL_DUCKING);
@@ -534,7 +522,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
-				const Vec3 vOriginOffset = target.m_pEntity->GetAbsOrigin() - vTargetPos;
+				const Vec3 vOriginOffset = target.m_pEntity->GetVecOrigin() - vTargetPos;
 
 				const model_t* pModel = target.m_pEntity->GetModel();
 				if (!pModel) return true;
@@ -637,8 +625,9 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 	const bool bShouldAim = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 	if (!bShouldAim &&
-		(Vars::Aimbot::Global::AutoShoot.Value ||
-		!Vars::Aimbot::Global::AutoShoot.Value && !(G::LastUserCmd->buttons & IN_ATTACK)))
+		(!Vars::Aimbot::Global::AutoShoot.Value
+		? !bLastTickHeld
+		: true))
 	{
 		return true;
 	}

@@ -15,11 +15,6 @@ void CMisc::RunPre(CUserCmd* pCmd, bool* pSendPacket)
 	bMovementStopped = false; bMovementScuffed = false;
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
-		FastStop(pCmd, pLocal);
-		StopMovement(pCmd, pSendPacket);
-		FastDeltaMove(pCmd, pSendPacket);
-		AccurateMovement(pCmd, pLocal);
-		FastAccel(pCmd, pLocal, pSendPacket);
 		AutoJump(pCmd, pLocal);
 		AutoStrafe(pCmd, pLocal);
 		AntiBackstab(pLocal, pCmd);
@@ -38,6 +33,11 @@ void CMisc::RunPost(CUserCmd* pCmd, bool* pSendPacket)
 {
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
+		FastStop(pCmd, pLocal);
+		StopMovement(pCmd, pSendPacket);
+		FastDeltaMove(pCmd, pSendPacket);
+		AccurateMovement(pCmd, pLocal);
+		FastAccel(pCmd, pLocal, pSendPacket);
 		DoubletapPacket(pCmd, pSendPacket);
 		LegJitter(pCmd, pLocal);
 		ChokeCheck(pSendPacket);
@@ -52,7 +52,7 @@ void CMisc::StopMovement(CUserCmd* pCmd, bool* pSendPacket)
 	if (G::ShouldStop)
 		return;
 	G::UpdateView = false; bMovementStopped = true; bMovementScuffed = true;
-	if (G::Recharge)
+	if (G::Recharge || G::DoubleTap)
 		return;
 	*pSendPacket = false;
 }
@@ -120,7 +120,7 @@ void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 	if (G::DoubleTap || G::Teleport)
 	{
 		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
-		if (G::DoubleTap || G::LastUserCmd->buttons & IN_ATTACK)
+		if (G::DoubleTap || pCmd->buttons & IN_ATTACK)
 		{
 			const int iShiftFrom = G::ShiftedGoal + std::min(Vars::CL_Move::DoubleTap::TickLimit.Value, G::MaxShift);
 			if (iShiftFrom - 20 == G::ShiftedTicks)
@@ -134,9 +134,7 @@ void CMisc::AntiAFK(CUserCmd* pCmd)
 	if (Vars::Misc::AntiAFK.Value && g_ConVars.afkTimer->GetInt() != 0)
 	{
 		if (pCmd->command_number % 2)
-		{
-			pCmd->buttons |= 1 << 27;
-		}
+			pCmd->buttons |= (1 << 27);
 	}
 }
 
@@ -619,8 +617,7 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 			}
 			if (Vars::Misc::DirectionalOnlyOnSpace.Value)
 			{
-				int key = VK_SPACE; static KeyHelper spaceKey{ &key };
-				if (!spaceKey.Down())
+				if (!(GetAsyncKeyState(VK_SPACE) & 0x8000))
 				{
 					break;
 				}
@@ -815,7 +812,7 @@ bool CMisc::TauntControl(CUserCmd* pCmd)
 				}
 				
 				/*
-				if (pLocal->GetFlags() & FL_DUCKING) //+duck?
+				if +duck? // would like to not use hardcoded key
 				{
 					pCmd->buttons |= IN_DUCK;
 				}
@@ -951,8 +948,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 	static Vec3 peekStart;
 	static Vec3 peekVector;
 
-	static KeyHelper peekKey{ &Vars::CL_Move::AutoPeekKey.Value };
-	if (pLocal->IsAlive() && Vars::CL_Move::AutoPeekKey.Value && peekKey.Down())
+	if (pLocal->IsAlive() && Vars::CL_Move::AutoPeekKey.Value && F::KeyHandler.Down(Vars::CL_Move::AutoPeekKey.Value))
 	{
 		const Vec3 localPos = pLocal->GetAbsOrigin();
 
@@ -1184,6 +1180,22 @@ void CMisc::UnlockAchievements()
 		for (int i = 0; i < achievementmgr->GetAchievementCount(); i++)
 		{
 			achievementmgr->AwardAchievement(achievementmgr->GetAchievementByIndex(i)->GetAchievementID());
+		}
+		g_SteamInterfaces.UserStats->StoreStats();
+		g_SteamInterfaces.UserStats->RequestCurrentStats();
+	}
+}
+
+void CMisc::LockAchievements()
+{
+	using FN = IAchievementMgr * (*)(void);
+	const auto achievementmgr = GetVFunc<FN>(I::EngineClient, 114)();
+	if (achievementmgr)
+	{
+		g_SteamInterfaces.UserStats->RequestCurrentStats();
+		for (int i = 0; i < achievementmgr->GetAchievementCount(); i++)
+		{
+			g_SteamInterfaces.UserStats->ClearAchievement(achievementmgr->GetAchievementByIndex(i)->GetName());
 		}
 		g_SteamInterfaces.UserStats->StoreStats();
 		g_SteamInterfaces.UserStats->RequestCurrentStats();

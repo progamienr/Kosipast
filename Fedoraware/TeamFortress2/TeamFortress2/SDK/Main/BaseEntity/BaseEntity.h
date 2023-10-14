@@ -759,7 +759,7 @@ public: //Everything else, lol.
 
 	__inline Vec3 GetEyePosition()
 	{
-		return (GetViewOffset() + GetAbsOrigin());
+		return GetAbsOrigin() + GetViewOffset();
 	}
 
 	__inline Vec3 GetWorldSpaceCenter()
@@ -781,7 +781,7 @@ public: //Everything else, lol.
 	// This does not return your actual shoot pos for projectile weapons! Use Utils::GetRealShootPos(...) instead
 	__inline Vec3 GetShootPos()
 	{
-		return  GetVecOrigin() + GetViewOffset();
+		return GetVecOrigin() + GetViewOffset();
 	}
 
 	__inline int GetNumOfHitboxes()

@@ -28,17 +28,18 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 		oldrandomseed = *I::RandomSeed;
 		*I::RandomSeed = MD5_PseudoRandom(pCmd->command_number) & std::numeric_limits<int>::max();
 
+		m_nOldTickCount = I::GlobalVars->tickcount;
 		m_fOldCurrentTime = I::GlobalVars->curtime;
 		m_fOldFrameTime = I::GlobalVars->frametime;
-		m_nOldTickCount = I::GlobalVars->tickcount;
 
 		const int nOldTickBase = pLocal->GetTickBase();
 		const bool bOldIsFirstPrediction = I::Prediction->m_bFirstTimePredicted;
 		const bool bOldInPrediction = I::Prediction->m_bInPrediction;
 
-		I::GlobalVars->curtime = TICKS_TO_TIME(GetTickbase(pCmd, pLocal));
+		I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal); // maybe just call gettickbase once ?
+		I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
 		I::GlobalVars->frametime = (I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL);
-		I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal);
+		G::TickBase = I::GlobalVars->tickcount;
 
 		I::Prediction->m_bFirstTimePredicted = false;
 		I::Prediction->m_bInPrediction = true;
@@ -66,9 +67,9 @@ void CEnginePrediction::End(CUserCmd* pCmd)
 	{
 		I::MoveHelper->SetHost(nullptr);
 
+		I::GlobalVars->tickcount = m_nOldTickCount;
 		I::GlobalVars->curtime = m_fOldCurrentTime;
 		I::GlobalVars->frametime = m_fOldFrameTime;
-		I::GlobalVars->tickcount = m_nOldTickCount;
 
 		pLocal->SetCurrentCmd(nullptr);
 

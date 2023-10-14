@@ -183,7 +183,6 @@ int CAimbotMelee::GetSwingTime(CBaseCombatWeapon* pWeapon)
 	return 14;
 }
 
-// to do: warp to
 void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, std::vector<Target_t> targets, 
 								   Vec3& vEyePos, std::unordered_map<CBaseEntity*, std::deque<TickRecord>>& pRecordMap,
 								   std::unordered_map<CBaseEntity*, std::deque<std::pair<Vec3, Vec3>>>& simLines)
@@ -191,38 +190,51 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 	for (auto& target : targets)
 		pRecordMap[target.m_pEntity] = {};
 
-	// swing prediction
-	int iTicks = GetSwingTime(pWeapon);
-	if (Vars::Aimbot::Melee::PredictSwing.Value && pWeapon->GetSmackTime() < 0.f && iTicks)
+	if (lockedTarget.m_pEntity)
+		return;
+
+	// swing prediction / auto warp
+	const int iSwingTicks = GetSwingTime(pWeapon);
+	int iMax = (iDoubletapTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid())
+		? 0 //std::max(iSwingTicks - iDoubletapTicks, 0)
+		: std::max(iSwingTicks, iDoubletapTicks);
+
+	if ((Vars::Aimbot::Melee::PredictSwing.Value || iDoubletapTicks) && pWeapon->GetSmackTime() < 0.f && iMax)
 	{
 		PlayerStorage localStorage;
 		std::unordered_map<CBaseEntity*, PlayerStorage> targetStorage;
 
-		F::MoveSim.Initialize(pLocal, localStorage, false);
+		F::MoveSim.Initialize(pLocal, localStorage, false, iDoubletapTicks);
 		for (auto& target : targets)
 		{
 			targetStorage[target.m_pEntity] = {};
 			F::MoveSim.Initialize(target.m_pEntity, targetStorage[target.m_pEntity], false);
 		}
 
-		for (int i = 0; i < iTicks; i++) // intended for plocal to collide with targets but doesn't seem to always work
+		for (int i = 0; i < iMax; i++) // intended for plocal to collide with targets but seems inconsistent
 		{
-			if (i < iTicks - 1)
-				F::MoveSim.RunTick(localStorage);
-			for (auto& target : targets)
+			if (i < iMax/* - 1*/)
 			{
-				F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
-				if (!targetStorage[target.m_pEntity].m_bFailed)
+				if (pLocal->InCond(TF_COND_SHIELD_CHARGE) && iMax - i <= GetSwingTime(pWeapon)) // demo charge fix for swing pred
 				{
-					target.m_pEntity->SetAbsOrigin(targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin);
-
-					pRecordMap[target.m_pEntity].push_front({
-						target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
-						I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
-						I::GlobalVars->tickcount + i + 1,
-						false,
-						BoneMatrixes{},
-						target.m_pEntity->GetAbsOrigin()
+					localStorage.m_MoveData.m_flMaxSpeed = pLocal->TeamFortress_CalculateMaxSpeed(true);
+					localStorage.m_MoveData.m_flClientMaxSpeed = localStorage.m_MoveData.m_flMaxSpeed;
+				}
+				F::MoveSim.RunTick(localStorage);
+			}
+			if (i < iSwingTicks - iDoubletapTicks)
+			{
+				for (auto& target : targets)
+				{
+					F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
+					if (!targetStorage[target.m_pEntity].m_bFailed)
+						pRecordMap[target.m_pEntity].push_front({
+							target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
+							I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
+							I::GlobalVars->tickcount + i + 1,
+							false,
+							BoneMatrixes{},
+							targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin
 						});
 				}
 			}
@@ -231,7 +243,8 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 
 		if (Vars::Visuals::SwingLines.Value)
 		{
-			if (Vars::Aimbot::Global::AutoShoot.Value)
+			const bool bAlwaysDraw = !Vars::Aimbot::Global::AutoShoot.Value || Vars::Debug::DebugInfo.Value;
+			if (!bAlwaysDraw)
 			{
 				G::ProjLines = localStorage.PredictionLines;
 				for (auto& target : targets)
@@ -240,9 +253,9 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 			else
 			{
 				G::LinesStorage.clear();
-				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
+				G::LinesStorage.push_back({ localStorage.PredictionLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
 				for (auto& target : targets)
-					G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor });
+					G::LinesStorage.push_back({ targetStorage[target.m_pEntity].PredictionLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor });
 			}
 		}
 
@@ -258,7 +271,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 		return false;
 
 	Vector vecToTarget;
-	vecToTarget = pTarget->GetAbsOrigin() - pLocal->GetAbsOrigin();
+	vecToTarget = pTarget->GetAbsOrigin() - pLocal->GetVecOrigin();
 	vecToTarget.z = 0.0f;
 	float vecDist = vecToTarget.Length();
 	vecToTarget.NormalizeInPlace();
@@ -337,7 +350,9 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 	}
 
 	// this might be retarded
-	Vec3 vecDiff = { 0, 0, (pLocal->IsDucking() && pLocal->OnSolid() || target.m_pEntity->m_fFlags() & FL_DUCKING) ? 45.f : 65.f };
+	const float flTargetPos = (target.m_pEntity->GetCollideableMaxs().z - target.m_pEntity->GetCollideableMins().z) * 65.f / 82.f;
+	const float flLocalPos = (pLocal->GetCollideableMaxs().z - pLocal->GetCollideableMins().z) * 65.f / 82.f;
+	const Vec3 vecDiff = { 0, 0, std::min(flTargetPos, flLocalPos) };
 
 	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER ? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value) : pRecords;
 	for (auto& pTick : validRecords)
@@ -411,7 +426,15 @@ bool CAimbotMelee::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		return pCmd->buttons & IN_ATTACK;
 
-	return TIME_TO_TICKS(pWeapon->GetSmackTime()) + 2 == I::GlobalVars->tickcount; // seems to work most (?) of the time, would like to not have arbitrary number
+	static int iCount = 14; // hacky
+	if (pWeapon->GetSmackTime() < 0.f || !iDoubletapTicks)
+		iCount = 14;
+	else
+		iCount--;
+
+	return iDoubletapTicks
+		? !iCount
+		: TIME_TO_TICKS(pWeapon->GetSmackTime()) == I::GlobalVars->tickcount - 1; // seems to work most (?) of the time
 }
 
 // assume angle calculated outside with other overload
@@ -465,7 +488,7 @@ Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 
 void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || !G::WeaponCanAttack && pWeapon->GetSmackTime() < 0.f)
+	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::WeaponCanAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->GetSmackTime() < 0.f)
 	{
 		lockedTarget.m_pEntity = nullptr;
 		return;
@@ -478,6 +501,12 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 	auto targets = SortTargets(pLocal, pWeapon);
 	if (targets.empty())
 		return;
+
+	// get auto warp to work better
+		// fix eye pos issues (antiwarp)
+		// fix weird movement when aiming (no antiwarp)
+	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
+	const bool bShouldSwing = iDoubletapTicks <= GetSwingTime(pWeapon) || Vars::CL_Move::DoubleTap::AntiWarp.Value;
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;
@@ -496,31 +525,45 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			G::AimPos = target.m_vPos;
 
 		if (Vars::Aimbot::Global::AutoShoot.Value)
-			pCmd->buttons |= IN_ATTACK;
+		{
+			if (bShouldSwing)
+				pCmd->buttons |= IN_ATTACK;
+			if (iDoubletapTicks)
+				G::DoubleTap = true;
+		}
 
-		G::IsAttacking = IsAttacking(pCmd, pWeapon);
+		const bool bAttacking = IsAttacking(pCmd, pWeapon);
+		G::IsAttacking = bAttacking || bShouldSwing && G::DoubleTap; // dumb but works
 
 		if (G::IsAttacking && target.pTick)
 		{
 			if (target.ShouldBacktrack)
 				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokeSetMod.Value;
+			// bug: older (maybe only fast) records seem to be progressively more unreliable ?
+			// ^ this might be something wonky with the tr_walkway ramp because rijin misses on this too lmao
 
 			if (Vars::Visuals::BulletTracer.Value)
 			{
 				F::Visuals.ClearBulletLines();
-				G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Colors::BulletTracer });
+				G::BulletsStorage.push_back({ {vEyePos, target.m_vPos}, I::GlobalVars->curtime + 5.f, Colors::BulletTracer });
 			}
 			if (Vars::Aimbot::Global::ShowHitboxes.Value)
 				F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
 		}
-		if (Vars::Visuals::SwingLines.Value && target.pTick && Vars::Aimbot::Global::AutoShoot.Value && G::IsAttacking)
+		if (Vars::Visuals::SwingLines.Value && target.pTick && G::IsAttacking)
 		{
-			G::LinesStorage.clear();
-			G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
-			G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor }); // not working for whatever reason
+			const bool bAlwaysDraw = !Vars::Aimbot::Global::AutoShoot.Value || Vars::Debug::DebugInfo.Value;
+			if (!bAlwaysDraw)
+			{
+				G::LinesStorage.clear();
+				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor });
+				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor }); // not working for whatever reason
+			}
 		}
 
 		Aim(pCmd, target.m_vAngleTo);
+
+		G::IsAttacking = bAttacking;
 
 		break;
 	}

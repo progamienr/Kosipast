@@ -6,11 +6,10 @@ typedef unsigned int       u32;
 
 struct WeaponStorage
 {
-	float Bucket = 150.f; //300.f
+	float Bucket = 300.f;
 
-	float BaseDamage = 0.f;
+	float BaseDamage = 0.f; // literally fucking unused, yet causes crash with some weapons if removed ??
 	float Damage = 0.f;
-
 	float BaseCost = 0.f;
 	std::pair<int, int> ShotsCrits = { 0, 0 };
 	float Cost = 0.f;
@@ -47,8 +46,6 @@ private:
 	void ResetWeapon(CBaseCombatWeapon* pWeapon);
 	void Reset();
 
-	bool CalcIsAttackCriticalHelper(CBaseEntity* pLocal, const CUserCmd* pCmd);
-
 	std::deque<int> ForceCmds{};
 	std::deque<int> SkipCmds{};
 
@@ -64,7 +61,7 @@ private:
 	float CritChance = 0.f;
 
 public:
-	
+
 	void Run(CUserCmd* pCmd);
 	bool CalcIsAttackCriticalHandler(CBaseEntity* pLocal, CBaseCombatWeapon* weapon);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);

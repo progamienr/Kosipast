@@ -3,7 +3,7 @@
 bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
 {
 	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
-	CBaseEntity* pLocal = reinterpret_cast<CBaseEntity*>(this->pSkip);
+	CBaseEntity* pLocal = this->pSkip;
 
 	switch (pEntity->GetClassID())
 	{
@@ -34,7 +34,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 		}
 	}
 
-	return (pEntityHandle != pSkip);
+	return pEntityHandle != pSkip;
 }
 
 ETraceType CTraceFilterHitscan::GetTraceType() const

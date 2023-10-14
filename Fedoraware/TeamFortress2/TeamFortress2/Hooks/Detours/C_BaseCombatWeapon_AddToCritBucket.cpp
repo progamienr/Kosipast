@@ -7,12 +7,12 @@ MAKE_HOOK(C_BaseCombatWeapon_AddToCritBucket, g_Pattern.Find(L"client.dll", L"55
 	if (Vars::Debug::DebugInfo.Value)
 		I::Cvar->ConsoleColorPrintf({ 0, 255, 255, 255 }, "Called AddToCritBucket.\n");
 
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (pWeapon)
-	{
-		if (F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage == 0)
-			F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage = flDamage;
-	}
+	//const auto& pWeapon = g_EntityCache.GetWeapon();
+	//if (pWeapon)
+	//{
+	//	if (F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage == 0)
+	//		F::CritHack.Storage[pWeapon->GetSlot()].BaseDamage = flDamage;
+	//}
 
 	if (F::CritHack.ProtectData)
 		return;

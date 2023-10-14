@@ -232,7 +232,7 @@ float CAntiAim::GetBaseYaw(int iMode, CBaseEntity* pLocal, CUserCmd* pCmd)
 					if (G::IsIgnored(pInfo.friendsID))
 						continue;
 				}
-				const Vec3 vAngleTo = Math::CalcAngle(pLocal->GetAbsOrigin(), pEnemy->GetAbsOrigin());
+				const Vec3 vAngleTo = Math::CalcAngle(pLocal->GetVecOrigin(), pEnemy->GetVecOrigin());
 				const float flFOVTo = Math::CalcFov(I::EngineClient->GetViewAngles(), vAngleTo);
 
 				if (flFOVTo < flSmallestFovTo)
@@ -257,16 +257,13 @@ void CAntiAim::Run(CUserCmd* pCmd, bool* pSendPacket)
 		return;
 
 	// AA toggle key
-	static KeyHelper kAA{ &Vars::AntiHack::AntiAim::ToggleKey.Value };
-	Vars::AntiHack::AntiAim::Active.Value = (kAA.Pressed() ? !Vars::AntiHack::AntiAim::Active.Value : Vars::AntiHack::AntiAim::Active.Value);
+	Vars::AntiHack::AntiAim::Active.Value = (F::KeyHandler.Pressed(Vars::AntiHack::AntiAim::ToggleKey.Value) ? !Vars::AntiHack::AntiAim::Active.Value : Vars::AntiHack::AntiAim::Active.Value);
 
 	// AA invert key
-	static KeyHelper kInvert{ &Vars::AntiHack::AntiAim::InvertKey.Value };
-	bInvert = (kInvert.Pressed() ? !bInvert : bInvert);
+	bInvert = (F::KeyHandler.Pressed(Vars::AntiHack::AntiAim::InvertKey.Value) ? !bInvert : bInvert);
 
 	// Manual yaw key
-	static KeyHelper kManual(&Vars::AntiHack::AntiAim::ManualKey.Value);
-	bManualing = kManual.Down() && (Vars::AntiHack::AntiAim::YawFake.Value == 14 || Vars::AntiHack::AntiAim::YawReal.Value == 14);
+	bManualing = F::KeyHandler.Down(Vars::AntiHack::AntiAim::ManualKey.Value) && (Vars::AntiHack::AntiAim::YawFake.Value == 14 || Vars::AntiHack::AntiAim::YawReal.Value == 14);
 
 	if (!Vars::AntiHack::AntiAim::Active.Value || G::ForceSendPacket || G::AvoidingBackstab || G::DoubleTap)
 		return;

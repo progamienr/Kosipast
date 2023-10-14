@@ -137,8 +137,8 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 	g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value + 2, { 255, 255, 255, 255 }, align, "Scoreboard %d ms", iLatencyScoreBoard);
 	if (Vars::Debug::DebugInfo.Value)
 	{
-		g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
-		g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 3, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
+		g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 2 + 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
+		g_Draw.String(FONT_INDICATORS, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 3 + 2, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
 	}
 }
 
@@ -243,8 +243,7 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 		{
 			if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible())
 			{
-				static KeyHelper tpKey{ &Vars::Visuals::ThirdPersonKey.Value };
-				if (tpKey.Pressed())
+				if (F::KeyHandler.Pressed(Vars::Visuals::ThirdPersonKey.Value))
 				{
 					Vars::Visuals::ThirdPerson.Value = !Vars::Visuals::ThirdPerson.Value;
 				}
@@ -405,6 +404,22 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 
 void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 {
+	if (Vars::Debug::DebugInfo.Value)
+	{
+		G::BoxesStorage.clear(); // TEMP
+		for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
+		{
+			CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+			if (!pEntity || pEntity->GetDormant())
+				continue;
+			if (!pEntity->IsPlayer())
+				return;
+
+			G::BoxesStorage.push_back({ pEntity->GetVecOrigin(), pEntity->GetCollideableMins(), pEntity->GetCollideableMaxs(), Vec3(), I::GlobalVars->curtime + 5.f, { 255, 255, 255, 255 }, { 0, 0, 0, 0 } }); // TEMP
+			G::BoxesStorage.push_back({ pEntity->GetAbsOrigin() + Vec3(0, 0, 1), pEntity->GetCollideableMins(), pEntity->GetCollideableMaxs(), Vec3(), I::GlobalVars->curtime + 5.f, {255, 0, 0, 255}, {0, 0, 0, 0} }); // TEMP
+		}
+	}
+
 	if (!pLocal->IsAlive() || !I::Input->CAM_IsThirdPerson())
 	{
 		return;

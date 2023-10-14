@@ -1,5 +1,6 @@
 #include "Backtrack.h"
 #include "../Simulation/MovementSimulation/MovementSimulation.h"
+#include "../Visuals/Visuals.h"
 
 #define ROUND_TO_TICKS(t) (TICKS_TO_TIME(TIME_TO_TICKS(t)))
 
@@ -66,11 +67,20 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	int iLerpTicks = TIME_TO_TICKS(flFakeInterp);
 
 	float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + TICKS_TO_TIME(iLerpTicks) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
+	
+	/*
+	if (I::GlobalVars->tickcount == G::TickBase)
+	{
+		const auto tb = I::GlobalVars->tickcount;
+		const auto tc = iTickCount;
+		Utils::ConLog("diff", tfm::format("%i (%i, %i)", tb - tc, tb, tc).c_str(), { 100, 100, 255, 255 });
+	}
+	*/
 
-	int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) - 1 + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+	int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 	float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - iTarget);
 
-	return fabsf(flDelta) < Vars::Backtrack::Window.Value / 1000.f; // - TICKS_TO_TIME(flDelta < 0.f ? 1 : 0); // older end seems more unreliable, possibly due to 1 tick choke ?
+	return fabsf(flDelta) < (Vars::Backtrack::Window.Value - (flDelta > 0.f ? Vars::Backtrack::NWindowSub.Value : Vars::Backtrack::OWindowSub.Value)) / 1000.f; // older end seems more unreliable, possibly due to 1 tick choke ?
 	// in short, check if the record is +- 200ms from us
 }
 
@@ -235,7 +245,7 @@ void CBacktrack::MakeRecords()
 		const float flSimTime = pEntity->GetSimulationTime(), flOldSimTime = pEntity->GetOldSimulationTime();
 		const float flDelta = flSimTime - flOldSimTime;
 
-		const Vec3 vOrigin = pEntity->GetAbsOrigin();//m_vecOrigin();
+		const Vec3 vOrigin = pEntity->GetVecOrigin();//m_vecOrigin();
 		if (!mRecords[pEntity].empty())
 		{
 			// as long as we have 1 record we can check for lagcomp breaking here
@@ -400,6 +410,7 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 	}
 	if (G::ChokedTicks && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
 		G::AnticipatedChoke = G::ChosenTicks - G::ChokedTicks;
+		// iffy, unsure if there is a good way to get it to work well without unchoking
 
 	UpdateDatagram();
 
