@@ -30,10 +30,8 @@ void CMaterialEditor::LoadMaterials()
 	for (const auto& entry : std::filesystem::directory_iterator(MaterialFolder))
 	{
 		// Ignore all non-Material files
-		if (std::filesystem::path(entry).filename().string().find(".vmt") == std::string_view::npos)
-		{
-			continue;
-		}
+		if (!entry.is_regular_file()) { continue; }
+		if (entry.path().extension() != std::string(".vmt")) { continue; }
 
 		// Get the material name
 		const std::string matPath = entry.path().filename().string();

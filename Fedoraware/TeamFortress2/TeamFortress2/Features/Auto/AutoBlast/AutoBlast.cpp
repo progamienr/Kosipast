@@ -105,7 +105,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 		{
 			for (const auto& pBurningPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
 			{
-				if (!pBurningPlayer->IsOnFire() || !pBurningPlayer->IsAlive())
+				if (!pBurningPlayer->IsOnFire() || !pBurningPlayer->IsAlive() || pBurningPlayer->IsAGhost())
 					continue;
 
 				if (Vars::Triggerbot::Blast::Rage.Value)

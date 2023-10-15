@@ -20,56 +20,44 @@ int BulletDangerValue(CBaseEntity* pPatient)
 	// Find dangerous playes in other team
 	for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!player->IsAlive())
-		{
+		if (!player->IsAlive() || player->IsAGhost())
 			continue;
-		}
 
 		if (player->GetDormant())
-		{
 			continue;
-		}
 
 		switch (player->GetClassNum())
 		{
-			case 1: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 0)) { continue; }
+			case 1: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 0)) continue;
 				  break; //	scout
-			case 2: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 7)) { continue; }
+			case 2: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 7)) continue;
 				  break; //	sniper
-			case 3: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 1)) { continue; }
+			case 3: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 1)) continue;
 				  break; //	soldier
-			case 6: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 4)) { continue; }
+			case 6: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 4)) continue;
 				  break; //	heavy
-			case 7: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 2)) { continue; }
+			case 7: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 2)) continue;
 				  break; //	pyro
-			case 8: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 8)) { continue; }
+			case 8: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 8)) continue;
 				  break; //	spy
-			case 9: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 5)) { continue; }
+			case 9: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 5)) continue;
 				  break; //	engineer
 			default: { continue; }
 		}
 
 		if (HAS_CONDITION(player, TFCond_Bonked))
-		{
 			return false;
-		}
 
 		const auto& pWeapon = player->GetActiveWeapon();
 
 		if (!pWeapon)
-		{
 			return 0;
-		}
 
 		if (pWeapon->GetSlot() == SLOT_MELEE)
-		{
 			return false;
-		}
 
 		if (pWeapon->GetClassID() == ETFClassID::CTFLunchBox || pWeapon->GetClassID() == ETFClassID::CTFLunchBox_Drink || pWeapon->GetClassID() == ETFClassID::CTFWeaponPDA)
-		{
 			return false;
-		}
 
 		// Ignore ignored players
 		if (F::AutoGlobal.ShouldIgnore(player)) { continue; }
@@ -79,16 +67,15 @@ int BulletDangerValue(CBaseEntity* pPatient)
 
 		if (G::PlayerPriority[player->GetIndex()].Mode != 4 && Vars::Triggerbot::Uber::ReactFoV.Value)
 		{
-			if ((flFOVTo - (3.f * G::ChokeMap[player->GetIndex()])) > static_cast<float>(Vars::Triggerbot::Uber::ReactFoV.Value)) { continue; } //	account for choking :D
+			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Triggerbot::Uber::ReactFoV.Value))
+				continue; // account for choking :D
 		}
 
 		if (HAS_CONDITION(player, TFCond_Zoomed))
 		{
 			anyZoomedSnipers = true;
 			if (Utils::VisPos(pPatient, player, pPatient->GetHitboxPos(HITBOX_HEAD), player->GetEyePosition()))
-			{
 				return 2;
-			}
 		}
 
 
@@ -138,14 +125,10 @@ int BulletDangerValue(CBaseEntity* pPatient)
 	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
 		if (pProjectile->GetVelocity().IsZero())
-		{
 			continue;
-		}
 
 		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum())
-		{
 			continue;
-		}
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Arrow &&
 			pProjectile->GetClassID() != ETFClassID::CTFProjectile_EnergyBall &&
@@ -160,7 +143,8 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		const float flHyp = sqrtf(pPatient->GetVecOrigin().DistToSqr(pProjectile->GetVecOrigin()));
 		if (flHypPred < flHyp && pPatient->GetVecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
 		{
-			if (pProjectile->IsCritBoosted()) { return 2; }
+			if (pProjectile->IsCritBoosted())
+				return 2;
 			hasHitscan = true;
 		}
 	}
@@ -168,9 +152,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 	if (hasHitscan)
 	{
 		if (pPatient->GetHealth() < 449)
-		{
 			return 2;
-		}
 	}
 
 	return (anyZoomedSnipers || anyEnemies) ? 1 : 0;
@@ -183,36 +165,30 @@ int FireDangerValue(CBaseEntity* pPatient)
 	for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
 		if (!player->IsAlive())
-		{
 			continue;
-		}
 
 		if (player->GetClassNum() != CLASS_PYRO) // Pyro only
-		{
 			continue;
-		}
 
 		if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) > 450.f)
-		{
 			continue;
-		}
 
 		const auto& pPlayerWeapon = player->GetActiveWeapon();
 
 		if (!pPlayerWeapon)
-		{
 			return 0;
-		}
 
 		if (pPlayerWeapon->GetClassID() == ETFClassID::CTFFlameThrower)
 		{
 			if (HAS_CONDITION(pPatient, TFCond_OnFire) && pPatient->GetHealth() < 250)
 			{
-				if (pPatient->GetClassNum() == CLASS_PYRO) { return 1; }
+				if (pPatient->GetClassNum() == CLASS_PYRO)
+					return 1;
 				return 2;
 			}
 
-			if (HAS_CONDITION(player, TFCondEx_PhlogUber)) { return 2; }
+			if (HAS_CONDITION(player, TFCondEx_PhlogUber)) 
+				return 2;
 			shouldSwitch = 1;
 		}
 	}
@@ -227,24 +203,16 @@ int BlastDangerValue(CBaseEntity* pPatient)
 	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
 		if (hasRockets && !pProjectile->IsCritBoosted())
-		{
 			continue;
-		}
 
 		if (pProjectile->GetVelocity().IsZero())
-		{
 			continue;
-		}
 
 		if (pProjectile->GetTouched()) // Ignore landed Stickies
-		{
 			continue;
-		}
 
 		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum())
-		{
 			continue;
-		}
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Rocket &&
 			pProjectile->GetClassID() != ETFClassID::CTFProjectile_SentryRocket &&
@@ -255,17 +223,13 @@ int BlastDangerValue(CBaseEntity* pPatient)
 
 		// Projectile is getting closer
 		if (pPatient->GetAbsOrigin().DistTo(pProjectile->GetAbsOrigin()) <= 275.f)
-		{
 			hasRockets = true;
-		}
 	}
 
 	if (hasRockets)
 	{
 		if (pPatient->GetHealth() < 235)
-		{
 			return 2;
-		}
 		return 1;
 	}
 
@@ -275,9 +239,7 @@ int BlastDangerValue(CBaseEntity* pPatient)
 int CurrentResistance()
 {
 	if (const auto& pWeapon = g_EntityCache.GetWeapon())
-	{
 		return pWeapon->GetChargeResistType();
-	}
 	return 0;
 }
 
@@ -285,7 +247,8 @@ int ChargeCount()
 {
 	if (const auto& pWeapon = g_EntityCache.GetWeapon())
 	{
-		if (G::CurItemDefIndex == Medic_s_TheVaccinator) { return pWeapon->GetUberCharge() / 0.25f; }
+		if (G::CurItemDefIndex == Medic_s_TheVaccinator)
+			return pWeapon->GetUberCharge() / 0.25f;
 		return pWeapon->GetUberCharge() / 1.f;
 	}
 	return 1;
@@ -299,9 +262,12 @@ int OptimalResistance(CBaseEntity* pPatient, bool* pShouldPop)
 	if (pShouldPop)
 	{
 		int charges = ChargeCount();
-		if (bulletDanger > 1 && Vars::Triggerbot::Uber::BulletRes.Value) { *pShouldPop = true; }
-		if (fireDanger > 1 && Vars::Triggerbot::Uber::FireRes.Value) { *pShouldPop = true; }
-		if (blastDanger > 1 && Vars::Triggerbot::Uber::BlastRes.Value) { *pShouldPop = true; }
+		if (bulletDanger > 1 && Vars::Triggerbot::Uber::BulletRes.Value)
+			*pShouldPop = true;
+		if (fireDanger > 1 && Vars::Triggerbot::Uber::FireRes.Value)
+			*pShouldPop = true;
+		if (blastDanger > 1 && Vars::Triggerbot::Uber::BlastRes.Value)
+			*pShouldPop = true;
 	}
 
 	if (!(bulletDanger || fireDanger || blastDanger))
@@ -312,9 +278,12 @@ int OptimalResistance(CBaseEntity* pPatient, bool* pShouldPop)
 	vaccChangeTimer = CHANGE_TIMER;
 
 	// vaccinator_change_timer = (int) change_timer;
-	if (bulletDanger >= fireDanger && bulletDanger >= blastDanger) { return 0; }
-	if (blastDanger >= fireDanger && blastDanger >= bulletDanger) { return 1; }
-	if (fireDanger >= bulletDanger && fireDanger >= blastDanger) { return 2; }
+	if (bulletDanger >= fireDanger && bulletDanger >= blastDanger)
+		return 0;
+	if (blastDanger >= fireDanger && blastDanger >= bulletDanger)
+		return 1;
+	if (fireDanger >= bulletDanger && fireDanger >= blastDanger)
+		return 2;
 	return -1;
 }
 
@@ -325,29 +294,23 @@ void SetResistance(int pResistance)
 	vaccIdealResist = pResistance;
 
 	const int curResistance = CurrentResistance();
-	if (pResistance == curResistance) { return; }
+	if (pResistance == curResistance)
+		return;
 	if (pResistance > curResistance)
-	{
 		vaccChangeState = pResistance - curResistance;
-	}
 	else
-	{
 		vaccChangeState = 3 - curResistance + pResistance;
-	}
 }
 
 void DoResistSwitching(CUserCmd* pCmd)
 {
 	if (vaccChangeTimer > 0)
-	{
 		vaccChangeTimer--;
-	}
 	else
-	{
 		vaccChangeTimer = CHANGE_TIMER;
-	}
 
-	if (!vaccChangeState) { return; }
+	if (!vaccChangeState)
+		return;
 	if (CurrentResistance() == vaccIdealResist)
 	{
 		vaccChangeTicks = 0;
@@ -366,9 +329,7 @@ void DoResistSwitching(CUserCmd* pCmd)
 		vaccChangeTicks = 8;
 	}
 	else
-	{
 		vaccChangeTicks--;
-	}
 }
 
 void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
@@ -392,19 +353,14 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			// Auto vaccinator
 			bool shouldPop = false;
 
-
 			DoResistSwitching(pCmd);
 
 			const int optResistance = OptimalResistance(pLocal, &shouldPop);
 			if (optResistance >= 0 && optResistance != CurrentResistance())
-			{
 				SetResistance(optResistance);
-			}
 
 			if (shouldPop && CurrentResistance() == optResistance)
-			{
 				pCmd->buttons |= IN_ATTACK2;
-			}
 		}
 		else
 		{
@@ -422,15 +378,11 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	{
 		//Ignore if target is somehow dead, or already not vulnerable
 		if (!pTarget->IsAlive() || !pTarget->IsVulnerable() || pTarget->GetDormant())
-		{
 			return;
-		}
 
 		//Dont waste if not a friend, fuck off scrub
 		if (Vars::Triggerbot::Uber::OnlyFriends.Value && !g_EntityCache.IsFriend(pTarget->GetIndex()))
-		{
 			return;
-		}
 
 		//Check target's status
 		m_flHealth = static_cast<float>(pTarget->GetHealth());
@@ -459,22 +411,16 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 
 			const int optResistance = OptimalResistance(pTarget, &shouldPop);
 			if (optResistance >= 0 && optResistance != CurrentResistance())
-			{
 				SetResistance(optResistance);
-			}
 
 			if (shouldPop && CurrentResistance() == optResistance)
-			{
 				pCmd->buttons |= IN_ATTACK2;
-			}
 		}
 		else
 		{
 			// Default mediguns
 			if (((m_flHealth / m_flMaxHealth) * 100.0f) <= Vars::Triggerbot::Uber::HealthLeft.Value)
-			{
 				pCmd->buttons |= IN_ATTACK2; //Target under wanted health percentage, pop
-			}
 		}
 	}
 }

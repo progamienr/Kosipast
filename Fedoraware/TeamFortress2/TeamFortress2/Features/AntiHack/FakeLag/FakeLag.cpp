@@ -7,7 +7,7 @@ bool CFakeLag::IsVisible(CBaseEntity* pLocal)
 	const Vec3 vPredictedCheckPoint = pLocal->GetEyePosition() + (pLocal->m_vecVelocity() * (I::GlobalVars->interval_per_tick * 6));	//	6 ticks in da future
 	for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsCloaked() || pEnemy->IsAGhost() || pEnemy->GetFeignDeathReady() || pEnemy->IsBonked())
+		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsAGhost() || pEnemy->IsCloaked() || pEnemy->GetFeignDeathReady() || pEnemy->IsBonked())
 			continue;
 
 		PlayerInfo_t pInfo{};	//	ignored players shouldn't trigger this
@@ -91,7 +91,7 @@ void CFakeLag::PreserveBlastJump(const int nOldGround, const int nOldFlags, CUse
 		return;
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive() || !pLocal->IsPlayer())
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->IsPlayer())
 		return;
 
 	if (!(GetAsyncKeyState(VK_SPACE) & 0x8000) || pLocal->IsDucking())
@@ -110,7 +110,7 @@ void CFakeLag::Unduck(const int nOldFlags){
 		return;
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive() || pLocal->IsDucking() || !pLocal->IsPlayer())
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsDucking() || !pLocal->IsPlayer())
 		return;
 	if (!(nOldFlags & FL_DUCKING))
 		return;
@@ -147,7 +147,7 @@ void CFakeLag::OnTick(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt
 	}
 
 	const auto& pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive())
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost())
 	{
 		*pSendPacket = true;
 		G::ChokedTicks = 0;

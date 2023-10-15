@@ -420,7 +420,7 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 		}
 	}
 
-	if (!pLocal->IsAlive() || !I::Input->CAM_IsThirdPerson())
+	if (!pLocal->IsAlive() || pLocal->IsAGhost() || !I::Input->CAM_IsThirdPerson())
 	{
 		return;
 	}
@@ -747,10 +747,11 @@ void CVisuals::FillSightlines()
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
 			const int iEntityIndex = pEnemy->GetIndex();
-			if (!(pEnemy->IsAlive()) ||
-				!(pEnemy->GetClassNum() == CLASS_SNIPER) ||
+			if (!pEnemy->IsAlive() ||
+				pEnemy->IsAGhost() ||
+				pEnemy->GetClassNum() != CLASS_SNIPER ||
 				!(pEnemy->GetCond() & TFCond_Zoomed) ||
-				(pEnemy->GetDormant()))
+				pEnemy->GetDormant())
 			{
 				m_SightLines[iEntityIndex] = { Vec3(), Vec3(), Color_t(), false };
 				continue;

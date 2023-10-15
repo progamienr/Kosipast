@@ -224,7 +224,7 @@ float CAntiAim::GetBaseYaw(int iMode, CBaseEntity* pLocal, CUserCmd* pCmd)
 			float flSmallestAngleTo = 0.f; float flSmallestFovTo = 360.f;
 			for (CBaseEntity* pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 			{
-				if (!pEnemy || !pEnemy->IsAlive() || pEnemy->GetDormant())
+				if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsAGhost() || pEnemy->GetDormant())
 					continue;	//	is enemy valid
 				PlayerInfo_t pInfo{ };
 				if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pInfo))
@@ -365,7 +365,7 @@ void CAntiAim::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 
 void CAntiAim::Draw(CBaseEntity* pLocal)
 {
-	if (!pLocal->IsAlive() || !bManualing)
+	if (!pLocal->IsAlive() || pLocal->IsAGhost() || !bManualing)
 		return;
 	if (Vars::AntiHack::AntiAim::YawFake.Value != 14 && Vars::AntiHack::AntiAim::YawReal.Value != 14)
 		return;

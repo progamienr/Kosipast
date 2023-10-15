@@ -10,9 +10,8 @@ void CFakeAng::Run(CUserCmd* pCmd)
 		{
 			return;
 		}
-		if (pLocal->IsAlive())
+		if (pLocal->IsAlive() && !pLocal->IsAGhost())
 		{
-
 			if (const auto& pAnimState = pLocal->GetAnimState())
 			{
 				Math::Clamp(G::FakeViewAngles.x, -89.f, 89.f);

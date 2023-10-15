@@ -84,7 +84,7 @@ void CMovementSimulation::FillInfo()
 		{
 			const int iEntIndex = pEntity->GetIndex();
 
-			if (!pEntity->IsAlive() || pEntity->GetDormant())
+			if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant())
 			{
 				m_Positions[iEntIndex].clear();
 				return;
@@ -118,7 +118,7 @@ void CMovementSimulation::FillInfo()
 		{
 			const int iEntIndex = pEntity->GetIndex();
 
-			if (!pEntity->IsAlive() || pEntity->GetDormant() || vVelocity.IsZero())
+			if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant() || vVelocity.IsZero())
 			{
 				m_Velocities[iEntIndex].clear();
 				return;

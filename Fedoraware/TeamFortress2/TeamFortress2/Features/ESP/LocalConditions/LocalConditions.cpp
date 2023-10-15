@@ -217,6 +217,9 @@ std::vector<std::wstring> LCESP::GetPlayerConditions(CBaseEntity* pEntity) const
 
 
 
+		if (pEntity->GetFeignDeathReady())
+			szCond.emplace_back(L"DR");
+
 		if (pEntity->InCond(TF_COND_FEIGN_DEATH))
 			szCond.emplace_back(L"FEIGN");
 

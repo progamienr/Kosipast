@@ -170,7 +170,7 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 		(pTarget = sphere.GetCurrentEntity()) != nullptr;
 		sphere.NextEntity())
 	{
-		if (!pTarget || !pTarget->IsAlive() || pTarget->GetTeamNum() == pLocal->GetTeamNum())
+		if (!pTarget || !pTarget->IsAlive() || pTarget->IsAGhost() || pTarget->GetTeamNum() == pLocal->GetTeamNum())
 			continue;
 
 		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & (PLAYER) && pTarget->IsPlayer();

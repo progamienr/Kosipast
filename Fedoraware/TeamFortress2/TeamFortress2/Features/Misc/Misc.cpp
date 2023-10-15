@@ -185,7 +185,7 @@ void CMisc::DetectChoke()
 	iOldTick = I::GlobalVars->tickcount;
 	for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 	{
-		if (!pEntity->IsAlive() || pEntity->GetDormant())
+		if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant())
 		{
 			G::ChokeMap[pEntity->GetIndex()] = 0;
 			continue;
@@ -225,11 +225,10 @@ void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
 	Vec3 vTargetPos;
 
 	if (!pLocal->IsAlive() || pLocal->IsStunned() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !Vars::AntiHack::AntiAim::AntiBackstab.Value)
-	{
 		return;
-	}
 
-	if (G::IsAttacking) { return; }
+	if (G::IsAttacking)
+		return;
 
 	const Vec3 vLocalPos = pLocal->GetWorldSpaceCenter();
 	CBaseEntity* target = nullptr;
@@ -237,23 +236,24 @@ void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
 	for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
 		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->GetClassNum() != CLASS_SPY || pEnemy->IsCloaked() || pEnemy->IsAGhost() || pEnemy->GetFeignDeathReady())
-		{
 			continue;
-		}
 
 		if (CBaseCombatWeapon* pWeapon = pEnemy->GetActiveWeapon())
 		{
-			if (pWeapon->GetWeaponID() != TF_WEAPON_KNIFE) { continue; }
+			if (pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
+				continue;
 		}
 
 		PlayerInfo_t pInfo{};
 		if (!I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pInfo))
 		{
-			if (G::IsIgnored(pInfo.friendsID)) { continue; }
+			if (G::IsIgnored(pInfo.friendsID))
+				continue;
 		}
 
 		Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
-		if (!Utils::VisPos(pLocal, pEnemy, vLocalPos, vEnemyPos)) { continue; }
+		if (!Utils::VisPos(pLocal, pEnemy, vLocalPos, vEnemyPos))
+			continue;
 		if (!target && vLocalPos.DistTo(vEnemyPos) < 150.f)
 		{
 			target = pEnemy;
@@ -842,7 +842,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	// 1<<17 = TFCond_Charging
 
-	if (pLocal && pLocal->IsAlive() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned() && pLocal->GetVelocity().Length2D() > 5.f)
+	if (pLocal && pLocal->IsAlive() && !pLocal->IsAGhost() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned() && pLocal->GetVelocity().Length2D() > 5.f)
 	{
 		static Vec3 prediction = {};
 		static Vec3 origin = {};
@@ -918,8 +918,10 @@ bool CanAttack(CBaseEntity* pLocal, const Vec3& pPos)
 
 		for (const auto& target : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
-			if (!target->IsAlive()) { continue; }
-			if (F::AimbotGlobal.ShouldIgnore(target)) { continue; }
+			if (!target->IsAlive() || target->IsAGhost())
+				continue;
+			if (F::AimbotGlobal.ShouldIgnore(target))
+				continue;
 
 			// Get the hitbox position (Backtrack if possible)
 			Vec3 targetPos = target->GetHitboxPos(HITBOX_HEAD);
@@ -948,7 +950,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 	static Vec3 peekStart;
 	static Vec3 peekVector;
 
-	if (pLocal->IsAlive() && Vars::CL_Move::AutoPeekKey.Value && F::KeyHandler.Down(Vars::CL_Move::AutoPeekKey.Value))
+	if (pLocal->IsAlive() && !pLocal->IsAGhost() && Vars::CL_Move::AutoPeekKey.Value && F::KeyHandler.Down(Vars::CL_Move::AutoPeekKey.Value))
 	{
 		const Vec3 localPos = pLocal->GetAbsOrigin();
 

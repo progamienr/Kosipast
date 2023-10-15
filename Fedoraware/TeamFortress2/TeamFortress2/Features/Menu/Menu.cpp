@@ -1684,6 +1684,7 @@ void CMenu::MenuMisc()
 			{
 				F::DMEChams.CreateMaterials();
 				F::Glow.CreateMaterials();
+				F::MaterialEditor.LoadMaterials();
 			}
 			if (Button("Print Hashes", SIZE_FULL_WIDTH))
 				Hash::PrintHash();

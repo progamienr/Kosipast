@@ -729,23 +729,18 @@ public: //Everything else, lol.
 
 	__inline Vec3 GetHitboxPosMatrix(const int nHitbox, matrix3x4 BoneMatrix[128])
 	{
-		if (const auto& pModel = GetModel())
-		{
-			if (const auto& pHdr = I::ModelInfoClient->GetStudioModel(pModel))
-			{
-				if (const auto& pSet = pHdr->GetHitboxSet(GetHitboxSet()))
-				{
-					if (const auto& pBox = pSet->hitbox(nHitbox))
-					{
-						Vec3 vPos = (pBox->bbmin + pBox->bbmax) * 0.5f, vOut;
-						Math::VectorTransform(vPos, BoneMatrix[pBox->bone], vOut); // CRASH: Access violation reading location (Backtrack.Run() -> GetHitRecord(); might have fixed ?)
-						return vOut;
-					}
-				}
-			}
-		}
+		const auto& pModel = GetModel();
+		if (!pModel) return Vec3();
+		const auto& pHdr = I::ModelInfoClient->GetStudioModel(pModel);
+		if (!pHdr) return Vec3();
+		const auto& pSet = pHdr->GetHitboxSet(GetHitboxSet());
+		if (!pSet) return Vec3();
+		const auto& pBox = pSet->hitbox(nHitbox);
+		if (!pBox) return Vec3();
 
-		return Vec3();
+		Vec3 vPos = (pBox->bbmin + pBox->bbmax) * 0.5f, vOut;
+		Math::VectorTransform(vPos, BoneMatrix[pBox->bone], vOut); // CRASH: Access violation reading location (Backtrack.Run() -> GetHitRecord(); might have fixed ?)
+		return vOut;
 	}
 
 	__inline Vec3 GetBonePos(const int nBone)

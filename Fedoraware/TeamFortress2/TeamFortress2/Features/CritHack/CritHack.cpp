@@ -658,7 +658,7 @@ void CCritHack::Draw()
 		return;
 
 	const auto& pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive())
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost())
 		return;
 
 	const auto& pWeapon = pLocal->GetActiveWeapon();

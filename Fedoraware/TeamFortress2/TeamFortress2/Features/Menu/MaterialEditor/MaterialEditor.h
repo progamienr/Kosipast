@@ -11,7 +11,6 @@ struct CustomMaterial
 class CMaterialEditor
 {
 	std::string GetMaterialPath(const std::string& matFileName);
-	void LoadMaterials();
 	void WriteMaterial(const CustomMaterial& material, const std::string& content);
 	void MainWindow();
 	void EditorWindow();
@@ -24,6 +23,7 @@ class CMaterialEditor
 	CustomMaterial CurrentMaterial;
 
 public:
+	void LoadMaterials();
 	void Render();
 	void Init();
 	IMaterial* GetByName(const std::string& name);
