@@ -1190,16 +1190,16 @@ void CESP::DrawWorld() const
 		}
 	}
 
-	for (const auto& Bombs : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
+	for (const auto& Bomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
 	{
 		// distance things
-		const Vec3 vDelta = Bombs->GetAbsOrigin() - pLocal->GetAbsOrigin();
+		const Vec3 vDelta = Bomb->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
 		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
-		if (GetDrawBounds(Bombs, vTrans, x, y, w, h))
+		if (GetDrawBounds(Bomb, vTrans, x, y, w, h))
 		{
 			int nTextTopOffset = 0;
 
@@ -1207,7 +1207,7 @@ void CESP::DrawWorld() const
 			{
 				const wchar_t* szName;
 
-				switch (Bombs->GetClassID())
+				switch (Bomb->GetClassID())
 				{
 				case ETFClassID::CTFPumpkinBomb:
 				{
@@ -1237,7 +1237,7 @@ void CESP::DrawWorld() const
 				if (I::Input->CAM_IsThirdPerson())
 					Utils::W2S(pLocal->GetAbsOrigin(), vOrigin);
 
-				if (Utils::W2S(Bombs->GetAbsOrigin(), vScreen))
+				if (Utils::W2S(Bomb->GetAbsOrigin(), vScreen))
 					g_Draw.Line(vOrigin.x, vOrigin.y, vScreen.x, vScreen.y, Colors::Bomb);
 			}
 
@@ -1269,6 +1269,73 @@ void CESP::DrawWorld() const
 			case 3:
 			{
 				Draw3DBox(vTrans, Colors::Bomb);
+				break;
+			}
+			default: break;
+			}
+		}
+	}
+
+	for (const auto& Book : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
+	{
+		// distance things
+		const Vec3 vDelta = Book->GetAbsOrigin() - pLocal->GetAbsOrigin();
+		const float flDistance = vDelta.Length2D();
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
+
+		int x = 0, y = 0, w = 0, h = 0;
+		Vec3 vTrans[8];
+		if (GetDrawBounds(Book, vTrans, x, y, w, h))
+		{
+			int nTextTopOffset = 0;
+
+			if (Vars::ESP::World::SpellbookName.Value)
+			{
+				const wchar_t* szName = L"Spellbook";
+
+				nTextTopOffset += g_Draw.m_vecFonts[FONT_ESP_NAME].nTall + g_Draw.m_vecFonts[FONT_ESP_NAME].nTall / 4;
+				g_Draw.String(FONT_ESP_NAME, x + w / 2, y - nTextTopOffset, Colors::Spellbook, ALIGN_CENTERHORIZONTAL, szName);
+			}
+
+			if (Vars::ESP::World::SpellbookLine.Value)
+			{
+				Vec3 vScreen, vOrigin = Vec3(g_ScreenSize.c, g_ScreenSize.h, 0.0f);
+
+				if (I::Input->CAM_IsThirdPerson())
+					Utils::W2S(pLocal->GetAbsOrigin(), vOrigin);
+
+				if (Utils::W2S(Book->GetAbsOrigin(), vScreen))
+					g_Draw.Line(vOrigin.x, vOrigin.y, vScreen.x, vScreen.y, Colors::Spellbook);
+			}
+
+			if (Vars::ESP::World::SpellbookDistance.Value)
+			{
+				const int Distance = round(flDistance / 52.49);
+				g_Draw.String(FONT_ESP, x + (w / 2), y + h, Colors::Spellbook, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
+			}
+
+			switch (Vars::ESP::World::SpellbookBox.Value)
+			{
+			case 1:
+			{
+				h += 1;
+
+				g_Draw.OutlinedRect(x, y, w, h, Colors::Spellbook);
+				g_Draw.OutlinedRect(x - 1, y - 1, w + 2, h + 2, Colors::OutlineESP);
+
+				h -= 1;
+				break;
+			}
+			case 2:
+			{
+				g_Draw.CornerRect(x, y, w, h, 3, 5, Colors::Spellbook);
+				g_Draw.CornerRect(x - 1, y - 1, w + 2, h + 2, 3, 5, Colors::OutlineESP);
+
+				break;
+			}
+			case 3:
+			{
+				Draw3DBox(vTrans, Colors::Spellbook);
 				break;
 			}
 			default: break;

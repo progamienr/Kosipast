@@ -194,6 +194,7 @@ namespace Colors
 	inline Color_t bonecolor =					{ 231, 95, 255, 10 };
 	inline Color_t NPC =						{ 255, 255, 255, 255 };
 	inline Color_t Bomb =						{ 255, 255, 255, 255 };
+	inline Color_t Spellbook =					{ 255, 255, 255, 255 };
 }
 
 namespace Utils
@@ -309,35 +310,19 @@ namespace Utils
 		if (pEntity->IsPlayer())
 		{
 			if (g_EntityCache.GetLocal()->GetIndex() == pEntity->GetIndex())
-			{
 				out = Colors::Local;
-			}
-
 			else if (g_EntityCache.IsFriend(pEntity->GetIndex()) || pEntity == g_EntityCache.GetLocal())
-			{
 				out = Colors::Friend;
-			}
-
 			else if (G::IsIgnored(info.friendsID))
-			{
 				out = Colors::Ignored;
-			}
-
 			else if (pEntity->IsCloaked())
-			{
 				out = Colors::Cloak;
-			}
-
 			else if (!pEntity->IsVulnerable())
-			{
 				out = Colors::Invuln;
-			}
 		}
 
 		if (pEntity->GetIndex() == G::CurrentTargetIdx)
-		{
 			out = Colors::Target;
-		}
 
 		return out;
 	}

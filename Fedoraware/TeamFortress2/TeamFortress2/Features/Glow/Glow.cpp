@@ -401,15 +401,29 @@ void CGlowEffect::Render()
 
 			if (Vars::Glow::World::Bombs.Value)
 			{
-				for (const auto& Bombs : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
+				for (const auto& Bomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
 				{
-					if (!Utils::IsOnScreen(pLocal, Bombs))
+					if (!Utils::IsOnScreen(pLocal, Bomb))
 						continue;
 
-					m_vecGlowEntities.push_back({ Bombs, Utils::GetEntityDrawColor(Bombs, false), Vars::Glow::World::Alpha.Value });
+					m_vecGlowEntities.push_back({ Bomb, Utils::GetEntityDrawColor(Bomb, false), Vars::Glow::World::Alpha.Value });
 
-					if (!F::Chams.HasDrawn(Bombs))
-						DrawModel(Bombs, STUDIO_RENDER, true);
+					if (!F::Chams.HasDrawn(Bomb))
+						DrawModel(Bomb, STUDIO_RENDER, true);
+				}
+			}
+
+			if (Vars::Glow::World::Spellbook.Value)
+			{
+				for (const auto& Book : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
+				{
+					if (!Utils::IsOnScreen(pLocal, Book))
+						continue;
+
+					m_vecGlowEntities.push_back({ Book, Colors::Spellbook, Vars::Glow::World::Alpha.Value });
+
+					if (!F::Chams.HasDrawn(Book))
+						DrawModel(Book, STUDIO_RENDER, true);
 				}
 			}
 		}

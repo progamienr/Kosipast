@@ -436,6 +436,8 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 							case 0: vPoints.push_back(Utils::GetHeadOffset(target.m_pEntity)); break;
 							case 1: vPoints.push_back(Utils::GetHeadOffset(target.m_pEntity, { 0, -Vars::Aimbot::Projectile::HuntermanShift.Value, 0 })); break;
 							case 2: { const Vec3 vOff = Utils::GetHeadOffset(target.m_pEntity);
+									  vPoints.push_back(Vec3(vOff.x, vOff.y, std::min(vOff.z + Vars::Aimbot::Projectile::HuntermanShift.Value, vMaxs.z))); break; }
+							case 3: { const Vec3 vOff = Utils::GetHeadOffset(target.m_pEntity);
 									  vPoints.push_back(Vec3(vOff.x, vOff.y, std::max(vMaxs.z - Vars::Aimbot::Projectile::VerticalShift.Value, vOff.z))); break; }
 							}
 						}
@@ -518,7 +520,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
 		{
-			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + (Vars::Visuals::ClearLines.Value ? TICKS_TO_TIME(i) : 5.f));
+			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f));
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
@@ -551,7 +553,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				Vec3 matrixOrigin;
 				Math::GetMatrixOrigin(matrix, matrixOrigin);
 
-				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + (Vars::Visuals::ClearLines.Value ? TICKS_TO_TIME(i) : 5.f), Colors::HitboxEdge, Colors::HitboxFace });
+				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f), Colors::HitboxEdge, Colors::HitboxFace });
 			}
 		}
 		return true;
@@ -708,9 +710,9 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			F::Visuals.ClearBulletLines();
 			G::LinesStorage.clear();
 
-			G::LinesStorage.push_back({ G::MoveLines, Vars::Visuals::ClearLines.Value ? -1.f : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor});
+			G::LinesStorage.push_back({ G::MoveLines, Vars::Visuals::TimedLines.Value ? -1.f : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::PredictionColor});
 			if (G::IsAttacking)
-				G::LinesStorage.push_back({ G::ProjLines, Vars::Visuals::ClearLines.Value ? -1.f - F::Backtrack.GetReal() : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor});
+				G::LinesStorage.push_back({ G::ProjLines, Vars::Visuals::TimedLines.Value ? -1.f - F::Backtrack.GetReal() : I::GlobalVars->curtime + 5.f, Vars::Aimbot::Projectile::ProjectileColor});
 		}
 
 		Aim(pCmd, target.m_vAngleTo);

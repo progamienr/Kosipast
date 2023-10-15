@@ -938,6 +938,9 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::ESP::World::BombName);
 		SAVE_VAR(Vars::ESP::World::BombLine);
 		SAVE_VAR(Vars::ESP::World::BombBox);
+		SAVE_VAR(Vars::ESP::World::SpellbookName);
+		SAVE_VAR(Vars::ESP::World::SpellbookLine);
+		SAVE_VAR(Vars::ESP::World::SpellbookBox);
 		SAVE_VAR(Vars::ESP::World::Alpha);
 		SAVE_VAR(Vars::Chams::Main::Active);
 		SAVE_VAR(Vars::Chams::Players::Active);
@@ -981,6 +984,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Glow::World::Ammo);
 		SAVE_VAR(Vars::Glow::World::NPCs);
 		SAVE_VAR(Vars::Glow::World::Bombs);
+		SAVE_VAR(Vars::Glow::World::Spellbook);
 		SAVE_VAR(Vars::Glow::World::Projectiles);
 		SAVE_VAR(Vars::Glow::World::Alpha);
 		SAVE_VAR(Vars::Radar::Main::Active);
@@ -1063,7 +1067,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::EquipRegionUnlock);
 		SAVE_VAR(Vars::Visuals::BulletTracer);
 		SAVE_VAR(Vars::Visuals::SimLines);
-		SAVE_VAR(Vars::Visuals::ClearLines);
+		SAVE_VAR(Vars::Visuals::TimedLines);
 		SAVE_VAR(Vars::Visuals::SimSeperators);
 		SAVE_VAR(Vars::Visuals::SeperatorLength);
 		SAVE_VAR(Vars::Visuals::SeperatorSpacing);
@@ -1115,6 +1119,9 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_OTHER(Colors::Overheal);
 		SAVE_OTHER(Colors::Health);
 		SAVE_OTHER(Colors::Ammo);
+		SAVE_OTHER(Colors::NPC);
+		SAVE_OTHER(Colors::Bomb);
+		SAVE_OTHER(Colors::Spellbook);
 		SAVE_OTHER(Colors::UberColor);
 		SAVE_OTHER(Colors::Enemy);
 		SAVE_OTHER(Colors::rTeam);
@@ -1282,6 +1289,10 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::ESP::World::BombLine);
 		LOAD_VAR(Vars::ESP::World::BombBox);
 
+		LOAD_VAR(Vars::ESP::World::SpellbookName);
+		LOAD_VAR(Vars::ESP::World::SpellbookLine);
+		LOAD_VAR(Vars::ESP::World::SpellbookBox);
+
 		LOAD_VAR(Vars::ESP::World::Alpha);
 		LOAD_VAR(Vars::Chams::Main::Active);
 		LOAD_VAR(Vars::Chams::Players::Active);
@@ -1326,6 +1337,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Glow::World::Ammo);
 		LOAD_VAR(Vars::Glow::World::NPCs);
 		LOAD_VAR(Vars::Glow::World::Bombs);
+		LOAD_VAR(Vars::Glow::World::Spellbook);
 		LOAD_VAR(Vars::Glow::World::Projectiles);
 		LOAD_VAR(Vars::Glow::World::Alpha);
 		LOAD_VAR(Vars::Radar::Main::Active);
@@ -1417,7 +1429,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Visuals::BulletTracer);
 
 		LOAD_VAR(Vars::Visuals::SimLines);
-		LOAD_VAR(Vars::Visuals::ClearLines);
+		LOAD_VAR(Vars::Visuals::TimedLines);
 		LOAD_VAR(Vars::Visuals::SimSeperators);
 		LOAD_VAR(Vars::Visuals::SeperatorLength);
 		LOAD_VAR(Vars::Visuals::SeperatorSpacing);
@@ -1469,6 +1481,9 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_OTHER(Colors::Overheal);
 		LOAD_OTHER(Colors::Health);
 		LOAD_OTHER(Colors::Ammo);
+		LOAD_OTHER(Colors::NPC);
+		LOAD_OTHER(Colors::Bomb);
+		LOAD_OTHER(Colors::Spellbook);
 		LOAD_OTHER(Colors::UberColor);
 		LOAD_OTHER(Colors::Enemy);
 		LOAD_OTHER(Colors::rTeam);

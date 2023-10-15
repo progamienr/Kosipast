@@ -9,9 +9,6 @@ namespace Hash
 {
 	void PrintHash();
 
-	//TODO:
-	//MISSING NEW SPELLBOOK, AND SPELL CHRYSTAL
-
 	//Panels
 	constexpr size_owned FocusOverlayPanel = 2347069313;
 	constexpr size_owned HudScope = 4197140386;
@@ -36,6 +33,7 @@ namespace Hash
 	constexpr size_owned MedKitLargeHalloween = 3893084692;
 	constexpr size_owned MedKitLargeMushroom = 980493366;
 	constexpr size_owned MedievalMeat = 969509793;
+	constexpr size_owned FoodCan = 710669651;
 
 	//Ammo packs
 	constexpr size_owned AmmoSmall = 2534489767;
@@ -44,6 +42,15 @@ namespace Hash
 	constexpr size_owned AmmoLargeBday = 1501082414;
 	constexpr size_owned AmmoMediumBday = 1283759932;
 	constexpr size_owned AmmoSmallBday = 2832603626;
+
+	//Spells
+	constexpr size_owned SpellbookFlying = 1949854555;
+	constexpr size_owned SpellbookUpright = 1753814975;
+	constexpr size_owned SpellbookUprightMajor = 2461783237;
+	constexpr size_owned CrystalBall = 3715827197;
+	constexpr size_owned CrystalBallMajor = 4112151211;
+	constexpr size_owned FlaskGreen = 3852856031;
+	constexpr size_owned FlaskPurple = 1077944092; // prop_dynamic in the map, probably won't work
 
 	//Models
 	constexpr size_owned SentryBuster = 2509256133;

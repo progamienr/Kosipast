@@ -67,7 +67,7 @@ void CEntityCache::Fill()
 				}
 			}
 
-			if (pEntity == m_pLocal && !I::Input->CAM_IsThirdPerson())
+			if (pEntity == m_pLocal && !I::Input->CAM_IsThirdPerson()) // why was this done?
 			{
 				continue;
 			}
@@ -103,6 +103,12 @@ void CEntityCache::Fill()
 					if (Hash::IsHealth(szName))
 					{
 						m_vecGroups[EGroupType::WORLD_HEALTH].push_back(pEntity);
+						break;
+					}
+
+					if (Hash::IsSpell(szName))
+					{
+						m_vecGroups[EGroupType::WORLD_SPELLBOOK].push_back(pEntity);
 						break;
 					}
 

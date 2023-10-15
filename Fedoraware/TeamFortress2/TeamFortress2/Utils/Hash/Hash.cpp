@@ -52,7 +52,15 @@ const char* ToHash[] =
 		"models/workshop/weapons/c_models/c_chocolate/plate_chocolate.mdl",
 		"models/workshop/weapons/c_models/c_fishcake/plate_fishcake.mdl",
 		"HudScope",
-		"info"
+		"info",
+		"models/props_halloween/hwn_spellbook_flying.mdl",
+		"models/props_halloween/hwn_spellbook_upright.mdl",
+		"models/props_halloween/hwn_spellbook_upright_major.mdl",
+		"models/items/crystal_ball_pickup.mdl",
+		"models/items/crystal_ball_pickup_major.mdl",
+		"models/props_monster_mash/flask_vial_green.mdl",
+		"models/props_monster_mash/flask_vial_purple.mdl",
+		"models/props_brine/foodcan.mdl"
 };
 
 void Hash::PrintHash()
@@ -110,6 +118,7 @@ bool Hash::IsHealth(const char* szName)
 		case MedievalMeat:
 		case MedKitDalokahs:
 		case MedKitFishCake:
+		case FoodCan:
 			return true;
 		default: 
 			return false;
@@ -136,8 +145,15 @@ bool Hash::IsSpell(const char* szName)
 {
 	switch (m_Hash(szName))
 	{
-		case 69: //SpellBook
-		case 420: //ChrystalBall
+		case SpellbookFlying:
+			I::Cvar->ConsolePrintf("SpellbookFlying\n");
+			return true;
+		case SpellbookUpright:
+		case SpellbookUprightMajor:
+		case CrystalBall:
+		case CrystalBallMajor:
+		case FlaskGreen:
+		case FlaskPurple:
 			return true;
 		default:
 			return false;

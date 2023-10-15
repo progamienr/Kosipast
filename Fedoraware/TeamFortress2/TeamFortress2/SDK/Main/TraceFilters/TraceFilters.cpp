@@ -17,7 +17,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 		}
 	}
 
-	if (pLocal && pLocal->GetClassNum() == CLASS_SNIPER)
+	if (pLocal && pLocal->IsPlayer() && pLocal->GetClassNum() == CLASS_SNIPER) // CRASH: access violation reading location (from ValidBomb)
 	{
 		switch (pEntity->GetClassID())
 		{

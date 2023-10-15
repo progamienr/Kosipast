@@ -377,7 +377,7 @@ void CMenu::MenuAimbot()
 				WSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, "%.1f");
 				WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
 				WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
-				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift up", "from top" });
+				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top" });
 				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1)
 					WSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, "%.1f");
 			}
@@ -860,30 +860,37 @@ void CMenu::MenuVisuals()
 					SectionTitle("Healthpack");
 					WToggle("Name###WorldESPHealthpackName", &Vars::ESP::World::HealthName.Value); HelpMarker("Will draw ESP on healthpacks");
 					WToggle("Line###WorldESPHealthpackLine", &Vars::ESP::World::HealthLine.Value); HelpMarker("Will draw a line to healthpacks");
-					WToggle("Health Distance", &Vars::ESP::World::HealthDistance.Value); HelpMarker("Shows the distance from you to the health pack in meters");
+					WToggle("Distance###WorldESPHealthDistance", &Vars::ESP::World::HealthDistance.Value); HelpMarker("Shows the distance from you to the health pack in meters");
 					WCombo("Box###WorldESPHealthpackBox", &Vars::ESP::World::HealthBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on healthpacks");
 					ColorPickerL("Healthpack colour", Colors::Health); HelpMarker("Color for healthpack ESP");
 
 					SectionTitle("Ammopack");
 					WToggle("Name###WorldESPAmmopackName", &Vars::ESP::World::AmmoName.Value); HelpMarker("Will draw ESP on ammopacks");
 					WToggle("Line###WorldESPAmmopackLine", &Vars::ESP::World::AmmoLine.Value); HelpMarker("Will draw a line to ammopacks");
-					WToggle("Ammo Distance", &Vars::ESP::World::AmmoDistance.Value); HelpMarker("Shows the distance from you to the ammo box in meters");
+					WToggle("Distance###WorldESPAmmoDistance", &Vars::ESP::World::AmmoDistance.Value); HelpMarker("Shows the distance from you to the ammo box in meters");
 					WCombo("Box###WorldESPAmmopackBox", &Vars::ESP::World::AmmoBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on ammopacks");
 					ColorPickerL("Ammopack colour", Colors::Ammo); HelpMarker("Color for ammopack ESP");
 
 					SectionTitle("NPC");
 					WToggle("Name###WorldESPNPCName", &Vars::ESP::World::NPCName.Value); HelpMarker("Will draw ESP on NPCs");
 					WToggle("Line###WorldESPNPCLine", &Vars::ESP::World::NPCLine.Value); HelpMarker("Will draw a line to NPCs");
-					WToggle("NPC Distance", &Vars::ESP::World::NPCDistance.Value); HelpMarker("Shows the distance from you to the NPC in meters");
+					WToggle("Distance###WorldESPNPCDistance", &Vars::ESP::World::NPCDistance.Value); HelpMarker("Shows the distance from you to the NPC in meters");
 					WCombo("Box###WorldESPNPCBox", &Vars::ESP::World::NPCBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on NPCs");
 					ColorPickerL("NPC colour", Colors::NPC); HelpMarker("Color for NPC ESP");
 
 					SectionTitle("Bombs");
 					WToggle("Name###WorldESPBombName", &Vars::ESP::World::BombName.Value); HelpMarker("Will draw ESP on Bombs");
 					WToggle("Line###WorldESPBombLine", &Vars::ESP::World::BombLine.Value); HelpMarker("Will draw a line to Bombs");
-					WToggle("Bomb Distance", &Vars::ESP::World::BombDistance.Value); HelpMarker("Shows the distance from you to the bomb in meters");
+					WToggle("Distance###WorldESPBombDistance", &Vars::ESP::World::BombDistance.Value); HelpMarker("Shows the distance from you to the bomb in meters");
 					WCombo("Box###WorldESPBombBox", &Vars::ESP::World::BombBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on Bombs");
 					ColorPickerL("Bomb Colour", Colors::Bomb); HelpMarker("Color for bomb ESP");
+
+					SectionTitle("Spellbook");
+					WToggle("Name###WorldESPSpellbookName", &Vars::ESP::World::SpellbookName.Value); HelpMarker("Will draw ESP on Bombs");
+					WToggle("Line###WorldESPSpellbookLine", &Vars::ESP::World::SpellbookLine.Value); HelpMarker("Will draw a line to Bombs");
+					WToggle("Distance###WorldESPSpellbookDistance", &Vars::ESP::World::SpellbookDistance.Value); HelpMarker("Shows the distance from you to the bomb in meters");
+					WCombo("Box###WorldESPSpellbookBox", &Vars::ESP::World::SpellbookBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on Spellbooks");
+					ColorPickerL("Spellbook Colour", Colors::Spellbook); HelpMarker("Color for bomb ESP");
 
 				} EndChild();
 
@@ -963,6 +970,7 @@ void CMenu::MenuVisuals()
 					WToggle("Ammopacks###worldammopackglow", &Vars::Glow::World::Ammo.Value);
 					WToggle("NPCs###worldnpcs", &Vars::Glow::World::NPCs.Value);
 					WToggle("Bombs###worldbombglow", &Vars::Glow::World::Bombs.Value);
+					WToggle("Spellbook###worldspellbookglow", &Vars::Glow::World::Spellbook.Value);
 					WCombo("Projectile glow###teamprojectileglow", &Vars::Glow::World::Projectiles.Value, { "Off", "All", "Only enemies" });
 					WSlider("Glow alpha###WorldGlowAlpha", &Vars::Glow::World::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 				} EndChild();
@@ -1155,7 +1163,7 @@ void CMenu::MenuVisuals()
 					WToggle("Enabled", &Vars::Visuals::SimLines.Value);
 					ColorPickerL("Prediction Line Color", Vars::Aimbot::Projectile::PredictionColor);
 					ColorPickerL("Projectile Line Color", Vars::Aimbot::Projectile::ProjectileColor, 1);
-					WToggle("Clear Lines", &Vars::Visuals::ClearLines.Value);
+					WToggle("Timed", &Vars::Visuals::TimedLines.Value);
 					WToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
 					if (Vars::Visuals::SimSeperators.Value)
 					{

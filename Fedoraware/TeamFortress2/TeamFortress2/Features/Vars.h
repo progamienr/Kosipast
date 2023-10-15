@@ -107,7 +107,6 @@ namespace Vars
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
 			inline CVar<int> SmoothingAmount{ 25 };
-			inline CVar<float> ScanScale{ 0.78f }; // how to scale the points. 0.78 is a good number, huntsman bugs at anything below 0.76
 			inline CVar<bool> SplashPrediction{ false };
 			inline Color_t PredictionColor{ 255, 255, 255, 255 };
 			inline Color_t ProjectileColor{ 255, 100, 100, 255 };
@@ -119,12 +118,12 @@ namespace Vars
 			inline CVar<int> StrafePredictionMaxDistance{ 1000 };
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
 			inline CVar<float> StrafePredictionHitchance{ 0.f };
-			inline CVar<int> iSamples{ 10 }; // debug
+			inline CVar<int> iSamples{ 5 }; // debug
 			inline CVar<int> VelMode{ 1 }; // debug
-			inline CVar<float> VerticalShift{ 10.f }; // debug
+			inline CVar<float> VerticalShift{ 5.f }; // debug
 			inline CVar<float> LatOff{ 0.f }; // debug
 			inline CVar<float> PhyOff{ 0.f }; // debug
-			inline CVar<int> HuntermanMode{ 0 }; // debug
+			inline CVar<int> HuntermanMode{ 2 }; // debug
 			inline CVar<float> HuntermanShift{ 2.f }; // debug
 		}
 
@@ -289,6 +288,11 @@ namespace Vars
 			inline CVar<bool> BombLine{ false };
 			inline CVar<bool> BombDistance{ false };
 
+			inline CVar<bool> SpellbookName{ false };
+			inline CVar<int> SpellbookBox{ false };
+			inline CVar<bool> SpellbookLine{ false };
+			inline CVar<bool> SpellbookDistance{ false };
+
 			inline CVar<float> Alpha{ 1.0f };
 		}
 	}
@@ -408,6 +412,7 @@ namespace Vars
 			inline CVar<bool> Ammo{ false };
 			inline CVar<bool> NPCs{ false };
 			inline CVar<bool> Bombs{ false };
+			inline CVar<bool> Spellbook{ false };
 			inline CVar<int> Projectiles{ 1 }; //0 - Off, 1 - All, 2 - Enemy Only
 			inline CVar<float> Alpha{ 1.0f };
 		}
@@ -514,7 +519,7 @@ namespace Vars
 		inline CVar<bool> BulletTracer{ false };
 
 		inline CVar<bool> SimLines{ false };
-		inline CVar<bool> ClearLines{ false };
+		inline CVar<bool> TimedLines{ false };
 		inline CVar<bool> SimSeperators{ false };
 		inline CVar<int> SeperatorLength{ 12 };
 		inline CVar<int> SeperatorSpacing{ 6 };
