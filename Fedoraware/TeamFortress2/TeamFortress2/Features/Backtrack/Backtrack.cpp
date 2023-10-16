@@ -205,7 +205,7 @@ void CBacktrack::CleanRecords()
 		if (!pEntity)
 			continue;
 
-		if (pEntity->GetDormant() || !pEntity->IsAlive() || pEntity->IsAGhost() || !pEntity->IsPlayer())
+		if (pEntity->GetDormant() || !pEntity->IsAlive() || !pEntity->IsPlayer() || pEntity->IsAGhost())
 		{
 			mRecords[pEntity].clear();
 			continue;
