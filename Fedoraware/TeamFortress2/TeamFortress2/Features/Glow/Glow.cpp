@@ -426,6 +426,20 @@ void CGlowEffect::Render()
 						DrawModel(Book, STUDIO_RENDER, true);
 				}
 			}
+
+			if (Vars::Glow::World::Gargoyle.Value)
+			{
+				for (const auto& Gargy : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
+				{
+					if (!Utils::IsOnScreen(pLocal, Gargy))
+						continue;
+
+					m_vecGlowEntities.push_back({ Gargy, Colors::Gargoyle, Vars::Glow::World::Alpha.Value });
+
+					if (!F::Chams.HasDrawn(Gargy))
+						DrawModel(Gargy, STUDIO_RENDER, true);
+				}
+			}
 		}
 
 		StencilStateDisable.SetStencilState(pRenderContext);

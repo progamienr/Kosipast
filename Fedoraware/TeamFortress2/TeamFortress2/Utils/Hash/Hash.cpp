@@ -60,7 +60,8 @@ const char* ToHash[] =
 		"models/items/crystal_ball_pickup_major.mdl",
 		"models/props_monster_mash/flask_vial_green.mdl",
 		"models/props_monster_mash/flask_vial_purple.mdl",
-		"models/props_brine/foodcan.mdl"
+		"models/props_brine/foodcan.mdl",
+		"models/props_halloween/gargoyle_ghost.mdl"
 };
 
 void Hash::PrintHash()

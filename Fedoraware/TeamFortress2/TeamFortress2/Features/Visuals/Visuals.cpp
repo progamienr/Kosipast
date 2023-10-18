@@ -404,22 +404,6 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 
 void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 {
-	if (Vars::Debug::DebugInfo.Value)
-	{
-		G::BoxesStorage.clear(); // TEMP
-		for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
-		{
-			CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-			if (!pEntity || pEntity->GetDormant())
-				continue;
-			if (!pEntity->IsPlayer())
-				return;
-
-			G::BoxesStorage.push_back({ pEntity->GetVecOrigin(), pEntity->GetCollideableMins(), pEntity->GetCollideableMaxs(), Vec3(), I::GlobalVars->curtime + 5.f, { 255, 255, 255, 255 }, { 0, 0, 0, 0 } }); // TEMP
-			G::BoxesStorage.push_back({ pEntity->GetAbsOrigin() + Vec3(0, 0, 1), pEntity->GetCollideableMins(), pEntity->GetCollideableMaxs(), Vec3(), I::GlobalVars->curtime + 5.f, {255, 0, 0, 255}, {0, 0, 0, 0} }); // TEMP
-		}
-	}
-
 	if (!pLocal->IsAlive() || pLocal->IsAGhost() || !I::Input->CAM_IsThirdPerson())
 	{
 		return;

@@ -138,6 +138,7 @@ namespace Vars
 			inline CVar<bool> AutoBackstab{ true };
 			inline CVar<bool> IgnoreRazorback{ true };
 			inline CVar<bool> WhipTeam{ false };
+			inline CVar<int> SwingTicks{ 13 }; // debug
 		}
 	}
 
@@ -293,6 +294,11 @@ namespace Vars
 			inline CVar<bool> SpellbookLine{ false };
 			inline CVar<bool> SpellbookDistance{ false };
 
+			inline CVar<bool> GargoyleName{ false };
+			inline CVar<int> GargoyleBox{ false };
+			inline CVar<bool> GargoyleLine{ false };
+			inline CVar<bool> GargoyleDistance{ false };
+
 			inline CVar<float> Alpha{ 1.0f };
 		}
 	}
@@ -413,6 +419,7 @@ namespace Vars
 			inline CVar<bool> NPCs{ false };
 			inline CVar<bool> Bombs{ false };
 			inline CVar<bool> Spellbook{ false };
+			inline CVar<bool> Gargoyle{ false };
 			inline CVar<int> Projectiles{ 1 }; //0 - Off, 1 - All, 2 - Enemy Only
 			inline CVar<float> Alpha{ 1.0f };
 		}

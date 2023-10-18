@@ -179,22 +179,23 @@ namespace Colors
 	inline Color_t Bones =						{ 255, 255, 255, 255 };
 	inline Color_t BulletTracer =				{ 255, 255, 255, 255 };
 	inline Color_t FeetColor =					{ 255, 150, 0, 255 }; //orange-ish color - like fire was my idea
-	inline Color_t FresnelBase =				{ 0,0,0,255 };
-	inline Color_t FresnelBaseHands =			{ 0,0,0,255 };
-	inline Color_t FresnelBaseWeps =			{ 0,0,0,255 };
-	inline Color_t FresnelTop = 				{ 0,255,0,255 };
-	inline Color_t AimSquareCol = 				{ 0,255,0,255 };
+	inline Color_t FresnelBase =				{ 0 ,0, 0, 255 };
+	inline Color_t FresnelBaseHands =			{ 0, 0, 0, 255 };
+	inline Color_t FresnelBaseWeps =			{ 0, 0, 0, 255 };
+	inline Color_t FresnelTop = 				{ 0, 255, 0, 255 };
+	inline Color_t AimSquareCol = 				{ 0, 255, 0, 255 };
 	inline Color_t DtOutline =					{ 30, 30, 30, 180 };
 	inline Color_t NotifBG =					{ 30, 30, 30, 255 };
 	inline Color_t NotifOutline =				{ 255, 101, 101, 255};
 	inline Color_t NotifText =					{ 255, 255, 255, 255 };
 	inline Color_t HitboxFace =					{ 255, 255, 255, 25 };
 	inline Color_t HitboxEdge =					{ 255, 255, 255, 175 };
-	inline Color_t WeaponIcon =					{ 255,255,255,255 };
+	inline Color_t WeaponIcon =					{ 255, 255, 255, 255 };
 	inline Color_t bonecolor =					{ 231, 95, 255, 10 };
 	inline Color_t NPC =						{ 255, 255, 255, 255 };
-	inline Color_t Bomb =						{ 255, 255, 255, 255 };
-	inline Color_t Spellbook =					{ 255, 255, 255, 255 };
+	inline Color_t Bomb =						{ 255, 75, 0, 255 };
+	inline Color_t Spellbook =					{ 100, 0, 255, 255 };
+	inline Color_t Gargoyle =					{ 0, 150, 75, 255 };
 }
 
 namespace Utils

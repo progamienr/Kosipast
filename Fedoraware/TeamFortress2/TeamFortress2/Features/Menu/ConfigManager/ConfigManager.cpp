@@ -941,6 +941,9 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::ESP::World::SpellbookName);
 		SAVE_VAR(Vars::ESP::World::SpellbookLine);
 		SAVE_VAR(Vars::ESP::World::SpellbookBox);
+		SAVE_VAR(Vars::ESP::World::GargoyleName);
+		SAVE_VAR(Vars::ESP::World::GargoyleLine);
+		SAVE_VAR(Vars::ESP::World::GargoyleBox);
 		SAVE_VAR(Vars::ESP::World::Alpha);
 		SAVE_VAR(Vars::Chams::Main::Active);
 		SAVE_VAR(Vars::Chams::Players::Active);
@@ -985,6 +988,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Glow::World::NPCs);
 		SAVE_VAR(Vars::Glow::World::Bombs);
 		SAVE_VAR(Vars::Glow::World::Spellbook);
+		SAVE_VAR(Vars::Glow::World::Gargoyle);
 		SAVE_VAR(Vars::Glow::World::Projectiles);
 		SAVE_VAR(Vars::Glow::World::Alpha);
 		SAVE_VAR(Vars::Radar::Main::Active);
@@ -1122,6 +1126,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_OTHER(Colors::NPC);
 		SAVE_OTHER(Colors::Bomb);
 		SAVE_OTHER(Colors::Spellbook);
+		SAVE_OTHER(Colors::Gargoyle);
 		SAVE_OTHER(Colors::UberColor);
 		SAVE_OTHER(Colors::Enemy);
 		SAVE_OTHER(Colors::rTeam);
@@ -1293,6 +1298,10 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::ESP::World::SpellbookLine);
 		LOAD_VAR(Vars::ESP::World::SpellbookBox);
 
+		LOAD_VAR(Vars::ESP::World::GargoyleName);
+		LOAD_VAR(Vars::ESP::World::GargoyleLine);
+		LOAD_VAR(Vars::ESP::World::GargoyleBox);
+
 		LOAD_VAR(Vars::ESP::World::Alpha);
 		LOAD_VAR(Vars::Chams::Main::Active);
 		LOAD_VAR(Vars::Chams::Players::Active);
@@ -1338,6 +1347,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Glow::World::NPCs);
 		LOAD_VAR(Vars::Glow::World::Bombs);
 		LOAD_VAR(Vars::Glow::World::Spellbook);
+		LOAD_VAR(Vars::Glow::World::Gargoyle);
 		LOAD_VAR(Vars::Glow::World::Projectiles);
 		LOAD_VAR(Vars::Glow::World::Alpha);
 		LOAD_VAR(Vars::Radar::Main::Active);
@@ -1484,6 +1494,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_OTHER(Colors::NPC);
 		LOAD_OTHER(Colors::Bomb);
 		LOAD_OTHER(Colors::Spellbook);
+		LOAD_OTHER(Colors::Gargoyle);
 		LOAD_OTHER(Colors::UberColor);
 		LOAD_OTHER(Colors::Enemy);
 		LOAD_OTHER(Colors::rTeam);

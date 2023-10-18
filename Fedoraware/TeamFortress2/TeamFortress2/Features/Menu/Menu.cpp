@@ -309,12 +309,12 @@ void CMenu::MenuAimbot()
 			if (Vars::Debug::DebugInfo.Value)
 			{
 				SectionTitle("debug");
-				WSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3, "%d");
-				WSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3, "%d");
-				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1, "%d");
-				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1, "%d");
-				WSlider("new window sub", &Vars::Backtrack::NWindowSub.Value, 0, 200, "%d");
-				WSlider("old window sub", &Vars::Backtrack::OWindowSub.Value, 0, 200, "%d");
+				WSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3);
+				WSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3);
+				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1);
+				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1);
+				WSlider("new window sub", &Vars::Backtrack::NWindowSub.Value, 0, 200);
+				WSlider("old window sub", &Vars::Backtrack::OWindowSub.Value, 0, 200);
 			}
 		} EndChild();
 
@@ -354,6 +354,11 @@ void CMenu::MenuAimbot()
 			WToggle("Ignore razorback", &Vars::Aimbot::Melee::IgnoreRazorback.Value);
 			WToggle("Swing prediction", &Vars::Aimbot::Melee::PredictSwing.Value); HelpMarker("Aimbot will attack preemptively, predicting you will be in range of the target");
 			WToggle("Whip teammates", &Vars::Aimbot::Melee::WhipTeam.Value); HelpMarker("Aimbot will target teammates if holding the Disciplinary Action");
+			if (Vars::Debug::DebugInfo.Value)
+			{
+				SectionTitle("debug");
+				WSlider("swing ticks", &Vars::Aimbot::Melee::SwingTicks.Value, 10, 14);
+			}
 		} EndChild();
 
 		/* Column 3 */
@@ -886,12 +891,18 @@ void CMenu::MenuVisuals()
 					ColorPickerL("Bomb Colour", Colors::Bomb); HelpMarker("Color for bomb ESP");
 
 					SectionTitle("Spellbook");
-					WToggle("Name###WorldESPSpellbookName", &Vars::ESP::World::SpellbookName.Value); HelpMarker("Will draw ESP on Bombs");
-					WToggle("Line###WorldESPSpellbookLine", &Vars::ESP::World::SpellbookLine.Value); HelpMarker("Will draw a line to Bombs");
-					WToggle("Distance###WorldESPSpellbookDistance", &Vars::ESP::World::SpellbookDistance.Value); HelpMarker("Shows the distance from you to the bomb in meters");
+					WToggle("Name###WorldESPSpellbookName", &Vars::ESP::World::SpellbookName.Value); HelpMarker("Will draw ESP on Spellbooks");
+					WToggle("Line###WorldESPSpellbookLine", &Vars::ESP::World::SpellbookLine.Value); HelpMarker("Will draw a line to Spellbooks");
+					WToggle("Distance###WorldESPSpellbookDistance", &Vars::ESP::World::SpellbookDistance.Value); HelpMarker("Shows the distance from you to the spellbook in meters");
 					WCombo("Box###WorldESPSpellbookBox", &Vars::ESP::World::SpellbookBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on Spellbooks");
 					ColorPickerL("Spellbook Colour", Colors::Spellbook); HelpMarker("Color for bomb ESP");
 
+					SectionTitle("Gargoyle");
+					WToggle("Name###WorldESPGargoyleName", &Vars::ESP::World::GargoyleName.Value); HelpMarker("Will draw ESP on Gargoyles");
+					WToggle("Line###WorldESPGargoyleLine", &Vars::ESP::World::GargoyleLine.Value); HelpMarker("Will draw a line to Gargoyles");
+					WToggle("Distance###WorldESPGargoyleDistance", &Vars::ESP::World::GargoyleDistance.Value); HelpMarker("Shows the distance from you to the gargoyle in meters");
+					WCombo("Box###WorldESPGargoyleBox", &Vars::ESP::World::GargoyleBox.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on Gargoyles");
+					ColorPickerL("Gargoyle Colour", Colors::Gargoyle); HelpMarker("Color for bomb ESP");
 				} EndChild();
 
 				/* Column 2 */
@@ -971,6 +982,7 @@ void CMenu::MenuVisuals()
 					WToggle("NPCs###worldnpcs", &Vars::Glow::World::NPCs.Value);
 					WToggle("Bombs###worldbombglow", &Vars::Glow::World::Bombs.Value);
 					WToggle("Spellbook###worldspellbookglow", &Vars::Glow::World::Spellbook.Value);
+					WToggle("Gargoyle###worldgargoyleglow", &Vars::Glow::World::Gargoyle.Value);
 					WCombo("Projectile glow###teamprojectileglow", &Vars::Glow::World::Projectiles.Value, { "Off", "All", "Only enemies" });
 					WSlider("Glow alpha###WorldGlowAlpha", &Vars::Glow::World::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 				} EndChild();

@@ -180,7 +180,7 @@ int CAimbotMelee::GetSwingTime(CBaseCombatWeapon* pWeapon)
 {
 	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		return 0;
-	return 14;
+	return Vars::Aimbot::Melee::SwingTicks.Value;
 }
 
 void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, std::vector<Target_t> targets, 
@@ -507,6 +507,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		// fix weird movement when aiming (no antiwarp)
 	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
 	const bool bShouldSwing = iDoubletapTicks <= GetSwingTime(pWeapon) || Vars::CL_Move::DoubleTap::AntiWarp.Value;
+	// might be better to hardcode 13 ticks or something so that the swing is finished at the start of the next packet ?
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;

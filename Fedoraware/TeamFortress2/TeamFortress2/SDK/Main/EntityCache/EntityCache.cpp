@@ -201,6 +201,11 @@ void CEntityCache::Fill()
 
 					break;
 				}
+				case ETFClassID::CHalloweenGiftPickup:
+				{
+					m_vecGroups[EGroupType::WORLD_GARGOYLE].push_back(pEntity);
+					break;
+				}
 
 				default: break;
 			}
