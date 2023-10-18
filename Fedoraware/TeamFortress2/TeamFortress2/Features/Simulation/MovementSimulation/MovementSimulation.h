@@ -10,7 +10,6 @@ struct PositionData
 struct VelocityData
 {
 	Vec3 m_vecVelocity = {};
-	float m_flSimTime = 0.f;
 	bool m_bGrounded = true;
 };
 struct PlayerData
@@ -47,7 +46,6 @@ class CMovementSimulation
 {
 private:
 	//void SetCurrentCommand(CBaseEntity* pPlayer, CUserCmd* pCmd);
-	bool GetVelocity(CBaseEntity* pEntity, Vec3& vVelOut, bool bMoveData = false);
 	bool SetupMoveData(PlayerStorage& playerStorage);
 	float GetAverageYaw(const int iSamples, PlayerStorage& playerStorage);
 	void StrafePrediction(PlayerStorage& playerStorage);
@@ -59,7 +57,6 @@ private:
 	int iTick = 0;
 
 	std::map<int, std::deque<VelocityData>> m_Velocities;
-	std::map<int, std::deque<PositionData>> m_Positions;
 
 public:
 	void FillInfo();

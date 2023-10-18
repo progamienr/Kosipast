@@ -119,7 +119,6 @@ namespace Vars
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
 			inline CVar<float> StrafePredictionHitchance{ 0.f };
 			inline CVar<int> iSamples{ 5 }; // debug
-			inline CVar<int> VelMode{ 1 }; // debug
 			inline CVar<float> VerticalShift{ 5.f }; // debug
 			inline CVar<float> LatOff{ 0.f }; // debug
 			inline CVar<float> PhyOff{ 0.f }; // debug

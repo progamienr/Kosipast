@@ -514,8 +514,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	F::MoveSim.Restore(storage);
 
 	if (iLowestPriority != 3 &&
-		(target.m_TargetType != ETargetType::PLAYER ||
-		target.m_TargetType == ETargetType::PLAYER && !storage.m_bFailed)) // don't attempt to aim at players when movesim fails
+		(target.m_TargetType == ETargetType::PLAYER ? !storage.m_bFailed : true)) // don't attempt to aim at players when movesim fails
 	{
 		target.m_vAngleTo = vAngleTo;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)

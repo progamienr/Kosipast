@@ -377,8 +377,7 @@ void CMenu::MenuAimbot()
 			if (Vars::Debug::DebugInfo.Value)
 			{
 				SectionTitle("debug");
-				WSlider("samples", &Vars::Aimbot::Projectile::iSamples.Value, 2, 66);
-				WCombo("vel mode", &Vars::Aimbot::Projectile::VelMode.Value, { "custom", "m_vecVelocity", "GetVelocity", "GetVecVelocity", "EstimateAbsVelocity" });
+				WSlider("samples", &Vars::Aimbot::Projectile::iSamples.Value, 3, 66);
 				WSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, "%.1f");
 				WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
 				WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");

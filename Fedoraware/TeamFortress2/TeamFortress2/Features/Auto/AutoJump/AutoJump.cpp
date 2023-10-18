@@ -34,7 +34,6 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			bCTap = vCurrPos.z - vLastPos.z < 0.5f/* && pCmd->viewangles.x > 30.f*/;
 
 		iJumpFrame++;
-		Utils::ConLog("jump", tfm::format("%i, %i", iJumpFrame, bCTap).c_str(), { 0, 127, 255, 255 });
 
 		switch (iJumpFrame)
 		{
