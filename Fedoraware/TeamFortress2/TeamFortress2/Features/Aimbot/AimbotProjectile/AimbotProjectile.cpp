@@ -283,7 +283,7 @@ bool CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTarge
 
 bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& target, const Vec3& vOriginal, const Vec3& vPredict, const Vec3& vAngles, const int& iSimTime)
 {
-	target.m_pEntity->SetAbsOrigin(vPredict);
+	target.m_pEntity->SetAbsOrigin(vOriginal);
 
 	ProjectileInfo projInfo = {};
 	if (!F::ProjSim.GetInfo(pLocal, pWeapon, vAngles, projInfo))
@@ -291,6 +291,8 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 
 	if (!F::ProjSim.Initialize(projInfo))
 		return false;
+
+	target.m_pEntity->SetAbsOrigin(vPredict);
 
 	for (int n = 0; n < iSimTime; n++) {
 		Vec3 Old = F::ProjSim.GetOrigin();
@@ -377,8 +379,6 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 			return false;
 		}
 	}
-
-	target.m_pEntity->SetAbsOrigin(vOriginal);
 
 	return false;
 }
@@ -503,6 +503,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
 			}
+			target.m_pEntity->SetAbsOrigin(vOriginalPos);
 		}
 
 		if (iEndTick && iEndTick == i || !iLowestPriority)

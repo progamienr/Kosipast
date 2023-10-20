@@ -512,10 +512,11 @@ namespace Vars
 		inline CVar<bool> ThirdpersonCrosshair{ false };
 
 		inline CVar<bool> WorldModulation{ false };
+		inline CVar<bool> SkyModulation{ false };
+		inline CVar<bool> PropModulation{ false };
 		inline CVar<bool> PropWireframe{ false };
 		inline CVar<bool> OverrideWorldTextures{ false };
 		inline CVar<bool> SkyboxChanger{ false };
-		inline CVar<bool> SkyModulation{ false };
 		
 		inline CVar<bool> AimbotViewmodel{ false };
 		inline CVar<bool> ViewmodelSway{ false };

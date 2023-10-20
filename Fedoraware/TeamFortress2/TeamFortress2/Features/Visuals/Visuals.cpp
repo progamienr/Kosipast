@@ -931,39 +931,6 @@ void CVisuals::ClearMaterialHandles()
 	MaterialHandleDatas.clear();
 }
 
-// this whole section below is for world modulation
-bool ModColChanged() // check if colours have been changed
-{
-	static auto oldW = Colors::WorldModulation;
-	static auto oldS = Colors::SkyModulation;
-	const auto curW = Colors::WorldModulation;
-	const auto curS = Colors::SkyModulation;
-
-	if (curW.r != oldW.r || curW.g != oldW.g || curW.b != oldW.b || curS.r != oldS.r || curS.g != oldS.g || curS.b != oldS.b)
-	{
-		oldW = curW;
-		oldS = curS;
-		return true;
-	}
-	return false;
-}
-
-bool ModSetChanged() // check if modulation has been switched
-{
-	static auto oldS = Vars::Visuals::SkyModulation.Value;
-	static auto oldW = Vars::Visuals::WorldModulation.Value;
-	const auto curS = Vars::Visuals::SkyModulation.Value;
-	const auto curW = Vars::Visuals::WorldModulation.Value;
-
-	if (curS != oldS || curW != oldW)
-	{
-		oldW = curW;
-		oldS = curS;
-		return true;
-	}
-	return false;
-}
-
 void ApplyModulation(const Color_t& clr)
 {
 	//for (MaterialHandle_t h = I::MatSystem->First(); h != I::MatSystem->Invalid(); h = I::
@@ -1045,26 +1012,52 @@ void ApplySkyboxModulation(const Color_t& clr)
 
 void CVisuals::ModulateWorld()
 {
-	static bool oConnectionState = (I::EngineClient->IsConnected() && I::EngineClient->IsInGame());
-	const bool connectionState = (I::EngineClient->IsConnected() && I::EngineClient->IsInGame());
-	const bool isUnchanged = connectionState == oConnectionState;
-	static bool shouldModulate = false;
+	const bool bScreenshot = I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value;
+	const bool bWorldModulation = Vars::Visuals::WorldModulation.Value && !bScreenshot;
+	const bool bSkyModulation = Vars::Visuals::SkyModulation.Value && !bScreenshot;
 
-	if (ModColChanged() || ModSetChanged() || !isUnchanged)
+	static bool bLastConnectionState = I::EngineClient->IsConnected() && I::EngineClient->IsInGame();
+	const bool bCurrConnectionState = I::EngineClient->IsConnected() && I::EngineClient->IsInGame();
+	const bool bUnchanged = bLastConnectionState == bCurrConnectionState;
+
+	bool bSetChanged = false;
+	// check if modulation has been switched
 	{
-		Vars::Visuals::WorldModulation.Value ? ApplyModulation(Colors::WorldModulation) : ApplyModulation({ 255, 255, 255, 255 });
-		Vars::Visuals::SkyModulation.Value ? ApplySkyboxModulation(Colors::SkyModulation) : ApplySkyboxModulation({ 255, 255, 255, 255 });
-		oConnectionState = connectionState;
-		shouldModulate = false;
-	}
-	else if (!Vars::Visuals::WorldModulation.Value)
-	{
-		if (!shouldModulate)
+		static auto oldW = bWorldModulation;
+		const auto curW = bWorldModulation;
+		static auto oldS = bSkyModulation;
+		const auto curS = bSkyModulation;
+
+		if (curS != oldS || curW != oldW)
 		{
-			ApplyModulation({ 255, 255, 255, 255 });
-			shouldModulate = true;
+			oldW = curW;
+			oldS = curS;
+			bSetChanged = true;
 		}
-	} // i don't know why i need to do this
+	}
+
+	bool bColorChanged = false;
+	// check if colours have been changed
+	{
+		static auto oldW = Colors::WorldModulation;
+		static auto oldS = Colors::SkyModulation;
+		const auto curW = Colors::WorldModulation;
+		const auto curS = Colors::SkyModulation;
+
+		if (curW.r != oldW.r || curW.g != oldW.g || curW.b != oldW.b || curS.r != oldS.r || curS.g != oldS.g || curS.b != oldS.b)
+		{
+			oldW = curW;
+			oldS = curS;
+			bColorChanged = true;
+		}
+	}
+
+	if (bSetChanged || bColorChanged || !bUnchanged)
+	{
+		bWorldModulation ? ApplyModulation(Colors::WorldModulation) : ApplyModulation({ 255, 255, 255, 255 });
+		bSkyModulation ? ApplySkyboxModulation(Colors::SkyModulation) : ApplySkyboxModulation({ 255, 255, 255, 255 });
+		bLastConnectionState = bCurrConnectionState;
+	}
 }
 
 void CVisuals::RestoreWorldModulation() // keep this because its mentioned in @DLLMain.cpp if you find a better way to do this, remove it ig.

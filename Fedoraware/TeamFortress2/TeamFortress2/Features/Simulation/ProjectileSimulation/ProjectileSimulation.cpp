@@ -8,9 +8,7 @@ IPhysicsObject* obj = nullptr;
 bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick) //add cleaver, wrap assassin, sandman; possibly refine values and magic numbers
 {
 	if (!player || !pWeapon)
-	{
 		return false;
-	}
 
 	bool ducking = player->m_fFlags() & FL_DUCKING;
 
@@ -20,7 +18,8 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 	{
 	case TF_WEAPON_PARTICLE_CANNON:
 	case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
-	case TF_WEAPON_ROCKETLAUNCHER: {
+	case TF_WEAPON_ROCKETLAUNCHER:
+	{
 		if (pWeapon->GetItemDefIndex() == Soldier_m_TheOriginal)
 			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 0.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		else
@@ -126,9 +125,7 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 {
 	if (!env)
-	{
 		env = I::Physics->CreateEnvironment();
-	}
 
 	if (!obj)
 	{
@@ -150,9 +147,7 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 	}
 
 	if (!env || !obj)
-	{
 		return false;
-	}
 
 	//set position and velocity
 	{
@@ -178,17 +173,11 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 
 			break;
 		}
-
-		default:
-		{
-			break;
-		}
+		default: break;
 		}
 
 		if (info.no_spin)
-		{
 			ang_vel.Zero();
-		}
 
 		obj->SetPosition(info.m_pos, info.m_ang, true);
 		obj->SetVelocity(&vel, &ang_vel);
@@ -212,7 +201,6 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 
 			break;
 		}
-
 		case TF_PROJECTILE_PIPEBOMB_REMOTE:
 		case TF_PROJECTILE_PIPEBOMB_PRACTICE:
 		{
@@ -222,7 +210,6 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 
 			break;
 		}
-
 		case TF_PROJECTILE_CANNONBALL:
 		{
 			drag = 1.f;
@@ -231,11 +218,7 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 
 			break;
 		}
-
-		default:
-		{
-			break;
-		}
+		default: break;
 		}
 
 		obj->SetDragCoefficient(&drag, &drag);
@@ -262,11 +245,7 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 
 			break;
 		}
-
-		default:
-		{
-			break;
-		}
+		default: break;
 		}
 
 		physics_performanceparams_t params{};
@@ -298,9 +277,7 @@ void CProjectileSimulation::RunTick(ProjectileInfo& info)
 Vec3 CProjectileSimulation::GetOrigin()
 {
 	if (!obj)
-	{
 		return {};
-	}
 
 	Vec3 out;
 
@@ -312,9 +289,7 @@ Vec3 CProjectileSimulation::GetOrigin()
 Vec3 CProjectileSimulation::GetVelocity()
 {
 	if (!obj)
-	{
 		return {};
-	}
 
 	Vec3 out;
 

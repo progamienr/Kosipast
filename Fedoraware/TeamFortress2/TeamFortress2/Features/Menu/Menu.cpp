@@ -1122,7 +1122,7 @@ void CMenu::MenuVisuals()
 					SectionTitle("World & UI");
 					WSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 30, 150, "%d"); HelpMarker("How many degrees of field of vision you would like");
 					WSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 30, 150, "%d"); HelpMarker("Degrees of field while zoomed");
-					MultiCombo({ "World", "Sky", "Prop Wireframe" }, { &Vars::Visuals::WorldModulation.Value, &Vars::Visuals::SkyModulation.Value, &Vars::Visuals::PropWireframe.Value }, "Modulations");
+					MultiCombo({ "World", "Sky", "Prop", "Prop Wireframe" }, { &Vars::Visuals::WorldModulation.Value, &Vars::Visuals::SkyModulation.Value, &Vars::Visuals::PropModulation.Value, &Vars::Visuals::PropWireframe.Value }, "Modulations");
 					HelpMarker("Select which types of modulation you want to enable");
 					if (ColorPickerL("World modulation colour", Colors::WorldModulation) ||
 						ColorPickerL("Sky modulation colour", Colors::SkyModulation, 1) ||

@@ -121,6 +121,9 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 					});
 			}
 
+			if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value)
+				return FinishDrawing(I::VGuiSurface);
+
 			F::ESP.Run();
 			F::Visuals.PickupTimers();
 			F::PlayerArrows.Run();
@@ -133,7 +136,6 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 
 			if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
 			{
-				if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value) { return FinishDrawing(I::VGuiSurface); }
 				F::Visuals.DrawAntiAim(pLocal);
 				F::Visuals.DrawTickbaseText();
 				F::Visuals.DrawAimbotFOV(pLocal);

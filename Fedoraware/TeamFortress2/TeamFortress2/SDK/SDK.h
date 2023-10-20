@@ -644,10 +644,7 @@ namespace Utils
 		pos_out = shoot_pos + (forward * offset.x) + (right * offset.y) + (up * offset.z);
 
 		if (pipes)
-		{
 			ang_out = ang_in;
-		}
-
 		else
 		{
 			Vec3 end_pos = shoot_pos + (forward * 2000.0f);

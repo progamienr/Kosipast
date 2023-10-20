@@ -113,10 +113,8 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 					G::ShouldUpdateMaterialCache = false;
 				}
 
-				if (Vars::Visuals::SkyModulation.Value || Vars::Visuals::WorldModulation.Value)
-				{
+				//if (Vars::Visuals::SkyModulation.Value || Vars::Visuals::WorldModulation.Value)
 					F::Visuals.ModulateWorld();
-				}
 			}
 			break;
 		}

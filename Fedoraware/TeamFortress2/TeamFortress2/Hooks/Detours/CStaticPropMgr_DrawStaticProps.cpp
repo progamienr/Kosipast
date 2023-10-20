@@ -4,6 +4,7 @@ MAKE_HOOK(CStaticPropMgr_DrawStaticProps, g_Pattern.Find(L"engine.dll", L"55 8B 
 		  void* ecx, void* edx, IClientRenderable** pProps, int count, bool bShadowDepth, bool drawVCollideWireframe)
 {
 	G::DrawingStaticProps = true;
-	Hook.Original<FN>()(ecx, edx, pProps, count, bShadowDepth, Vars::Visuals::PropWireframe.Value);
+	const bool bScreenshot = I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value;
+	Hook.Original<FN>()(ecx, edx, pProps, count, bShadowDepth, Vars::Visuals::PropWireframe.Value && !bScreenshot);
 	G::DrawingStaticProps = false;
 }

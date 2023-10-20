@@ -1048,6 +1048,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::ThirdpersonCrosshair);
 		SAVE_VAR(Vars::Visuals::WorldModulation);
 		SAVE_VAR(Vars::Visuals::SkyModulation);
+		SAVE_VAR(Vars::Visuals::PropModulation);
 		SAVE_VAR(Vars::Visuals::PropWireframe);
 		SAVE_VAR(Vars::Visuals::SkyboxChanger);
 		SAVE_VAR(Vars::Visuals::Particles::Colors::Type);
@@ -1409,6 +1410,7 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 
 		LOAD_VAR(Vars::Visuals::WorldModulation);
 		LOAD_VAR(Vars::Visuals::SkyModulation);
+		LOAD_VAR(Vars::Visuals::PropModulation);
 		LOAD_VAR(Vars::Visuals::PropWireframe);
 		LOAD_VAR(Vars::Visuals::SkyboxChanger);
 		LOAD_VAR(Vars::Visuals::Particles::Colors::Type);
