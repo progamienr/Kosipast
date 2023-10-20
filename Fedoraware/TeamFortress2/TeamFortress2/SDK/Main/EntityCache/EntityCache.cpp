@@ -203,7 +203,8 @@ void CEntityCache::Fill()
 				}
 				case ETFClassID::CHalloweenGiftPickup:
 				{
-					m_vecGroups[EGroupType::WORLD_GARGOYLE].push_back(pEntity);
+					if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->GetTargetPlayer()) == m_pLocal)
+						m_vecGroups[EGroupType::WORLD_GARGOYLE].push_back(pEntity);
 					break;
 				}
 

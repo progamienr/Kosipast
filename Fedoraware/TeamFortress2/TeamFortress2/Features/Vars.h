@@ -122,7 +122,7 @@ namespace Vars
 			inline CVar<float> VerticalShift{ 5.f }; // debug
 			inline CVar<float> LatOff{ 0.f }; // debug
 			inline CVar<float> PhyOff{ 0.f }; // debug
-			inline CVar<int> HuntermanMode{ 2 }; // debug
+			inline CVar<int> HuntermanMode{ 0 }; // debug
 			inline CVar<float> HuntermanShift{ 2.f }; // debug
 		}
 

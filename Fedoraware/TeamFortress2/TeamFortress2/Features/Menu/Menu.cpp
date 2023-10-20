@@ -382,7 +382,7 @@ void CMenu::MenuAimbot()
 				WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
 				WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
 				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top" });
-				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1)
+				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1 || Vars::Aimbot::Projectile::HuntermanMode.Value == 2)
 					WSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, "%.1f");
 			}
 

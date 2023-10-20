@@ -112,6 +112,7 @@ public: //Netvars & conditions
 		M_DYNVARGET(Streaks, int*, this, "DT_TFPlayer", "m_Shared", "m_nStreaks")
 		M_DYNVARGET(Crits, int, this, "DT_TFPlayer", "m_Shared", "tfsharedlocaldata", "m_ScoreData", "m_iCrits")
 		M_DYNVARGET(InvisCompleteTime, float, this, "DT_TFPlayer", "m_Shared", "m_flInvisChangeCompleteTime")
+		M_DYNVARGET(TargetPlayer, int, this, "DT_CHalloweenGiftPickup", "m_hTargetPlayer")
 
 		M_OFFSETGET(PipebombType, int, 0x8F8)												//	4
 		M_OFFSETGET(PipebombPulsed, bool, 0x908)	//	this is incredibly fucking lazy.	//	16
