@@ -27,7 +27,7 @@ bool CNoSpread::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUser
 		return false;
 	}
 
-	return Utils::IsAttacking(pCmd, pWeapon);
+	return G::IsAttacking;//Utils::IsAttacking(pCmd, pWeapon);
 }
 
 void CNoSpread::Run(CUserCmd* pCmd)
@@ -45,11 +45,12 @@ void CNoSpread::Run(CUserCmd* pCmd)
 	{
 	case TF_WEAPON_SYRINGEGUN_MEDIC:
 	{
-		// don't let the _local_ syringes fool you
+		Utils::RandomFloat();
+
+		// don't let the _local_ syringes fool you (is there a way to fix or sync them?)
 		pCmd->viewangles.x -= Utils::RandomFloat(-1.5f, 1.5f);
 		pCmd->viewangles.y -= Utils::RandomFloat(-1.5f, 1.5f);
-		G::SilentTime = true;
-		return;
+		break;
 	}
 	case TF_WEAPON_COMPOUND_BOW:
 	{
@@ -61,15 +62,14 @@ void CNoSpread::Run(CUserCmd* pCmd)
 		pCmd->viewangles.x -= -6 + flRand * 12.f;
 		flRand = (float)Utils::RandomInt(0, 0x7fff) / 0x7fff;
 		pCmd->viewangles.y -= -6 + flRand * 12.f;
-		G::SilentTime = true;
-		return;
+		break;
 	}
 	default:
-		Vec3 spread;
-		pWeapon->GetSpreadAngles(spread);
+		Utils::RandomFloat();
 
-		pCmd->viewangles -= spread - I::EngineClient->GetViewAngles();
-		G::SilentTime = true;
-		return;
+		pCmd->viewangles -= pWeapon->GetSpreadAngles() - I::EngineClient->GetViewAngles();
+		break;
 	}
+
+	G::SilentTime = true;
 }

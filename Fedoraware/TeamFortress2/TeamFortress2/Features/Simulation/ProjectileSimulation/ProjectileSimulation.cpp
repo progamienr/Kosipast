@@ -14,6 +14,13 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 
 	Vec3 pos, ang;
 
+	if (Vars::Visuals::PTOverwrite.Value)
+	{
+		Utils::GetProjectileFireSetup(player, vAngles, { Vars::Visuals::PTOffX.Value, Vars::Visuals::PTOffY.Value, Vars::Visuals::PTOffZ.Value }, pos, ang, Vars::Visuals::PTPipes.Value, bQuick);
+		out = { static_cast<ETFProjectileType>(Vars::Visuals::PTType.Value), pos, ang, { Vars::Visuals::PTHull.Value, Vars::Visuals::PTHull.Value, Vars::Visuals::PTHull.Value }, Vars::Visuals::PTSpeed.Value, Vars::Visuals::PTGravity.Value, Vars::Visuals::PTNoSpin.Value, Vars::Visuals::PTLifeTime.Value };
+		return true;
+	}
+
 	switch (pWeapon->GetWeaponID())
 	{
 	case TF_WEAPON_PARTICLE_CANNON:
@@ -23,7 +30,7 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 		if (pWeapon->GetItemDefIndex() == Soldier_m_TheOriginal)
 			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 0.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		else
-			Utils::GetProjectileFireSetup(player, vAngles, Vec3(23.5f, 12.f, ducking ? 8.f : -3.f), pos, ang, false, bQuick);
+			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		out = { TF_PROJECTILE_ROCKET, pos, ang, { 1.f, 1.f, 1.f /*0.f, 0.f, 0.f i think is real size*/ }, bQuick ? 1081344.f : Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon), 0.f, true };
 		return true;
 	}
@@ -189,36 +196,45 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 		Vec3 drag_basis;
 		Vec3 ang_drag_basis;
 
-		//these values were dumped from the server by firing the projectiles with 0 0 0 angles
-		//they are calculated in CPhysicsObject::RecomputeDragBases
-		switch (info.m_type)
+		if (Vars::Visuals::PTOverwrite.Value)
 		{
-		case TF_PROJECTILE_PIPEBOMB:
-		{
-			drag = 1.f;
-			drag_basis = { 0.003902f, 0.009962f, 0.009962f };
-			ang_drag_basis = { 0.003618f, 0.001514f, 0.001514f };
-
-			break;
+			drag = Vars::Visuals::PTDrag.Value;
+			drag_basis = { Vars::Visuals::PTDragBasisX.Value, Vars::Visuals::PTDragBasisY.Value, Vars::Visuals::PTDragBasisZ.Value };
+			ang_drag_basis = { Vars::Visuals::PTAngDragBasisX.Value, Vars::Visuals::PTAngDragBasisY.Value, Vars::Visuals::PTAngDragBasisZ.Value };
 		}
-		case TF_PROJECTILE_PIPEBOMB_REMOTE:
-		case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+		else
 		{
-			drag = 1.f;
-			drag_basis = { 0.007491f, 0.007491f, 0.007306f };
-			ang_drag_basis = { 0.002777f, 0.002842f, 0.002812f };
+			//these values were dumped from the server by firing the projectiles with 0 0 0 angles
+			//they are calculated in CPhysicsObject::RecomputeDragBases
+			switch (info.m_type)
+			{
+			case TF_PROJECTILE_PIPEBOMB:
+			{
+				drag = 1.f;
+				drag_basis = { 0.003902f, 0.009962f, 0.009962f };
+				ang_drag_basis = { 0.003618f, 0.001514f, 0.001514f };
 
-			break;
-		}
-		case TF_PROJECTILE_CANNONBALL:
-		{
-			drag = 1.f;
-			drag_basis = { 0.020971f, 0.019420f, 0.020971f };
-			ang_drag_basis = { 0.012997f, 0.013496f, 0.013714f };
+				break;
+			}
+			case TF_PROJECTILE_PIPEBOMB_REMOTE:
+			case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+			{
+				drag = 1.f;
+				drag_basis = { 0.007491f, 0.007491f, 0.007306f };
+				ang_drag_basis = { 0.002777f, 0.002842f, 0.002812f };
 
-			break;
-		}
-		default: break;
+				break;
+			}
+			case TF_PROJECTILE_CANNONBALL:
+			{
+				drag = 1.f;
+				drag_basis = { 0.020971f, 0.019420f, 0.020971f };
+				ang_drag_basis = { 0.012997f, 0.013496f, 0.013714f };
+
+				break;
+			}
+			default: break;
+			}
 		}
 
 		obj->SetDragCoefficient(&drag, &drag);

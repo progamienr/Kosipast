@@ -1183,6 +1183,32 @@ void CMenu::MenuVisuals()
 					}
 					WToggle("Swing Prediction Lines", &Vars::Visuals::SwingLines.Value);
 					WToggle("Projectile Trajectory", &Vars::Visuals::ProjectileTrajectory.Value);
+					if (Vars::Debug::DebugInfo.Value)
+					{
+						SectionTitle("debug");
+						WToggle("overwrite", &Vars::Visuals::PTOverwrite.Value);
+						WCombo("type", &Vars::Visuals::PTType.Value,
+							{ "none", "bullet", "rocket", "pipebomb", "pipebomb remote", "syringe", "flare", "jar", "arrow", "flame rocket", "jar milk",
+							"healing bolt", "energy ball", "energy ring", "pipebomb practice", "cleaver", "sticky ball", "cannonball", "building repair bolt", "sentry rocket",
+							"festive arrow", "throwable", "spell", "festive jar", "festive healing bolt", "breadmonster jarate", "breadmonster madmilk", "grappling hook", "bread monster", "jar gas",
+							"balloffire" }); // to keep the integer easily associated with the enum, a lot of these aren't even used
+						WSlider("off x", &Vars::Visuals::PTOffX.Value, -25.f, 25.f, "%.1f");
+						WSlider("off y", &Vars::Visuals::PTOffY.Value, -25.f, 25.f, "%.1f");
+						WSlider("off z", &Vars::Visuals::PTOffZ.Value, -25.f, 25.f, "%.1f");
+						WToggle("pipes", &Vars::Visuals::PTPipes.Value);
+						WSlider("hull", &Vars::Visuals::PTHull.Value, 0.f, 10.f, "%.1f");
+						WSlider("speed", &Vars::Visuals::PTSpeed.Value, 0.f, 5000.f, "%.0f");
+						WSlider("gravity", &Vars::Visuals::PTGravity.Value, 0.f, 2.f, "%.1f");
+						WToggle("no spin", &Vars::Visuals::PTNoSpin.Value);
+						WSlider("lifetime", &Vars::Visuals::PTLifeTime.Value, 0.f, 10.f, "%.1f");
+						WSlider("drag", &Vars::Visuals::PTDrag.Value, 0.f, 2.f, "%.1f");
+						WSlider("drag x", &Vars::Visuals::PTDragBasisX.Value, 0.f, 0.1f, "%.6f");
+						WSlider("drag y", &Vars::Visuals::PTDragBasisY.Value, 0.f, 0.1f, "%.6f");
+						WSlider("drag z", &Vars::Visuals::PTDragBasisZ.Value, 0.f, 0.1f, "%.6f");
+						WSlider("ang drag x", &Vars::Visuals::PTAngDragBasisX.Value, 0.f, 0.1f, "%.6f");
+						WSlider("ang drag y", &Vars::Visuals::PTAngDragBasisY.Value, 0.f, 0.1f, "%.6f");
+						WSlider("ang drag z", &Vars::Visuals::PTAngDragBasisZ.Value, 0.f, 0.1f, "%.6f");
+					}
 
 					SectionTitle("Hitbox");
 					WToggle("Draw Hitboxes", &Vars::Aimbot::Global::ShowHitboxes.Value); HelpMarker("Shows targeted hitbox");
@@ -1255,10 +1281,10 @@ void CMenu::MenuVisuals()
 					}
 
 					SectionTitle("Viewmodel Offset");
-					WSlider("VM Off X", &Vars::Visuals::VMOffsets.x, -45.f, 45.f);
-					WSlider("VM Off Y", &Vars::Visuals::VMOffsets.y, -45.f, 45.f);
-					WSlider("VM Off Z", &Vars::Visuals::VMOffsets.z, -45.f, 45.f);
-					WSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
+					WSlider("VM Off X", &Vars::Visuals::VMOffsets.x, -45.f, 45.f, "%.1f");
+					WSlider("VM Off Y", &Vars::Visuals::VMOffsets.y, -45.f, 45.f, "%.1f");
+					WSlider("VM Off Z", &Vars::Visuals::VMOffsets.z, -45.f, 45.f, "%.1f");
+					WSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180, "%.1f");
 
 					SectionTitle("Ragdolls");
 					WToggle("No Gibs", &Vars::Visuals::RagdollEffects::NoGib.Value);
@@ -1321,9 +1347,9 @@ void CMenu::MenuVisuals()
 					WToggle("Thirdperson", &Vars::Visuals::ThirdPerson.Value); HelpMarker("Will move your camera to be in a thirdperson view");
 					InputKeybind("Thirdperson key", Vars::Visuals::ThirdPersonKey.Value); HelpMarker("What key to toggle thirdperson, press ESC if no bind is desired");
 
-					WSlider("Thirdperson distance", &Vars::Visuals::ThirdpersonDist.Value, -500.f, 500.f, "%.1f", ImGuiSliderFlags_None);
-					WSlider("Thirdperson right", &Vars::Visuals::ThirdpersonRight.Value, -500.f, 500.f, "%.1f", ImGuiSliderFlags_None);
-					WSlider("Thirdperson up", &Vars::Visuals::ThirdpersonUp.Value, -500.f, 500.f, "%.1f", ImGuiSliderFlags_None);
+					WSlider("Thirdperson distance", &Vars::Visuals::ThirdpersonDist.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
+					WSlider("Thirdperson right", &Vars::Visuals::ThirdpersonRight.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
+					WSlider("Thirdperson up", &Vars::Visuals::ThirdpersonUp.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
 					WToggle("Thirdperson crosshair", &Vars::Visuals::ThirdpersonCrosshair.Value);
 
 					SectionTitle("Out of FOV arrows");

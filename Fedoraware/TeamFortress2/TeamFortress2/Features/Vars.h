@@ -532,6 +532,24 @@ namespace Vars
 		inline CVar<int> SeperatorSpacing{ 6 };
 		inline CVar<bool> SwingLines{ false };
 		inline CVar<bool> ProjectileTrajectory{ false };
+		inline CVar<bool> PTOverwrite{ false }; // debug
+		inline CVar<int> PTType{ 0 }; // debug
+		inline CVar<float> PTOffX{ 23.5f }; // debug
+		inline CVar<float> PTOffY{ 0.f }; // debug
+		inline CVar<float> PTOffZ{ -3.f }; // debug
+		inline CVar<bool> PTPipes{ false }; // debug
+		inline CVar<float> PTHull{ 1.f }; // debug
+		inline CVar<float> PTSpeed{ 1000.f }; // debug
+		inline CVar<float> PTGravity{ 0.f }; // debug
+		inline CVar<bool> PTNoSpin{ true }; // debug
+		inline CVar<float> PTLifeTime{ 10.f }; // debug
+		inline CVar<float> PTDrag{ 0.f }; // debug
+		inline CVar<float> PTDragBasisX{ 0.f }; // debug
+		inline CVar<float> PTDragBasisY{ 0.f }; // debug
+		inline CVar<float> PTDragBasisZ{ 0.f }; // debug
+		inline CVar<float> PTAngDragBasisX{ 0.f }; // debug
+		inline CVar<float> PTAngDragBasisY{ 0.f }; // debug
+		inline CVar<float> PTAngDragBasisZ{ 0.f }; // debug
 
 		inline CVar<bool> DoPostProcessing{ false };
 
