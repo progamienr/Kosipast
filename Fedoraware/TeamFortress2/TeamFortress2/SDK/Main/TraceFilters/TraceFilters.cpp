@@ -17,7 +17,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 		}
 	}
 
-	if (pLocal && pLocal->IsPlayer() && pLocal->GetClassNum() == CLASS_SNIPER) // CRASH: access violation reading location (from ValidBomb)
+	if (pLocal && pLocal->IsPlayer() && pLocal->GetClassNum() == CLASS_SNIPER)
 	{
 		switch (pEntity->GetClassID())
 		{
@@ -41,6 +41,65 @@ ETraceType CTraceFilterHitscan::GetTraceType() const
 {
 	return TRACE_EVERYTHING;
 }
+
+
+
+bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
+{
+	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
+
+	switch (pEntity->GetClassID())
+	{
+		case ETFClassID::CTFProjectile_ThrowableBreadMonster:
+		case ETFClassID::CTFProjectile_ThrowableBrick:
+		case ETFClassID::CTFProjectile_ThrowableRepel:
+		case ETFClassID::CTFProjectile_Throwable:
+		case ETFClassID::CTFThrowable:
+		case ETFClassID::CTFProjectile_MechanicalArmOrb:
+		case ETFClassID::CTFProjectile_JarGas:
+		case ETFClassID::CTFProjectile_Cleaver:
+		case ETFClassID::CTFProjectile_JarMilk:
+		case ETFClassID::CTFProjectile_Jar:
+		case ETFClassID::CTFGrenadePipebombProjectile:
+		case ETFClassID::CTFBall_Ornament:
+		case ETFClassID::CTFStunBall:
+		case ETFClassID::CTFProjectile_EnergyRing:
+		case ETFClassID::CTFProjectile_Rocket:
+		case ETFClassID::CTFProjectile_Flare:
+		case ETFClassID::CTFProjectile_EnergyBall:
+		case ETFClassID::CTFProjectile_GrapplingHook:
+		case ETFClassID::CTFProjectile_HealingBolt:
+		case ETFClassID::CTFProjectile_Arrow:
+		case ETFClassID::CTFProjectile_SpellKartBats:
+		case ETFClassID::CTFProjectile_SpellKartOrb:
+		case ETFClassID::CTFProjectile_SpellLightningOrb:
+		case ETFClassID::CTFProjectile_SpellTransposeTeleport:
+		case ETFClassID::CTFProjectile_SpellMeteorShower:
+		case ETFClassID::CTFProjectile_SpellSpawnBoss:
+		case ETFClassID::CTFProjectile_SpellMirv:
+		case ETFClassID::CTFProjectile_SpellPumpkin:
+		case ETFClassID::CTFProjectile_SpellSpawnHorde:
+		case ETFClassID::CTFProjectile_SpellSpawnZombie:
+		case ETFClassID::CTFProjectile_SpellBats:
+		case ETFClassID::CTFProjectile_SpellFireball:
+		case ETFClassID::CTFProjectile_BallOfFire:
+		case ETFClassID::CTFProjectile_SentryRocket:
+		{
+			return false;
+		} break;
+		default:
+			break;
+	}
+
+	return pEntityHandle != pSkip;
+}
+
+ETraceType CTraceFilterProjectile::GetTraceType() const
+{
+	return TRACE_EVERYTHING;
+}
+
+
 
 bool CTraceFilterWorldAndPropsOnly::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
 {
@@ -80,7 +139,7 @@ bool CTraceFilterWorldAndPropsOnly::ShouldHitEntity(void* pEntityHandle, int nCo
 			break;
 	}
 
-	return !(pEntityHandle == pSkip);
+	return pEntityHandle != pSkip;
 }
 
 ETraceType CTraceFilterWorldAndPropsOnly::GetTraceType() const

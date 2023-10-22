@@ -300,7 +300,7 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 		Vec3 New = F::ProjSim.GetOrigin();
 
 		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
+		CTraceFilterProjectile filter = {};
 		filter.pSkip = pLocal;
 		Utils::TraceHull(Old, New, projInfo.m_hull * -1.f, projInfo.m_hull, MASK_SOLID, &filter, &trace);
 
