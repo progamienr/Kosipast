@@ -5,7 +5,7 @@
 IPhysicsEnvironment* env = nullptr;
 IPhysicsObject* obj = nullptr;
 
-bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick) // possibly refine values and magic numbers
+bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick, float flCharge) // possibly refine values and magic numbers
 {
 	if (!player || !player->IsAlive() || player->IsAGhost() || player->IsTaunting() || !pWeapon)
 		return false;
@@ -42,7 +42,7 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 	case TF_WEAPON_GRENADELAUNCHER:
 	{
 		Utils::GetProjectileFireSetup(player, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		bool is_lochnload = G::CurItemDefIndex == Demoman_m_TheLochnLoad;
+		const bool is_lochnload = G::CurItemDefIndex == Demoman_m_TheLochnLoad;
 		float speed = is_lochnload ? 1490.f : 1200.f;
 		if (player->IsPrecisionRune())
 			speed *= 2.5f;
@@ -55,10 +55,10 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 	case TF_WEAPON_PIPEBOMBLAUNCHER:
 	{
 		Utils::GetProjectileFireSetup(player, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		float charge = I::GlobalVars->curtime - pWeapon->GetChargeBeginTime();
-		float speed = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 900.f, 2400.f);
-		if (pWeapon->GetChargeBeginTime() <= 0.f)
-			speed = 900.f;
+		const float charge = flCharge > 0.f
+			? Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon) * flCharge
+			: (pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f);
+		const float speed = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 900.f, 2400.f);
 		out = { TF_PROJECTILE_PIPEBOMB_REMOTE, pos, ang, { 4.f, 4.f, 4.f }, speed, 1.f, false };
 		return true;
 	}
@@ -89,13 +89,9 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 	case TF_WEAPON_COMPOUND_BOW:
 	{
 		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
-		float charge = I::GlobalVars->curtime - pWeapon->GetChargeBeginTime();
-		float speed = Math::RemapValClamped(charge, 0.f, 1.f, 1800.f, 2600.f);
-		float gravity = Math::RemapValClamped(charge, 0.f, 1.f, 0.5f, 0.1f);
-		if (pWeapon->GetChargeBeginTime() <= 0.f) {
-			speed = 1800.f;
-			gravity = 0.5f;
-		}
+		const float charge = pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f;
+		const float speed = Math::RemapValClamped(charge, 0.f, 1.f, 1800.f, 2600.f);
+		const float gravity = Math::RemapValClamped(charge, 0.f, 1.f, 0.5f, 0.1f);
 		out = { TF_PROJECTILE_ARROW, pos, ang, { 1.f, 1.f, 1.f }, speed, gravity, true };
 		return true;
 	}
@@ -140,7 +136,7 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 		return true;
 	}
 	case TF_WEAPON_BAT_WOOD:
-	case TF_WEAPON_BAT_GIFTWRAP: // see if they are identical
+	case TF_WEAPON_BAT_GIFTWRAP:
 	{	// new
 		auto pLocal = g_EntityCache.GetLocal();
 		if (!pLocal)

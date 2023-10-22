@@ -373,6 +373,9 @@ void CMenu::MenuAimbot()
 				WSlider("Smooth factor###ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("How smooth the aimbot should be");
 			WSlider("Prediction Time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, "%.1f");
 			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
+			WToggle("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value);
+			if (Vars::Aimbot::Projectile::AutoRelease.Value)
+				WSlider("Auto release at", &Vars::Aimbot::Projectile::AutoReleaseAt.Value, 0.f, 1.f, "%.2f");
 
 			if (Vars::Debug::DebugInfo.Value)
 			{

@@ -627,9 +627,9 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 	const bool bShouldAim = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 	if (!bShouldAim &&
-		(!Vars::Aimbot::Global::AutoShoot.Value
-		? !bLastTickHeld
-		: true))
+		(Vars::Aimbot::Global::AutoShoot.Value
+		? true
+		: !bLastTickHeld))
 	{
 		return true;
 	}
@@ -726,12 +726,15 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
 	const bool bEarly = RunMain(pLocal, pWeapon, pCmd);
+	const bool bHeld = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 
-	const float charge = I::GlobalVars->curtime - pWeapon->GetChargeBeginTime();
+	const float charge = pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f;
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
+
+	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && amount > Vars::Aimbot::Projectile::AutoReleaseAt.Value;
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if (((bCancel || bEarly && !(pCmd->buttons & IN_ATTACK)) && G::LastUserCmd->buttons & IN_ATTACK) && bLastTickHeld) // add user toggle to control whether to cancel or not
+	if ((bCancel || bEarly && (!(pCmd->buttons & IN_ATTACK) || bAutoRelease)) && G::LastUserCmd->buttons & IN_ATTACK && bLastTickHeld) // add user toggle to control whether to cancel or not
 	{
 		switch (pWeapon->GetWeaponID())
 		{
@@ -743,9 +746,13 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		case TF_WEAPON_CANNON:
 			pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_MELEE)->GetIndex();
 			bLastTickCancel = true;
-			pCmd->buttons &= ~IN_ATTACK;
 		}
 	}
+	else if (bAutoRelease && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW &&
+		!pWeapon->IsInReload() && !bLastTickReload && G::LastUserCmd->buttons & IN_ATTACK && !bLastTickHeld)
+	{
+		pCmd->buttons &= ~IN_ATTACK;
+	}
 
-	bLastTickHeld = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
+	bLastTickHeld = bHeld, bLastTickReload = pWeapon->IsInReload();
 }

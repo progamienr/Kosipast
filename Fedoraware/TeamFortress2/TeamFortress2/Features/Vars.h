@@ -112,6 +112,8 @@ namespace Vars
 			inline Color_t ProjectileColor{ 255, 100, 100, 255 };
 			inline CVar<float> PredictionTime{ 2.0f };
 			inline CVar<bool> NoSpread{ false };
+			inline CVar<bool> AutoRelease{ false };
+			inline CVar<float> AutoReleaseAt{ 0.6f };
 			inline CVar<bool> ChargeLooseCannon{ false };
 			inline CVar<bool> StrafePredictionGround{ false };
 			inline CVar<bool> StrafePredictionAir{ false };

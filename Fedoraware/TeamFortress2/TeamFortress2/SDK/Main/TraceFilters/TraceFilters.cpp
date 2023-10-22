@@ -12,9 +12,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 		case ETFClassID::CSniperDot:
 		case ETFClassID::CTFMedigunShield:
 		case ETFClassID::CTFReviveMarker:
-		{
 			return false;
-		}
 	}
 
 	if (pLocal && pLocal->IsPlayer() && pLocal->GetClassNum() == CLASS_SNIPER)
@@ -28,9 +26,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 			{
 				if (pLocal->GetTeamNum() == pEntity->GetTeamNum())
 					return false;
-			} break;
-			default:
-				break;
+			}
 		}
 	}
 
@@ -50,6 +46,10 @@ bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsM
 
 	switch (pEntity->GetClassID())
 	{
+		case ETFClassID::CFuncAreaPortalWindow:
+		case ETFClassID::CFuncRespawnRoomVisualizer:
+		case ETFClassID::CSniperDot:
+		case ETFClassID::CTFReviveMarker:
 		case ETFClassID::CTFProjectile_ThrowableBreadMonster:
 		case ETFClassID::CTFProjectile_ThrowableBrick:
 		case ETFClassID::CTFProjectile_ThrowableRepel:
@@ -84,11 +84,7 @@ bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsM
 		case ETFClassID::CTFProjectile_SpellFireball:
 		case ETFClassID::CTFProjectile_BallOfFire:
 		case ETFClassID::CTFProjectile_SentryRocket:
-		{
 			return false;
-		} break;
-		default:
-			break;
 	}
 
 	return pEntityHandle != pSkip;
@@ -132,11 +128,7 @@ bool CTraceFilterWorldAndPropsOnly::ShouldHitEntity(void* pEntityHandle, int nCo
 		case ETFClassID::CEyeballBoss:
 		case ETFClassID::CHeadlessHatman:
 		case ETFClassID::CZombie:
-		{
 			return false;
-		} break;
-		default:
-			break;
 	}
 
 	return pEntityHandle != pSkip;

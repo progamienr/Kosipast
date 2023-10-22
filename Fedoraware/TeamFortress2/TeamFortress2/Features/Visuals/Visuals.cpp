@@ -330,7 +330,7 @@ void CVisuals::ProjectileTrace()
 		return;
 
 	ProjectileInfo projInfo = {};
-	if (!F::ProjSim.GetInfo(pLocal, pWeapon, I::EngineClient->GetViewAngles(), projInfo, true))
+	if (!F::ProjSim.GetInfo(pLocal, pWeapon, I::EngineClient->GetViewAngles(), projInfo, true, Vars::Aimbot::Projectile::AutoRelease.Value ? Vars::Aimbot::Projectile::AutoReleaseAt.Value : -1.f))
 		return;
 
 	if (!F::ProjSim.Initialize(projInfo))

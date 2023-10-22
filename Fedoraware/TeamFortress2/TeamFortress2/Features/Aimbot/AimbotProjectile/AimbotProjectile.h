@@ -35,6 +35,7 @@ class CAimbotProjectile
 	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
 
 	bool bLastTickHeld = false;
+	bool bLastTickReload = false;
 	bool bFlameThrower = false;
 
 public:
