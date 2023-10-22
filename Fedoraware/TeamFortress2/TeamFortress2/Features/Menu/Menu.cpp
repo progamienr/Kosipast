@@ -1191,7 +1191,7 @@ void CMenu::MenuVisuals()
 							{ "none", "bullet", "rocket", "pipebomb", "pipebomb remote", "syringe", "flare", "jar", "arrow", "flame rocket", "jar milk",
 							"healing bolt", "energy ball", "energy ring", "pipebomb practice", "cleaver", "sticky ball", "cannonball", "building repair bolt", "sentry rocket",
 							"festive arrow", "throwable", "spell", "festive jar", "festive healing bolt", "breadmonster jarate", "breadmonster madmilk", "grappling hook", "bread monster", "jar gas",
-							"balloffire" }); // to keep the integer easily associated with the enum, a lot of these aren't even used
+							"balloffire" }); // to keep the integer easily associated with the enum, a lot of these aren't even used and are probably only used outside of simulation
 						WSlider("off x", &Vars::Visuals::PTOffX.Value, -25.f, 25.f, "%.1f");
 						WSlider("off y", &Vars::Visuals::PTOffY.Value, -25.f, 25.f, "%.1f");
 						WSlider("off z", &Vars::Visuals::PTOffZ.Value, -25.f, 25.f, "%.1f");
@@ -1201,6 +1201,10 @@ void CMenu::MenuVisuals()
 						WSlider("gravity", &Vars::Visuals::PTGravity.Value, 0.f, 2.f, "%.1f");
 						WToggle("no spin", &Vars::Visuals::PTNoSpin.Value);
 						WSlider("lifetime", &Vars::Visuals::PTLifeTime.Value, 0.f, 10.f, "%.1f");
+						WSlider("up vel", &Vars::Visuals::PTUpVelocity.Value, 0.f, 1000.f, "%.0f");
+						WSlider("ang vel x", &Vars::Visuals::PTAngVelocityX.Value, -1000.f, 1000.f, "%.0f");
+						WSlider("ang vel y", &Vars::Visuals::PTAngVelocityY.Value, -1000.f, 1000.f, "%.0f");
+						WSlider("ang vel z", &Vars::Visuals::PTAngVelocityZ.Value, -1000.f, 1000.f, "%.0f");
 						WSlider("drag", &Vars::Visuals::PTDrag.Value, 0.f, 2.f, "%.1f");
 						WSlider("drag x", &Vars::Visuals::PTDragBasisX.Value, 0.f, 0.1f, "%.6f");
 						WSlider("drag y", &Vars::Visuals::PTDragBasisY.Value, 0.f, 0.1f, "%.6f");
@@ -1284,7 +1288,7 @@ void CMenu::MenuVisuals()
 					WSlider("VM Off X", &Vars::Visuals::VMOffsets.x, -45.f, 45.f, "%.1f");
 					WSlider("VM Off Y", &Vars::Visuals::VMOffsets.y, -45.f, 45.f, "%.1f");
 					WSlider("VM Off Z", &Vars::Visuals::VMOffsets.z, -45.f, 45.f, "%.1f");
-					WSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180, "%.1f");
+					WSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
 
 					SectionTitle("Ragdolls");
 					WToggle("No Gibs", &Vars::Visuals::RagdollEffects::NoGib.Value);

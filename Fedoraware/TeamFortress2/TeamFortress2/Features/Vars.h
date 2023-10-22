@@ -543,6 +543,10 @@ namespace Vars
 		inline CVar<float> PTGravity{ 0.f }; // debug
 		inline CVar<bool> PTNoSpin{ true }; // debug
 		inline CVar<float> PTLifeTime{ 10.f }; // debug
+		inline CVar<float> PTUpVelocity{ 0.f }; // debug
+		inline CVar<float> PTAngVelocityX{ 0.f }; // debug
+		inline CVar<float> PTAngVelocityY{ 0.f }; // debug
+		inline CVar<float> PTAngVelocityZ{ 0.f }; // debug
 		inline CVar<float> PTDrag{ 0.f }; // debug
 		inline CVar<float> PTDragBasisX{ 0.f }; // debug
 		inline CVar<float> PTDragBasisY{ 0.f }; // debug

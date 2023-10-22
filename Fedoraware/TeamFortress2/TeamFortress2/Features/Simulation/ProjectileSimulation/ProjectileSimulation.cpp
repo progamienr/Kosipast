@@ -5,12 +5,17 @@
 IPhysicsEnvironment* env = nullptr;
 IPhysicsObject* obj = nullptr;
 
-bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick) //add cleaver, wrap assassin, sandman; possibly refine values and magic numbers
+bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick) // possibly refine values and magic numbers
 {
-	if (!player || !pWeapon)
+	if (!player || !player->IsAlive() || player->IsAGhost() || player->IsTaunting() || !pWeapon)
 		return false;
 
-	bool ducking = player->m_fFlags() & FL_DUCKING;
+	ConVar* cl_flipviewmodels = g_ConVars.cl_flipviewmodels;
+	if (!cl_flipviewmodels)
+		return false;
+
+	const bool bDucking = player->m_fFlags() & FL_DUCKING;
+	const bool bFlipped = cl_flipviewmodels->GetBool();
 
 	Vec3 pos, ang;
 
@@ -28,9 +33,9 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 	case TF_WEAPON_ROCKETLAUNCHER:
 	{
 		if (pWeapon->GetItemDefIndex() == Soldier_m_TheOriginal)
-			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 0.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
+			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 0.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		else
-			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
+			Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		out = { TF_PROJECTILE_ROCKET, pos, ang, { 1.f, 1.f, 1.f /*0.f, 0.f, 0.f i think is real size*/ }, bQuick ? 1081344.f : Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon), 0.f, true };
 		return true;
 	}
@@ -71,13 +76,13 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 	}
 	case TF_WEAPON_FLAREGUN:
 	{
-		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
+		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, 2000.f, 0.3f, true };
 		return true;
 	}
 	case TF_WEAPON_RAYGUN_REVENGE:
 	{
-		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
+		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, 3000.f, 0.45f, true };
 		return true;
 	}
@@ -113,20 +118,72 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWea
 		return true;
 	}
 	case TF_WEAPON_FLAME_BALL:
-	{	// probably inaccurate
-		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
+	{
+		Utils::GetProjectileFireSetup(player, vAngles, { 20.f /*70.f, don't want to do an initial trace*/, bFlipped ? -7.f : 7.f /*doesn't flip*/, -9.f}, pos, ang, false, bQuick);
 		out = { TF_PROJECTILE_BALLOFFIRE, pos, ang, { 1.f, 1.f, 1.f }, 3000.f, 0.f, true, 0.2f };
+		// unrelated note to self: flamethrower offset { 40, 5, 0 }
 		return true;
 	}
 	case TF_WEAPON_RAYGUN:
 	case TF_WEAPON_DRG_POMSON:
-	{	// wrong
-		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 8.f, ducking ? 8.f : -3.f }, pos, ang, false, bQuick);
+	{
+		Utils::GetProjectileFireSetup(player, vAngles, { 23.5f, 8.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
+		if (pWeapon->GetWeaponID() == TF_WEAPON_DRG_POMSON)
+			pos.z -= 13.f;
 		out = { TF_PROJECTILE_ENERGY_RING, pos, ang, { 1.f, 1.f, 1.f }, bQuick ? 1081344.f : 1200.f, 0.f, true };
 		return true;
 	}
-	default: return false;
+	case TF_WEAPON_CLEAVER:
+	{	// new
+		Utils::GetProjectileFireSetup(player, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
+		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.5f, 1.5f, 1.5f }, 3000.f, 2.f, false };
+		return true;
 	}
+	case TF_WEAPON_BAT_WOOD:
+	case TF_WEAPON_BAT_GIFTWRAP: // see if they are identical
+	{	// new
+		auto pLocal = g_EntityCache.GetLocal();
+		if (!pLocal)
+			return false;
+
+		Utils::GetProjectileFireSetup(player, vAngles, { 0.f, 0.f, 0.f }, pos, ang, true, bQuick);
+		Vec3 forward; Math::AngleVectors(ang, &forward);
+		pos = (bQuick ? pLocal->GetAbsOrigin() : pLocal->GetVecOrigin()) + (Vec3(0, 0, 50) + forward * 32.f) * pLocal->m_flModelScale(); // why?
+		out = { TF_PROJECTILE_THROWABLE, pos, ang, { 3.f, 3.f, 3.f }, 2000.f, 1.f, false };
+		return true;
+	}
+	case TF_WEAPON_JAR:
+	case TF_WEAPON_JAR_MILK:
+	{	// new
+		Utils::GetProjectileFireSetup(player, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
+		out = { TF_PROJECTILE_JAR, pos, ang, { 1.5f, 1.5f, 1.5f }, 1000.f, 1.f, false, 2.2f };
+		return true;
+	}
+	case TF_WEAPON_JAR_GAS:
+	{	// new
+		Utils::GetProjectileFireSetup(player, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
+		out = { TF_PROJECTILE_JAR_GAS, pos, ang, { 1.5f, 1.5f, 1.5f }, 2000.f, 1.f, false, 2.2f };
+		return true;
+	}
+	}
+
+	switch (pWeapon->GetItemDefIndex())
+	{
+	case Heavy_s_RoboSandvich:
+	case Heavy_s_Sandvich:
+	case Heavy_s_FestiveSandvich:
+	case Heavy_s_Fishcake:
+	case Heavy_s_TheDalokohsBar:
+	case Heavy_s_SecondBanana:
+	{	// new
+		Utils::GetProjectileFireSetup(player, vAngles, { 0.f, 0.f, -8.f }, pos, ang, true, bQuick);
+		ang -= Vec3(10, 0, 0);
+		out = { TF_PROJECTILE_NONE, pos, ang, { 4.f, 4.f, 4.f /*hull in reality is massive*/}, 500.f, 1.f, false, 10.f };
+		return true;
+	}
+	}
+
+	return false;
 }
 
 bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
@@ -162,25 +219,57 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 
 		Math::AngleVectors(info.m_ang, &forward, nullptr, &up);
 
-		Vec3 vel{ forward * info.m_velocity };
+		Vec3 vel = { forward * info.m_velocity };
 		Vec3 ang_vel;
 
-		switch (info.m_type)
+		if (Vars::Visuals::PTOverwrite.Value)
 		{
-		case TF_PROJECTILE_PIPEBOMB:
-		case TF_PROJECTILE_PIPEBOMB_REMOTE:
-		case TF_PROJECTILE_PIPEBOMB_PRACTICE:
-		case TF_PROJECTILE_CANNONBALL:
-		{
-			//CTFWeaponBaseGun::FirePipeBomb
-			//pick your poison
-
-			vel += up * 200.f;
-			ang_vel = { 600.f, -1200.f, 0.f };
-
-			break;
+			vel += up * Vars::Visuals::PTUpVelocity.Value;
+			ang_vel = { Vars::Visuals::PTAngVelocityX.Value, Vars::Visuals::PTAngVelocityY.Value, Vars::Visuals::PTAngVelocityZ.Value };
 		}
-		default: break;
+		else
+		{
+			switch (info.m_type)
+			{
+			case TF_PROJECTILE_PIPEBOMB:
+			case TF_PROJECTILE_PIPEBOMB_REMOTE:
+			case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+			case TF_PROJECTILE_CANNONBALL:
+			{
+				// CTFWeaponBaseGun::FirePipeBomb
+				// pick your poison
+				vel += up * 200.f;
+				ang_vel = { 600.f, -1200.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_CLEAVER:
+			{
+				// CTFCleaver::GetVelocityVector
+				vel += up * 300.f;
+				// CTFProjectile_Throwable::GetAngularImpulse
+				ang_vel = { 300.f, 0.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_THROWABLE:
+			{
+				// CTFBat_Wood::GetBallDynamics
+				vel += up * 200.f;
+				ang_vel = { 100.f, 0.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_JAR:
+			case TF_PROJECTILE_JAR_GAS:
+			{
+				vel += up * 200.f;
+				ang_vel = { 300.f, 0.f, 0.f };
+
+				break;
+			}
+			default: break;
+			}
 		}
 
 		if (info.no_spin)
@@ -230,6 +319,38 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 				drag = 1.f;
 				drag_basis = { 0.020971f, 0.019420f, 0.020971f };
 				ang_drag_basis = { 0.012997f, 0.013496f, 0.013714f };
+
+				break;
+			}
+			case TF_PROJECTILE_CLEAVER:
+			{
+				// guesstimate
+				drag = 1.f;
+				drag_basis = { 0.020971f, 0.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_THROWABLE:
+			{
+				// guesstimate
+				drag = 1.f;
+				drag_basis = { 0.010500f, 0.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_JAR:
+			{
+				// guesstimate (there are different drags for different models, though shouldn't matter here)
+				drag = 1.f;
+				drag_basis = { 0.003902f, 0.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_JAR_GAS:
+			{
+				// who
+				drag = 1.f;
+				drag_basis = { 0.027101f, 0.067938f, 0.f };
 
 				break;
 			}
