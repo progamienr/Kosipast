@@ -22,6 +22,8 @@ struct ProjectileInfo
 
 class CProjectileSimulation
 {
+	bool GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick, float flCharge);
+
 	const objectparams_t g_PhysDefaultObjectParams =
 	{
 		NULL,
@@ -38,7 +40,7 @@ class CProjectileSimulation
 	};
 
 public:
-	bool GetInfo(CBaseEntity* player, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick = false, float flCharge = -1.f);
+	bool GetInfo(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick = false, float flCharge = -1.f);
 	bool Initialize(const ProjectileInfo& info);
 	void RunTick(ProjectileInfo& info);
 	Vec3 GetOrigin();

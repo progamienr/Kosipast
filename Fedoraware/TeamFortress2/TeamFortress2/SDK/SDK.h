@@ -624,7 +624,7 @@ namespace Utils
 		return EWeaponType::UNKNOWN;
 	}
 
-	__inline void GetProjectileFireSetup(CBaseEntity* player, const Vec3& ang_in, Vec3 offset, Vec3& pos_out, Vec3& ang_out, bool pipes = false, bool interp = false)
+	__inline void GetProjectileFireSetup(CBaseEntity* pPlayer, const Vec3& vAngIn, Vec3 vOffset, Vec3& vPosOut, Vec3& vAngOut, bool bPipes = false, bool bInterp = false)
 	{
 		ConVar* cl_flipviewmodels = g_ConVars.cl_flipviewmodels;
 
@@ -632,33 +632,29 @@ namespace Utils
 			return;
 
 		if (cl_flipviewmodels->GetBool())
-			offset.y *= -1.0f;
+			vOffset.y *= -1.0f;
 
 		Vec3 forward, right, up;
-		Math::AngleVectors(ang_in, &forward, &right, &up);
+		Math::AngleVectors(vAngIn, &forward, &right, &up);
 
-		Vec3 shoot_pos;
-		if (!interp)
-			shoot_pos = player->GetShootPos();
-		else
-			shoot_pos = player->GetEyePosition();
+		const Vec3 vShootPos = bInterp ? pPlayer->GetEyePosition() : pPlayer->GetShootPos();
 
-		pos_out = shoot_pos + (forward * offset.x) + (right * offset.y) + (up * offset.z);
+		vPosOut = vShootPos + (forward * vOffset.x) + (right * vOffset.y) + (up * vOffset.z);
 
-		if (pipes)
-			ang_out = ang_in;
+		if (bPipes)
+			vAngOut = vAngIn;
 		else
 		{
-			Vec3 end_pos = shoot_pos + (forward * 2000.0f);
+			Vec3 vEndPos = vShootPos + (forward * 2000.0f);
 
 			CGameTrace trace = {};
 			CTraceFilterHitscan filter = {};
-			filter.pSkip = player;
-			Trace(shoot_pos, end_pos, MASK_SHOT, &filter, &trace);
+			filter.pSkip = pPlayer;
+			Trace(vShootPos, vEndPos, MASK_SHOT, &filter, &trace);
 			if (trace.DidHit() && trace.flFraction > 0.1f)
-				end_pos = trace.vEndPos;
+				vEndPos = trace.vEndPos;
 
-			Math::VectorAngles(end_pos - pos_out, ang_out);
+			Math::VectorAngles(vEndPos - vPosOut, vAngOut);
 		}
 	}
 

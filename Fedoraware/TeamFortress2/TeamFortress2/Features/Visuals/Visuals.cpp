@@ -351,11 +351,8 @@ void CVisuals::ProjectileTrace()
 			Vec3 angles;
 			Math::VectorAngles(trace.Plane.normal, angles);
 
-			Color_t face = Vars::Aimbot::Projectile::ProjectileColor; face.a = 0;
-			Color_t edge = Vars::Aimbot::Projectile::ProjectileColor;
-
 			const Vec3 size = { projInfo.m_hull.x * 2.f, 16.f, 16.f };
-			RenderBox(trace.vEndPos, size / -2, size / 2, angles, edge, face);
+			RenderBox(trace.vEndPos, size / -2, size / 2, angles, Vars::Aimbot::Projectile::ProjectileColor, { 0, 0, 0, 0 });
 
 			projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
 
