@@ -2,6 +2,7 @@
 #include "../Vars.h"
 #include "../ESP/LocalConditions/LocalConditions.h"
 #include "../Backtrack/Backtrack.h"
+#include "../PacketManip/AntiAim/AntiAim.h"
 #include "../Simulation/ProjectileSimulation/ProjectileSimulation.h"
 
 #include "../Menu/ImGui/imgui_impl_win32.h"
@@ -273,7 +274,9 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 			}
 
 			// Thirdperson angles
-			I::Prediction->SetLocalViewAngles(G::RealViewAngles);
+			Vec3 vAngles = { F::AntiAim.vRealAngles.x, F::AntiAim.vRealAngles.y, 0 };
+			I::Prediction->SetLocalViewAngles(vAngles);
+			//I::Prediction->SetLocalViewAngles(G::ViewAngles); // it's probably better to keep track of the predicted yaw manually
 
 			// Thirdperson offset
 			I::ThirdPersonManager->SetDesiredCameraOffset(Vec3{}); //would've used this but right & up offsets get reversed on trace
@@ -406,7 +409,7 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 		return;
 	}
 
-	if (Vars::AntiHack::AntiAim::Active.Value)
+	if (Vars::AntiHack::AntiAim::Active.Value && Vars::Debug::AntiAimLines.Value)
 	{
 		static constexpr Color_t realColour = { 0, 255,0, 255 };
 		static constexpr Color_t fakeColour = { 255, 0, 0, 255 };
@@ -417,12 +420,12 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 		if (Utils::W2S(vOrigin, vScreen1))
 		{
 			constexpr auto distance = 50.f;
-			if (Utils::W2S(Utils::GetRotatedPosition(vOrigin, G::RealViewAngles.y, distance), vScreen2))
+			if (Utils::W2S(Utils::GetRotatedPosition(vOrigin, F::AntiAim.vRealAngles.y, distance), vScreen2))
 			{
 				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, realColour);
 			}
 
-			if (Utils::W2S(Utils::GetRotatedPosition(vOrigin, G::FakeViewAngles.y, distance), vScreen2))
+			if (Utils::W2S(Utils::GetRotatedPosition(vOrigin, F::AntiAim.vFakeAngles.y, distance), vScreen2))
 			{
 				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, fakeColour);
 			}
@@ -441,7 +444,7 @@ void CVisuals::DrawTickbaseText()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, G::MaxShift);
+	const int ticks = std::clamp(G::ShiftedTicks + G::ChokeAmount - (G::AntiAim ? 1 : 0), 0, G::MaxShift);
 	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position;
 
 	const auto fontHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
@@ -470,7 +473,7 @@ void CVisuals::DrawTickbaseBars()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	const int ticks = std::clamp(G::ShiftedTicks + G::ChokedTicks/*I::ClientState->chokedcommands*/, 0, G::MaxShift);
+	const int ticks = std::clamp(G::ShiftedTicks + G::ChokeAmount - (G::AntiAim ? 1 : 0), 0, G::MaxShift);
 	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position;
 	const float ratioCurrent = (float)ticks / (float)G::MaxShift;
 
@@ -494,7 +497,7 @@ void CVisuals::DrawServerHitboxes()
 	static int iOldTick = I::GlobalVars->tickcount;
 	if (iOldTick == I::GlobalVars->tickcount) { return; } iOldTick = I::GlobalVars->tickcount;
 	// draw our serverside hitbox on local servers, used to test fakelag & antiaim
-	if (I::Input->CAM_IsThirdPerson() && Vars::Visuals::ThirdPersonServerHitbox.Value)
+	if (I::Input->CAM_IsThirdPerson() && Vars::Debug::ServerHitbox.Value)
 	{
 		//	i have no idea what this is
 		using GetServerAnimating_t = void* (*)(int);

@@ -5,7 +5,7 @@
 #include "../../Features/Glow/Glow.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/TickHandler/TickHandler.h"
-#include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
+#include "../../Features/AntiHack/CheaterDetection.h"
 
 #include "../../Features/Misc/Misc.h"
 

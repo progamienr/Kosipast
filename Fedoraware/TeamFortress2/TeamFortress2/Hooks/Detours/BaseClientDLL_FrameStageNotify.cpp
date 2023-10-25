@@ -51,8 +51,6 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 			F::Backtrack.FrameStageNotify();
 			F::MoveSim.FillInfo();
 			F::Visuals.FillSightlines();
-			G::BulletTracerFix = true;
-			G::LocalSpectated = false;
 			F::Visuals.PruneBulletTracers();
 			for (auto& Line : G::LinesStorage)
 			{
@@ -68,24 +66,6 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 					}
 
 					Line.m_line.pop_front();
-				}
-			}
-			if (const auto& pLocal = g_EntityCache.GetLocal())
-			{
-				for (const auto& teammate : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
-				{
-					if (teammate->IsAlive() || g_EntityCache.IsFriend(teammate->GetIndex()))
-					{
-						continue;
-					}
-
-					const CBaseEntity* pObservedPlayer = I::ClientEntityList->GetClientEntityFromHandle(teammate->GetObserverTarget());
-
-					if (pObservedPlayer == pLocal)
-					{
-						G::LocalSpectated = true;
-						break;
-					}
 				}
 			}
 

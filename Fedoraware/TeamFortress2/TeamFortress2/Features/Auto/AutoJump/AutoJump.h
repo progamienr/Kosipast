@@ -8,8 +8,8 @@ class CAutoJump
 	bool bLastGrounded = false;
 
 	int iJumpFrame = -1;
-	int iRocketFrame = -1;
 
+	bool bFire = false;
 	bool bCTap = false;
 
 public:

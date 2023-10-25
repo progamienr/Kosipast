@@ -6,14 +6,13 @@
 #include "../../Features/Auto/Auto.h"
 #include "../../Features/Misc/Misc.h"
 #include "../../Features/Visuals/Visuals.h"
-#include "../../Features/AntiHack/AntiAim.h"
-#include "../../Features/AntiHack/FakeLag/FakeLag.h"
+#include "../../Features/PacketManip/PacketManip.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Visuals/FakeAngleManager/FakeAng.h"
 #include "../../Features/CritHack/CritHack.h"
 #include "../../Features/NoSpread/NoSpread.h"
 #include "../../Features/Resolver/Resolver.h"
-#include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
+#include "../../Features/AntiHack/CheaterDetection.h"
 #include "../../Features/Vars.h"
 #include "../../Features/Chams/DMEChams.h"
 #include "../../Features/Glow/Glow.h"
@@ -135,12 +134,11 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		{
 			F::Aimbot.Run(pCmd);
 			F::Auto.Run(pCmd);
-			F::FakeLag.OnTick(pCmd, pSendPacket, nOldGroundEnt, nOldFlags);
-			F::AntiAim.Run(pCmd, pSendPacket);
+			F::PacketManip.CreateMove(pCmd, pSendPacket, nOldGroundEnt, nOldFlags);
 		}
 		F::EnginePrediction.End(pCmd);
 
-		F::Ticks.CreateMove(pCmd);
+		F::Ticks.MovePost(pCmd);
 		F::CritHack.Run(pCmd);
 		F::NoSpread.Run(pCmd);
 		F::Misc.RunPost(pCmd, pSendPacket);
@@ -153,40 +151,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		F::FakeAng.DrawChams = Vars::AntiHack::AntiAim::Active.Value || Vars::CL_Move::FakeLag::Enabled.Value;
 	}
 
-	G::ViewAngles = pCmd->viewangles;
-
-	if (!G::DoubleTap)
-	{
-		static bool bWasSet = false;
-		if (G::SilentTime && !bWasSet)
-		{
-			*pSendPacket = false;
-			bWasSet = true;
-		}
-		else
-		{
-			if (bWasSet)
-			{
-				*pSendPacket = true;
-				bWasSet = false;
-			}
-		}
-
-		G::EyeAngDelay++; // Used for the return delay in the viewmodel aimbot
-
-		if (G::ForceSendPacket)
-		{
-			*pSendPacket = true;
-			G::ForceSendPacket = false;
-		} // if we are trying to force update do this lol
-		else if (G::ForceChokePacket)
-		{
-			*pSendPacket = false;
-			G::ForceChokePacket = false;
-		} // check after force send to prevent timing out possibly
-	}
-	else
-		AttackingUpdate();
+	AttackingUpdate();
 
 	// do this at the end just in case aimbot / triggerbot fired.
 	if (const auto& pWeapon = g_EntityCache.GetWeapon(); const auto & pLocal = g_EntityCache.GetLocal())
@@ -199,9 +164,10 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 				G::NextSafeTick = I::GlobalVars->tickcount + g_ConVars.sv_maxusrcmdprocessticks_holdaim->GetInt() + 1;
 		}
 	}
-
+	
+	G::ViewAngles = pCmd->viewangles;
 	G::LastUserCmd = pCmd;
 
-	const bool bShouldSkip = (G::SilentTime || G::AAActive || G::HitscanSilentActive || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd));
+	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd));
 	return bShouldSkip ? false : Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 }

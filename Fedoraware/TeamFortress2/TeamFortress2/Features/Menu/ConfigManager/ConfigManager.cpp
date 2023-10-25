@@ -352,17 +352,6 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::Triggerbot::Global::IgnoreOptions);
 			}
 
-			//Shoot
-			{
-				SAVE_VAR(Vars::Triggerbot::Shoot::Active);
-				SAVE_VAR(Vars::Triggerbot::Shoot::TriggerPlayers);
-				SAVE_VAR(Vars::Triggerbot::Shoot::TriggerBuildings);
-				SAVE_VAR(Vars::Triggerbot::Shoot::HeadOnly);
-				SAVE_VAR(Vars::Triggerbot::Shoot::WaitForHeadshot);
-				SAVE_VAR(Vars::Triggerbot::Shoot::ScopeOnly);
-				SAVE_VAR(Vars::Triggerbot::Shoot::HeadScale);
-			}
-
 			//Detonate
 			{
 				SAVE_VAR(Vars::Triggerbot::Detonate::Active);
@@ -477,10 +466,7 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 				SAVE_VAR(Vars::CL_Move::FakeLag::Max);
 				SAVE_VAR(Vars::CL_Move::FakeLag::Value);
 				SAVE_VAR(Vars::CL_Move::FakeLag::WhileMoving);
-				SAVE_VAR(Vars::CL_Move::FakeLag::WhileVisible);
-				SAVE_VAR(Vars::CL_Move::FakeLag::PredictVisibility);
 				SAVE_VAR(Vars::CL_Move::FakeLag::WhileUnducking);
-				SAVE_VAR(Vars::CL_Move::FakeLag::WhileInAir);
 				SAVE_VAR(Vars::CL_Move::FakeLag::UnchokeOnAttack);
 				SAVE_VAR(Vars::CL_Move::FakeLag::RetainBlastJump);
 				SAVE_VAR(Vars::CL_Move::AutoPeekKey);
@@ -508,20 +494,15 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 			{
 				SAVE_VAR(Vars::AntiHack::AntiAim::Active);
 				SAVE_VAR(Vars::AntiHack::AntiAim::ToggleKey);
-				SAVE_VAR(Vars::AntiHack::AntiAim::InvertKey);
-				SAVE_VAR(Vars::AntiHack::AntiAim::ManualKey);
-				SAVE_VAR(Vars::AntiHack::AntiAim::Pitch);
-				SAVE_VAR(Vars::AntiHack::AntiAim::BaseYawMode);
+				SAVE_VAR(Vars::AntiHack::AntiAim::PitchReal);
+				SAVE_VAR(Vars::AntiHack::AntiAim::PitchFake);
 				SAVE_VAR(Vars::AntiHack::AntiAim::YawReal);
 				SAVE_VAR(Vars::AntiHack::AntiAim::YawFake);
+				SAVE_VAR(Vars::AntiHack::AntiAim::RealYawMode);
+				SAVE_VAR(Vars::AntiHack::AntiAim::RealYawOffset);
+				SAVE_VAR(Vars::AntiHack::AntiAim::FakeYawMode);
+				SAVE_VAR(Vars::AntiHack::AntiAim::FakeYawOffset);
 				SAVE_VAR(Vars::AntiHack::AntiAim::SpinSpeed);
-				SAVE_VAR(Vars::AntiHack::AntiAim::CustomRealPitch);
-				SAVE_VAR(Vars::AntiHack::AntiAim::BaseYawOffset);
-				SAVE_VAR(Vars::AntiHack::AntiAim::CustomRealYaw);
-				SAVE_VAR(Vars::AntiHack::AntiAim::CustomFakeYaw);
-				SAVE_VAR(Vars::AntiHack::AntiAim::RealJitter);
-				SAVE_VAR(Vars::AntiHack::AntiAim::FakeJitter);
-				SAVE_VAR(Vars::AntiHack::AntiAim::RandInterval);
 				SAVE_VAR(Vars::AntiHack::AntiAim::AntiOverlap);
 				SAVE_VAR(Vars::AntiHack::AntiAim::AntiBackstab);
 				SAVE_VAR(Vars::AntiHack::AntiAim::LegJitter);
@@ -660,17 +641,6 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::Triggerbot::Global::IgnoreOptions);
 			}
 
-			//Shoot
-			{
-				LOAD_VAR(Vars::Triggerbot::Shoot::Active);
-				LOAD_VAR(Vars::Triggerbot::Shoot::TriggerPlayers);
-				LOAD_VAR(Vars::Triggerbot::Shoot::TriggerBuildings);
-				LOAD_VAR(Vars::Triggerbot::Shoot::HeadOnly);
-				LOAD_VAR(Vars::Triggerbot::Shoot::WaitForHeadshot);
-				LOAD_VAR(Vars::Triggerbot::Shoot::ScopeOnly);
-				LOAD_VAR(Vars::Triggerbot::Shoot::HeadScale);
-			}
-
 			//Detonate
 			{
 				LOAD_VAR(Vars::Triggerbot::Detonate::Active);
@@ -786,10 +756,7 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 				LOAD_VAR(Vars::CL_Move::FakeLag::Max);
 				LOAD_VAR(Vars::CL_Move::FakeLag::Value);
 				LOAD_VAR(Vars::CL_Move::FakeLag::WhileMoving);
-				LOAD_VAR(Vars::CL_Move::FakeLag::WhileVisible);
-				LOAD_VAR(Vars::CL_Move::FakeLag::PredictVisibility);
 				LOAD_VAR(Vars::CL_Move::FakeLag::WhileUnducking);
-				LOAD_VAR(Vars::CL_Move::FakeLag::WhileInAir);
 				LOAD_VAR(Vars::CL_Move::FakeLag::UnchokeOnAttack);
 				LOAD_VAR(Vars::CL_Move::FakeLag::RetainBlastJump);
 				LOAD_VAR(Vars::CL_Move::AutoPeekKey);
@@ -817,20 +784,15 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 			{
 				LOAD_VAR(Vars::AntiHack::AntiAim::Active);
 				LOAD_VAR(Vars::AntiHack::AntiAim::ToggleKey);
-				LOAD_VAR(Vars::AntiHack::AntiAim::InvertKey);
-				LOAD_VAR(Vars::AntiHack::AntiAim::ManualKey);
-				LOAD_VAR(Vars::AntiHack::AntiAim::Pitch);
-				LOAD_VAR(Vars::AntiHack::AntiAim::BaseYawMode);
+				LOAD_VAR(Vars::AntiHack::AntiAim::PitchReal);
+				LOAD_VAR(Vars::AntiHack::AntiAim::PitchFake);
 				LOAD_VAR(Vars::AntiHack::AntiAim::YawReal);
 				LOAD_VAR(Vars::AntiHack::AntiAim::YawFake);
+				LOAD_VAR(Vars::AntiHack::AntiAim::RealYawMode);
+				LOAD_VAR(Vars::AntiHack::AntiAim::RealYawOffset);
+				LOAD_VAR(Vars::AntiHack::AntiAim::FakeYawMode);
+				LOAD_VAR(Vars::AntiHack::AntiAim::FakeYawOffset);
 				LOAD_VAR(Vars::AntiHack::AntiAim::SpinSpeed);
-				LOAD_VAR(Vars::AntiHack::AntiAim::CustomRealPitch);
-				LOAD_VAR(Vars::AntiHack::AntiAim::BaseYawOffset);
-				LOAD_VAR(Vars::AntiHack::AntiAim::CustomRealYaw);
-				LOAD_VAR(Vars::AntiHack::AntiAim::CustomFakeYaw);
-				LOAD_VAR(Vars::AntiHack::AntiAim::RealJitter);
-				LOAD_VAR(Vars::AntiHack::AntiAim::FakeJitter);
-				LOAD_VAR(Vars::AntiHack::AntiAim::RandInterval);
 				LOAD_VAR(Vars::AntiHack::AntiAim::AntiOverlap);
 				LOAD_VAR(Vars::AntiHack::AntiAim::AntiBackstab);
 				LOAD_VAR(Vars::AntiHack::AntiAim::LegJitter);
@@ -954,7 +916,6 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Chams::Buildings::IgnoreZ);
 		SAVE_VAR(Vars::Chams::Buildings::EnemyOnly);
 		SAVE_VAR(Vars::Chams::World::Active);
-		SAVE_VAR(Vars::Chams::DME::Active);
 		SAVE_VAR(Vars::Chams::DME::HandsGlowOverlay);
 		SAVE_VAR(Vars::Chams::DME::WeaponGlowOverlay);
 		SAVE_VAR(Vars::Chams::DME::HandsRainbow);
@@ -1040,7 +1001,6 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		SAVE_VAR(Vars::Visuals::ThirdPerson);
 		SAVE_VAR(Vars::Visuals::ThirdPersonSilentAngles);
 		SAVE_VAR(Vars::Visuals::ThirdPersonInstantYaw);
-		SAVE_VAR(Vars::Visuals::ThirdPersonServerHitbox);
 		SAVE_VAR(Vars::Visuals::ThirdpersonOffset);
 		SAVE_VAR(Vars::Visuals::ThirdpersonDist);
 		SAVE_VAR(Vars::Visuals::ThirdpersonRight);
@@ -1314,7 +1274,6 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Chams::Buildings::IgnoreZ);
 		LOAD_VAR(Vars::Chams::Buildings::EnemyOnly);
 		LOAD_VAR(Vars::Chams::World::Active);
-		LOAD_VAR(Vars::Chams::DME::Active);
 		LOAD_VAR(Vars::Chams::DME::HandsGlowOverlay);
 		LOAD_VAR(Vars::Chams::DME::WeaponGlowOverlay);
 		LOAD_VAR(Vars::Chams::DME::HandsRainbow);
@@ -1401,7 +1360,6 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		LOAD_VAR(Vars::Visuals::ThirdPerson);
 		LOAD_VAR(Vars::Visuals::ThirdPersonSilentAngles);
 		LOAD_VAR(Vars::Visuals::ThirdPersonInstantYaw);
-		LOAD_VAR(Vars::Visuals::ThirdPersonServerHitbox);
 		LOAD_VAR(Vars::Visuals::ThirdpersonOffset);
 		LOAD_VAR(Vars::Visuals::ThirdpersonDist);
 		LOAD_VAR(Vars::Visuals::ThirdpersonRight);

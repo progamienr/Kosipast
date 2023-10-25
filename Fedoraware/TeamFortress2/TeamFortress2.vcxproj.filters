@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="TeamFortress2\Features\AntiHack\CheaterDetection\CheaterDetection.cpp" />
-    <ClCompile Include="TeamFortress2\Features\AntiHack\FakeLag\FakeLag.cpp" />
+    <ClCompile Include="TeamFortress2\Features\AntiHack\CheaterDetection.cpp" />
+    <ClCompile Include="TeamFortress2\Features\PacketManip\FakeLag\FakeLag.cpp" />
     <ClCompile Include="TeamFortress2\Features\AutoQueue\AutoQueue.cpp" />
     <ClCompile Include="TeamFortress2\Features\Backtrack\Backtrack.cpp" />
     <ClCompile Include="TeamFortress2\Features\Commands\Commands.cpp" />
@@ -12,7 +12,7 @@
     <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotGlobal\AimbotGlobal.cpp" />
     <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotHitscan\AimbotHitscan.cpp" />
     <ClCompile Include="TeamFortress2\Features\Aimbot\AimbotMelee\AimbotMelee.cpp" />
-    <ClCompile Include="TeamFortress2\Features\AntiHack\AntiAim.cpp" />
+    <ClCompile Include="TeamFortress2\Features\PacketManip\AntiAim\AntiAim.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoBlast\AutoBlast.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoDetonate\AutoDetonate.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoUber\AutoUber.cpp" />
@@ -32,7 +32,6 @@
     <ClCompile Include="TeamFortress2\Features\Radar\Radar.cpp" />
     <ClCompile Include="TeamFortress2\Features\Resolver\Resolver.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\AutoGlobal\AutoGlobal.cpp" />
-    <ClCompile Include="TeamFortress2\Features\Auto\AutoShoot\AutoShoot.cpp" />
     <ClCompile Include="TeamFortress2\Features\Auto\Auto.cpp" />
     <ClCompile Include="TeamFortress2\Features\Visuals\FakeAngleManager\FakeAng.cpp" />
     <ClCompile Include="TeamFortress2\Features\Visuals\Visuals.cpp" />
@@ -163,20 +162,21 @@
     <ClCompile Include="TeamFortress2\Features\Menu\ImGui\imgui_tables.cpp" />
     <ClCompile Include="TeamFortress2\Features\Menu\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="TeamFortress2\Features\Menu\ImGui\TextEditor.cpp" />
+    <ClCompile Include="TeamFortress2\Features\PacketManip\PacketManip.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TeamFortress2\Features\AutoQueue\AutoQueue.h" />
     <ClInclude Include="TeamFortress2\Features\Commands\Commands.h" />
     <ClInclude Include="TeamFortress2\Resources\DVD-Icon.h" />
-    <ClInclude Include="TeamFortress2\Features\AntiHack\CheaterDetection\CheaterDetection.h" />
-    <ClInclude Include="TeamFortress2\Features\AntiHack\FakeLag\FakeLag.h" />
+    <ClInclude Include="TeamFortress2\Features\AntiHack\CheaterDetection.h" />
+    <ClInclude Include="TeamFortress2\Features\PacketManip\FakeLag\FakeLag.h" />
     <ClInclude Include="TeamFortress2\Features\Backtrack\Backtrack.h" />
     <ClInclude Include="TeamFortress2\Features\CritHack\CritHack.h" />
     <ClInclude Include="TeamFortress2\Features\Aimbot\Aimbot.h" />
     <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotGlobal\AimbotGlobal.h" />
     <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotHitscan\AimbotHitscan.h" />
     <ClInclude Include="TeamFortress2\Features\Aimbot\AimbotMelee\AimbotMelee.h" />
-    <ClInclude Include="TeamFortress2\Features\AntiHack\AntiAim.h" />
+    <ClInclude Include="TeamFortress2\Features\PacketManip\AntiAim\AntiAim.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoBlast\AutoBlast.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoDetonate\AutoDetonate.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoUber\AutoUber.h" />
@@ -199,7 +199,6 @@
     <ClInclude Include="TeamFortress2\Features\Radar\Radar.h" />
     <ClInclude Include="TeamFortress2\Features\Resolver\Resolver.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\AutoGlobal\AutoGlobal.h" />
-    <ClInclude Include="TeamFortress2\Features\Auto\AutoShoot\AutoShoot.h" />
     <ClInclude Include="TeamFortress2\Features\Auto\Auto.h" />
     <ClInclude Include="TeamFortress2\Features\Vars.h" />
     <ClInclude Include="TeamFortress2\Features\Visuals\FakeAngleManager\FakeAng.h" />
@@ -671,6 +670,7 @@
     <ClInclude Include="TeamFortress2\Features\Menu\ImGui\imstb_textedit.h" />
     <ClInclude Include="TeamFortress2\Features\Menu\ImGui\imstb_truetype.h" />
     <ClInclude Include="TeamFortress2\Features\Menu\ImGui\TextEditor.h" />
+    <ClInclude Include="TeamFortress2\Features\PacketManip\PacketManip.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="TeamFortress2\SDK\DirectX\d3dx9.lib" />

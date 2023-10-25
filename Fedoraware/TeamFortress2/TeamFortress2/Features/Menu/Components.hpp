@@ -155,19 +155,17 @@ namespace ImGui
 		const auto id = GetID(label);
 		PushID(label);
 
+		G::InKeybind = false;
 		if (GetActiveID() == id)
 		{
+			G::InKeybind = true;
+
 			Button("...", ImVec2(100, 20));
 			const bool bHovered = IsItemHovered();
 
 			if (bHovered && IsMouseClicked(ImGuiMouseButton_Left))
 			{
 				bCanceled = true;
-				ClearActiveID();
-			}
-			else if (IsKeyPressed(ImGuiKey_Escape) && bAllowNone)
-			{
-				output = 0x0;
 				ClearActiveID();
 			}
 			else
@@ -184,6 +182,8 @@ namespace ImGui
 						continue;
 
 					output = key;
+					if (bAllowNone && key == VK_ESCAPE)
+						output = 0x0;
 					ClearActiveID();
 					break;
 				}

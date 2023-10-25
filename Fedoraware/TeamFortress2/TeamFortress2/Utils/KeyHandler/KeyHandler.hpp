@@ -26,10 +26,12 @@ class CKeyHandler
 
 		// down
 		bool bDown = GetAsyncKeyState(Key) & 0x8000;
+		if (bDown)
 		{ //Utils::IsGameWindowInFocus()
 			static HWND hwGame = nullptr;
 
-			while (!hwGame) {
+			while (!hwGame)
+			{
 				hwGame = FindWindowW(nullptr, L"Team Fortress 2");
 				if (!hwGame)
 					bDown = false;

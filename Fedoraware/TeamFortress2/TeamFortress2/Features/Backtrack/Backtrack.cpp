@@ -404,8 +404,8 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 			G::AnticipatedChoke = 1;
 		break;
 	}
-	if (G::ChokedTicks && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
-		G::AnticipatedChoke = G::ChosenTicks - G::ChokedTicks;
+	if (G::ChokeAmount && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
+		G::AnticipatedChoke = G::ChokeGoal - G::ChokeAmount;
 		// iffy, unsure if there is a good way to get it to work well without unchoking
 
 	UpdateDatagram();

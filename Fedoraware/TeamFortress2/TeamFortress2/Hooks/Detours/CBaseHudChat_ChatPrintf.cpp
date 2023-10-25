@@ -1,5 +1,5 @@
 #include "../Hooks.h"
-#include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
+#include "../../Features/AntiHack/CheaterDetection.h"
 #include "../../Features/Visuals/Visuals.h"
 
 struct ChatFlags_t

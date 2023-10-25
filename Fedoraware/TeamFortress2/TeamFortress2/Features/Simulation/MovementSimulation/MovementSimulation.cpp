@@ -31,7 +31,7 @@ void CMovementSimulation::FillInfo()
 				pEntity->IsOnGround()
 			};
 
-			if (m_Velocities[iEntIndex].size() > 0)
+			if (!m_Velocities[iEntIndex].empty())
 			{
 				if (G::ChokeMap[pEntity->GetIndex()])
 					return;

@@ -1,5 +1,5 @@
 #include "ESP.h"
-#include "../AntiHack/CheaterDetection/CheaterDetection.h"
+#include "../AntiHack/CheaterDetection.h"
 #include "../Backtrack/Backtrack.h"
 #include "GetWeaponName/GetWeaponName.h"
 #include "../Vars.h"
@@ -1343,16 +1343,16 @@ void CESP::DrawWorld() const
 		}
 	}
 
-	for (const auto& Book : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
+	for (const auto& Gargy : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
 	{
 		// distance things
-		const Vec3 vDelta = Book->GetAbsOrigin() - pLocal->GetAbsOrigin();
+		const Vec3 vDelta = Gargy->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
 		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
-		if (GetDrawBounds(Book, vTrans, x, y, w, h))
+		if (GetDrawBounds(Gargy, vTrans, x, y, w, h))
 		{
 			int nTextTopOffset = 0;
 
@@ -1371,7 +1371,7 @@ void CESP::DrawWorld() const
 				if (I::Input->CAM_IsThirdPerson())
 					Utils::W2S(pLocal->GetAbsOrigin(), vOrigin);
 
-				if (Utils::W2S(Book->GetAbsOrigin(), vScreen))
+				if (Utils::W2S(Gargy->GetAbsOrigin(), vScreen))
 					g_Draw.Line(vOrigin.x, vOrigin.y, vScreen.x, vScreen.y, Colors::Gargoyle);
 			}
 

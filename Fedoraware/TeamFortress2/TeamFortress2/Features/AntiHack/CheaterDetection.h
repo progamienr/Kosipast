@@ -1,6 +1,6 @@
 #pragma once
-#include "../../../SDK/SDK.h"
-#include "../../Backtrack/Backtrack.h"
+#include "../../SDK/SDK.h"
+#include "../Backtrack/Backtrack.h"
 
 struct PlayerData
 {

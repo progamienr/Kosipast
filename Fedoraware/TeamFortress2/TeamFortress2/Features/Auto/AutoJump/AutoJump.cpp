@@ -19,13 +19,22 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	if (bValidWeapon)
 		pCmd->buttons &= ~IN_ATTACK2; // fix for retarded issue
 
-	// barebones
-	if (bValidWeapon && iJumpFrame == -1 && iRocketFrame == -1 && bCurrGrounded && bCurrGrounded == bLastGrounded &&
+	// barebones (doesn't seem 100% consistent, unsure if it's user error or what)
+	if (bValidWeapon && iJumpFrame == -1 && bCurrGrounded && bCurrGrounded == bLastGrounded &&
 		G::WeaponCanAttack && !pLocal->IsDucking() && pWeapon->GetClip1() > 0)
 	{
+		if (F::KeyHandler.Down(Vars::Triggerbot::Jump::JumpKey.Value))
+		{
+			iJumpFrame = 0;
+			bFire = true;
+		}
+
 		if (F::KeyHandler.Down(Vars::Triggerbot::Jump::CTapKey.Value))
 			iJumpFrame = 0;
 	}
+
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible())
+		iJumpFrame = -1;
 
 	if (iJumpFrame != -1)
 	{
@@ -71,10 +80,34 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 				pCmd->buttons |= IN_DUCK;
 			if (!(G::LastUserCmd->buttons & IN_JUMP))
 				pCmd->buttons |= IN_JUMP;
-			break;
-		case 4:
+		}
+
+		if (bFire && pCmd->buttons & IN_ATTACK)
+		{
+			G::UpdateView = false; // would use G::SilentTime but that would mess with timing
+
+			const bool bOriginal = pWeapon->GetItemDefIndex() == Soldier_m_TheOriginal;
+			const bool bMoving = pLocal->m_vecVelocity().Length2D() > 200.f;
+
+			float v_x = 0.f;
+			float v_y = bMoving ? Math::VelocityToAngles(pLocal->m_vecVelocity()).y : pCmd->viewangles.y;
+			if (bOriginal)
+			{
+				v_x = bMoving ? 70.f : 89.f;
+				v_y -= 180.f;
+			}
+			else
+			{
+				v_x = bMoving ? 75.f : 89.f;
+				v_y -= bMoving ? 133.f : 81.5f;
+			}
+			pCmd->viewangles = { v_x, v_y, 0 };
+		}
+
+		if (iJumpFrame == 4)
+		{
 			iJumpFrame = -1;
-			bCTap = false;
+			bFire = false, bCTap = false;
 		}
 	}
 

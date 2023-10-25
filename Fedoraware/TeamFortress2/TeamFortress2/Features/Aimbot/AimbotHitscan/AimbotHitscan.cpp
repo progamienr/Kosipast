@@ -650,10 +650,9 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 		if (!CanHit(target, pLocal, pWeapon)) continue;
 
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
-		G::HitscanRunning = true;
-		G::HitscanSilentActive = Vars::Aimbot::Hitscan::AimMethod.Value == 2;
+		G::UpdateView = Vars::Aimbot::Hitscan::AimMethod.Value != 2;
 
-		if (G::HitscanSilentActive)
+		if (!G::UpdateView)
 			G::AimPos = target.m_vPos;
 
 		bool bShouldFire = ShouldFire(pLocal, pWeapon, pCmd, target);

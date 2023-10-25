@@ -1,62 +1,47 @@
-<h2 align="center" style="margin-top: 0px;">Fedoraware</h2>  
-<p align="center" style="margin-bottom: 0px !important;">
-  <img width="200" src=".github/assets/fedoraware.png" alt="Fedoraware logo." align="center">
-</p>
-<h2 align="center" style="margin-top: 0px;">SE-Owned but coollllll</h2>
 <p align="center">
-<a href="https://github.com/stax132349/Fedoraware/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/stax132349/Fedoraware"></a>
-<a href="https://discord.gg/HkJbfgv6Hv"><img alt="Fedoraware Discord Server" src="https://img.shields.io/discord/1069923050499354624?label=Discord&logo=Discord"></a>
-<a href="https://github.com/stax132349/Fedoraware/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/stax132349/Fedoraware/MSBuild"></a>
-<a href="https://github.com/stax132349/Fedoraware/commits/main"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/w/stax132349/Fedoraware"></a>
-</p>  
-
-<hr/>
-
-<p align="center">
-<a href="https://nightly.link/stax132349/Fedoraware/workflows/msbuild/main/Fedoraware.zip">
-<img src=".github/assets/download.png" align="center" width="100%" height="auto">
-</a>
+  <img src=".github/assets/Logo_Animated.svg" alt="Fedoraware Logo" width="250" align="center">
+  <br/>
+  <a href="https://nightly.link/rei-kes/Fedoraware/workflows/msbuild/master/Fedoraware.zip">
+    <img src=".github/assets/download.png" alt="Download Button" width="400" height="auto" align="center">
+  </a>
 </p>
 
-## Notes:
-- It is required to use dxlevel 90+ due to issues with ImGui.
+# Fedoraware
+
+[![GitHub Repo stars](https://img.shields.io/github/stars/rei-kes/Fedoraware)](/../../stargazers)
+[![Discord](https://img.shields.io/discord/1115064843209289849?logo=Discord&label=discord)](https://discord.gg/FYypQsbU2G)
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/rei-kes/Fedoraware/msbuild.yml?branch=master)](/../../actions)
+[![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/rei-kes/Fedoraware)](/../../commits/)
+
+A free and open-source training software for Team Fortress 2, based on [SE-Owned](https://www.unknowncheats.me/forum/team-fortress-2-a/436430-seowned-featured-cheat.html).
+
+## Notes
+
+- It is required to use [dxlevel 90](https://docs.mastercomfig.com/latest/customization/launch_options/?h=#dxlevel-launch-options) or higher.
 - You might have issues with injecting if you are on Windows 10 upgraded from Windows 7.
-- The source code is most likely __DETECTED__, use [VAC Bypass by danielkrupinski](https://github.com/danielkrupinski/VAC-Bypass). In the event you get VAC Banned, we are not responsible. Don't cheat on accounts you care about.
-- Read the [Fedoraware Documentation](https://fedoraware.github.io/Docs/) to learn more about Fedoraware and its Features.
+- The source code is most likely **DETECTED**, use [VAC Bypass by danielkrupinski](https://github.com/Fedoraware/VAC-Bypass-Loader/releases/tag/Release). In the event you get VAC banned, we are not responsible. Don't cheat on accounts you care about.
+- Read the [Fedoraware Documentation](https://fedoraware.github.io/Docs/) to learn more about Fedoraware and its features.
 
-## Media:  
+## Guide
+
+- We suggest using [Fedoraloader](https://github.com/Fedoraware/Fedoraloader/releases) as it downloads the latest build and injects it with minimal crashing. It also includes a VAC bypass.
+- Alternatively, use an injector like [Xenos](https://github.com/DarthTon/Xenos/releases) to inject the dll into TF2. [(Tutorial)](https://www.youtube.com/watch?v=PT3kVA053IY)
+- **If you have any suggestions for the cheat, or questions about it, you can open a thread in [discussions](https://github.com/Fedoraware/Fedoraware/discussions).**
+- **If you have any problems, you can open an [issue](https://github.com/Fedoraware/Fedoraware/issues).**
+
+## Media
+
 - [Fedoraware is the best free cheat in tf2 (by bean)](https://www.youtube.com/watch?v=FyeaMghYZL0)
-- [The Crew (by Josep)](https://www.youtube.com/watch?v=7I44S9sSOcc)
 - [Playing as Michael Jackson (by km)](https://www.youtube.com/watch?v=cVD3BBEMNPo)
 
-![Screenshot](https://user-images.githubusercontent.com/17802843/161588254-5cf29b82-fd70-41c1-90c3-f77b29014a68.png)
+## Credits to
 
-## Credits to:
-  - [spook953](https://github.com/spook953)
-  - [Lak3](https://github.com/Lak3)
-  - [Baan](https://github.com/xxmyn)
-  - [lnx00](https://github.com/lnx00)
-  - [Johnathon Walnut](https://github.com/johnathon-walnut)
-  - [JAGNEmk](https://github.com/JAGNEmk)
-  - [r00t](https://github.com/l-r00t-l)
-  - [lykanfox](https://github.com/lykanfox)
-  - [km-ch](https://github.com/km-ch)
-  - [HutchyBean](https://github.com/HutchyBean)
-  - [SinnerK0N](https://github.com/SinnerK0N)
-  - [jp4](https://github.com/relaxtakenotes)
-  - [canedoly](https://github.com/canedoly)
-  - [lolnoenemy](https://github.com/lolnoenemy)
-  - [reestart](https://github.com/restarrt)
-  - [Ind1g0](https://github.com/lnd1g0)
-  - [AscendedSion](https://github.com/AscendedSion)
-  - [resiki8182](https://github.com/resiki8182)
-  - [SylveonBottle](https://github.com/SylveonBottle)
-  - [NotAnUser1](https://github.com/NotAnUser1)
-  - [VOID-Nightmare](https://github.com/VOID-Nightmare)
-  - Fourteen
-  - [vicinity-gush8](https://github.com/vicinity-gush8)
-  - [XJN2](https://github.com/XJN2)
-  - [hivec2](https://github.com/hivec2)
-  - [wsock](https://github.com/wsock)
-  - [hyperventilation](https://github.com/hyperventilation)
-  - [frel0](https://github.com/frel0)
+- [spook953](https://github.com/spook953)
+- [Lak3](https://github.com/Lak3)
+- [Baan](https://github.com/xxmyn)
+- [lnx00](https://github.com/lnx00)
+- [Johnathon Walnut](https://github.com/johnathon-walnut)
+- [JAGNEmk](https://github.com/JAGNEmk)
+- [r00t](https://github.com/l-r00t-l)
+- [lykanfox](https://github.com/lykanfox)
+- ...and all other [contibutors](/../../graphs/contributors)!

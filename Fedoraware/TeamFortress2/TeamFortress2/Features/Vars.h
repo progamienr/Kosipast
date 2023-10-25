@@ -152,17 +152,6 @@ namespace Vars
 			inline CVar<int> IgnoreOptions{ 0b00000 }; //disguised, fakelagging players, taunting, friends, cloaked, invul
 		}
 
-		namespace Shoot
-		{
-			inline CVar<bool> Active{ false };
-			inline CVar<bool> TriggerPlayers{ false };
-			inline CVar<bool> TriggerBuildings{ false };
-			inline CVar<bool> HeadOnly{ false };
-			inline CVar<bool> WaitForHeadshot{ false };
-			inline CVar<bool> ScopeOnly{ false };
-			inline CVar<float> HeadScale{ 0.7f };
-		}
-
 		namespace Detonate
 		{
 			inline CVar<bool> Active{ false };
@@ -360,8 +349,6 @@ namespace Vars
 
 		namespace DME
 		{
-			inline CVar<bool> Active{ false };
-
 			inline Chams_t Hands{ 1, 0, 0, true };
 			inline Chams_t Weapon{ 1, 0, 0, true };
 
@@ -504,7 +491,6 @@ namespace Vars
 		inline CVar<int> ThirdPersonKey{ VK_B };
 		inline CVar<bool> ThirdPersonSilentAngles{ false };
 		inline CVar<bool> ThirdPersonInstantYaw{ false };
-		inline CVar<bool> ThirdPersonServerHitbox{ false };
 		inline CVar<bool> ThirdpersonOffset{ false };
 		inline CVar<float> ThirdpersonDist{ 200.f };
 		inline CVar<float> ThirdpersonRight{ 0.f };
@@ -678,10 +664,8 @@ namespace Vars
 			inline CVar<int> Value{ 1 };
 
 			inline CVar<bool> WhileMoving{ false };
-			inline CVar<bool> WhileVisible{ false };
-			inline CVar<bool> PredictVisibility{ false };
 			inline CVar<bool> WhileUnducking{ false };
-			inline CVar<bool> WhileInAir{ false };
+			inline CVar<bool> WhileGrounded{ false };
 
 			inline CVar<bool> UnchokeOnAttack{ false };
 			inline CVar<bool> RetainBlastJump{ false };
@@ -767,25 +751,23 @@ namespace Vars
 		{
 			inline CVar<bool> Active{ false };
 			inline CVar<int> ToggleKey{ 0 };
-			inline CVar<int> InvertKey{ 0 };
-			inline CVar<int> ManualKey{ 0 };
-			inline CVar<int> Pitch{ 0 }; //0 - None, 1 - Zero, 2 - Up, 3 - Down, 4 - Fake Up, 5 - Fake Down
-			inline CVar<int> YawReal{ 0 }; //0 - None, 1 - Forward, 2 - Left, 3 - Right, 4 - Backwards
-			inline CVar<int> YawFake{ 0 }; //0 - None, 1 - Forward, 2 - Left, 3 - Right, 4 - Backwards
-			inline CVar<int> BaseYawMode{ 0 };
-			inline CVar<float> BaseYawOffset{ 0.f };
+
+			inline CVar<int> PitchReal{ 0 }; //0 - None, 1 - Zero, 2 - Up, 3 - Down, 4 - Zero
+			inline CVar<int> PitchFake{ 0 }; //0 - None, 1 - Zero, 2 - Up, 3 - Down
+
+			inline CVar<int> YawReal{ 0 }; //0 - None, 1 - Forward, 2 - Left, 3 - Right, 4 - Backwards, 5 - Spin, 6 - Edge
+			inline CVar<int> YawFake{ 0 }; //0 - None, 1 - Forward, 2 - Left, 3 - Right, 4 - Backwards, 5 - Spin, 6 - Edge
+
+			inline CVar<int> RealYawMode{ 0 };
+			inline CVar<float> RealYawOffset{ 0.f };
+			inline CVar<int> FakeYawMode{ 0 };
+			inline CVar<float> FakeYawOffset{ 0.f };
+
 			inline CVar<float> SpinSpeed{ 15.f };
-			inline CVar<float> CustomRealPitch{ 0.f };
-			inline CVar<float> CustomRealYaw{ 0 };
-			inline CVar<float> CustomFakeYaw{ 0 };
-			inline CVar<float> FakeJitter{ 0 };
-			inline CVar<float> RealJitter{ 0 };
-			inline CVar<int> RandInterval{ 25 };
+			inline CVar<bool> AntiOverlap{ false };
 			inline CVar<bool> AntiBackstab{ false };
 			inline CVar<bool> LegJitter{ false }; // frick u fourteen
-			inline CVar<bool> AntiOverlap{ false };
 			inline CVar<bool> InvalidShootPitch{ false }; // i dont know what to name this its TRASH
-			// no reason to do this for projectile and melee cause u have psilent lel
 		}
 
 		namespace Resolver
@@ -857,5 +839,7 @@ namespace Vars
 	namespace Debug
 	{
 		inline CVar<bool> DebugInfo{ false };
+		inline CVar<bool> ServerHitbox{ false };
+		inline CVar<bool> AntiAimLines{ false };
 	}
 }

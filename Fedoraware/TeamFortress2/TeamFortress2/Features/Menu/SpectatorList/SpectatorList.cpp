@@ -5,6 +5,8 @@
 
 bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 {
+	G::FirstSpectated = G::ThirdSpectated = false;
+
 	Spectators.clear();
 
 	for (const auto& pTeammate : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
@@ -20,11 +22,13 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 				case OBS_MODE_FIRSTPERSON:
 				{
 					szMode = L"1st";
+					G::FirstSpectated = true;
 					break;
 				}
 				case OBS_MODE_THIRDPERSON:
 				{
 					szMode = L"3rd";
+					G::ThirdSpectated = true;
 					break;
 				}
 				default: 

@@ -5,7 +5,8 @@
 #include "../../Utils/Timer/Timer.hpp"
 #include "../Aimbot/AimbotGlobal/AimbotGlobal.h"
 #include "../Backtrack/Backtrack.h"
-#include "../AntiHack/CheaterDetection/CheaterDetection.h"
+#include "../AntiHack/CheaterDetection.h"
+#include "../PacketManip/AntiAim/AntiAim.h"
 
 extern int attackStringW;
 extern int attackStringH;
@@ -40,7 +41,6 @@ void CMisc::RunPost(CUserCmd* pCmd, bool* pSendPacket)
 		FastAccel(pCmd, pLocal, pSendPacket);
 		DoubletapPacket(pCmd, pSendPacket);
 		LegJitter(pCmd, pLocal);
-		ChokeCheck(pSendPacket);
 	}
 }
 
@@ -107,25 +107,18 @@ void CMisc::FastDeltaMove(CUserCmd* pCmd, bool* pSendPacket){
 	}
 }
 
-void CMisc::ChokeCheck(bool* pSendPacket)
-{
-	static int iChokedPackets = 0;
-	if (!*pSendPacket) { iChokedPackets++; }
-	else { iChokedPackets = 0; }
-	if (iChokedPackets > 22) { *pSendPacket = true; iChokedPackets = 0; }
-}
-
 void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 {
+	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!iNetChan)
+		return;
+
 	if (G::DoubleTap || G::Teleport)
 	{
 		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
-		if (G::DoubleTap || pCmd->buttons & IN_ATTACK)
-		{
-			const int iShiftFrom = G::ShiftedGoal + std::min(Vars::CL_Move::DoubleTap::TickLimit.Value, G::MaxShift);
-			if (iShiftFrom - 20 == G::ShiftedTicks)
-				*pSendPacket = true;
-		}
+		if ((G::DoubleTap || pCmd->buttons & IN_ATTACK) && iNetChan->m_nChokedPackets >= 21)
+			*pSendPacket = true;
+		Utils::ConLog("DoubletapPacket", tfm::format("%i, %i, %i, %i", *pSendPacket, G::ShiftedGoal, G::ShiftedTicks, iNetChan->m_nChokedPackets).c_str(), { 224, 255, 131, 255 });
 	}
 }
 
@@ -206,12 +199,15 @@ void CMisc::DetectChoke()
 //	dumb feature made out of spite for fourteen
 void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
-	static bool pos = true;
-	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
-	if (G::IsAttacking || G::DoubleTap || G::AntiAim.second || !Vars::AntiHack::AntiAim::Active.Value)
+	if (!Vars::AntiHack::AntiAim::LegJitter.Value || !pLocal->OnSolid() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !pLocal->IsAlive())
 		return;
 
-	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && Vars::AntiHack::AntiAim::LegJitter.Value/* && I::GlobalVars->tickcount % 2*/)
+	if (G::IsAttacking || G::DoubleTap || !F::AntiAim.bSendingReal)
+		return;
+
+	static bool pos = true;
+	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
+	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && (Vars::AntiHack::AntiAim::LegJitter.Value || F::AntiAim.bSendingReal)) // force leg jitter if we are sending our real.
 	{
 		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;
 		pos ? pCmd->sidemove = scale : pCmd->sidemove = -scale;
@@ -381,7 +377,7 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 	static bool flipVar = false;
 	flipVar = !flipVar;
 
-	if ((G::AAActive || bMovementScuffed || bMovementStopped) || (Vars::Misc::FakeAccelAngle.Value && !flipVar))
+	if ((G::AntiAim || bMovementScuffed || bMovementStopped) || (Vars::Misc::FakeAccelAngle.Value && !flipVar))
 	{
 		return;
 	}
@@ -858,14 +854,14 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 			Vec3 origin = pLocal->GetAbsOrigin();
 			Vec3 velocity; pLocal->EstimateAbsVelocity(velocity);
 			Vec3 predicted = origin + (velocity * TICKS_TO_TIME(G::ShiftedTicks));
-			Vec3 predicted_max = origin + (velocity * TICKS_TO_TIME(22 - G::ChokedTicks));
+			Vec3 predicted_max = origin + (velocity * TICKS_TO_TIME(22 - G::ChokeAmount));
 
 			float scale = Math::RemapValClamped(predicted.DistTo(origin), 0.0f, predicted_max.DistTo(origin) * 1.27f, 1.0f, 0.0f);
 			float scale_ = Math::RemapValClamped(velocity.Length2D(), 0.0f, 520.0f, 0.0f, 1.0f);
 
 			if (pLocal->IsClass(CLASS_SCOUT))
 			{
-				Utils::WalkTo(pCmd, pLocal, predicted, origin, TICKS_TO_TIME(22 - G::ChokedTicks));
+				Utils::WalkTo(pCmd, pLocal, predicted, origin, TICKS_TO_TIME(22 - G::ChokeAmount));
 			}
 			else
 			{

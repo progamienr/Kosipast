@@ -2,13 +2,12 @@
 #include "../../Hooks/HookManager.h"
 #include "../../Hooks/Hooks.h"
 
-void CTickshiftHandler::Speedhack(CUserCmd* pCmd)
+void CTickshiftHandler::Reset()
 {
-	bSpeedhack = Vars::CL_Move::SpeedEnabled.Value;
-	if (!bSpeedhack)
-		return;
-
-	G::DoubleTap = G::Teleport = G::Recharge = false;
+	bSpeedhack = G::DoubleTap = G::Recharge = G::Teleport = false;
+	G::ShiftedTicks = G::ShiftedGoal = 0;
+	iNextPassiveTick = 0;
+	iTickRate = round(1.f / I::GlobalVars->interval_per_tick);
 }
 
 void CTickshiftHandler::Recharge(CUserCmd* pCmd, CBaseEntity* pLocal) // occasionally breaks ??
@@ -98,6 +97,15 @@ int CTickshiftHandler::GetTicks(CBaseEntity* pLocal)
 	return 0;
 }
 
+void CTickshiftHandler::Speedhack(CUserCmd* pCmd)
+{
+	bSpeedhack = Vars::CL_Move::SpeedEnabled.Value;
+	if (!bSpeedhack)
+		return;
+
+	G::DoubleTap = G::Teleport = G::Recharge = false;
+}
+
 void CTickshiftHandler::CLMoveFunc(float accumulated_extra_samples, bool bFinalTick)
 {
 	static auto CL_Move = g_HookManager.GetMapHooks()["CL_Move"];
@@ -121,7 +129,7 @@ void CTickshiftHandler::CLMoveFunc(float accumulated_extra_samples, bool bFinalT
 	CL_Move->Original<void(__cdecl*)(float, bool)>()(accumulated_extra_samples, bFinalTick);
 }
 
-void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
+void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTick)
 {
 	{
 		CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
@@ -133,7 +141,7 @@ void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 	}
 
 	G::MaxShift = g_ConVars.sv_maxusrcmdprocessticks ? g_ConVars.sv_maxusrcmdprocessticks->GetInt() : 24;
-	if (G::AntiAim.first || G::AntiAim.second)
+	if (G::AntiAim)
 		G::MaxShift -= 1;
 
 	while (G::ShiftedTicks > G::MaxShift)
@@ -194,7 +202,19 @@ void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 	return CLMoveFunc(accumulated_extra_samples, true);
 }
 
-void CTickshiftHandler::CreateMove(CUserCmd* pCmd)
+void CTickshiftHandler::MovePre()
+{
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	CUserCmd* pCmd = G::CurrentUserCmd;
+	if (!pLocal || !pCmd)
+		return;
+
+	Recharge(pCmd, pLocal);
+	Teleport(pCmd);
+	Speedhack(pCmd);
+}
+
+void CTickshiftHandler::MovePost(CUserCmd* pCmd)
 {
 	if (Vars::CL_Move::DoubleTap::Mode.Value == 2 && F::KeyHandler.Pressed(Vars::CL_Move::DoubleTap::DoubletapKey.Value))
 		Vars::CL_Move::DoubleTap::Enabled.Value = !Vars::CL_Move::DoubleTap::Enabled.Value;
@@ -203,16 +223,11 @@ void CTickshiftHandler::CreateMove(CUserCmd* pCmd)
 	if (!pLocal)
 		return;
 
-	Recharge(pCmd, pLocal);
-	Teleport(pCmd);
 	Doubletap(pCmd, pLocal);
-	Speedhack(pCmd);
 }
 
-void CTickshiftHandler::Reset()
+void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 {
-	bSpeedhack = G::DoubleTap = G::Recharge = G::Teleport = false;
-	G::ShiftedTicks = G::ShiftedGoal = 0;
-	iNextPassiveTick = 0;
-	iTickRate = round(1.f / I::GlobalVars->interval_per_tick);
+	MovePre();
+	MoveMain(accumulated_extra_samples, bFinalTick);
 }

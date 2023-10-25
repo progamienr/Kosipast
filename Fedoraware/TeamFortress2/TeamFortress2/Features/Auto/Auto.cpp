@@ -2,8 +2,6 @@
 
 #include "../Vars.h"
 
-#include "AutoShoot/AutoShoot.h"
-//#include "AutoStab/AutoStab.h"
 #include "AutoDetonate/AutoDetonate.h"
 #include "AutoBlast/AutoBlast.h"
 #include "AutoUber/AutoUber.h"
@@ -42,7 +40,6 @@ void CAuto::Run(CUserCmd* pCmd)
 	}
 	*/
 
-	//G::AutoBackstabRunning = false;
 	//F::AutoStab.m_bShouldDisguise = false;
 
 	const auto pLocal = g_EntityCache.GetLocal();
@@ -52,8 +49,6 @@ void CAuto::Run(CUserCmd* pCmd)
 	{
 		if (ShouldRun(pLocal))
 		{
-			F::AutoShoot.Run(pLocal, pWeapon, pCmd);
-			//F::AutoStab.Run(pLocal, pWeapon, pCmd);
 			F::AutoDetonate.Run(pLocal, pWeapon, pCmd);
 			F::AutoAirblast.Run(pLocal, pWeapon, pCmd);
 			F::AutoUber.Run(pLocal, pWeapon, pCmd);

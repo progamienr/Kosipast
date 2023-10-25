@@ -8,10 +8,6 @@
 
 bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
-	// Don't run while freecam is active
-	if (G::FreecamActive)
-		return false;
-
 	// Don't run if aimbot is disabled
 	//if (!Vars::Aimbot::Global::Active.Value) { return false; }
 
@@ -68,8 +64,6 @@ void CAimbot::Run(CUserCmd* pCmd)
 {
 	G::CurrentTargetIdx = 0;
 	G::PredictedPos = Vec3();
-	G::HitscanRunning = false;
-	G::HitscanSilentActive = false;
 	G::AimPos = Vec3();
 
 	if (F::Misc.bMovementStopped || F::Misc.bFastAccel)

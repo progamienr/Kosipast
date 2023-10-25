@@ -53,18 +53,15 @@ namespace G
 {
 	inline int CurrentTargetIdx = 0; // Index of the current aimbot target
 	inline int CurItemDefIndex = 0; // DefIndex of the current weapon
-	inline int NotifyCounter = 0;
-	inline int EyeAngDelay = 25;
 	inline int NextSafeTick = 0;	//	I::GlobalVars->tickcount + sv_maxusrcmdprocessticks_holdaim + 1 (when attacking)
 	inline float LerpTime = 0.f;	//	current lerp time
 	inline bool WeaponCanHeadShot = false; // Can the current weapon headshot?
 	inline bool WeaponCanAttack = false; // Can the current weapon attack?
 	inline bool WeaponCanSecondaryAttack = false;
-	inline bool AAActive = false; // Is the Anti-Aim active?
-	inline bool HitscanSilentActive = false;
+	inline bool AntiAim = false; // Is the Anti-Aim active?
 	inline bool AvoidingBackstab = false; // Are we currently avoiding a backstab? (Overwrites AA)
-	inline bool AutoBackstabRunning = false;
-	inline bool LocalSpectated = false; // Is the local player being spectated?
+	inline bool FirstSpectated = false; // currently unused
+	inline bool ThirdSpectated = false; // currently unused
 	inline bool ShouldStop = false; // Stops our players movement, takes 1 tick.
 	inline bool UnloadWndProcHook = false;
 	inline bool Frozen = false;	//	angles & movement are frozen.
@@ -80,26 +77,20 @@ namespace G
 	inline int MaxShift = 24;
 
 	/* Choking / Packets */
-	inline int ChokedTicks = 0; // How many ticks have been choked
-	inline int ChosenTicks = 0; // How many ticks should be choked
-	inline bool ForceSendPacket = false; // might not actually be useful 
-	inline bool ForceChokePacket = false; // might not actually be useful 
-	inline bool IsChoking = false; // might not actually be useful 
+	inline int ChokeAmount = 0; // How many ticks have been choked
+	inline int ChokeGoal = 0; // How many ticks should be choked
 	inline int AnticipatedChoke = 0; // what the choke is expected to be (backtrack)
 	inline int TickBase = 0; // for utils
 
 	/* Aimbot */
 	inline bool IsAttacking = false;
-	inline bool HitscanRunning = false;
 	inline bool SilentTime = false;
+	inline bool UpdateView = false;
 	inline Vec3 AimPos = {};
 	inline VMatrix WorldToProjection = {};
 
 	/* Angles */
 	inline Vec3 ViewAngles = {};
-	inline Vec3 RealViewAngles = {}; // Real view angles (AA)
-	inline Vec3 FakeViewAngles = {}; // Fake view angles (AA)
-	inline std::pair<bool, bool> AntiAim = {};	//	fakeset, realset
 	inline Vec3 PunchAngles = {};
 
 	/* Bullets */
@@ -119,37 +110,16 @@ namespace G
 	inline CUserCmd* LastUserCmd{nullptr};
 	
 	inline EWeaponType CurWeaponType = {};
-	inline std::unordered_map<CBaseEntity*, VelFixRecord> VelFixRecords;
-	inline bool FreecamActive = false;
-	inline Vec3 FreecamPos = {};
 	inline std::unordered_map<int, DormantData> DormantPlayerESP; // <Index, DormantData>
 	inline std::unordered_map<int, int> ChokeMap; // Choked packets of players <Index, Amount>
-	inline bool DrawingStaticProps = false;
-	inline std::unordered_map<uint32_t, Priority> PlayerPriority; // Playerlist priorities <FriendsID, Priority>
-	inline bool BulletTracerFix = false;
-
-	inline bool UpdateView = false;
-
-	inline DWORD CalcIsAttackCriticalHelperOffset = 0;
-
-	inline bool ShouldAutoQueue = false;
-
-	inline int BackpackQuality = 1;
-
 	inline std::vector<int> MedicCallers;
+	inline std::unordered_map<CBaseEntity*, VelFixRecord> VelFixRecords;
 
-	inline bool ShouldUpdateMaterialCache = false;
-
+	inline std::unordered_map<uint32_t, Priority> PlayerPriority; // Playerlist priorities <FriendsID, Priority>
 	inline bool IsIgnored(uint32_t friendsID)
 	{
 		return PlayerPriority[friendsID].Mode < 2;
 	}
-
-	inline bool IsRage(uint32_t friendsID)
-	{
-		return PlayerPriority[friendsID].Mode > 2;
-	}
-
 	inline void SwitchIgnore(uint32_t playerID) //this code is so fucking shitty
 	{
 		bool ignore = true;
@@ -167,15 +137,10 @@ namespace G
 		}
 
 		if (ignore == true)
-		{
 			PlayerPriority[playerID].Mode = 1;
-		}
 		else if (unignore == true)
-		{
 			PlayerPriority[playerID].Mode = 2;
-		}
 	}
-
 	inline void SwitchMark(uint32_t playerID)
 	{
 		bool Mark = true;
@@ -205,4 +170,8 @@ namespace G
 			Unmark = false;
 		}
 	}
+
+	inline bool InKeybind = false;
+	inline bool DrawingStaticProps = false;
+	inline bool ShouldUpdateMaterialCache = false;
 };

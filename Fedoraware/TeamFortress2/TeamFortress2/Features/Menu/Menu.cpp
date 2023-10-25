@@ -205,35 +205,23 @@ void CMenu::DrawTabbar()
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, BackgroundLight.Value);
 			ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
-			if (ImGui::TabButton("Players", CurrentVisualsTab == VisualsTab::Players))
-			{
-				CurrentVisualsTab = VisualsTab::Players;
-			}
+			if (ImGui::TabButton("ESP", CurrentVisualsTab == VisualsTab::ESP))
+				CurrentVisualsTab = VisualsTab::ESP;
 
-			if (ImGui::TabButton("Buildings", CurrentVisualsTab == VisualsTab::Buildings))
-			{
-				CurrentVisualsTab = VisualsTab::Buildings;
-			}
+			if (ImGui::TabButton("Chams", CurrentVisualsTab == VisualsTab::Chams))
+				CurrentVisualsTab = VisualsTab::Chams;
 
-			if (ImGui::TabButton("World", CurrentVisualsTab == VisualsTab::World))
-			{
-				CurrentVisualsTab = VisualsTab::World;
-			}
-
-			if (ImGui::TabButton("Fonts", CurrentVisualsTab == VisualsTab::Font))
-			{
-				CurrentVisualsTab = VisualsTab::Font;
-			}
+			if (ImGui::TabButton("Glow", CurrentVisualsTab == VisualsTab::Glow))
+				CurrentVisualsTab = VisualsTab::Glow;
 
 			if (ImGui::TabButton("Misc", CurrentVisualsTab == VisualsTab::Misc))
-			{
 				CurrentVisualsTab = VisualsTab::Misc;
-			}
 
 			if (ImGui::TabButton("Radar", CurrentVisualsTab == VisualsTab::Radar))
-			{
 				CurrentVisualsTab = VisualsTab::Radar;
-			}
+
+			if (ImGui::TabButton("Fonts", CurrentVisualsTab == VisualsTab::Font))
+				CurrentVisualsTab = VisualsTab::Font;
 
 			ImGui::PopStyleColor(2);
 			ImGui::EndTable();
@@ -425,14 +413,6 @@ void CMenu::MenuTrigger()
 				HelpMarker("Choose which targets should be ignored");
 			}
 
-			SectionTitle("Autoshoot");
-			WToggle("Autoshoot###AutoshootTrigger", &Vars::Triggerbot::Shoot::Active.Value); HelpMarker("Shoots if mouse is over a target");
-			MultiCombo({ "Players", "Buildings" }, { &Vars::Triggerbot::Shoot::TriggerPlayers.Value, &Vars::Triggerbot::Shoot::TriggerBuildings.Value }, "Trigger targets");
-			HelpMarker("Choose which target the triggerbot should shoot at");
-			WToggle("Head only###TriggerHeadOnly", &Vars::Triggerbot::Shoot::HeadOnly.Value); HelpMarker("Auto shoot will only shoot if you are aiming at the head");
-			WToggle("Wait for Headshot###TriggerbotWaitForHeadshot", &Vars::Triggerbot::Shoot::WaitForHeadshot.Value); HelpMarker("Auto shoot will only shoot if the sniper is charged enough to headshot");
-			WToggle("Scoped Only###TriggerbotScopedOnly", &Vars::Triggerbot::Shoot::ScopeOnly.Value); HelpMarker("Auto shoot will only shoot while scoped");
-			WSlider("Head scale###TriggerHeadScale", &Vars::Triggerbot::Shoot::HeadScale.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp); HelpMarker("The scale at which the auto shoot will try to shoot the targets head");
 		} EndChild();
 
 		/* Column 2 */
@@ -497,13 +477,13 @@ void CMenu::MenuVisuals()
 
 	switch (CurrentVisualsTab)
 	{
-	// Visuals: Players
-		case VisualsTab::Players:
+	// Visuals: ESP
+		case VisualsTab::ESP:
 		{
-			if (BeginTable("VisualsPlayersTable", 3))
+			if (BeginTable("VisualsESPTable", 3))
 			{
 				/* Column 1 */
-				if (TableColumnChild("VisualsPlayersCol1"))
+				if (TableColumnChild("VisualsESPCol1"))
 				{
 					SectionTitle("ESP Main");
 					WToggle("ESP###EnableESP", &Vars::ESP::Main::Active.Value); HelpMarker("Global ESP master switch");
@@ -581,169 +561,7 @@ void CMenu::MenuVisuals()
 				} EndChild();
 
 				/* Column 2 */
-				if (TableColumnChild("VisualsPlayersCol2"))
-				{
-					SectionTitle("Chams Main");
-					WToggle("Chams###ChamsMasterSwitch", &Vars::Chams::Main::Active.Value); HelpMarker("Chams master switch");
-
-					static std::vector chamOptions{
-						"Local",
-						"FakeAngles",
-						"Friends",
-						"Enemies",
-						"Teammates",
-						"Target",
-						"Ragdolls",
-						"ViewModel",
-						"VM Weapon"
-					};
-					static std::vector DMEProxyMaterials{
-						"None",
-						"Spectrum splattered",
-						"Electro skulls",
-						"Jazzy",
-						"Frozen aurora",
-						"Hana",
-						"IDK",
-						"Ghost thing",
-						"Flames",
-						"Spook wood",
-						"Edgy",
-						"Starlight serenity",
-						"Fade"
-					};
-					static std::vector dmeGlowMaterial{
-						"None",
-						"Fresnel Glow",
-						"Wireframe Glow"
-					};
-
-					static int currentSelected = 0;
-					Chams_t& currentStruct = ([&]() -> Chams_t&
-											  {
-												  switch (currentSelected)
-												  {
-													  case 0:
-													  {
-														  return Vars::Chams::Players::Local;
-													  }
-													  case 1:
-													  {
-														  return Vars::Chams::Players::FakeAng;
-													  }
-													  case 2:
-													  {
-														  return Vars::Chams::Players::Friend;
-													  }
-													  case 3:
-													  {
-														  return Vars::Chams::Players::Enemy;
-													  }
-													  case 4:
-													  {
-														  return Vars::Chams::Players::Team;
-													  }
-													  case 5:
-													  {
-														  return Vars::Chams::Players::Target;
-													  }
-													  case 6:
-													  {
-														  return Vars::Chams::Players::Ragdoll;
-													  }
-													  case 7:
-													  {
-														  return Vars::Chams::DME::Hands;
-													  }
-													  case 8:
-													  {
-														  return Vars::Chams::DME::Weapon;
-													  }
-												  }
-
-												  return Vars::Chams::Players::Local;
-											  }());
-					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
-
-					//WToggle("Player chams###PlayerChamsBox", &Vars::Chams::Players::Active.Value); HelpMarker("Player chams master switch");
-
-					MultiCombo({ "Render Wearable", "Render Weapon" }, { &Vars::Chams::Players::Wearables.Value, &Vars::Chams::Players::Weapons.Value }, "Flags");
-					HelpMarker("Customize Chams");
-					WCombo("Config", &currentSelected, chamOptions);
-					{
-						ColorPickerL("Colour", currentStruct.colour);
-						MultiCombo({ "Active", "Obstructed" }, { &currentStruct.chamsActive, &currentStruct.showObstructed }, "Options");
-
-						WCombo("Material", &currentStruct.drawMaterial, DMEChamMaterials); HelpMarker("Which material the chams will apply to the player");
-						if (currentStruct.drawMaterial == 7)
-						{
-							ColorPickerL("Fresnel base colour", currentStruct.fresnelBase, 1);
-						}
-						if (currentStruct.drawMaterial == 9)
-						{
-							MaterialCombo("Custom Material", &currentStruct.customMaterial);
-						}
-						WCombo("Overlay", &currentStruct.overlayType, dmeGlowMaterial);
-						ColorPickerL("Glow Colour", currentStruct.overlayColour);
-
-						if (currentSelected == 7 || currentSelected == 8)
-						{
-							int& proxySkinIndex = currentSelected == 8 ? Vars::Chams::DME::WeaponsProxySkin.Value : Vars::Chams::DME::HandsProxySkin.Value;
-							WCombo("Proxy Material", &proxySkinIndex, DMEProxyMaterials);
-
-						}
-					}
-
-					SectionTitle("Chams Misc");
-
-					WToggle("DME chams###dmeactive", &Vars::Chams::DME::Active.Value); HelpMarker("DME chams master switch");
-
-					SectionTitle("Backtrack chams");
-					WToggle("Backtrack chams", &Vars::Backtrack::BtChams::Enabled.Value); HelpMarker("Draws chams to show where a player is");
-					ColorPickerL("Backtrack colour", Vars::Backtrack::BtChams::BacktrackColor);
-					WToggle("Only draw last tick", &Vars::Backtrack::BtChams::LastOnly.Value); HelpMarker("Only draws the last tick (can save FPS)");
-					WToggle("Enemy only", &Vars::Backtrack::BtChams::EnemyOnly.Value); HelpMarker("You CAN backtrack your teammates. (Whip, medigun)");
-
-					WCombo("Material##BtMaterial", &Vars::Backtrack::BtChams::Material.Value, DMEChamMaterials);
-					if (Vars::Backtrack::BtChams::Material.Value == 9)
-					{
-						MaterialCombo("Custom Material##BtCustom", &Vars::Backtrack::BtChams::Custom);
-					}
-					WCombo("Overlay##BtOverlay", &Vars::Backtrack::BtChams::Overlay.Value, dmeGlowMaterial);
-					WToggle("Ignore Z###BtIgnoreZ", &Vars::Backtrack::BtChams::IgnoreZ.Value); HelpMarker("Draws them through walls");
-				} EndChild();
-
-				/* Column 3 */
-				if (TableColumnChild("VisualsPlayersCol3"))
-				{
-					SectionTitle("Glow Main");
-					WToggle("Glow", &Vars::Glow::Main::Active.Value);
-					WCombo("Glow Type###GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" }); HelpMarker("Method in which glow will be rendered");
-					WSlider("Glow scale", &Vars::Glow::Main::Scale.Value, 1, 20, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-					SectionTitle("Player Glow");
-					WToggle("Player glow###PlayerGlowButton", &Vars::Glow::Players::Active.Value); HelpMarker("Player glow master switch");
-					WToggle("Self glow###SelfGlow", &Vars::Glow::Players::ShowLocal.Value); HelpMarker("Draw glow on the local player");
-					WToggle("Self rainbow glow###SelfGlowRainbow", &Vars::Glow::Players::LocalRainbow.Value); HelpMarker("Homosapien");
-					WCombo("Ignore team###IgnoreTeamGlowp", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" }); HelpMarker("Which teammates the glow will ignore drawing on");
-					WToggle("Wearable glow###PlayerWearableGlow", &Vars::Glow::Players::Wearables.Value); HelpMarker("Will draw glow on player cosmetics");
-					WToggle("Weapon glow###PlayerWeaponGlow", &Vars::Glow::Players::Weapons.Value); HelpMarker("Will draw glow on player weapons");
-					WSlider("Glow alpha###PlayerGlowAlpha", &Vars::Glow::Players::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-					WCombo("Glow colour###GlowColour", &Vars::Glow::Players::Color.Value, { "Team", "Health" }); HelpMarker("Which colour the glow will draw");
-				} EndChild();
-
-				EndTable();
-			}
-			break;
-		}
-
-		// Visuals: Building
-		case VisualsTab::Buildings:
-		{
-			if (BeginTable("VisualsBuildingsTable", 3))
-			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsBuildingsCol1"))
+				if (TableColumnChild("VisualsESPCol2"))
 				{
 					SectionTitle("Building ESP");
 					WToggle("Building ESP###BuildinGESPSwioifas", &Vars::ESP::Buildings::Active.Value); HelpMarker("Will draw useful information/indicators on buildings");
@@ -764,100 +582,8 @@ void CMenu::MenuVisuals()
 					WSlider("ESP alpha###BuildingESPAlpha", &Vars::ESP::Buildings::Alpha.Value, 0.01f, 1.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp); HelpMarker("How transparent the ESP should be");
 				} EndChild();
 
-				/* Column 2 */
-				if (TableColumnChild("VisualsBuildingsCol2"))
-				{
-					SectionTitle("Building Chams");
-					WToggle("Building chams###BuildingChamsBox", &Vars::Chams::Buildings::Active.Value); HelpMarker("Building chams master switch");
-
-					static std::vector chamOptions{
-						"Local",
-						"Friends",
-						"Enemies",
-						"Teammates",
-						"Target"
-					};
-					static std::vector dmeGlowMaterial{
-						"None",
-						"Fresnel Glow",
-						"Wireframe Glow"
-					};
-
-					static int currentSelected = 0; //
-					Chams_t& currentStruct = ([&]() -> Chams_t&
-											  {
-												  switch (currentSelected)
-												  {
-													  case 0:
-													  {
-														  return Vars::Chams::Buildings::Local;
-													  }
-													  case 1:
-													  {
-														  return Vars::Chams::Buildings::Friend;
-													  }
-													  case 2:
-													  {
-														  return Vars::Chams::Buildings::Enemy;
-													  }
-													  case 3:
-													  {
-														  return Vars::Chams::Buildings::Team;
-													  }
-													  case 4:
-													  {
-														  return Vars::Chams::Buildings::Target;
-													  }
-												  }
-
-												  return Vars::Chams::Buildings::Local;
-											  }());
-					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
-
-					WCombo("Config", &currentSelected, chamOptions);
-					{
-						ColorPickerL("Colour", currentStruct.colour, 1);
-						MultiCombo({ "Active", "Obstructed" }, { &currentStruct.chamsActive, &currentStruct.showObstructed }, "Options");
-
-						WCombo("Material", &currentStruct.drawMaterial, DMEChamMaterials); HelpMarker("Which material the chams will apply to the player");
-						if (currentStruct.drawMaterial == 7)
-						{
-							ColorPickerL("Fresnel base colour", currentStruct.fresnelBase, 1);
-						}
-						if (currentStruct.drawMaterial == 9)
-						{
-							MaterialCombo("Custom Material", &currentStruct.customMaterial);
-						}
-						WCombo("Glow Overlay", &currentStruct.overlayType, dmeGlowMaterial);
-						ColorPickerL("Glow Colour", currentStruct.overlayColour, 1);
-						WToggle("Rainbow Glow", &currentStruct.overlayRainbow);
-						WToggle("Pulse Glow", &currentStruct.overlayPulse);
-						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-					}
-				} EndChild();
-
 				/* Column 3 */
-				if (TableColumnChild("VisualsBuildingsCol3"))
-				{
-					SectionTitle("Building Glow");
-					WToggle("Building glow###BuildiongGlowButton", &Vars::Glow::Buildings::Active.Value);
-					WToggle("Ignore team buildings###buildingglowignoreteams", &Vars::Glow::Buildings::IgnoreTeammates.Value);
-					WSlider("Glow alpha###BuildingGlowAlpha", &Vars::Glow::Buildings::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-					WCombo("Glow colour###GlowColourBuildings", &Vars::Glow::Buildings::Color.Value, { "Team", "Health" });
-				} EndChild();
-
-				EndTable();
-			}
-			break;
-		}
-
-		// Visuals: World
-		case VisualsTab::World:
-		{
-			if (BeginTable("VisualsWorldTable", 3))
-			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsWorldCol1"))
+				if (TableColumnChild("VisualsESPCol3"))
 				{
 					SectionTitle("World ESP");
 
@@ -907,17 +633,133 @@ void CMenu::MenuVisuals()
 					ColorPickerL("Gargoyle Colour", Colors::Gargoyle); HelpMarker("Color for bomb ESP");
 				} EndChild();
 
-				/* Column 2 */
-				if (TableColumnChild("VisualsWorldCol2"))
+				EndTable();
+			}
+			break;
+		}
+
+		// Visuals: Chams
+		case VisualsTab::Chams:
+		{
+			if (BeginTable("VisualsChamsTable", 3))
+			{
+				/* Column 1 */
+				if (TableColumnChild("VisualsChamsCol1"))
 				{
-					SectionTitle("World Chams");
-					WToggle("World chams###woldchamsbut", &Vars::Chams::World::Active.Value);				
+					SectionTitle("Chams Main");
+					WToggle("Chams###ChamsMasterSwitch", &Vars::Chams::Main::Active.Value); HelpMarker("Chams master switch");
 
 					static std::vector chamOptions{
-						"Healthpacks",
-						"Ammopacks",
-						"Team Projectiles",
-						"Enemy Projectiles",
+						"Local",
+						"FakeAngles",
+						"Friends",
+						"Enemies",
+						"Teammates",
+						"Target",
+						"Ragdolls",
+						"ViewModel",
+						"VM Weapon"
+					};
+					static std::vector DMEProxyMaterials{
+						"None",
+						"Spectrum splattered",
+						"Electro skulls",
+						"Jazzy",
+						"Frozen aurora",
+						"Hana",
+						"IDK",
+						"Ghost thing",
+						"Flames",
+						"Spook wood",
+						"Edgy",
+						"Starlight serenity",
+						"Fade"
+					};
+					static std::vector dmeGlowMaterial{
+						"None",
+						"Fresnel Glow",
+						"Wireframe Glow"
+					};
+
+					static int currentSelected = 0;
+					Chams_t& currentStruct = ([&]() -> Chams_t&
+						{
+							switch (currentSelected)
+							{
+							case 0: return Vars::Chams::Players::Local;
+							case 1: return Vars::Chams::Players::FakeAng;
+							case 2: return Vars::Chams::Players::Friend;
+							case 3: return Vars::Chams::Players::Enemy;
+							case 4: return Vars::Chams::Players::Team;
+							case 5: return Vars::Chams::Players::Target;
+							case 6: return Vars::Chams::Players::Ragdoll;
+							case 7: return Vars::Chams::DME::Hands;
+							case 8: return Vars::Chams::DME::Weapon;
+							}
+
+							return Vars::Chams::Players::Local;
+						}());
+					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
+
+					//WToggle("Player chams###PlayerChamsBox", &Vars::Chams::Players::Active.Value); HelpMarker("Player chams master switch");
+
+					MultiCombo({ "Render Wearable", "Render Weapon" }, { &Vars::Chams::Players::Wearables.Value, &Vars::Chams::Players::Weapons.Value }, "Flags");
+					HelpMarker("Customize Chams");
+					WCombo("Config", &currentSelected, chamOptions);
+					{
+						ColorPickerL("Colour", currentStruct.colour);
+						MultiCombo({ "Active", "Obstructed" }, { &currentStruct.chamsActive, &currentStruct.showObstructed }, "Options");
+
+						WCombo("Material", &currentStruct.drawMaterial, DMEChamMaterials); HelpMarker("Which material the chams will apply to the player");
+						if (currentStruct.drawMaterial == 7)
+						{
+							ColorPickerL("Fresnel base colour", currentStruct.fresnelBase, 1);
+						}
+						if (currentStruct.drawMaterial == 9)
+						{
+							MaterialCombo("Custom Material", &currentStruct.customMaterial);
+						}
+						WCombo("Overlay", &currentStruct.overlayType, dmeGlowMaterial);
+						ColorPickerL("Glow Colour", currentStruct.overlayColour);
+						WToggle("Rainbow Glow", &currentStruct.overlayRainbow);
+						WToggle("Pulse Glow", &currentStruct.overlayPulse);
+						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+
+						if (currentSelected == 7 || currentSelected == 8)
+						{
+							int& proxySkinIndex = currentSelected == 8 ? Vars::Chams::DME::WeaponsProxySkin.Value : Vars::Chams::DME::HandsProxySkin.Value;
+							WCombo("Proxy Material", &proxySkinIndex, DMEProxyMaterials);
+
+						}
+					}
+
+					SectionTitle("Backtrack chams");
+					WToggle("Backtrack chams", &Vars::Backtrack::BtChams::Enabled.Value); HelpMarker("Draws chams to show where a player is");
+					ColorPickerL("Backtrack colour", Vars::Backtrack::BtChams::BacktrackColor);
+					WToggle("Only draw last tick", &Vars::Backtrack::BtChams::LastOnly.Value); HelpMarker("Only draws the last tick (can save FPS)");
+					WToggle("Enemy only", &Vars::Backtrack::BtChams::EnemyOnly.Value); HelpMarker("You CAN backtrack your teammates. (Whip, medigun)");
+
+					WCombo("Material##BtMaterial", &Vars::Backtrack::BtChams::Material.Value, DMEChamMaterials);
+					if (Vars::Backtrack::BtChams::Material.Value == 9)
+					{
+						MaterialCombo("Custom Material##BtCustom", &Vars::Backtrack::BtChams::Custom);
+					}
+					WCombo("Overlay##BtOverlay", &Vars::Backtrack::BtChams::Overlay.Value, dmeGlowMaterial);
+					WToggle("Ignore Z###BtIgnoreZ", &Vars::Backtrack::BtChams::IgnoreZ.Value); HelpMarker("Draws them through walls");
+				} EndChild();
+
+				/* Column 2 */
+				if (TableColumnChild("VisualsChamsCol2"))
+				{
+					SectionTitle("Building Chams");
+					WToggle("Building chams###BuildingChamsBox", &Vars::Chams::Buildings::Active.Value); HelpMarker("Building chams master switch");
+
+					static std::vector chamOptions{
+						"Local",
+						"Friends",
+						"Enemies",
+						"Teammates",
+						"Target"
 					};
 					static std::vector dmeGlowMaterial{
 						"None",
@@ -927,29 +769,18 @@ void CMenu::MenuVisuals()
 
 					static int currentSelected = 0; //
 					Chams_t& currentStruct = ([&]() -> Chams_t&
-											  {
-												  switch (currentSelected)
-												  {
-													  case 0:
-													  {
-														  return Vars::Chams::World::Health;
-													  }
-													  case 1:
-													  {
-														  return Vars::Chams::World::Ammo;
-													  }
-													  case 2:
-													  {
-														  return Vars::Chams::World::Projectiles::Team;
-													  }
-													  case 3:
-													  {
-														  return Vars::Chams::World::Projectiles::Enemy;
-													  }
-												  }
+						{
+							switch (currentSelected)
+							{
+								case 0: return Vars::Chams::Buildings::Local;
+								case 1: return Vars::Chams::Buildings::Friend;
+								case 2: return Vars::Chams::Buildings::Enemy;
+								case 3: return Vars::Chams::Buildings::Team;
+								case 4: return Vars::Chams::Buildings::Target;
+							}
 
-												  return Vars::Chams::World::Health;
-											  }());
+							return Vars::Chams::Buildings::Local;
+						}());
 					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
 					WCombo("Config", &currentSelected, chamOptions);
@@ -975,7 +806,101 @@ void CMenu::MenuVisuals()
 				} EndChild();
 
 				/* Column 3 */
-				if (TableColumnChild("VisualsWorldCol3"))
+				if (TableColumnChild("VisualsChamsCol3"))
+				{
+					SectionTitle("World Chams");
+					WToggle("World chams###woldchamsbut", &Vars::Chams::World::Active.Value);
+
+					static std::vector chamOptions{
+						"Healthpacks",
+						"Ammopacks",
+						"Team Projectiles",
+						"Enemy Projectiles",
+					};
+					static std::vector dmeGlowMaterial{
+						"None",
+						"Fresnel Glow",
+						"Wireframe Glow"
+					};
+
+					static int currentSelected = 0; //
+					Chams_t& currentStruct = ([&]() -> Chams_t&
+						{
+							switch (currentSelected)
+							{
+							case 0: return Vars::Chams::World::Health;
+							case 1: return Vars::Chams::World::Ammo;
+							case 2: return Vars::Chams::World::Projectiles::Team;
+							case 3: return Vars::Chams::World::Projectiles::Enemy;
+							}
+
+							return Vars::Chams::World::Health;
+						}());
+					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
+
+					WCombo("Config", &currentSelected, chamOptions);
+					{
+						ColorPickerL("Colour", currentStruct.colour, 1);
+						MultiCombo({ "Active", "Obstructed" }, { &currentStruct.chamsActive, &currentStruct.showObstructed }, "Options");
+
+						WCombo("Material", &currentStruct.drawMaterial, DMEChamMaterials); HelpMarker("Which material the chams will apply to the player");
+						if (currentStruct.drawMaterial == 7)
+						{
+							ColorPickerL("Fresnel base colour", currentStruct.fresnelBase, 1);
+						}
+						if (currentStruct.drawMaterial == 9)
+						{
+							MaterialCombo("Custom Material", &currentStruct.customMaterial);
+						}
+						WCombo("Glow Overlay", &currentStruct.overlayType, dmeGlowMaterial);
+						ColorPickerL("Glow Colour", currentStruct.overlayColour, 1);
+						WToggle("Rainbow Glow", &currentStruct.overlayRainbow);
+						WToggle("Pulse Glow", &currentStruct.overlayPulse);
+						WSlider("Glow Reduction", &currentStruct.overlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+					}
+				} EndChild();
+
+				EndTable();
+			}
+			break;
+		}
+
+		// Visuals: Glow
+		case VisualsTab::Glow:
+		{
+			if (BeginTable("VisualsGlowTable", 3))
+			{
+				/* Column 1 */
+				if (TableColumnChild("VisualsGlowCol1"))
+				{
+					SectionTitle("Glow Main");
+					WToggle("Glow", &Vars::Glow::Main::Active.Value);
+					WCombo("Glow Type###GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" }); HelpMarker("Method in which glow will be rendered");
+					WSlider("Glow scale", &Vars::Glow::Main::Scale.Value, 1, 20, "%d", ImGuiSliderFlags_AlwaysClamp);
+
+					SectionTitle("Player Glow");
+					WToggle("Player glow###PlayerGlowButton", &Vars::Glow::Players::Active.Value); HelpMarker("Player glow master switch");
+					WToggle("Self glow###SelfGlow", &Vars::Glow::Players::ShowLocal.Value); HelpMarker("Draw glow on the local player");
+					WToggle("Self rainbow glow###SelfGlowRainbow", &Vars::Glow::Players::LocalRainbow.Value); HelpMarker("Homosapien");
+					WCombo("Ignore team###IgnoreTeamGlowp", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" }); HelpMarker("Which teammates the glow will ignore drawing on");
+					WToggle("Wearable glow###PlayerWearableGlow", &Vars::Glow::Players::Wearables.Value); HelpMarker("Will draw glow on player cosmetics");
+					WToggle("Weapon glow###PlayerWeaponGlow", &Vars::Glow::Players::Weapons.Value); HelpMarker("Will draw glow on player weapons");
+					WSlider("Glow alpha###PlayerGlowAlpha", &Vars::Glow::Players::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+					WCombo("Glow colour###GlowColour", &Vars::Glow::Players::Color.Value, { "Team", "Health" }); HelpMarker("Which colour the glow will draw");
+				} EndChild();
+
+				/* Column 2 */
+				if (TableColumnChild("VisualsGlowCol2"))
+				{
+					SectionTitle("Building Glow");
+					WToggle("Building glow###BuildiongGlowButton", &Vars::Glow::Buildings::Active.Value);
+					WToggle("Ignore team buildings###buildingglowignoreteams", &Vars::Glow::Buildings::IgnoreTeammates.Value);
+					WSlider("Glow alpha###BuildingGlowAlpha", &Vars::Glow::Buildings::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+					WCombo("Glow colour###GlowColourBuildings", &Vars::Glow::Buildings::Color.Value, { "Team", "Health" });
+				} EndChild();
+
+				/* Column 3 */
+				if (TableColumnChild("VisualsGlowCol3"))
 				{
 					SectionTitle("World Glow");
 					WToggle("World glow###Worldglowbutton", &Vars::Glow::World::Active.Value);
@@ -994,127 +919,7 @@ void CMenu::MenuVisuals()
 			break;
 		}
 
-		// Visuals: Font
-		case VisualsTab::Font:
-		{
-			if (BeginTable("VisualsFontTable", 3))
-			{
-				static std::vector fontFlagNames{ "Italic", "Underline", "Strikeout", "Symbol", "Antialias", "Gaussian", "Rotary", "Dropshadow", "Additive", "Outline", "Custom" };
-				static std::vector fontFlagValues{ 0x001, 0x002, 0x004, 0x008, 0x010, 0x020, 0x040, 0x080, 0x100, 0x200, 0x400 };
-
-				/* Column 1 */
-				if (TableColumnChild("VisualsFontCol1"))
-				{
-					SectionTitle("ESP Font");
-					WInputText("Font name###espfontname", &Vars::Fonts::FONT_ESP::szName);
-					WInputInt("Font height###espfontheight", &Vars::Fonts::FONT_ESP::nTall.Value);
-					WInputInt("Font weight###espfontweight", &Vars::Fonts::FONT_ESP::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP::nFlags.Value, "Font flags###FONT_ESP");
-
-					SectionTitle("Name Font");
-					WInputText("Font name###espfontnamename", &Vars::Fonts::FONT_ESP_NAME::szName);
-					WInputInt("Font height###espfontnameheight", &Vars::Fonts::FONT_ESP_NAME::nTall.Value);
-					WInputInt("Font weight###espfontnameweight", &Vars::Fonts::FONT_ESP_NAME::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_NAME::nFlags.Value, "Font flags###FONT_ESP_NAME");
-				} EndChild();
-
-				/* Column 2 */
-				if (TableColumnChild("VisualsFontCol2"))
-				{
-					SectionTitle("Condition Font");
-					WInputText("Font name###espfontcondname", &Vars::Fonts::FONT_ESP_COND::szName);
-					WInputInt("Font height###espfontcondheight", &Vars::Fonts::FONT_ESP_COND::nTall.Value);
-					WInputInt("Font weight###espfontcondweight", &Vars::Fonts::FONT_ESP_COND::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_COND::nFlags.Value, "Font flags###FONT_ESP_COND");
-
-					SectionTitle("Pickup Font");
-					WInputText("Font name###espfontpickupsname", &Vars::Fonts::FONT_ESP_PICKUPS::szName);
-					WInputInt("Font height###espfontpickupsheight", &Vars::Fonts::FONT_ESP_PICKUPS::nTall.Value);
-					WInputInt("Font weight###espfontpickupsweight", &Vars::Fonts::FONT_ESP_PICKUPS::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_PICKUPS::nFlags.Value, "Font flags###FONT_ESP_PICKUPS");
-				} EndChild();
-
-				/* Column 3 */
-				if (TableColumnChild("VisualsFontCol3"))
-				{
-					SectionTitle("Menu Font");
-					WInputText("Font name###espfontnamenameneby", &Vars::Fonts::FONT_MENU::szName);
-					WInputInt("Font height###espfontnameheightafsdfads", &Vars::Fonts::FONT_MENU::nTall.Value);
-					WInputInt("Font weight###espfontnameweightasfdafsd", &Vars::Fonts::FONT_MENU::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_MENU::nFlags.Value, "Font flags###FONT_MENU");
-
-					SectionTitle("Indicator Font");
-					WInputText("Font name###espfontindicatorname", &Vars::Fonts::FONT_INDICATORS::szName);
-					WInputInt("Font height###espfontindicatorheight", &Vars::Fonts::FONT_INDICATORS::nTall.Value);
-					WInputInt("Font weight###espfontindicatorweight", &Vars::Fonts::FONT_INDICATORS::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_INDICATORS::nFlags.Value, "Font flags###FONT_INDICATORS");
-
-					if (Button("Apply settings###fontapply"))
-					{
-						const Font_t fontEsp = {
-							0x0,
-							Vars::Fonts::FONT_ESP::szName.c_str(),
-							Vars::Fonts::FONT_ESP::nTall.Value,
-							Vars::Fonts::FONT_ESP::nWeight.Value,
-							Vars::Fonts::FONT_ESP::nFlags.Value
-						};
-						const Font_t fontEspName = {
-							0x0,
-							Vars::Fonts::FONT_ESP_NAME::szName.c_str(),
-							Vars::Fonts::FONT_ESP_NAME::nTall.Value,
-							Vars::Fonts::FONT_ESP_NAME::nWeight.Value,
-							Vars::Fonts::FONT_ESP_NAME::nFlags.Value
-						};
-						const Font_t fontEspCond = {
-							0x0,
-							Vars::Fonts::FONT_ESP_COND::szName.c_str(),
-							Vars::Fonts::FONT_ESP_COND::nTall.Value,
-							Vars::Fonts::FONT_ESP_COND::nWeight.Value,
-							Vars::Fonts::FONT_ESP_COND::nFlags.Value
-						};
-						const Font_t fontIndicator = {
-							0x0,
-							Vars::Fonts::FONT_INDICATORS::szName.c_str(),
-							Vars::Fonts::FONT_INDICATORS::nTall.Value,
-							Vars::Fonts::FONT_INDICATORS::nWeight.Value,
-							Vars::Fonts::FONT_INDICATORS::nFlags.Value
-						};
-						const Font_t fontEspPickups = {
-							0x0,
-							Vars::Fonts::FONT_ESP_PICKUPS::szName.c_str(),
-							Vars::Fonts::FONT_ESP_PICKUPS::nTall.Value,
-							Vars::Fonts::FONT_ESP_PICKUPS::nWeight.Value,
-							Vars::Fonts::FONT_ESP_PICKUPS::nFlags.Value
-						};
-						const Font_t fontMenu = {
-							0x0,
-							Vars::Fonts::FONT_MENU::szName.c_str(),
-							Vars::Fonts::FONT_MENU::nTall.Value,
-							Vars::Fonts::FONT_MENU::nWeight.Value,
-							Vars::Fonts::FONT_MENU::nFlags.Value
-						};
-
-						const std::vector <Font_t> fonts = {
-							fontEsp,
-							fontEspName,
-							fontEspCond,
-							fontEspPickups,
-							fontMenu,
-							fontIndicator,
-							{ 0x0, "Verdana", 18, 800, FONTFLAG_ANTIALIAS},
-							{ 0x0, "Verdana", 12, 800, FONTFLAG_DROPSHADOW},
-						};
-
-						g_Draw.RemakeFonts(fonts);
-					}
-				} EndChild();
-
-				EndTable();
-			}
-			break;
-		}
-
-			// Visuals: Misc
+		// Visuals: Misc
 		case VisualsTab::Misc:
 		{
 			if (BeginTable("VisualsMiscTable", 2))
@@ -1354,7 +1159,7 @@ void CMenu::MenuVisuals()
 					WToggle("Thirdperson", &Vars::Visuals::ThirdPerson.Value); HelpMarker("Will move your camera to be in a thirdperson view");
 					InputKeybind("Thirdperson key", Vars::Visuals::ThirdPersonKey.Value); HelpMarker("What key to toggle thirdperson, press ESC if no bind is desired");
 
-					WSlider("Thirdperson distance", &Vars::Visuals::ThirdpersonDist.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
+					WSlider("Thirdperson distance", &Vars::Visuals::ThirdpersonDist.Value, 0.f, 500.f, "%.0f", ImGuiSliderFlags_None);
 					WSlider("Thirdperson right", &Vars::Visuals::ThirdpersonRight.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
 					WSlider("Thirdperson up", &Vars::Visuals::ThirdpersonUp.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
 					WToggle("Thirdperson crosshair", &Vars::Visuals::ThirdpersonCrosshair.Value);
@@ -1370,6 +1175,7 @@ void CMenu::MenuVisuals()
 			break;
 		}
 
+		// Visuals: Radar
 		case VisualsTab::Radar:
 		{
 			if (BeginTable("VisualsRadarTable", 3))
@@ -1415,6 +1221,126 @@ void CMenu::MenuVisuals()
 					WToggle("Healthpack###radarworldda", &Vars::Radar::World::Health.Value);
 					WToggle("Ammopack###radarworlddb", &Vars::Radar::World::Ammo.Value);
 					WSlider("Icon size###worldsizeiconradar", &Vars::Radar::World::IconSize.Value, 12, 30, "%d");
+				} EndChild();
+
+				EndTable();
+			}
+			break;
+		}
+
+		// Visuals: Font
+		case VisualsTab::Font:
+		{
+			if (BeginTable("VisualsFontTable", 3))
+			{
+				static std::vector fontFlagNames{ "Italic", "Underline", "Strikeout", "Symbol", "Antialias", "Gaussian", "Rotary", "Dropshadow", "Additive", "Outline", "Custom" };
+				static std::vector fontFlagValues{ 0x001, 0x002, 0x004, 0x008, 0x010, 0x020, 0x040, 0x080, 0x100, 0x200, 0x400 };
+
+				/* Column 1 */
+				if (TableColumnChild("VisualsFontCol1"))
+				{
+					SectionTitle("ESP Font");
+					WInputText("Font name###espfontname", &Vars::Fonts::FONT_ESP::szName);
+					WInputInt("Font height###espfontheight", &Vars::Fonts::FONT_ESP::nTall.Value);
+					WInputInt("Font weight###espfontweight", &Vars::Fonts::FONT_ESP::nWeight.Value);
+					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP::nFlags.Value, "Font flags###FONT_ESP");
+
+					SectionTitle("Name Font");
+					WInputText("Font name###espfontnamename", &Vars::Fonts::FONT_ESP_NAME::szName);
+					WInputInt("Font height###espfontnameheight", &Vars::Fonts::FONT_ESP_NAME::nTall.Value);
+					WInputInt("Font weight###espfontnameweight", &Vars::Fonts::FONT_ESP_NAME::nWeight.Value);
+					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_NAME::nFlags.Value, "Font flags###FONT_ESP_NAME");
+				} EndChild();
+
+				/* Column 2 */
+				if (TableColumnChild("VisualsFontCol2"))
+				{
+					SectionTitle("Condition Font");
+					WInputText("Font name###espfontcondname", &Vars::Fonts::FONT_ESP_COND::szName);
+					WInputInt("Font height###espfontcondheight", &Vars::Fonts::FONT_ESP_COND::nTall.Value);
+					WInputInt("Font weight###espfontcondweight", &Vars::Fonts::FONT_ESP_COND::nWeight.Value);
+					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_COND::nFlags.Value, "Font flags###FONT_ESP_COND");
+
+					SectionTitle("Pickup Font");
+					WInputText("Font name###espfontpickupsname", &Vars::Fonts::FONT_ESP_PICKUPS::szName);
+					WInputInt("Font height###espfontpickupsheight", &Vars::Fonts::FONT_ESP_PICKUPS::nTall.Value);
+					WInputInt("Font weight###espfontpickupsweight", &Vars::Fonts::FONT_ESP_PICKUPS::nWeight.Value);
+					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_PICKUPS::nFlags.Value, "Font flags###FONT_ESP_PICKUPS");
+				} EndChild();
+
+				/* Column 3 */
+				if (TableColumnChild("VisualsFontCol3"))
+				{
+					SectionTitle("Menu Font");
+					WInputText("Font name###espfontnamenameneby", &Vars::Fonts::FONT_MENU::szName);
+					WInputInt("Font height###espfontnameheightafsdfads", &Vars::Fonts::FONT_MENU::nTall.Value);
+					WInputInt("Font weight###espfontnameweightasfdafsd", &Vars::Fonts::FONT_MENU::nWeight.Value);
+					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_MENU::nFlags.Value, "Font flags###FONT_MENU");
+
+					SectionTitle("Indicator Font");
+					WInputText("Font name###espfontindicatorname", &Vars::Fonts::FONT_INDICATORS::szName);
+					WInputInt("Font height###espfontindicatorheight", &Vars::Fonts::FONT_INDICATORS::nTall.Value);
+					WInputInt("Font weight###espfontindicatorweight", &Vars::Fonts::FONT_INDICATORS::nWeight.Value);
+					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_INDICATORS::nFlags.Value, "Font flags###FONT_INDICATORS");
+
+					if (Button("Apply settings###fontapply"))
+					{
+						const Font_t fontEsp = {
+							0x0,
+							Vars::Fonts::FONT_ESP::szName.c_str(),
+							Vars::Fonts::FONT_ESP::nTall.Value,
+							Vars::Fonts::FONT_ESP::nWeight.Value,
+							Vars::Fonts::FONT_ESP::nFlags.Value
+						};
+						const Font_t fontEspName = {
+							0x0,
+							Vars::Fonts::FONT_ESP_NAME::szName.c_str(),
+							Vars::Fonts::FONT_ESP_NAME::nTall.Value,
+							Vars::Fonts::FONT_ESP_NAME::nWeight.Value,
+							Vars::Fonts::FONT_ESP_NAME::nFlags.Value
+						};
+						const Font_t fontEspCond = {
+							0x0,
+							Vars::Fonts::FONT_ESP_COND::szName.c_str(),
+							Vars::Fonts::FONT_ESP_COND::nTall.Value,
+							Vars::Fonts::FONT_ESP_COND::nWeight.Value,
+							Vars::Fonts::FONT_ESP_COND::nFlags.Value
+						};
+						const Font_t fontIndicator = {
+							0x0,
+							Vars::Fonts::FONT_INDICATORS::szName.c_str(),
+							Vars::Fonts::FONT_INDICATORS::nTall.Value,
+							Vars::Fonts::FONT_INDICATORS::nWeight.Value,
+							Vars::Fonts::FONT_INDICATORS::nFlags.Value
+						};
+						const Font_t fontEspPickups = {
+							0x0,
+							Vars::Fonts::FONT_ESP_PICKUPS::szName.c_str(),
+							Vars::Fonts::FONT_ESP_PICKUPS::nTall.Value,
+							Vars::Fonts::FONT_ESP_PICKUPS::nWeight.Value,
+							Vars::Fonts::FONT_ESP_PICKUPS::nFlags.Value
+						};
+						const Font_t fontMenu = {
+							0x0,
+							Vars::Fonts::FONT_MENU::szName.c_str(),
+							Vars::Fonts::FONT_MENU::nTall.Value,
+							Vars::Fonts::FONT_MENU::nWeight.Value,
+							Vars::Fonts::FONT_MENU::nFlags.Value
+						};
+
+						const std::vector <Font_t> fonts = {
+							fontEsp,
+							fontEspName,
+							fontEspCond,
+							fontEspPickups,
+							fontMenu,
+							fontIndicator,
+							{ 0x0, "Verdana", 18, 800, FONTFLAG_ANTIALIAS},
+							{ 0x0, "Verdana", 12, 800, FONTFLAG_DROPSHADOW},
+						};
+
+						g_Draw.RemakeFonts(fonts);
+					}
 				} EndChild();
 
 				EndTable();
@@ -1477,7 +1403,7 @@ void CMenu::MenuHvH()
 					break;
 				}
 			}	//	add more here if you add your own fakelag modes :D
-			MultiCombo({ "While Moving", "While Visible", "Predict Visibility", "While Unducking", "While Airborne" }, { &Vars::CL_Move::FakeLag::WhileMoving.Value, &Vars::CL_Move::FakeLag::WhileVisible.Value, &Vars::CL_Move::FakeLag::PredictVisibility.Value, &Vars::CL_Move::FakeLag::WhileUnducking.Value, &Vars::CL_Move::FakeLag::WhileInAir.Value }, "Flags###FakeLagFlags");
+			MultiCombo({ "While Moving", "While Unducking", "While Airborne" }, { &Vars::CL_Move::FakeLag::WhileMoving.Value, &Vars::CL_Move::FakeLag::WhileUnducking.Value, &Vars::CL_Move::FakeLag::WhileGrounded.Value }, "Flags###FakeLagFlags");
 			WToggle("Unchoke On Attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value); HelpMarker("Will exit a fakelag cycle if you are attacking.");
 
 			WToggle("Retain BlastJump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value); HelpMarker("Will attempt to retain the blast jumping condition as soldier and runs independently of fakelag.");
@@ -1544,50 +1470,26 @@ void CMenu::MenuHvH()
 		{
 			/* Section: Anti Aim */
 			SectionTitle("Anti Aim");
-			WToggle("Enable Anti-aim", &Vars::AntiHack::AntiAim::Active.Value);
+			WToggle("Active", &Vars::AntiHack::AntiAim::Active.Value);
 			InputKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value); HelpMarker("The key to toggle anti aim");
-			WCombo("Pitch", &Vars::AntiHack::AntiAim::Pitch.Value, { "None", "Zero", "Up", "Down", "Fake up", "Fake down", "Random", "Half Up", "Jitter", "Fake Up Custom", "Fake Down Custom" }); HelpMarker("Which way to look up/down");
-			WCombo("Base Yaw", &Vars::AntiHack::AntiAim::BaseYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" });
-			WCombo("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Random", "Spin", "Edge", "On Hurt", "Custom", "Invert", "Jitter", "Jitter Random", "Jitter Flip", "Manual" }); HelpMarker("Which way to look horizontally");
-			WCombo("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Random", "Spin", "Edge", "On Hurt", "Custom", "Invert", "Jitter", "Jitter Random", "Jitter Flip", "Manual" }); HelpMarker("Which way to appear to look horizontally");
-			if (Vars::AntiHack::AntiAim::Pitch.Value == 9 || Vars::AntiHack::AntiAim::Pitch.Value == 10)
+
+			WCombo("Real Pitch", &Vars::AntiHack::AntiAim::PitchReal.Value, { "None", "Up", "Down", "Zero" }); HelpMarker("The pitch your hitboxes will be built around.");
+			WCombo("Fake Pitch", &Vars::AntiHack::AntiAim::PitchFake.Value, { "None", "Up", "Down" }); HelpMarker("The pitch that other players will see.");
+			
+			WCombo("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }); HelpMarker("The yaw your hitboxes will be built around.");
+			WCombo("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }); HelpMarker("The yaw that other players will see.");
+			if (Vars::AntiHack::AntiAim::YawFake.Value == 5 || Vars::AntiHack::AntiAim::YawReal.Value == 5)
 			{
-				WSlider("Custom Real Pitch", &Vars::AntiHack::AntiAim::CustomRealPitch.Value, -90.f, 90.f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.0f", 0); HelpMarker("How many degrees you will rotate in a tick");
 			}
-			if (Vars::AntiHack::AntiAim::Pitch.Value == 6 || Vars::AntiHack::AntiAim::YawFake.Value == 6 || Vars::AntiHack::AntiAim::YawReal.Value == 6)
-			{
-				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.0f"); HelpMarker("You spin me right 'round, baby, right 'round");
-			}
-			if (Vars::AntiHack::AntiAim::Pitch.Value == 6 || Vars::AntiHack::AntiAim::YawFake.Value == 5 || Vars::AntiHack::AntiAim::YawReal.Value == 5)
-			{
-				WSlider("Random Interval", &Vars::AntiHack::AntiAim::RandInterval.Value, 0, 100, "%d"); HelpMarker("How often the random Anti-Aim should update");
-			}
-			if (Vars::AntiHack::AntiAim::BaseYawMode.Value != 1)
-			{
-				WSlider("Base Yaw Offset", &Vars::AntiHack::AntiAim::BaseYawOffset.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
-			}
-			if (Vars::AntiHack::AntiAim::YawFake.Value == 10 || Vars::AntiHack::AntiAim::YawReal.Value == 10)
-			{
-				InputKeybind("Invert Key", Vars::AntiHack::AntiAim::InvertKey.Value);
-			}
-			if (Vars::AntiHack::AntiAim::YawFake.Value == 14 || Vars::AntiHack::AntiAim::YawReal.Value == 14)
-			{
-				InputKeybind("Manual Key", Vars::AntiHack::AntiAim::ManualKey.Value);
-			}
-			switch (Vars::AntiHack::AntiAim::YawFake.Value)
-			{
-				case 9: { WSlider("Custom fake yaw", &Vars::AntiHack::AntiAim::CustomFakeYaw.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
-				case 11:
-				case 12:
-				case 13: { WSlider("Fake Jitter Amt", &Vars::AntiHack::AntiAim::FakeJitter.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
-			}
-			switch (Vars::AntiHack::AntiAim::YawReal.Value)
-			{
-				case 9: { WSlider("Custom Real yaw", &Vars::AntiHack::AntiAim::CustomRealYaw.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
-				case 11:
-				case 12:
-				case 13: { WSlider("Real Jitter Amt", &Vars::AntiHack::AntiAim::RealJitter.Value, -180.f, 180.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); break; }
-			}
+			
+			WCombo("Real Offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }); HelpMarker("The yaw that your real yaw is added to.");
+			if (Vars::AntiHack::AntiAim::RealYawMode.Value != 1)
+				WSlider("Yaw Offset###RealYawOffset", &Vars::AntiHack::AntiAim::RealYawOffset.Value, -180, 180, "%.0f");
+			WCombo("Fake Offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }); HelpMarker("The yaw that your fake yaw is added to.");
+			if (Vars::AntiHack::AntiAim::FakeYawMode.Value != 1)
+				WSlider("Yaw Offset###FakeYawOffset", &Vars::AntiHack::AntiAim::FakeYawOffset.Value, -180, 180, "%.0f");
+
 			MultiCombo({ "AntiOverlap", "Jitter Legs", "HidePitchOnShot", "Anti-Backstab" }, { &Vars::AntiHack::AntiAim::AntiOverlap.Value, &Vars::AntiHack::AntiAim::LegJitter.Value, &Vars::AntiHack::AntiAim::InvalidShootPitch.Value, &Vars::AntiHack::AntiAim::AntiBackstab.Value }, "Misc.");
 
 			/* Section: Auto Peek */
@@ -2121,13 +2023,14 @@ void CMenu::DebugMenu()
 	{
 		const auto& pLocal = g_EntityCache.GetLocal();
 
-		Checkbox("Show Debug info", &Vars::Debug::DebugInfo.Value);
-		Checkbox("Allow secure servers", I::AllowSecureServers);
+		WToggle("Show Debug info", &Vars::Debug::DebugInfo.Value);
+		WToggle("Allow secure servers", I::AllowSecureServers);
 
 		bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
-		Checkbox("Pending Ping Refresh", m_bPendingPingRefresh);
+		WToggle("Pending Ping Refresh", m_bPendingPingRefresh);
 
-		WToggle("Show server hitboxes###tpShowServer", &Vars::Visuals::ThirdPersonServerHitbox.Value); HelpMarker("Will show the server angles in thirdperson in localhost servers");
+		WToggle("Show server hitboxes###tpShowServer", &Vars::Debug::ServerHitbox.Value); HelpMarker("Will show the server angles in thirdperson in localhost servers");
+		WToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value);
 
 		// Particle tester
 		if (CollapsingHeader("Particles"))
