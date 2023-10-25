@@ -118,7 +118,6 @@ void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
 		if ((G::DoubleTap || pCmd->buttons & IN_ATTACK) && iNetChan->m_nChokedPackets >= 21)
 			*pSendPacket = true;
-		Utils::ConLog("DoubletapPacket", tfm::format("%i, %i, %i, %i", *pSendPacket, G::ShiftedGoal, G::ShiftedTicks, iNetChan->m_nChokedPackets).c_str(), { 224, 255, 131, 255 });
 	}
 }
 
