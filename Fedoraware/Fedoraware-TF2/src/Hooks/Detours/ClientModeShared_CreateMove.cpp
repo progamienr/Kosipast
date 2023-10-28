@@ -79,9 +79,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			nOldGroundEnt = pLocal->m_hGroundEntity();
 
 			if (const int MaxSpeed = pLocal->GetMaxSpeed())
-			{
 				G::Frozen = MaxSpeed == 1;
-			}
 
 			// Update Global Info
 			if (const auto& pWeapon = g_EntityCache.GetWeapon())

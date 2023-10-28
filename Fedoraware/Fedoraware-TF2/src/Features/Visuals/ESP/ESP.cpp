@@ -82,8 +82,8 @@ bool CESP::GetDrawBounds(CBaseEntity* pEntity, int& x, int& y, int& w, int& h)
 
 	//if (bIsPlayer && Vars::ESP::Players::Box.Value)
 	//{
-	//	x_ += (right - left) / 8.0f;
-	//	w_ -= (right - left) / 8.0f * 2.0f;
+		x_ += (right - left) / 8.0f;
+		w_ -= (right - left) / 8.0f * 2.0f;
 	//}
 
 	x = static_cast<int>(x_);

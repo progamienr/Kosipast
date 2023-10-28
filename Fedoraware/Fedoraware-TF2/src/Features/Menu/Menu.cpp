@@ -122,21 +122,17 @@ void CMenu::DrawTabbar()
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, BackgroundLight.Value);
 		ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
+
 		if (ImGui::TabButton("Aimbot", CurrentTab == MenuTab::Aimbot))
 			CurrentTab = MenuTab::Aimbot;
-
 		if (ImGui::TabButton("Triggerbot", CurrentTab == MenuTab::Trigger))
 			CurrentTab = MenuTab::Trigger;
-
 		if (ImGui::TabButton("Visuals", CurrentTab == MenuTab::Visuals))
 			CurrentTab = MenuTab::Visuals;
-
 		if (ImGui::TabButton("HvH", CurrentTab == MenuTab::HvH))
 			CurrentTab = MenuTab::HvH;
-
 		if (ImGui::TabButton("Misc", CurrentTab == MenuTab::Misc))
 			CurrentTab = MenuTab::Misc;
-
 		if (ImGui::TabButton("Settings", CurrentTab == MenuTab::Settings))
 			CurrentTab = MenuTab::Settings;
 
@@ -153,21 +149,17 @@ void CMenu::DrawTabbar()
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, BackgroundLight.Value);
 			ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
+
 			if (ImGui::TabButton("ESP", CurrentVisualsTab == VisualsTab::ESP))
 				CurrentVisualsTab = VisualsTab::ESP;
-
 			if (ImGui::TabButton("Chams", CurrentVisualsTab == VisualsTab::Chams))
 				CurrentVisualsTab = VisualsTab::Chams;
-
 			if (ImGui::TabButton("Glow", CurrentVisualsTab == VisualsTab::Glow))
 				CurrentVisualsTab = VisualsTab::Glow;
-
 			if (ImGui::TabButton("Misc", CurrentVisualsTab == VisualsTab::Misc))
 				CurrentVisualsTab = VisualsTab::Misc;
-
 			if (ImGui::TabButton("Radar", CurrentVisualsTab == VisualsTab::Radar))
 				CurrentVisualsTab = VisualsTab::Radar;
-
 			if (ImGui::TabButton("Fonts", CurrentVisualsTab == VisualsTab::Font))
 				CurrentVisualsTab = VisualsTab::Font;
 
@@ -1286,20 +1278,6 @@ void CMenu::MenuMisc()
 		/* Column 2 */
 		if (TableColumnChild("MiscCol2"))
 		{
-			SectionTitle("Chat");
-			WToggle("Chat Flags", &Vars::Misc::ChatFlags.Value); HelpMarker("Adds advanced prefixes to chat messages");
-
-			SectionTitle("Queueing");
-			WToggle("Region selector", &Vars::Misc::RegionChanger.Value);
-
-			MultiFlags({ "Atlanta", "Chicago", "Los Angeles", "Moses Lake", "Seattle", "Virginia", "Washington", "Amsterdam", "Frankfurt", "London", "Madrid", "Paris", "Stockholm", "Vienna", "Warsaw", "Buenos Aires", "Lima", "Santiago", "Sao Paulo", "Chennai", "Dubai", "Guangzhou", "Hong Kong", "Mumbai", "Seoul", "Shanghai", "Singapore", "Tianjin", "Tokyo", "Sydney", "Johannesburg" },
-				{		  DC_ATL,	 DC_ORD,	DC_LAX,		   DC_EAT,		 DC_SEA,	DC_IAD,		DC_DFW,		  DC_AMS,	   DC_FRA,		DC_LHR,	  DC_MAD,	DC_PAR,	 DC_STO,	  DC_VIE,	DC_WAW,	  DC_EZE,		  DC_LIM, DC_SCL,	  DC_GRU,	   DC_MAA,	  DC_DXB,  DC_CAN,		DC_HKG,		 DC_BOM,   DC_SEO,	DC_SHA,		DC_SGP,		 DC_TSN,	DC_TYO,	 DC_SYD, DC_JNB			 },
-				&Vars::Misc::RegionsAllowed.Value,
-				"Regions"
-			);
-			WToggle("Freeze queue timer", &Vars::Misc::FreezeQueue.Value);
-			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" }); HelpMarker("Automatically starts queueuing for casual");
-
 			SectionTitle("Exploits");
 			WToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value); HelpMarker("Allows you to use some sv_cheats commands(clientside)");
 			WToggle("Pure bypass", &Vars::Misc::BypassPure.Value); HelpMarker("Allows you to load any custom files, even if disallowed by the sv_pure setting");
@@ -1331,6 +1309,19 @@ void CMenu::MenuMisc()
 				}
 			}
 
+			SectionTitle("Queueing");
+			WToggle("Region selector", &Vars::Misc::RegionChanger.Value);
+			MultiFlags({ "Atlanta", "Chicago", "Los Angeles", "Moses Lake", "Seattle", "Virginia", "Washington", "Amsterdam", "Frankfurt", "London", "Madrid", "Paris", "Stockholm", "Vienna", "Warsaw", "Buenos Aires", "Lima", "Santiago", "Sao Paulo", "Chennai", "Dubai", "Guangzhou", "Hong Kong", "Mumbai", "Seoul", "Shanghai", "Singapore", "Tianjin", "Tokyo", "Sydney", "Johannesburg" },
+				{		  DC_ATL,	 DC_ORD,	DC_LAX,		   DC_EAT,		 DC_SEA,	DC_IAD,		DC_DFW,		  DC_AMS,	   DC_FRA,		DC_LHR,	  DC_MAD,	DC_PAR,	 DC_STO,	  DC_VIE,	DC_WAW,	  DC_EZE,		  DC_LIM, DC_SCL,	  DC_GRU,	   DC_MAA,	  DC_DXB,  DC_CAN,		DC_HKG,		 DC_BOM,   DC_SEO,	DC_SHA,		DC_SGP,		 DC_TSN,	DC_TYO,	 DC_SYD,   DC_JNB },
+				&Vars::Misc::RegionsAllowed.Value,
+				"Regions"
+			);
+			WToggle("Freeze queue timer", &Vars::Misc::FreezeQueue.Value);
+			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" }); HelpMarker("Automatically starts queueuing for casual");
+
+			SectionTitle("Chat");
+			WToggle("Chat Flags", &Vars::Misc::ChatFlags.Value); HelpMarker("Adds advanced prefixes to chat messages");
+
 			SectionTitle("Steam RPC");
 			WToggle("Steam RPC", &Vars::Misc::Steam::EnableRPC.Value); HelpMarker("Enable Steam Rich Presence"); HelpMarker("Enable Steam Rich Presence");
 			WCombo("Match group", &Vars::Misc::Steam::MatchGroup.Value, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" }); HelpMarker("Which match group should be used?");
@@ -1360,20 +1351,16 @@ void CMenu::MenuSettings()
 			if (ColorPicker("Accent", Vars::Menu::Theme::Accent.Value))
 				LoadStyle();
 			SameLine(); Text("Accent");
-
 			WInputText("Name", &Vars::Menu::CheatName.Value);
 			WInputText("Chat Prefix", &Vars::Menu::CheatPrefix.Value);
 			WToggle("Keybinds", &Vars::Menu::ShowKeybinds.Value);
-
 			InputKeybind("Menu key", Vars::Menu::MenuKey.Value, true);
 
 			SectionTitle("Configs");
-
 			if (Button("Open configs folder", SIZE_FULL_WIDTH))
 				ShellExecuteA(NULL, NULL, g_CFG.GetConfigPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
 			if (Button("Open visuals folder", SIZE_FULL_WIDTH))
 				ShellExecuteA(NULL, NULL, g_CFG.GetVisualsPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
-
 			Dummy({ 0, 5 });
 
 			/* Config Tabs */
@@ -1383,9 +1370,9 @@ void CMenu::MenuSettings()
 			if (ImGui::BeginTable("ConfigTable", 2))
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
+
 				if (ImGui::TabButton("General", CurrentConfigTab == ConfigTab::General))
 					CurrentConfigTab = ConfigTab::General;
-
 				if (ImGui::TabButton("Visuals", CurrentConfigTab == ConfigTab::Visuals))
 					CurrentConfigTab = ConfigTab::Visuals;
 
@@ -1410,16 +1397,14 @@ void CMenu::MenuSettings()
 				if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + newConfigName))
-					{
 						g_CFG.SaveConfig(newConfigName);
-					}
 				}
 
 				// Config list
 				for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetConfigPath()))
 				{
-					if (!entry.is_regular_file()) { continue; }
-					if (entry.path().extension() != g_CFG.ConfigExtension) { continue; }
+					if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
+						continue;
 
 					std::string configName = entry.path().filename().string();
 					configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
@@ -1434,9 +1419,7 @@ void CMenu::MenuSettings()
 
 						// Config name button
 						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-						{
 							selected = configName;
-						}
 						PopStyleColor();
 
 						if (BeginTable("ConfigActions", 3))
@@ -1446,9 +1429,7 @@ void CMenu::MenuSettings()
 							if (Button("Save", SIZE_FULL_WIDTH))
 							{
 								if (configName != g_CFG.GetCurrentConfig())
-								{
 									OpenPopup("Save config?");
-								}
 								else
 								{
 									g_CFG.SaveConfig(selected);
@@ -1468,9 +1449,7 @@ void CMenu::MenuSettings()
 							// Remove config button
 							TableNextColumn();
 							if (Button("Remove", SIZE_FULL_WIDTH))
-							{
 								OpenPopup("Remove config?");
-							}
 
 							// Dialogs
 							{
@@ -1489,9 +1468,7 @@ void CMenu::MenuSettings()
 
 									SameLine();
 									if (Button("No", ImVec2(120, 0)))
-									{
 										CloseCurrentPopup();
-									}
 									EndPopup();
 								}
 
@@ -1509,9 +1486,7 @@ void CMenu::MenuSettings()
 									}
 									SameLine();
 									if (Button("No", ImVec2(150, 0)))
-									{
 										CloseCurrentPopup();
-									}
 									EndPopup();
 								}
 							}
@@ -1524,17 +1499,13 @@ void CMenu::MenuSettings()
 						PushStyleColor(ImGuiCol_Button, GetStyle().Colors[ImGuiCol_ButtonActive]);
 						std::string buttonText = "> " + configName + " <";
 						if (Button(buttonText.c_str(), SIZE_FULL_WIDTH))
-						{
 							selected = configName;
-						}
 						PopStyleColor();
 					}
 					else
 					{
 						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-						{
 							selected = configName;
-						}
 					}
 				}
 
@@ -1551,16 +1522,14 @@ void CMenu::MenuSettings()
 				if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + newConfigName))
-					{
 						g_CFG.SaveVisual(newConfigName);
-					}
 				}
 
 				// Visuals list
 				for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetVisualsPath()))
 				{
-					if (!entry.is_regular_file()) { continue; }
-					if (entry.path().extension() != g_CFG.ConfigExtension) { continue; }
+					if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
+						continue;
 
 					std::string configName = entry.path().filename().string();
 					configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
@@ -1575,9 +1544,7 @@ void CMenu::MenuSettings()
 
 						// Config name button
 						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-						{
 							selected = configName;
-						}
 						PopStyleColor();
 
 						// Visuals action buttons
@@ -1588,9 +1555,7 @@ void CMenu::MenuSettings()
 							if (Button("Save", SIZE_FULL_WIDTH))
 							{
 								if (configName != g_CFG.GetCurrentVisuals())
-								{
 									OpenPopup("Save visuals?");
-								}
 								else
 								{
 									g_CFG.SaveVisual(selected);
@@ -1610,9 +1575,7 @@ void CMenu::MenuSettings()
 							// Remove visual button
 							TableNextColumn();
 							if (Button("Remove", SIZE_FULL_WIDTH))
-							{
 								OpenPopup("Remove visuals?");
-							}
 
 							// Dialogs
 							{
@@ -1631,9 +1594,7 @@ void CMenu::MenuSettings()
 
 									SameLine();
 									if (Button("No", ImVec2(120, 0)))
-									{
 										CloseCurrentPopup();
-									}
 									EndPopup();
 								}
 
@@ -1651,9 +1612,7 @@ void CMenu::MenuSettings()
 									}
 									SameLine();
 									if (Button("No", ImVec2(150, 0)))
-									{
 										CloseCurrentPopup();
-									}
 									EndPopup();
 								}
 							}
@@ -1666,17 +1625,13 @@ void CMenu::MenuSettings()
 						PushStyleColor(ImGuiCol_Button, GetStyle().Colors[ImGuiCol_ButtonActive]);
 						std::string buttonText = "> " + configName + " <";
 						if (Button(buttonText.c_str(), SIZE_FULL_WIDTH))
-						{
 							selected = configName;
-						}
 						PopStyleColor();
 					}
 					else
 					{
 						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-						{
 							selected = configName;
-						}
 					}
 				}
 			}
@@ -1685,14 +1640,20 @@ void CMenu::MenuSettings()
 		/* Column 2 */
 		if (TableColumnChild("SettingsCol2"))
 		{
+			SectionTitle("Logging");
+			MultiFlags({ "Votes", "Class Changes", "Damage" }, { 1 << 0, 1 << 1, 1 << 2 }, &Vars::Logging::Logs.Value, "Logs");
+			MultiFlags({ "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, &Vars::Logging::LogTo.Value, "Log to");
+			ColorPickerL("Notification background", Vars::Logging::Notification::Background.Value);
+			ColorPickerL("Notification outline", Vars::Logging::Notification::Outline.Value, 1);
+			ColorPickerL("Notification color", Vars::Logging::Notification::Text.Value, 2);
+			WSlider("Notification time", &Vars::Logging::Notification::Lifetime.Value, 0.5f, 3.f, "%.1f");
+
 			SectionTitle("Debug");
 			WToggle("Debug info", &Vars::Debug::Info.Value);
 			WToggle("Debug logging", &Vars::Debug::Logging.Value);
 			WToggle("Allow secure servers", I::AllowSecureServers);
-
 			bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
 			WToggle("Pending Ping Refresh", m_bPendingPingRefresh);
-
 			WToggle("Show server hitboxes###tpShowServer", &Vars::Debug::ServerHitbox.Value); HelpMarker("Will show the server angles in thirdperson in localhost servers");
 			WToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value);
 
@@ -1707,53 +1668,19 @@ void CMenu::MenuSettings()
 					Particles::DispatchParticleEffect(particleName.c_str(), pLocal->GetAbsOrigin(), { });
 			}
 
-			SectionTitle("Logging");
-			MultiFlags({ "Votes", "Class Changes", "Damage" }, { 1 << 0, 1 << 1, 1 << 2 }, & Vars::Logging::Logs.Value, "Logs");
-			MultiFlags({ "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, & Vars::Logging::LogTo.Value, "Log to");
-			ColorPickerL("Notification background", Vars::Logging::Notification::Background.Value);
-			ColorPickerL("Notification outline", Vars::Logging::Notification::Outline.Value, 1);
-			ColorPickerL("Notification color", Vars::Logging::Notification::Text.Value, 2);
-			WSlider("Notification time", &Vars::Logging::Notification::Lifetime.Value, 0.5f, 3.f, "%.1f");
-
 			SectionTitle("Utilities");
-			if (Button("Full update", SIZE_FULL_WIDTH))
+			if (Button("cl_fullupdate", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("cl_fullupdate");
-			if (Button("Reload HUD", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("hud_reloadscheme");
-			if (Button("Restart sound", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("snd_restart");
-			if (Button("Stop sound", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("stopsound");
-			if (Button("Status", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("status");
-			if (Button("Ping", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("ping");
 			if (Button("Retry", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("retry");
-			if (Button("Exit", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("exit");
 			if (Button("Console", SIZE_FULL_WIDTH))
 				I::EngineClient->ClientCmd_Unrestricted("showconsole");
-			if (Button("Demo playback", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("demoui");
-			if (Button("Demo trackbar", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("demoui2");
-			if (Button("Itemtest", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("itemtest");
 			if (Button("Fix Chams", SIZE_FULL_WIDTH))
 			{
 				F::DMEChams.CreateMaterials();
 				F::Glow.CreateMaterials();
 				F::MaterialEditor.LoadMaterials();
 			}
-			if (Button("Print Hashes", SIZE_FULL_WIDTH))
-				Hash::PrintHash();
-			if (Button("Reveal bullet lines", SIZE_FULL_WIDTH))
-				F::Visuals.RevealBulletLines();
-			if (Button("Reveal prediction lines", SIZE_FULL_WIDTH))
-				F::Visuals.RevealSimLines();
-			if (Button("Reveal boxes", SIZE_FULL_WIDTH))
-				F::Visuals.RevealBoxes();
 #ifdef DEBUG
 			if (Button("Dump Classes", SIZE_FULL_WIDTH))
 				F::Misc.DumpClassIDS();
@@ -1764,9 +1691,53 @@ void CMenu::MenuSettings()
 			if (!I::EngineClient->IsConnected())
 			{
 				if (Button("Unlock all achievements", SIZE_FULL_WIDTH))
-					F::Misc.UnlockAchievements();
+					OpenPopup("Unlock achievements?");
 				if (Button("Lock all achievements", SIZE_FULL_WIDTH))
-					F::Misc.LockAchievements();
+					OpenPopup("Lock achievements?");
+
+				{
+					if (BeginPopupModal("Unlock achievements?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						Text("Do you really want to unlock all achievements?");
+
+						Separator();
+						if (Button("Yes, unlock!", ImVec2(150, 0)))
+						{
+							F::Misc.UnlockAchievements();
+							CloseCurrentPopup();
+						}
+						SameLine();
+						if (Button("No", ImVec2(150, 0)))
+							CloseCurrentPopup();
+						EndPopup();
+					}
+					if (BeginPopupModal("Lock achievements?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						Text("Do you really want to lock all achievements?");
+
+						Separator();
+						if (Button("Yes, lock!", ImVec2(150, 0)))
+						{
+							F::Misc.LockAchievements();
+							CloseCurrentPopup();
+						}
+						SameLine();
+						if (Button("No", ImVec2(150, 0)))
+							CloseCurrentPopup();
+						EndPopup();
+					}
+				}
+			}
+			if (Vars::Debug::Info.Value)
+			{
+				if (Button("Reveal bullet lines", SIZE_FULL_WIDTH))
+					F::Visuals.RevealBulletLines();
+				if (Button("Reveal prediction lines", SIZE_FULL_WIDTH))
+					F::Visuals.RevealSimLines();
+				if (Button("Reveal boxes", SIZE_FULL_WIDTH))
+					F::Visuals.RevealBoxes();
+				if (Button("Print Hashes", SIZE_FULL_WIDTH))
+					Hash::PrintHash();
 			}
 		} EndChild();
 

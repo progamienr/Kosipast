@@ -49,7 +49,7 @@ void CFakeLag::PreserveBlastJump(const int nOldGround, const int nOldFlags)
 		return;
 
 	const bool bVar = Vars::CL_Move::FakeLag::RetainBlastJump.Value;
-	const bool bPlayerReady = pLocal->IsPlayer() && pLocal->OnSolid() && nOldGround > 0 && nOldFlags & FL_ONGROUND;
+	const bool bPlayerReady = pLocal->IsPlayer() && (pLocal->OnSolid() || nOldGround >= 0 || nOldFlags & FL_ONGROUND);
 	const bool bCanPreserve = pLocal->GetClassNum() == ETFClass::CLASS_SOLDIER && pLocal->GetCondEx2() & TFCondEx2_BlastJumping;
 	const bool bValid = GetAsyncKeyState(VK_SPACE) & 0x8000 && !pLocal->IsDucking();
 
