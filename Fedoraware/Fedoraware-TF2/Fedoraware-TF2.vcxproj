@@ -187,9 +187,9 @@
     <ClCompile Include="src\Features\Auto\AutoJump\AutoJump.cpp" />
     <ClCompile Include="src\Features\Auto\AutoUber\AutoUber.cpp" />
     <ClCompile Include="src\Features\Backtrack\Backtrack.cpp" />
-    <ClCompile Include="src\Features\Logs\Logs.cpp" />
     <ClCompile Include="src\Features\Commands\Commands.cpp" />
     <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
+    <ClCompile Include="src\Features\Logs\Logs.cpp" />
     <ClCompile Include="src\Features\Menu\ConfigManager\ConfigManager.cpp" />
     <ClCompile Include="src\Features\Menu\MaterialEditor\MaterialEditor.cpp" />
     <ClCompile Include="src\Features\Menu\Menu.cpp" />
@@ -401,11 +401,11 @@
     <ClInclude Include="src\Features\Auto\AutoJump\AutoJump.h" />
     <ClInclude Include="src\Features\Auto\AutoUber\AutoUber.h" />
     <ClInclude Include="src\Features\Backtrack\Backtrack.h" />
-    <ClInclude Include="src\Features\Logs\Logs.h" />
     <ClInclude Include="src\Features\Color.h" />
     <ClInclude Include="src\Features\Commands\Commands.h" />
     <ClInclude Include="src\Features\CritHack\CritHack.h" />
     <ClInclude Include="src\Features\Feature.h" />
+    <ClInclude Include="src\Features\Logs\Logs.h" />
     <ClInclude Include="src\Features\Menu\Components.hpp" />
     <ClInclude Include="src\Features\Menu\ConfigManager\ConfigManager.h" />
     <ClInclude Include="src\Features\Menu\Fonts\IconsMaterialDesign.h" />
