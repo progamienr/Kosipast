@@ -258,9 +258,7 @@ public: //Everything else, lol
 		if (pLocal->GetClassNum() == CLASS_SPY)
 		{
 			if (pLocal->GetFeignDeathReady() && !pLocal->IsCloaked())
-			{
 				return false;
-			}
 
 			{ //Invis
 				static float flTimer = 0.0f;

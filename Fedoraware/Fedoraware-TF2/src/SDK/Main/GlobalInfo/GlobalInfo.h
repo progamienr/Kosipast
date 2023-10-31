@@ -97,7 +97,6 @@ namespace G
 	inline std::vector<DrawBullet> BulletsStorage;
 
 	/* Prediction */
-	inline Vec3 PredictedPos = {};
 	inline Vec3 LinearPredLine = {};
 	inline std::deque<std::pair<Vec3, Vec3>> MoveLines;
 	inline std::deque<std::pair<Vec3, Vec3>> ProjLines;

@@ -135,7 +135,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			const auto &fFontEsp = g_Draw.GetFont(FONT_ESP), &fFontName = g_Draw.GetFont(FONT_ESP_NAME), &fFontCond = g_Draw.GetFont(FONT_ESP_COND);
 
 			const Color_t drawColor = GetTeamColor(pPlayer->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
-			const int nMaxHealth = pPlayer->GetMaxHealth(), nHealth = std::min(pPlayer->GetHealth(), nMaxHealth), nClassNum = pPlayer->GetClassNum();
+			const int nMaxHealth = pPlayer->GetMaxHealth(), nHealth = pPlayer->GetHealth(), nClassNum = pPlayer->GetClassNum();
 
 			// Bone ESP
 			if (Vars::ESP::Players::Bones.Value)
@@ -158,7 +158,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			// Health bar
 			if (Vars::ESP::Players::HealthBar.Value)
 			{
-				const float ratio = float(nHealth) / nMaxHealth;
+				const float ratio = float(std::min(nHealth, nMaxHealth)) / nMaxHealth;
 				Color_t cColor = nHealth > nMaxHealth ? Vars::Colors::Overheal.Value : Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, ratio);
 
 				g_Draw.RectOverlay(x - 5, y + h, 2, h * ratio, 1.f, cColor, { 0, 0, 0, 255 }, false);
@@ -168,7 +168,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 			// Health text
 			if (Vars::ESP::Players::HealthText.Value)
-				g_Draw.String(fFontEsp, x - 2 - lOffset, (y + h) - (float(nHealth) / nMaxHealth * h) - 2, nHealth > nMaxHealth ? Vars::Colors::Overheal.Value : Color_t{ 255, 255, 255, 255 }, ALIGN_REVERSE, "%d", nHealth);
+				g_Draw.String(fFontEsp, x - 2 - lOffset, (y + h) - (float(std::min(nHealth, nMaxHealth)) / nMaxHealth * h) - 2, nHealth > nMaxHealth ? Vars::Colors::Overheal.Value : Color_t{ 255, 255, 255, 255 }, ALIGN_REVERSE, "%d", nHealth);
 
 			// Ubercharge bar/text
 			if (nClassNum == CLASS_MEDIC)
@@ -380,18 +380,21 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				// Lagcomp cond, idea from nitro
 				if (Vars::ESP::Players::Conditions::LagComp.Value)
 				{
-					const float flSimTime = pPlayer->GetSimulationTime(), flOldSimTime = pPlayer->GetOldSimulationTime();
-					if (flSimTime != flOldSimTime)
+					const float flDelta = pPlayer->GetSimulationTime() - pPlayer->GetOldSimulationTime();
+					if (TIME_TO_TICKS(flDelta) != 1)
 					{
-						if (!F::Backtrack.mRecords[pPlayer].empty())
+						bool bDisplay = F::Backtrack.mRecords[pPlayer].empty();
+						if (!bDisplay)
 						{
 							const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
 							const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
 							if (vDelta.Length2DSqr() > 4096.f)
-							{
-								g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
-								rOffset += fFontCond.nTall;
-							}
+								bDisplay = true;
+						}
+						if (bDisplay)
+						{
+							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
+							rOffset += fFontCond.nTall;
 						}
 					}
 				}

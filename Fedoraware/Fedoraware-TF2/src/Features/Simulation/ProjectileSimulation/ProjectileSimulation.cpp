@@ -43,9 +43,13 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_DRG_POMSON:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
-		if (pWeapon->GetWeaponID() == TF_WEAPON_DRG_POMSON)
-			pos.z -= 13.f;
-		out = { TF_PROJECTILE_ENERGY_RING, pos, ang, { 1.f, 1.f, 1.f }, bQuick ? 1081344.f : 1200.f, 0.f, true };
+		float speed = 1200.f;
+		switch (pWeapon->GetWeaponID())
+		{
+		case TF_WEAPON_PARTICLE_CANNON: speed = Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon); break;
+		case TF_WEAPON_DRG_POMSON: pos.z -= 13.f; break;
+		}
+		out = { TF_PROJECTILE_ENERGY_RING, pos, ang, { 1.f, 1.f, 1.f }, bQuick ? 1081344.f : speed, 0.f, true };
 		return true;
 	}
 	case TF_WEAPON_GRENADELAUNCHER:
@@ -105,15 +109,10 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		return true;
 	}
 	case TF_WEAPON_CROSSBOW:
-	{
-		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_ARROW, pos, ang, { 3.f, 3.f, 3.f }, 2400.f, 0.2f, true };
-		return true;
-	}
 	case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_BUILDING_REPAIR_BOLT, pos, ang, { 1.f, 1.f, 1.f }, 2400.f, 0.2f, true };
+		out = { TF_PROJECTILE_ARROW, pos, ang, { 3.f, 3.f, 3.f }, 2400.f, 0.2f, true };
 		return true;
 	}
 	case TF_WEAPON_SYRINGEGUN_MEDIC:

@@ -98,7 +98,8 @@ namespace Vars
 		CVar(Latency, 0)
 		CVar(Interp, 0)
 		CVar(Window, 185)
-		CVar(UnchokePrediction, false) // seems iffy
+		CVar(UnchokePrediction, false)
+		CVar(AllowForward, false)
 		CVar(PassthroughOffset, -1, NOSAVE) // debug
 		CVar(TicksetOffset, 0, NOSAVE) // debug
 		CVar(ChokePassMod, 1, NOSAVE) // debug
@@ -171,8 +172,9 @@ namespace Vars
 			CVar(VerticalShift, 5.f, NOSAVE) // debug
 			CVar(LatOff, 0.f, NOSAVE) // debug
 			CVar(PhyOff, 0.f, NOSAVE) // debug
-			CVar(HuntermanMode, 0, NOSAVE) // debug
+			CVar(HuntermanMode, 4, NOSAVE) // debug
 			CVar(HuntermanShift, 2.f, NOSAVE) // debug
+			CVar(HuntermanLerp, 50.f, NOSAVE) // debug
 		SUBNAMESPACE_END(Projectile)
 
 		SUBNAMESPACE_BEGIN(Melee)
@@ -181,7 +183,7 @@ namespace Vars
 			CVar(SortMethod, 1) //0 - FOV, 1 - Distance
 			CVar(AimMethod, 2) //0 - Normal,	1 - Smooth, 2 - Silent
 			CVar(SmoothingAmount, 25)
-			CVar(PredictSwing, false)
+			CVar(SwingPrediction, false)
 			CVar(AutoBackstab, true)
 			CVar(IgnoreRazorback, true)
 			CVar(WhipTeam, false)
@@ -220,7 +222,7 @@ namespace Vars
 			CVar(AutoVacc, false)
 			CVar(HealthLeft, 35.0f)
 			CVar(VoiceCommand, false)
-			CVar(ReactFoV, 25)
+			CVar(ReactFOV, 25)
 			CVar(BulletRes, true)
 			CVar(BlastRes, true)
 			CVar(FireRes, true)
@@ -568,8 +570,6 @@ namespace Vars
 		CVar(VMOffsets, Vec3(), VISUAL)
 		CVar(VMRoll, 0, VISUAL)
 
-		CVar(EquipRegionUnlock, false, VISUAL)
-
 		CVar(NoStaticPropFade, false, VISUAL)
 
 		SUBNAMESPACE_BEGIN(RagdollEffects)
@@ -624,7 +624,7 @@ namespace Vars
 			CVar(Key, 0x54)
 			CVar(Mode, 1) // 0 - Always, 1 - Hold, 2 - Toggle
 
-			CVar(Type, 0) // 0 - plain, 1 - random
+			CVar(Type, 0) // 0 - plain, 1 - random, 2 - adaptive
 			CVar(Min, 1)
 			CVar(Max, 1)
 			CVar(Value, 1)
@@ -649,37 +649,41 @@ namespace Vars
 	NAMESPACE_END(CL_Move)
 
 	NAMESPACE_BEGIN(Misc)
-		CVar(FastDeltaStrafe, false)
-		CVar(AccurateMovement, 0)
 		CVar(AutoJump, false)
 		CVar(AutoStrafe, 0)
 		CVar(DirectionalOnlyOnMove, true)
 		CVar(DirectionalOnlyOnSpace, false)
-		CVar(Directional, false)
-		CVar(TauntSlide, false)
-		CVar(BypassPure, false)
-		CVar(DisableInterpolation, false)
-		CVar(NoPush, 0)	//	0 off, 1 on, 2 on while not afk, 3 semi while afk
-		CVar(AntiAFK, false)
-		CVar(VotingOptions, 0b000100) // 000100 {verbose, autovote, party, chat, console, text}
-		CVar(CheatsBypass, false)
-		CVar(CrouchSpeed, false)
+		CVar(FastStop, false)
 		CVar(FastAccel, false)
-		CVar(FakeAccelAngle, false)
-		CVar(AntiAutobalance, false)
-		CVar(MVMRes, false)
+		CVar(FastStrafe, false)
+		CVar(NoPush, false)
+		CVar(CrouchSpeed, false)
+
+		CVar(AntiAFK, false)
+		CVar(TauntSlide, false)
+		CVar(AutoAcceptItemDrops, false)
+
+		CVar(SoundBlock, 0)
+
+		CVar(CheatsBypass, false)
+		CVar(BypassPure, false)
 		CVar(PingReducer, false)
 		CVar(PingTarget, 1)
+		CVar(EquipRegionUnlock, false)
 		CVar(ConvarName, std::string())
 		CVar(ConvarValue, std::string())
-		CVar(SoundBlock, 0)
-		CVar(ChatFlags, false)
-		CVar(AutoAcceptItemDrops, false)
+
 		CVar(RegionChanger, false)
 		CVar(RegionsAllowed, 0)
-		CVar(AutoCasualQueue, 0)
 		CVar(FreezeQueue, false)
+		CVar(AutoCasualQueue, 0)
+		CVar(ChatFlags, false)
+
+		CVar(DisableInterpolation, false)
 		CVar(ScoreboardPlayerlist, false)
+
+		CVar(AntiAutobalance, false)
+		CVar(MVMRes, false)
 
 		SUBNAMESPACE_BEGIN(CheaterDetection)
 			CVar(Enabled, false)
@@ -818,7 +822,7 @@ namespace Vars
 	NAMESPACE_END(Fonts)
 
 	NAMESPACE_BEGIN(Logging)
-		CVar(Logs, 0b001) // { Damage, Class Changes, Votes }
+		CVar(Logs, 0b0011) // { Damage, Class Changes, Vote cast, Vote start }
 		CVar(LogTo, 0b0001) // { Console, Party, Chat, Toasts }
 
 

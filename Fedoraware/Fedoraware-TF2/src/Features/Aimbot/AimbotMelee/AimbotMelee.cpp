@@ -199,7 +199,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 		? 0 //std::max(iSwingTicks - iDoubletapTicks, 0)
 		: std::max(iSwingTicks, iDoubletapTicks);
 
-	if ((Vars::Aimbot::Melee::PredictSwing.Value || iDoubletapTicks) && pWeapon->GetSmackTime() < 0.f && iMax)
+	if ((Vars::Aimbot::Melee::SwingPrediction.Value || iDoubletapTicks) && pWeapon->GetSmackTime() < 0.f && iMax)
 	{
 		PlayerStorage localStorage;
 		std::unordered_map<CBaseEntity*, PlayerStorage> targetStorage;
@@ -507,7 +507,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		// fix weird movement when aiming (no antiwarp)
 	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
 	const bool bShouldSwing = iDoubletapTicks <= GetSwingTime(pWeapon) || Vars::CL_Move::DoubleTap::AntiWarp.Value;
-	// might be better to hardcode 13 ticks or something so that the swing is finished at the start of the next packet ?
+	// might be better to hardcode 13 (12 if using silent ?) ticks or something so that the swing is finished at the start of the next packet ?
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;

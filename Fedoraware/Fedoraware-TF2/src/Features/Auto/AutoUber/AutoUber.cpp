@@ -65,9 +65,9 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		const Vec3 vAngleTo = Math::CalcAngle(player->GetEyePosition(), pPatient->GetWorldSpaceCenter());
 		const float flFOVTo = Math::CalcFov(player->GetEyeAngles(), vAngleTo);
 
-		if (G::PlayerPriority[player->GetIndex()].Mode != 4 && Vars::Triggerbot::Uber::ReactFoV.Value)
+		if (G::PlayerPriority[player->GetIndex()].Mode != 4 && Vars::Triggerbot::Uber::ReactFOV.Value)
 		{
-			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Triggerbot::Uber::ReactFoV.Value))
+			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Triggerbot::Uber::ReactFOV.Value))
 				continue; // account for choking :D
 		}
 
@@ -132,8 +132,9 @@ int BulletDangerValue(CBaseEntity* pPatient)
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Arrow &&
 			pProjectile->GetClassID() != ETFClassID::CTFProjectile_EnergyBall &&
-			pProjectile->GetClassID() != ETFClassID::CTFProjectile_EnergyRing
-			)
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_EnergyRing &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_Cleaver &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_HealingBolt)
 		{
 			continue;
 		}
@@ -188,6 +189,29 @@ int FireDangerValue(CBaseEntity* pPatient)
 			}
 
 			if (HAS_CONDITION(player, TFCondEx_PhlogUber)) 
+				return 2;
+			shouldSwitch = 1;
+		}
+	}
+
+	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
+	{
+		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum() || pProjectile->GetVelocity().IsZero())
+			continue;
+
+		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Flare &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_BallOfFire &&
+			pProjectile->GetClassID() != ETFClassID::CTFProjectile_SpellFireball)
+		{
+			continue;
+		}
+
+		const Vec3 vPredicted = (pProjectile->GetAbsOrigin() + pProjectile->GetVelocity());
+		const float flHypPred = sqrtf(pPatient->GetVecOrigin().DistToSqr(vPredicted));
+		const float flHyp = sqrtf(pPatient->GetVecOrigin().DistToSqr(pProjectile->GetVecOrigin()));
+		if (flHypPred < flHyp && pPatient->GetVecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
+		{
+			if (pProjectile->IsCritBoosted() || pPatient->InCond(TF_COND_BURNING))
 				return 2;
 			shouldSwitch = 1;
 		}

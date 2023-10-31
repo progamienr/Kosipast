@@ -41,18 +41,9 @@ bool CBacktrack::IsTracked(const TickRecord& record)
 	return record.flSimTime >= I::GlobalVars->curtime - 1.f;
 }
 
-//	i know this seems stupid, but i think it's a good idea to wait until the record is created rather than try and forward track.
-bool CBacktrack::IsEarly(CBaseEntity* pEntity, const TickRecord& record) {
-	return record.flSimTime > pEntity->GetSimulationTime();
-}
-
-//	should return true if the current position on the client has a lag comp record created for it by the server (SHOULD)
-//	if the player has updated more than once, only the first update will have a backtrack record (i think)
-//	dont use this yet
-bool CBacktrack::IsSimulationReliable(CBaseEntity* pEntity)
+bool CBacktrack::IsEarly(CBaseEntity* pEntity, const TickRecord& record)
 {
-	const float flSimTimeDelta = pEntity->GetSimulationTime() - pEntity->GetOldSimulationTime();
-	return flSimTimeDelta > 0 && flSimTimeDelta <= I::GlobalVars->interval_per_tick;
+	return !Vars::Backtrack::AllowForward.Value && record.flSimTime > pEntity->GetSimulationTime();
 }
 
 
@@ -222,20 +213,17 @@ void CBacktrack::CleanRecords()
 
 void CBacktrack::MakeRecords()
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal)
-		return;
+	if (!iMaxUnlag)
+		iMaxUnlag = 67;
 
-	const float flCurTime = I::GlobalVars->curtime;
-	const int iTickcount = I::GlobalVars->tickcount;
-	if (iLastCreationTick == iTickcount)
+	if (iLastCreationTick == I::GlobalVars->tickcount)
 		return;
-	iLastCreationTick = iTickcount;
+	iLastCreationTick = I::GlobalVars->tickcount;
 
 	for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity || n == pLocal->GetIndex())
+		if (!pEntity || pEntity == g_EntityCache.GetLocal())
 			continue;
 		if (!pEntity->IsPlayer())
 			return;
@@ -245,86 +233,74 @@ void CBacktrack::MakeRecords()
 		const float flSimTime = pEntity->GetSimulationTime(), flOldSimTime = pEntity->GetOldSimulationTime();
 		const float flDelta = flSimTime - flOldSimTime;
 
-		const Vec3 vOrigin = pEntity->GetVecOrigin();//m_vecOrigin();
+		const Vec3 vOrigin = pEntity->GetVecOrigin();
 		if (!mRecords[pEntity].empty())
-		{
-			// as long as we have 1 record we can check for lagcomp breaking here
+		{ // as long as we have 1 record we can check for lagcomp breaking here
 			const Vec3 vPrevOrigin = mRecords[pEntity].front().vOrigin;
 			const Vec3 vDelta = vOrigin - vPrevOrigin;
 			if (vDelta.Length2DSqr() > 4096.f)
 				mRecords[pEntity].clear();
 		}
 
-		//fix unchokepred
-		if (Vars::Backtrack::UnchokePrediction.Value ? IsSimulationReliable(pEntity) : flDelta > 0)	//	this is silly
-		{
-			//	create record on simulated players
+		if (Vars::Backtrack::UnchokePrediction.Value ? TIME_TO_TICKS(flDelta) == 1 : TIME_TO_TICKS(flDelta) > 0)
+		{ // create record on simulated players
 			matrix3x4 bones[128];
 			if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flSimTime))
 				continue;
 
 			mRecords[pEntity].push_front({
 				flSimTime,
-				flCurTime,
-				iTickcount,
+				I::GlobalVars->curtime,
+				I::GlobalVars->tickcount,
 				mDidShoot[pEntity->GetIndex()],
 				*reinterpret_cast<BoneMatrixes*>(&bones),
 				vOrigin
 			});
 		}
-		else if (Vars::Backtrack::UnchokePrediction.Value) {	// user is choking, predict location of next record.
-			//	IF THE CHEAT LAGS HERE, IT CAN CREATE A PREDICTED RECORD FOR AFTER A PLAYER HAS EXITED A CHOKE, WHICH IS BAD (probably)!!!!
+		else if (Vars::Backtrack::UnchokePrediction.Value && TIME_TO_TICKS(flDelta) == 0)
+		{ // user is choking, predict location of next record
 			const Vec3 vOriginalPos = pEntity->GetAbsOrigin();
 			const Vec3 vOriginalEyeAngles = pEntity->GetEyeAngles();
 			const float flNextSimTime = flSimTime + I::GlobalVars->interval_per_tick;
-			const float flDeltaRecorded = flNextSimTime - mRecords[pEntity].empty() ? flSimTime : mRecords[pEntity].front().flSimTime;
-			if (flDeltaRecorded < I::GlobalVars->interval_per_tick) // maybe they are smooth warping???.
+			const float flDeltaRecorded = flNextSimTime - (mRecords[pEntity].empty() ? flSimTime : mRecords[pEntity].front().flSimTime);
+			if (TICKS_TO_TIME(flDeltaRecorded) < 1)
 				continue;
-			//if (pEntity->GetVelocity().Length2D() > 4096.f) { continue; }	//	this will only happen on people that are stuck or it will be caught elsewhere, dont use
+			//if (pEntity->GetVelocity().Length2D() > 4096.f)
+			//	continue; // this will only happen on people that are stuck or it will be caught elsewhere, dont use
 			
 			PlayerStorage storage;
 			if (F::MoveSim.Initialize(pEntity, storage))
 			{
 				F::MoveSim.RunTick(storage);
 
-				//	we've predicted their next record, and we can probably predict their next lag record but if they are fakelagging it's pointless n shieet
-				//	i was going to check if this lag comp would be valid here but it seems almost pointless now, dont do it.
-				//	might need to do this for setupbones
+				// we've predicted their next record, and we can probably predict their next lag record but if they are fakelagging it's pointless n shieet
+				// i was going to check if this lag comp would be valid here but it seems almost pointless now, dont do it.
+				// might need to do this for setupbones
 				pEntity->SetAbsOrigin(storage.m_MoveData.m_vecAbsOrigin);
 				pEntity->SetEyeAngles(storage.m_MoveData.m_vecViewAngles);
 
 				matrix3x4 bones[128];
-				if (!pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flNextSimTime)) // if we fail bones we fail lyfe
+				if (pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, flNextSimTime)) // if we fail bones we fail lyfe
 				{
-					pEntity->SetAbsOrigin(vOriginalPos);
-					pEntity->SetEyeAngles(vOriginalEyeAngles);
-					continue;
+					mRecords[pEntity].push_front({
+						flNextSimTime,
+						I::GlobalVars->curtime + I::GlobalVars->interval_per_tick,
+						I::GlobalVars->tickcount + 1,
+						false,
+						*reinterpret_cast<BoneMatrixes*>(&bones),
+						storage.m_MoveData.m_vecAbsOrigin
+					});
 				}
 
-				//create lag record
-				mRecords[pEntity].push_front({
-					flNextSimTime,
-					flCurTime + I::GlobalVars->interval_per_tick,
-					iTickcount + 1,
-					false,
-					*reinterpret_cast<BoneMatrixes*>(&bones),
-					storage.m_MoveData.m_vecAbsOrigin
-				});
-
-				//restore
 				pEntity->SetAbsOrigin(vOriginalPos);
 				pEntity->SetEyeAngles(vOriginalEyeAngles);
-
 				F::MoveSim.Restore(storage);
 			}
 		}
-		//cleanup
+		// cleanup
 		mDidShoot[pEntity->GetIndex()] = false;
-		if (mRecords[pEntity].size() > 67)
-		{
-			/*Utils::ConLog("LagCompensation", "Manually removed tick record", {255, 0, 0, 255});*/
+		if (mRecords[pEntity].size() > iMaxUnlag)
 			mRecords[pEntity].pop_back();
-		} //	schizoid check
 	}
 }
 
@@ -404,8 +380,9 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 			G::AnticipatedChoke = 1;
 		break;
 	}
-	if (G::ChokeAmount && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
-		G::AnticipatedChoke = G::ChokeGoal - G::ChokeAmount;
+	const int iChoke = G::ChokeAmount - (G::AntiAim ? 1 : 0);
+	if (iChoke && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
+		G::AnticipatedChoke = G::ChokeGoal - iChoke;
 		// iffy, unsure if there is a good way to get it to work well without unchoking
 
 	UpdateDatagram();
@@ -538,4 +515,5 @@ void CBacktrack::Restart()
 	dSequences.clear();
 	flLatencyRampup = 0.f;
 	iLastInSequence = 0;
+	iMaxUnlag = TIME_TO_TICKS(g_ConVars.sv_maxunlag->GetFloat());
 }

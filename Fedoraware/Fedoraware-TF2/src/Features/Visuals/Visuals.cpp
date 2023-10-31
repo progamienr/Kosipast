@@ -82,6 +82,8 @@ void CVisuals::DrawTickbaseText()
 		g_Draw.String(fFont, dtPos.c, dtPos.y + iHeight * 6 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShiftedGoal: %d", G::ShiftedGoal);
 		g_Draw.String(fFont, dtPos.c, dtPos.y + iHeight * 7 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::AntiWarp: %d", G::AntiWarp);
 		g_Draw.String(fFont, dtPos.c, dtPos.y + iHeight * 8 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::MaxShift: %d", G::MaxShift);
+		g_Draw.String(fFont, dtPos.c, dtPos.y + iHeight * 9 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::WeaponCanAttack %d (%d)", G::WeaponCanAttack, I::GlobalVars->tickcount % 66);
+		g_Draw.String(fFont, dtPos.c, dtPos.y + iHeight * 10 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::IsAttacking %d", G::IsAttacking);
 	}
 }
 void CVisuals::DrawTickbaseBars()

@@ -173,7 +173,7 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 		while (G::ShiftedTicks > iGoal)
 		{
 			if (G::DoubleTap && Vars::CL_Move::DoubleTap::AntiWarp.Value)
-				G::ShouldStop = true; // doesn't seem to work on all weapons?? (sodapopper, pretty boy's, winger)
+				G::ShouldStop = true;
 			CLMoveFunc(accumulated_extra_samples, G::ShiftedTicks - 1 == iGoal);
 		}
 		//G::AntiWarp = false;

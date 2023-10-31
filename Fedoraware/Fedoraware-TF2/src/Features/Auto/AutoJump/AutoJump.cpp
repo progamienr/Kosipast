@@ -19,7 +19,7 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	if (bValidWeapon && (Vars::Triggerbot::Jump::JumpKey.Value == VK_RBUTTON || Vars::Triggerbot::Jump::CTapKey.Value == VK_RBUTTON))
 		pCmd->buttons &= ~IN_ATTACK2; // fix for retarded issue
 
-	// barebones (doesn't seem 100% consistent, unsure if it's user error or what)
+	// barebones (doesn't seem 100% consistent, unsure if it's fps related, user error, or what)
 	if (bValidWeapon && iJumpFrame == -1 && bCurrGrounded && bCurrGrounded == bLastGrounded &&
 		G::WeaponCanAttack && !pLocal->IsDucking() && pWeapon->GetClip1() > 0)
 	{

@@ -3,6 +3,7 @@
 MAKE_HOOK(C_TFPlayer_AvoidPlayers, S::CTFPlayer_AvoidPlayers(), void, __fastcall,
 	void* ecx, void* edx, CUserCmd* pCmd)
 {
+	/*
 	switch (Vars::Misc::NoPush.Value) {
 	case 0: break;
 	case 1: return;
@@ -16,5 +17,9 @@ MAKE_HOOK(C_TFPlayer_AvoidPlayers, S::CTFPlayer_AvoidPlayers(), void, __fastcall
 		return;
 	}
 	}
+	*/
+	if (Vars::Misc::NoPush.Value)
+		return;
+
 	Hook.Original<FN>()(ecx, edx, pCmd);
 }

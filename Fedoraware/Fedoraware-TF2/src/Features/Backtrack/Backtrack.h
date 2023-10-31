@@ -44,7 +44,6 @@ class CBacktrack
 {
 //	logic
 	bool IsTracked(const TickRecord& record);
-	bool IsSimulationReliable(CBaseEntity* pEntity);
 	bool IsEarly(CBaseEntity* pEntity, const TickRecord& record);
 	//bool IsBackLagComped(CBaseEntity* pEntity);
 
@@ -65,6 +64,7 @@ class CBacktrack
 	float flLatencyRampup = 0.f;
 	int iLastInSequence = 0;
 
+	size_t iMaxUnlag = 0;
 	bool bLastTickHeld = false;
 
 public:

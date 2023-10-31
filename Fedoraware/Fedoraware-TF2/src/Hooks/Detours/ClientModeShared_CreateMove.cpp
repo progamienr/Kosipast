@@ -25,14 +25,17 @@ void AttackingUpdate()
 	if (!G::IsAttacking)
 		return;
 
-	if (const auto& pLocal = g_EntityCache.GetLocal())
-	{
-		if (const auto& pWeapon = g_EntityCache.GetWeapon())
-		{
-			const float flFireDelay = pWeapon->GetWeaponData().m_flTimeFireDelay;
-			pWeapon->m_flNextPrimaryAttack() = static_cast<float>(pLocal->GetTickBase()) * I::GlobalVars->interval_per_tick + flFireDelay;
-		}
-	}
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto& pWeapon = g_EntityCache.GetWeapon();
+	if (!pLocal || !pWeapon)
+		return;
+
+	auto tfWeaponInfo = pWeapon->GetTFWeaponInfo();
+	if (!tfWeaponInfo)
+		return;
+
+	const float flFireDelay = tfWeaponInfo->GetWeaponData(0).m_flTimeFireDelay; // pWeapon->GetWeaponData().m_flTimeFireDelay is wrong
+	pWeapon->m_flNextPrimaryAttack() = static_cast<float>(pLocal->GetTickBase()) * I::GlobalVars->interval_per_tick + flFireDelay;
 }
 
 MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 21), bool, __fastcall,
@@ -44,6 +47,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 	if (!pCmd || !pCmd->command_number)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
+
+	const bool bInDuck = pCmd->buttons & IN_DUCK;
+
 	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd))
 		I::Prediction->SetLocalViewAngles(pCmd->viewangles);
 
@@ -53,8 +59,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(_bp) - 0x1);
 
 	//	save old info
-	static int nOldFlags = 0;
-	static int nOldGroundEnt = 0;
 	static Vec3 vOldAngles = pCmd->viewangles;
 	static float fOldSide = pCmd->sidemove;
 	static float fOldForward = pCmd->forwardmove;
@@ -69,15 +73,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	{
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
-			if (F::AimbotProjectile.bLastTickCancel)
-			{
-				pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
-				F::AimbotProjectile.bLastTickCancel = false;
-			}
-
-			nOldFlags = pLocal->GetFlags();
-			nOldGroundEnt = pLocal->m_hGroundEntity();
-
 			if (const int MaxSpeed = pLocal->GetMaxSpeed())
 				G::Frozen = MaxSpeed == 1;
 
@@ -111,6 +106,12 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 						G::WeaponCanAttack = false;
 				}
 			}
+
+			if (F::AimbotProjectile.bLastTickCancel)
+			{
+				pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
+				F::AimbotProjectile.bLastTickCancel = false;
+			}
 		}
 	}
 	else if (const auto& pWeapon = g_EntityCache.GetWeapon())
@@ -132,7 +133,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		{
 			F::Aimbot.Run(pCmd);
 			F::Auto.Run(pCmd);
-			F::PacketManip.CreateMove(pCmd, pSendPacket, nOldGroundEnt, nOldFlags);
+			F::PacketManip.CreateMove(pCmd, pSendPacket);
 		}
 		F::EnginePrediction.End(pCmd);
 
@@ -149,6 +150,14 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		F::FakeAng.DrawChams = Vars::AntiHack::AntiAim::Active.Value || Vars::CL_Move::FakeLag::Enabled.Value;
 	}
 
+	if (!G::DoubleTap)
+	{
+		static bool bWasSet = false;
+		if (G::SilentTime)
+			*pSendPacket = false, bWasSet = true;
+		else if(bWasSet)
+			*pSendPacket = true, bWasSet = false;
+	}
 	AttackingUpdate();
 
 	// do this at the end just in case aimbot / triggerbot fired.
@@ -166,6 +175,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	G::ViewAngles = pCmd->viewangles;
 	G::LastUserCmd = pCmd;
 
-	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd));
+	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd, bInDuck));
 	return bShouldSkip ? false : Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 }

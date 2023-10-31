@@ -72,9 +72,7 @@ void CMenu::DrawMenu()
 		ImGui::SetCursorPos({ 0, TitleHeight });
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, BackgroundLight.Value);
 		if (ImGui::BeginChild("Tabbar", { windowSize.x + 5, TabHeight + SubTabHeight }, false, ImGuiWindowFlags_NoScrollWithMouse))
-		{
 			DrawTabbar();
-		}
 		ImGui::EndChild();
 		ImGui::PopStyleColor();
 
@@ -188,21 +186,18 @@ void CMenu::MenuAimbot()
 		if (TableColumnChild("AimbotCol1"))
 		{
 			SectionTitle("Global");
-			WToggle("Aimbot", &Vars::Aimbot::Global::Active.Value); HelpMarker("Aimbot master switch");
+			WToggle("Aimbot", &Vars::Aimbot::Global::Active.Value);
 			ColorPickerL("Target", Vars::Colors::Target.Value);
-			InputKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value); HelpMarker("The key to enable aimbot");
+			InputKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value);
 			ColorPickerL("Aimbot FOV circle", Vars::Colors::FOVCircle.Value);
-			WToggle("Autoshoot###AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value); HelpMarker("Automatically shoot when a target is found");
+			WToggle("Autoshoot###AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value);
 			MultiFlags({ "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 },
 				&Vars::Aimbot::Global::AimAt.Value, "Aimbot targets###AimbotTargets");
 			ColorPickerL("Invulnerable color", Vars::Colors::Invulnerable.Value);
 			MultiFlags({ "Invulnerable", "Cloaked", "Dead Ringer", "Friends", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7 },
 				&Vars::Aimbot::Global::IgnoreOptions.Value, "Ignored targets###AimbotIgnoredTargets");
 			if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 1))
-			{
 				WSlider("Cloak Percentage Threshold", &Vars::Aimbot::Global::IgnoreCloakPercentage.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
-				HelpMarker("If the player's cloak percentage is greater than the set threshold, it will ignore them. (Set this to 0 to always ignore cloaked spies)");
-			}
 			WSlider("Max Targets###AimbotMax", &Vars::Aimbot::Global::MaxTargets.Value, 1, 6, "%d", ImGuiSliderFlags_AlwaysClamp);
 
 			if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 6))
@@ -211,21 +206,18 @@ void CMenu::MenuAimbot()
 			}
 
 			SectionTitle("Crits");
-			WToggle("Crit hack", &Vars::CritHack::Active.Value);  HelpMarker("Enables the crit hack (BETA)");
+			WToggle("Crit hack", &Vars::CritHack::Active.Value);
 			MultiCombo({ "Indicators", "Avoid Random", "Always Melee" }, { &Vars::CritHack::Indicators.Value, &Vars::CritHack::AvoidRandom.Value, &Vars::CritHack::AlwaysMelee.Value }, "Misc###CrithackMiscOptions");
-			HelpMarker("Misc options for crithack");
-			InputKeybind("Crit key", Vars::CritHack::CritKey.Value); HelpMarker("Will try to force crits when the key is held");
+			InputKeybind("Crit key", Vars::CritHack::CritKey.Value);
 
 			SectionTitle("Backtrack");
-			WToggle("Active", &Vars::Backtrack::Enabled.Value); HelpMarker("If you shoot at the backtrack manually it will attempt to hit it");
+			WToggle("Active", &Vars::Backtrack::Enabled.Value);
 			WCombo("Backtrack Method###HitscanBacktrackMethod", &Vars::Backtrack::Method.Value, { "All", "Last", "Prefer OnShot" });
-			{
-				float flDiv = Vars::Backtrack::Latency.Value / 5;
-				WSlider("Fake Latency###BTLatency", &Vars::Backtrack::Latency.Value, 0, 800, "%d", ImGuiSliderFlags_AlwaysClamp);
-			}
-			WSlider("Fake Interp###BTInterp", &Vars::Backtrack::Interp.Value, 0, 800, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Will not change latency but only able to modify on spawn");
+			WSlider("Fake Latency###BTLatency", &Vars::Backtrack::Latency.Value, 0, g_ConVars.sv_maxunlag->GetFloat() * 1000 - 200, "%d", ImGuiSliderFlags_AlwaysClamp);
+			WSlider("Fake Interp###BTInterp", &Vars::Backtrack::Interp.Value, 0, g_ConVars.sv_maxunlag->GetFloat() * 1000 - 200, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Will not change latency but only able to modify on spawn");
 			WSlider("Window###BTWindow", &Vars::Backtrack::Window.Value, 1, 200, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WToggle("Unchoke Prediction", &Vars::Backtrack::UnchokePrediction.Value);
+			WToggle("Unchoke prediction", &Vars::Backtrack::UnchokePrediction.Value);
+			WToggle("Allow forward tracking", &Vars::Backtrack::AllowForward.Value);
 			if (Vars::Debug::Info.Value)
 			{
 				SectionTitle("debug");
@@ -244,36 +236,33 @@ void CMenu::MenuAimbot()
 			SectionTitle("Hitscan");
 			WToggle("Active ###HitscanAimbotActive", &Vars::Aimbot::Hitscan::Active.Value);
 			WSlider("Aim FOV ###HitscanFOV", &Vars::Aimbot::Hitscan::AimFOV.Value, 0.f, 180.f, "%1.f", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Sort method###HitscanSortMethod", &Vars::Aimbot::Hitscan::SortMethod.Value, { "FOV", "Distance" }); HelpMarker("Which method the aimbot uses to decide which target to aim at");
-			WCombo("Aim method###HitscanAimMethod", &Vars::Aimbot::Hitscan::AimMethod.Value, { "Plain", "Smooth", "Silent" }); HelpMarker("Which method the aimbot uses to aim at the target");
+			WCombo("Sort method###HitscanSortMethod", &Vars::Aimbot::Hitscan::SortMethod.Value, { "FOV", "Distance" });
+			WCombo("Aim method###HitscanAimMethod", &Vars::Aimbot::Hitscan::AimMethod.Value, { "Plain", "Smooth", "Silent" });
 			if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
-				WSlider("Smooth factor###HitscanSmoothing", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Changes how smooth the aimbot will aim at the target");
-			WCombo("Tapfire###HitscanTapfire", &Vars::Aimbot::Hitscan::TapFire.Value, { "Off", "Distance", "Always" }); HelpMarker("How/If the aimbot chooses to tapfire enemies.");
+				WSlider("Smooth factor###HitscanSmoothing", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
+			WCombo("Tapfire###HitscanTapfire", &Vars::Aimbot::Hitscan::TapFire.Value, { "Off", "Distance", "Always" });
 			if (Vars::Aimbot::Hitscan::TapFire.Value == 1)
-				WSlider("Tap Fire Distance###HitscanTapfireDistance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, "%.0f", ImGuiSliderFlags_AlwaysClamp); HelpMarker("The distance at which tapfire will activate.");
-			{
-				static std::vector flagNames{ "Head", "Body", "Pelvis", "Arms", "Legs" };
-				static std::vector flagValues{ 0x00000001, 0x00000004, 0x00000002, 0x00000008, 0x00000010 }; // 1<<1 and 1<<2 are swapped because the enum for hitboxes is weird.
-				MultiFlags(flagNames, flagValues, &Vars::Aimbot::Hitscan::Hitboxes.Value, "Hitboxes###AimbotHitboxScanning");
-			}
+				WSlider("Tap Fire Distance###HitscanTapfireDistance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+			MultiFlags({ "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, &Vars::Aimbot::Hitscan::Hitboxes.Value, "Hitboxes###AimbotHitboxScanning");
+			// 1<<1 and 1<<2 are swapped because the enum for hitboxes is weird.
 			WSlider("Point Scale###HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 1.f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-			WToggle("Wait for headshot", &Vars::Aimbot::Hitscan::WaitForHeadshot.Value); HelpMarker("The aimbot will wait until it can headshot (if applicable)");
-			WToggle("Wait for charge", &Vars::Aimbot::Hitscan::WaitForCharge.Value); HelpMarker("The aimbot will wait until the rifle has charged long enough to kill in one shot");
-			WToggle("Scoped only", &Vars::Aimbot::Hitscan::ScopedOnly.Value); HelpMarker("The aimbot will only shoot if scoped");
-			WToggle("Auto scope", &Vars::Aimbot::Hitscan::AutoScope.Value); HelpMarker("The aimbot will automatically scope in to shoot");
-			WToggle("Bodyaim if lethal", &Vars::Aimbot::Global::BAimLethal.Value); HelpMarker("The aimbot will aim for body when damage is lethal to it");
-			WToggle("Piss on Team", &Vars::Aimbot::Hitscan::ExtinguishTeam.Value); HelpMarker("Will aim at burning teammates with The Sydney Sleeper");
+			WToggle("Wait for headshot", &Vars::Aimbot::Hitscan::WaitForHeadshot.Value);
+			WToggle("Wait for charge", &Vars::Aimbot::Hitscan::WaitForCharge.Value);
+			WToggle("Scoped only", &Vars::Aimbot::Hitscan::ScopedOnly.Value);
+			WToggle("Auto scope", &Vars::Aimbot::Hitscan::AutoScope.Value);
+			WToggle("Bodyaim if lethal", &Vars::Aimbot::Global::BAimLethal.Value);
+			WToggle("Extinguish team", &Vars::Aimbot::Hitscan::ExtinguishTeam.Value);
 
 			SectionTitle("Melee");
 			WToggle("Active ###MeleeAimbotActive", &Vars::Aimbot::Melee::Active.Value);
 			WSlider("Aim FOV ###MeleeFOV", &Vars::Aimbot::Melee::AimFOV.Value, 0.f, 180.f, "%1.f", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Aim method###MeleeAimMethod", &Vars::Aimbot::Melee::AimMethod.Value, { "Plain", "Smooth", "Silent" }); HelpMarker("Which method the aimbot uses to aim at the target");
+			WCombo("Aim method###MeleeAimMethod", &Vars::Aimbot::Melee::AimMethod.Value, { "Plain", "Smooth", "Silent" });
 			if (Vars::Aimbot::Melee::AimMethod.Value == 1)
-				WSlider("Smooth factor###MeleeSmoothing", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("How smooth the aimbot should be");
+				WSlider("Smooth factor###MeleeSmoothing", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
 			WToggle("Auto backstab", &Vars::Aimbot::Melee::AutoBackstab.Value);
 			WToggle("Ignore razorback", &Vars::Aimbot::Melee::IgnoreRazorback.Value);
-			WToggle("Swing prediction", &Vars::Aimbot::Melee::PredictSwing.Value); HelpMarker("Aimbot will attack preemptively, predicting you will be in range of the target");
-			WToggle("Whip teammates", &Vars::Aimbot::Melee::WhipTeam.Value); HelpMarker("Aimbot will target teammates if holding the Disciplinary Action");
+			WToggle("Swing prediction", &Vars::Aimbot::Melee::SwingPrediction.Value);
+			WToggle("Whip teammates", &Vars::Aimbot::Melee::WhipTeam.Value);
 			if (Vars::Debug::Info.Value)
 			{
 				SectionTitle("debug");
@@ -290,7 +279,7 @@ void CMenu::MenuAimbot()
 			WCombo("Sort method###ProjectileSortMethod", &Vars::Aimbot::Projectile::SortMethod.Value, { "FOV", "Distance" });
 			WCombo("Aim method###ProjectileAimMethod", &Vars::Aimbot::Projectile::AimMethod.Value, { "Plain", "Smooth", "Silent" });
 			if (Vars::Aimbot::Projectile::AimMethod.Value == 1)
-				WSlider("Smooth factor###ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("How smooth the aimbot should be");
+				WSlider("Smooth factor###ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
 			WSlider("Prediction Time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, "%.1f");
 			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
 			WToggle("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value);
@@ -304,19 +293,21 @@ void CMenu::MenuAimbot()
 				WSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, "%.1f");
 				WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
 				WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
-				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top" });
+				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top", "lerp to top" });
 				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1 || Vars::Aimbot::Projectile::HuntermanMode.Value == 2)
 					WSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, "%.1f");
+				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 4)
+					WSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, "%.0f%%");
 			}
 
 			SectionTitle("Preferences");
-			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value); HelpMarker("Will charge your loose cannon in order to double donk");
-			WToggle("Splash Prediction", &Vars::Aimbot::Projectile::SplashPrediction.Value); HelpMarker("Will shoot the area near the target to hit them with splash damage");
+			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value);
+			WToggle("Splash Prediction", &Vars::Aimbot::Projectile::SplashPrediction.Value);
 
 			SectionTitle("Strafe Prediction");
 			MultiCombo({ "Air", "Ground" }, { &Vars::Aimbot::Projectile::StrafePredictionAir.Value, &Vars::Aimbot::Projectile::StrafePredictionGround.Value }, "Strafe Prediction");
-			WSlider("Minimum deviation", &Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value, 0, 180); HelpMarker("How big the angle difference of the predicted strafe has to be to apply");
-			WSlider("Maximum distance", &Vars::Aimbot::Projectile::StrafePredictionMaxDistance.Value, 100.f, 10000.f); HelpMarker("Max distance to apply strafe prediction (lower is better)");
+			WSlider("Minimum deviation", &Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value, 0, 180);
+			WSlider("Maximum distance", &Vars::Aimbot::Projectile::StrafePredictionMaxDistance.Value, 100.f, 10000.f);
 			WSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0.f, 1.f);
 		} EndChild();
 
@@ -335,37 +326,24 @@ void CMenu::MenuTrigger()
 		if (TableColumnChild("TriggerCol1"))
 		{
 			SectionTitle("Global");
-			WToggle("Triggerbot", &Vars::Triggerbot::Global::Active.Value); HelpMarker("Global triggerbot master switch");
-			InputKeybind("Trigger key", Vars::Triggerbot::Global::TriggerKey.Value); HelpMarker("The key which activates the triggerbot");
-			HelpMarker("Choose which targets the Aimbot should aim at");
-			{
-				static std::vector flagNames{ "Invulnerable", "Cloaked", "Friends", "Taunting", "Unsimulated Players", "Disguised" };
-				static std::vector flagValues{ 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
-				MultiFlags(flagNames, flagValues, &Vars::Triggerbot::Global::IgnoreOptions.Value, "Ignored targets###TriggerbotIgnoredTargets");
-				HelpMarker("Choose which targets should be ignored");
-			}
+			WToggle("Active###TriggerMain", &Vars::Triggerbot::Global::Active.Value);
+			InputKeybind("Trigger key", Vars::Triggerbot::Global::TriggerKey.Value);
+			MultiFlags({ "Invulnerable", "Cloaked", "Friends", "Taunting", "Unsimulated Players", "Disguised" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 }, &Vars::Triggerbot::Global::IgnoreOptions.Value, "Ignored targets###TriggerbotIgnoredTargets");
 
 			SectionTitle("Autouber");
-			WToggle("Autouber###Triggeruber", &Vars::Triggerbot::Uber::Active.Value); HelpMarker("Auto uber master switch");
-			WToggle("Only uber friends", &Vars::Triggerbot::Uber::OnlyFriends.Value); HelpMarker("Auto uber will only activate if healing steam friends");
-			WToggle("Preserve self", &Vars::Triggerbot::Uber::PopLocal.Value); HelpMarker("Auto uber will activate if local player's health falls below the percentage");
-			WToggle("Vaccinator resistances", &Vars::Triggerbot::Uber::AutoVacc.Value); HelpMarker("Auto uber will automatically find the best resistance and pop when needed (This doesn't work properly)");
+			WToggle("Active###TriggerUber", &Vars::Triggerbot::Uber::Active.Value);
+			WToggle("Only uber friends", &Vars::Triggerbot::Uber::OnlyFriends.Value);
+			WToggle("Preserve self", &Vars::Triggerbot::Uber::PopLocal.Value);
+			WToggle("Vaccinator resistances", &Vars::Triggerbot::Uber::AutoVacc.Value);
 			if (Vars::Triggerbot::Uber::AutoVacc.Value)
-			{
 				MultiCombo({ "Bullet", "Blast", "Fire" }, { &Vars::Triggerbot::Uber::BulletRes.Value, &Vars::Triggerbot::Uber::BlastRes.Value, &Vars::Triggerbot::Uber::FireRes.Value }, "Allowed Resistances");
-			}
-			{
-				static std::vector Names{ "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" };
-				static std::vector Values{ 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 };
-
-				MultiFlags(Names, Values, &Vars::Triggerbot::Uber::ReactClasses.Value, "Hitscan React Classes###TriggerbotAutoVaccClasses");
-			}
-			WSlider("Health left (%)###TriggerUberHealthLeft", &Vars::Triggerbot::Uber::HealthLeft.Value, 1.f, 99.f, "%.0f%%", 1.0f); HelpMarker("The amount of health the heal target must be below to actiavte");
-			WSlider("Reaction FoV###TriggerUberReactFoV", &Vars::Triggerbot::Uber::ReactFoV.Value, 0, 90, "%d", 1); HelpMarker("Checks whether you are within a certain FoV from legit players before auto ubering.");
-			WToggle("Activate charge trigger", &Vars::Triggerbot::Uber::VoiceCommand.Value); HelpMarker("Will ubercharge regardless of anything if your target says activate charge");
+			MultiFlags({ "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, &Vars::Triggerbot::Uber::ReactClasses.Value, "Hitscan React Classes###TriggerbotAutoVaccClasses");
+			WSlider("Health left###TriggerUberHealthLeft", &Vars::Triggerbot::Uber::HealthLeft.Value, 1.f, 99.f, "%.0f%%", 1.0f);
+			WSlider("Reaction FOV###TriggerUberReactFoV", &Vars::Triggerbot::Uber::ReactFOV.Value, 0, 90, "%d", 1);
+			WToggle("Activate charge trigger", &Vars::Triggerbot::Uber::VoiceCommand.Value);
 
 			SectionTitle("Auto Jump");
-			InputKeybind("Auto rocket jump", Vars::Triggerbot::Jump::JumpKey.Value); HelpMarker("Unfinished");
+			InputKeybind("Auto rocket jump", Vars::Triggerbot::Jump::JumpKey.Value);
 			InputKeybind("Auto CTap", Vars::Triggerbot::Jump::CTapKey.Value);
 		} EndChild();
 
@@ -373,23 +351,18 @@ void CMenu::MenuTrigger()
 		if (TableColumnChild("TriggerCol2"))
 		{
 			SectionTitle("Auto Detonate");
-			WToggle("Autodetonate###TriggerDet", &Vars::Triggerbot::Detonate::Active.Value);
-			{
-				static std::vector Names{ "Players", "Sentries", "Dispensers", "Teleporters", "NPCs", "Bombs", "Stickies" };
-				static std::vector Values{ 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 };
-
-				MultiFlags(Names, Values, &Vars::Triggerbot::Detonate::DetonateTargets.Value, "Targets###TriggerbotDetonateTargets");
-			}
-			WToggle("Explode stickies###TriggerSticky", &Vars::Triggerbot::Detonate::Stickies.Value); HelpMarker("Detonate sticky bombs when a player is in range");
-			WToggle("Detonate flares###TriggerFlares", &Vars::Triggerbot::Detonate::Flares.Value); HelpMarker("Detonate detonator flares when a player is in range");
-			WSlider("Detonation radius###TriggerDetRadius", &Vars::Triggerbot::Detonate::RadiusScale.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp); HelpMarker("The radius around the projectile that it will detonate if a player is in");
+			WToggle("Active###TriggerDet", &Vars::Triggerbot::Detonate::Active.Value);
+			MultiFlags({ "Players", "Sentries", "Dispensers", "Teleporters", "NPCs", "Bombs", "Stickies" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 }, &Vars::Triggerbot::Detonate::DetonateTargets.Value, "Targets###TriggerbotDetonateTargets");
+			WToggle("Explode stickies###TriggerSticky", &Vars::Triggerbot::Detonate::Stickies.Value);
+			WToggle("Detonate flares###TriggerFlares", &Vars::Triggerbot::Detonate::Flares.Value);
+			WSlider("Detonation radius###TriggerDetRadius", &Vars::Triggerbot::Detonate::RadiusScale.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 
 			SectionTitle("Autoblast");
-			WToggle("Autoblast###Triggreairblast", &Vars::Triggerbot::Blast::Active.Value); HelpMarker("Auto airblast master switch");
-			WToggle("Rage airblast###TriggerAirRage", &Vars::Triggerbot::Blast::Rage.Value); HelpMarker("Will airblast whenever possible, regardless of FoV");
-			WToggle("Silent###triggerblastsilent", &Vars::Triggerbot::Blast::Silent.Value); HelpMarker("Aim changes made by the rage mode setting aren't visible");
-			WToggle("Extinguish Players###TriggerExtinguishPlayers", &Vars::Triggerbot::Blast::ExtinguishPlayers.Value); HelpMarker("Will automatically extinguish burning players");
-			WToggle("Disable on Attack###TriggerDisableOnAttack", &Vars::Triggerbot::Blast::DisableOnAttack.Value); HelpMarker("Will not air blast while attacking");
+			WToggle("Active###TriggreAirblast", &Vars::Triggerbot::Blast::Active.Value);
+			WToggle("Rage airblast###TriggerAirRage", &Vars::Triggerbot::Blast::Rage.Value);
+			WToggle("Silent###triggerblastsilent", &Vars::Triggerbot::Blast::Silent.Value);
+			WToggle("Extinguish Players###TriggerExtinguishPlayers", &Vars::Triggerbot::Blast::ExtinguishPlayers.Value);
+			WToggle("Disable on Attack###TriggerDisableOnAttack", &Vars::Triggerbot::Blast::DisableOnAttack.Value);
 			WSlider("FOV####AirBlastFov", &Vars::Triggerbot::Blast::Fov.Value, 0.f, 90.f, "%d", ImGuiSliderFlags_AlwaysClamp);
 		} EndChild();
 
@@ -413,8 +386,8 @@ void CMenu::MenuVisuals()
 				if (TableColumnChild("VisualsESPCol1"))
 				{
 					SectionTitle("Main");
-					WToggle("Active###EnableESP", &Vars::ESP::Main::Active.Value); HelpMarker("Global ESP master switch");
-					WToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value); HelpMarker("Chooses colors relative to your team (team/enemy)");
+					WToggle("Active###EnableESP", &Vars::ESP::Main::Active.Value);
+					WToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value);
 					if (Vars::ESP::Main::EnableTeamEnemyColors.Value)
 					{
 						ColorPickerL("Enemy color", Vars::Colors::Enemy.Value);
@@ -425,12 +398,12 @@ void CMenu::MenuVisuals()
 						ColorPickerL("RED Team color", Vars::Colors::TeamRed.Value);
 						ColorPickerL("BLU Team color", Vars::Colors::TeamBlu.Value, 1);
 					}
-					WToggle("Dormant sound ESP", &Vars::ESP::Main::DormantSoundESP.Value); HelpMarker("Credits: reestart");
+					WToggle("Dormant sound ESP", &Vars::ESP::Main::DormantSoundESP.Value);
 					if (Vars::ESP::Main::DormantSoundESP.Value)
 						WSlider("Dormant Decay Time###GlobalDormantDecayTime", &Vars::ESP::Main::DormantTime.Value, 0.015f, 5.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
 
 					SectionTitle("Players");
-					WToggle("Active###PlayerESP", &Vars::ESP::Players::Active.Value); HelpMarker("Will draw useful information/indicators on players");
+					WToggle("Active###PlayerESP", &Vars::ESP::Players::Active.Value);
 					WToggle("Ignore local###SelfESP", &Vars::ESP::Players::IgnoreLocal.Value); ColorPickerL("Local color", Vars::Colors::Local.Value);
 					WToggle("Ignore team###IgnoreTeamESPp", &Vars::ESP::Players::IgnoreTeam.Value); ColorPickerL("Friend color", Vars::Colors::Friend.Value);
 					WToggle("Ignore cloaked###IgnoreCloakESPp", &Vars::ESP::Players::IgnoreCloaked.Value); ColorPickerL("Cloaked color", Vars::Colors::Cloak.Value);
@@ -554,16 +527,15 @@ void CMenu::MenuVisuals()
 						}());
 					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
-					//WToggle("Player chams###PlayerChamsBox", &Vars::Chams::Players::Active.Value); HelpMarker("Player chams master switch");
+					//WToggle("Player chams###PlayerChamsBox", &Vars::Chams::Players::Active.Value);
 
 					MultiCombo({ "Render Wearable", "Render Weapon" }, { &Vars::Chams::Players::Wearables.Value, &Vars::Chams::Players::Weapons.Value }, "Flags");
-					HelpMarker("Customize Chams");
 					WCombo("Config", &currentSelected, chamOptions);
 					{
 						ColorPickerL("Color", currentStruct.Color);
 						MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options");
 
-						WCombo("Material", &currentStruct.DrawMaterial, DMEChamMaterials); HelpMarker("Which material the chams will apply to the player");
+						WCombo("Material", &currentStruct.DrawMaterial, DMEChamMaterials);
 						if (currentStruct.DrawMaterial == 7)
 							ColorPickerL("Fresnel base color", currentStruct.FresnelBase);
 						if (currentStruct.DrawMaterial == 9)
@@ -583,10 +555,10 @@ void CMenu::MenuVisuals()
 					}
 
 					SectionTitle("Backtrack Chams");
-					WToggle("Active###BacktrackChamsActive", &Vars::Backtrack::BtChams::Enabled.Value); HelpMarker("Draws chams to show where a player is");
+					WToggle("Active###BacktrackChamsActive", &Vars::Backtrack::BtChams::Enabled.Value);
 					ColorPickerL("Backtrack color", Vars::Backtrack::BtChams::BacktrackColor.Value);
-					WToggle("Only draw last tick", &Vars::Backtrack::BtChams::LastOnly.Value); HelpMarker("Only draws the last tick (can save FPS)");
-					WToggle("Enemy only", &Vars::Backtrack::BtChams::EnemyOnly.Value); HelpMarker("You CAN backtrack your teammates. (Whip, medigun)");
+					WToggle("Only draw last tick", &Vars::Backtrack::BtChams::LastOnly.Value);
+					WToggle("Enemy only", &Vars::Backtrack::BtChams::EnemyOnly.Value); // maybe remove this and make chams automatically display teammates if using medigun/whip
 
 					WCombo("Material##BtMaterial", &Vars::Backtrack::BtChams::Material.Value, DMEChamMaterials);
 					if (Vars::Backtrack::BtChams::Material.Value == 9)
@@ -594,7 +566,7 @@ void CMenu::MenuVisuals()
 						MaterialCombo("Custom Material##BtCustom", &Vars::Backtrack::BtChams::Custom.Value);
 					}
 					WCombo("Overlay##BtOverlay", &Vars::Backtrack::BtChams::Overlay.Value, dmeGlowMaterial);
-					WToggle("Ignore Z###BtIgnoreZ", &Vars::Backtrack::BtChams::IgnoreZ.Value); HelpMarker("Draws them through walls");
+					WToggle("Ignore Z###BtIgnoreZ", &Vars::Backtrack::BtChams::IgnoreZ.Value);
 				} EndChild();
 
 				/* Column 2 */
@@ -633,25 +605,21 @@ void CMenu::MenuVisuals()
 							}());
 						static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
-						WCombo("Config", &currentSelected, chamOptions);
+						WCombo("Config###BuildingConfig", &currentSelected, chamOptions);
 						{
-							ColorPickerL("Color", currentStruct.Color);
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options");
+							ColorPickerL("Color###BuildingColor", currentStruct.Color);
+							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options###BuildingOptions");
 
-							WCombo("Material", &currentStruct.DrawMaterial, DMEChamMaterials);
+							WCombo("Material###BuildingMaterial", &currentStruct.DrawMaterial, DMEChamMaterials);
 							if (currentStruct.DrawMaterial == 7)
-							{
-								ColorPickerL("Fresnel base color", currentStruct.FresnelBase);
-							}
+								ColorPickerL("Fresnel base color###BuildingFresnel", currentStruct.FresnelBase);
 							if (currentStruct.DrawMaterial == 9)
-							{
-								MaterialCombo("Custom Material", &currentStruct.CustomMaterial);
-							}
-							WCombo("Glow Overlay", &currentStruct.OverlayType, dmeGlowMaterial);
-							ColorPickerL("Glow Color", currentStruct.OverlayColor);
-							WToggle("Rainbow Glow", &currentStruct.OverlayRainbow);
-							WToggle("Pulse Glow", &currentStruct.OverlayPulse);
-							WSlider("Glow Reduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+								MaterialCombo("Custom Material###BuildingCustom", &currentStruct.CustomMaterial);
+							WCombo("Overlay###BuildingOverlay", &currentStruct.OverlayType, dmeGlowMaterial);
+							ColorPickerL("Glow Color###BuildingOverlayColor", currentStruct.OverlayColor);
+							WToggle("Rainbow Glow###BuildingRainbow", &currentStruct.OverlayRainbow);
+							WToggle("Pulse Glow###BuildingPulse", &currentStruct.OverlayPulse);
+							WSlider("Glow Reduction###BuildingReduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 						}
 					}
 					{
@@ -685,25 +653,21 @@ void CMenu::MenuVisuals()
 							}());
 						static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
-						WCombo("Config", &currentSelected, chamOptions);
+						WCombo("Config###WorldConfig", &currentSelected, chamOptions);
 						{
-							ColorPickerL("Color", currentStruct.Color);
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options");
+							ColorPickerL("Color###WorldColor", currentStruct.Color);
+							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options###WorldOptions");
 
-							WCombo("Material", &currentStruct.DrawMaterial, DMEChamMaterials); HelpMarker("Which material the chams will apply to the player");
+							WCombo("Material###WorldMaterial", &currentStruct.DrawMaterial, DMEChamMaterials);
 							if (currentStruct.DrawMaterial == 7)
-							{
-								ColorPickerL("Fresnel base color", currentStruct.FresnelBase);
-							}
+								ColorPickerL("Fresnel base color###WorldFresnel", currentStruct.FresnelBase);
 							if (currentStruct.DrawMaterial == 9)
-							{
-								MaterialCombo("Custom Material", &currentStruct.CustomMaterial);
-							}
-							WCombo("Glow Overlay", &currentStruct.OverlayType, dmeGlowMaterial);
-							ColorPickerL("Glow Color", currentStruct.OverlayColor);
-							WToggle("Rainbow Glow", &currentStruct.OverlayRainbow);
-							WToggle("Pulse Glow", &currentStruct.OverlayPulse);
-							WSlider("Glow Reduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+								MaterialCombo("Custom Material###WorldCustom", &currentStruct.CustomMaterial);
+							WCombo("Overlay###WorldOverlay", &currentStruct.OverlayType, dmeGlowMaterial);
+							ColorPickerL("Glow Color###WorldOverlayColor", currentStruct.OverlayColor);
+							WToggle("Rainbow Glow###WorldRainbow", &currentStruct.OverlayRainbow);
+							WToggle("Pulse Glow###WorldPulse", &currentStruct.OverlayPulse);
+							WSlider("Glow Reduction###WorldReduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 						}
 					}
 				} EndChild();
@@ -723,18 +687,18 @@ void CMenu::MenuVisuals()
 				{
 					SectionTitle("Glow Main");
 					WToggle("Active###GlowActive", &Vars::Glow::Main::Active.Value);
-					WCombo("Glow Type###GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" }); HelpMarker("Method in which glow will be rendered");
+					WCombo("Glow Type###GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" });
 					WSlider("Glow scale", &Vars::Glow::Main::Scale.Value, 1, 20, "%d", ImGuiSliderFlags_AlwaysClamp);
 
 					SectionTitle("Player Glow");
-					WToggle("Active###PlayerGlow", &Vars::Glow::Players::Active.Value); HelpMarker("Player glow master switch");
-					WToggle("Self glow###SelfGlow", &Vars::Glow::Players::ShowLocal.Value); HelpMarker("Draw glow on the local player");
-					WToggle("Self rainbow glow###SelfGlowRainbow", &Vars::Glow::Players::LocalRainbow.Value); HelpMarker("Homosapien");
-					WCombo("Ignore team###IgnoreTeamGlowp", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" }); HelpMarker("Which teammates the glow will ignore drawing on");
-					WToggle("Wearable glow###PlayerWearableGlow", &Vars::Glow::Players::Wearables.Value); HelpMarker("Will draw glow on player cosmetics");
-					WToggle("Weapon glow###PlayerWeaponGlow", &Vars::Glow::Players::Weapons.Value); HelpMarker("Will draw glow on player weapons");
+					WToggle("Active###PlayerGlow", &Vars::Glow::Players::Active.Value);
+					WToggle("Self glow###SelfGlow", &Vars::Glow::Players::ShowLocal.Value);
+					WToggle("Self rainbow glow###SelfGlowRainbow", &Vars::Glow::Players::LocalRainbow.Value);
+					WCombo("Ignore team###IgnoreTeamGlowp", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" });
+					WToggle("Wearable glow###PlayerWearableGlow", &Vars::Glow::Players::Wearables.Value);
+					WToggle("Weapon glow###PlayerWeaponGlow", &Vars::Glow::Players::Weapons.Value);
 					WSlider("Glow alpha###PlayerGlowAlpha", &Vars::Glow::Players::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-					WCombo("Glow color###GlowColour", &Vars::Glow::Players::Color.Value, { "Team", "Health" }); HelpMarker("Which color the glow will draw");
+					WCombo("Glow color###GlowColour", &Vars::Glow::Players::Color.Value, { "Team", "Health" });
 				} EndChild();
 
 				/* Column 2 */
@@ -772,8 +736,8 @@ void CMenu::MenuVisuals()
 				if (TableColumnChild("VisualsMiscCol1"))
 				{
 					SectionTitle("UI");
-					WSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 30, 150, "%d"); HelpMarker("How many degrees of field of vision you would like");
-					WSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 30, 150, "%d"); HelpMarker("Degrees of field while zoomed");
+					WSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 30, 150, "%d");
+					WSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 30, 150, "%d");
 					MultiCombo({ "Scope", "Disguises", "Taunts", "Interpolation", "View Punch", "MOTD", "Screen Effects", "Angle Forcing", "Ragdolls", "Screen Overlays", "DSP", "Convar Queries" }, { &Vars::Visuals::RemoveScope.Value, &Vars::Visuals::RemoveDisguises.Value, &Vars::Visuals::RemoveTaunts.Value, &Vars::Misc::DisableInterpolation.Value, &Vars::Visuals::RemovePunch.Value, &Vars::Visuals::RemoveMOTD.Value, &Vars::Visuals::RemoveScreenEffects.Value, &Vars::Visuals::PreventForcedAngles.Value, &Vars::Visuals::RemoveRagdolls.Value, &Vars::Visuals::RemoveScreenOverlays.Value, &Vars::Visuals::RemoveDSP.Value, &Vars::Visuals::RemoveConvarQueries.Value}, "Removals");
 					WToggle("Reveal Scoreboard", &Vars::Visuals::RevealScoreboard.Value);
 					WToggle("Scoreboard Colours", &Vars::Visuals::ScoreboardColors.Value);
@@ -800,7 +764,7 @@ void CMenu::MenuVisuals()
 					if (Vars::Visuals::ViewmodelSway.Value)
 					{
 						WSlider("Viewmodel Sway Scale", &Vars::Visuals::ViewmodelSwayScale.Value, 0.01, 5, "%.1f");
-						WSlider("Viewmodel Sway Interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01, 1, "%.1f"); HelpMarker("How long until the viewmodel returns to its original position (in seconds)");
+						WSlider("Viewmodel Sway Interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01, 1, "%.1f");
 					}
 
 					SectionTitle("Tracers");
@@ -817,7 +781,7 @@ void CMenu::MenuVisuals()
 					{
 						using namespace Vars::Visuals;
 
-						WToggle("Enable beams", &Beans::Active.Value); HelpMarker("he loves beans?");
+						WToggle("Enable beams", &Beans::Active.Value);
 						WToggle("Rainbow beams", &Beans::Rainbow.Value);
 						ColorPickerL("Beam color", Beans::BeamColor.Value);
 						WToggle("Custom model", &Beans::UseCustomModel.Value);
@@ -844,22 +808,18 @@ void CMenu::MenuVisuals()
 
 					SectionTitle("Ragdolls");
 					WToggle("No Gibs", &Vars::Visuals::RagdollEffects::NoGib.Value);
-					WToggle("Enemy only###RagdollEnemyOnly", &Vars::Visuals::RagdollEffects::EnemyOnly.Value); HelpMarker("Only runs it on enemies");
+					WToggle("Enemy only###RagdollEnemyOnly", &Vars::Visuals::RagdollEffects::EnemyOnly.Value);
 					MultiCombo({ "Burning", "Electrocuted", "Become ash", "Dissolve" }, { &Vars::Visuals::RagdollEffects::Burning.Value, &Vars::Visuals::RagdollEffects::Electrocuted.Value, &Vars::Visuals::RagdollEffects::BecomeAsh.Value, &Vars::Visuals::RagdollEffects::Dissolve.Value }, "Effects###RagdollEffects");
-					HelpMarker("Ragdoll particle effects");
-					WCombo("Ragdoll model", &Vars::Visuals::RagdollEffects::RagdollType.Value, { "None", "Gold", "Ice" }); HelpMarker("Which ragdoll model should be used");
-					HelpMarker("Will make their ragdoll ice");
+					WCombo("Ragdoll model", &Vars::Visuals::RagdollEffects::RagdollType.Value, { "None", "Gold", "Ice" });
 					WToggle("Use Separate Vector Forces", &Vars::Visuals::RagdollEffects::SeparateVectors.Value);
 					if (Vars::Visuals::RagdollEffects::SeparateVectors.Value)
 					{
-						WSlider("Ragdoll Force Forwards", &Vars::Visuals::RagdollEffects::RagdollForceForwards.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll's forward vector, where positive is backwards and negative is forwards.");
-						WSlider("Ragdoll Force Sideways", &Vars::Visuals::RagdollEffects::RagdollForceSides.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll's side vector, where negative is right and positive is left.");
-						WSlider("Ragdoll Force Up", &Vars::Visuals::RagdollEffects::RagdollForceUp.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll's up vector, where negative is up and positive is down.");
+						WSlider("Ragdoll Force Forwards", &Vars::Visuals::RagdollEffects::RagdollForceForwards.Value, -10.f, 10.f, "%.1f");
+						WSlider("Ragdoll Force Sideways", &Vars::Visuals::RagdollEffects::RagdollForceSides.Value, -10.f, 10.f, "%.1f");
+						WSlider("Ragdoll Force Up", &Vars::Visuals::RagdollEffects::RagdollForceUp.Value, -10.f, 10.f, "%.1f");
 					}
 					else
-					{
-						WSlider("Ragdoll Force", &Vars::Visuals::RagdollEffects::RagdollForce.Value, -10.f, 10.f, "%.1f"); HelpMarker("Multipler for the force applied to a ragdoll.");
-					}
+						WSlider("Ragdoll Force", &Vars::Visuals::RagdollEffects::RagdollForce.Value, -10.f, 10.f, "%.1f");
 				} EndChild();
 
 				/* Column 2 */
@@ -914,7 +874,7 @@ void CMenu::MenuVisuals()
 					}
 
 					SectionTitle("Hitbox");
-					WToggle("Draw Hitboxes", &Vars::Aimbot::Global::ShowHitboxes.Value); HelpMarker("Shows targeted hitbox");
+					WToggle("Draw Hitboxes", &Vars::Aimbot::Global::ShowHitboxes.Value);
 					ColorPickerL("Hitbox matrix face color", Vars::Colors::HitboxFace.Value);
 					ColorPickerL("Hitbox matrix edge color", Vars::Colors::HitboxEdge.Value, 1);
 
@@ -933,7 +893,6 @@ void CMenu::MenuVisuals()
 
 					SectionTitle("World");
 					MultiCombo({ "World", "Sky", "Prop", "Particle" }, { &Vars::Visuals::World::WorldModulation.Value, &Vars::Visuals::World::SkyModulation.Value, &Vars::Visuals::World::PropModulation.Value, &Vars::Visuals::World::ParticleModulation.Value }, "Modulations");
-					HelpMarker("Select which types of modulation you want to enable");
 					if (ColorPickerL("World modulation", Vars::Colors::WorldModulation.Value, 3) ||
 						ColorPickerL("Sky modulation", Vars::Colors::SkyModulation.Value, 2) ||
 						ColorPickerL("Prop modulation", Vars::Colors::StaticPropModulation.Value, 1))
@@ -966,11 +925,11 @@ void CMenu::MenuVisuals()
 						"sky_island_01",
 						"sky_rainbow_01"
 					};
-					WToggle("Skybox changer", &Vars::Visuals::World::SkyboxChanger.Value); HelpMarker("Will change the skybox, either to a base TF2 one or a custom one");
+					WToggle("Skybox changer", &Vars::Visuals::World::SkyboxChanger.Value);
 					WCombo("Skybox", &Vars::Visuals::World::SkyboxNum.Value, skyNames);
 					if (Vars::Visuals::World::SkyboxNum.Value == 0)
 					{
-						WInputText("Custom skybox name", &Vars::Visuals::World::SkyboxName.Value); HelpMarker("Name of the skybox you want to you (tf/materials/skybox)");
+						WInputText("Custom skybox name", &Vars::Visuals::World::SkyboxName.Value);
 					}
 					WToggle("World Textures Override", &Vars::Visuals::World::OverrideTextures.Value); HelpMarker("Turn this off when in-game so you don't drop fps :p");
 					WToggle("Prop Wireframe", &Vars::Visuals::World::PropWireframe.Value);
@@ -990,22 +949,22 @@ void CMenu::MenuVisuals()
 				if (TableColumnChild("VisualsRadarCol1"))
 				{
 					SectionTitle("Main");
-					WToggle("Enable Radar###RadarActive", &Vars::Radar::Main::Active.Value); HelpMarker("Will show nearby things relative to your player");
-					WSlider("Range###RadarRange", &Vars::Radar::Main::Range.Value, 50, 3000, "%d"); HelpMarker("The range of the radar");
-					WSlider("Background alpha###RadarBGA", &Vars::Radar::Main::BackAlpha.Value, 0, 255, "%d"); HelpMarker("The background alpha of the radar");
-					WSlider("Line alpha###RadarLineA", &Vars::Radar::Main::LineAlpha.Value, 0, 255, "%d"); HelpMarker("The line alpha of the radar");
+					WToggle("Enable Radar###RadarActive", &Vars::Radar::Main::Active.Value);
+					WSlider("Range###RadarRange", &Vars::Radar::Main::Range.Value, 50, 3000, "%d");
+					WSlider("Background alpha###RadarBGA", &Vars::Radar::Main::BackAlpha.Value, 0, 255, "%d");
+					WSlider("Line alpha###RadarLineA", &Vars::Radar::Main::LineAlpha.Value, 0, 255, "%d");
 					WToggle("No Title Gradient", &Vars::Radar::Main::NoTitleGradient.Value);
 
 					SectionTitle("Players");
-					WToggle("Show players###RIOJSADFIOSAJIDPFOJASDFOJASOPDFJSAPOFDJOPS", &Vars::Radar::Players::Active.Value); HelpMarker("lol");
-					WCombo("Icon###radari", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" }); HelpMarker("What sort of icon to represent players with");
-					WCombo("Background###radarb", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" }); HelpMarker("What sort of background to put on players on the radar");
-					WToggle("Outline###radaro", &Vars::Radar::Players::Outline.Value); HelpMarker("Will put an outline on players on the radar");
-					WCombo("Ignore teammates###radarplayersteam", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" }); HelpMarker("Which teammates the radar will ignore drawing on");
-					WCombo("Ignore cloaked###radarplayerscloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" }); HelpMarker("Which cloaked players the radar will ignore drawing on");
-					WToggle("Health bar###radarhealt", &Vars::Radar::Players::Health.Value); HelpMarker("Will show players health on the radar");
-					WSlider("Icon size###playersizeiconradar", &Vars::Radar::Players::IconSize.Value, 12, 30, "%d"); HelpMarker("The icon size of players on the radar");
-					WToggle("Height indicator###RadarPlayersZ", &Vars::Radar::Players::Height.Value); HelpMarker("Shows a little arrow indicating the height of the player");
+					WToggle("Show players###RIOJSADFIOSAJIDPFOJASDFOJASOPDFJSAPOFDJOPS", &Vars::Radar::Players::Active.Value);
+					WCombo("Icon###radari", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" });
+					WCombo("Background###radarb", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" });
+					WToggle("Outline###radaro", &Vars::Radar::Players::Outline.Value);
+					WCombo("Ignore teammates###radarplayersteam", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" });
+					WCombo("Ignore cloaked###radarplayerscloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" });
+					WToggle("Health bar###radarhealt", &Vars::Radar::Players::Health.Value);
+					WSlider("Icon size###playersizeiconradar", &Vars::Radar::Players::IconSize.Value, 12, 30, "%d");
+					WToggle("Height indicator###RadarPlayersZ", &Vars::Radar::Players::Height.Value);
 				} EndChild();
 
 				/* Column 2 */
@@ -1120,12 +1079,9 @@ void CMenu::MenuHvH()
 			ColorPickerL("Outline###DoubletapOutline", Vars::Colors::DtOutline.Value);
 
 			SectionTitle("Speed hack");
-			WToggle("Speed hack", &Vars::CL_Move::SpeedEnabled.Value); HelpMarker("Speedhack Master Switch");
+			WToggle("Speed hack", &Vars::CL_Move::SpeedEnabled.Value);
 			if (Vars::CL_Move::SpeedEnabled.Value)
-			{
 				WSlider("SpeedHack factor", &Vars::CL_Move::SpeedFactor.Value, 1, 66, "%d");
-			}
-			HelpMarker("High values are not recommended");
 
 			/* Section: Fakelag */
 			SectionTitle("Fakelag");
@@ -1140,15 +1096,15 @@ void CMenu::MenuHvH()
 				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp); break;
 				case 1:
 				{
-					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Maximum random fakelag value");
-					WSlider("Random min###flRandMin", &Vars::CL_Move::FakeLag::Min.Value, 1, Vars::CL_Move::FakeLag::Max.Value - 1, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Minimum random fakelag value");
+					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp);
+					WSlider("Random min###flRandMin", &Vars::CL_Move::FakeLag::Min.Value, 1, Vars::CL_Move::FakeLag::Max.Value - 1, "%d", ImGuiSliderFlags_AlwaysClamp);
 					break;
 				}
 			}	//	add more here if you add your own fakelag modes :D
 			MultiCombo({ "While Moving", "While Unducking", "While Airborne" }, { &Vars::CL_Move::FakeLag::WhileMoving.Value, &Vars::CL_Move::FakeLag::WhileUnducking.Value, &Vars::CL_Move::FakeLag::WhileGrounded.Value }, "Flags###FakeLagFlags");
-			WToggle("Unchoke On Attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value); HelpMarker("Will exit a fakelag cycle if you are attacking.");
+			WToggle("Unchoke On Attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value);
 
-			WToggle("Retain BlastJump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value); HelpMarker("Will attempt to retain the blast jumping condition as soldier and runs independently of fakelag.");
+			WToggle("Retain BlastJump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value);
 		} EndChild();
 
 		/* Column 2 */
@@ -1157,22 +1113,20 @@ void CMenu::MenuHvH()
 			/* Section: Anti Aim */
 			SectionTitle("Anti Aim");
 			WToggle("Active", &Vars::AntiHack::AntiAim::Active.Value);
-			InputKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value); HelpMarker("The key to toggle anti aim");
+			InputKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value);
 
-			WCombo("Real Pitch", &Vars::AntiHack::AntiAim::PitchReal.Value, { "None", "Up", "Down", "Zero" }); HelpMarker("The pitch your hitboxes will be built around.");
-			WCombo("Fake Pitch", &Vars::AntiHack::AntiAim::PitchFake.Value, { "None", "Up", "Down" }); HelpMarker("The pitch that other players will see.");
+			WCombo("Real Pitch", &Vars::AntiHack::AntiAim::PitchReal.Value, { "None", "Up", "Down", "Zero" });
+			WCombo("Fake Pitch", &Vars::AntiHack::AntiAim::PitchFake.Value, { "None", "Up", "Down" });
 			
-			WCombo("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }); HelpMarker("The yaw your hitboxes will be built around.");
-			WCombo("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }); HelpMarker("The yaw that other players will see.");
+			WCombo("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" });
+			WCombo("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" });
 			if (Vars::AntiHack::AntiAim::YawFake.Value == 5 || Vars::AntiHack::AntiAim::YawReal.Value == 5)
-			{
-				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.0f", 0); HelpMarker("How many degrees you will rotate in a tick");
-			}
+				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.0f", 0);
 			
-			WCombo("Real Offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }); HelpMarker("The yaw that your real yaw is added to.");
+			WCombo("Real Offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" });
 			if (Vars::AntiHack::AntiAim::RealYawMode.Value != 1)
 				WSlider("Yaw Offset###RealYawOffset", &Vars::AntiHack::AntiAim::RealYawOffset.Value, -180, 180, "%.0f");
-			WCombo("Fake Offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }); HelpMarker("The yaw that your fake yaw is added to.");
+			WCombo("Fake Offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" });
 			if (Vars::AntiHack::AntiAim::FakeYawMode.Value != 1)
 				WSlider("Yaw Offset###FakeYawOffset", &Vars::AntiHack::AntiAim::FakeYawOffset.Value, -180, 180, "%.0f");
 
@@ -1180,54 +1134,46 @@ void CMenu::MenuHvH()
 
 			/* Section: Auto Peek */
 			SectionTitle("Auto Peek");
-			InputKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey.Value); HelpMarker("Hold this key while peeking and use A/D to set the peek direction");
-			WSlider("Max Distance", &Vars::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, "%.0f"); HelpMarker("Maximum distance that auto peek can walk");
-			WToggle("Free move", &Vars::CL_Move::AutoPeekFree.Value); HelpMarker("Allows you to move freely while peeking");
+			InputKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey.Value);
+			WSlider("Max Distance", &Vars::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, "%.0f");
+			WToggle("Free move", &Vars::CL_Move::AutoPeekFree.Value);
 
 			SectionTitle("Cheater Detection");
 			WToggle("Enable Cheater Detection", &Vars::Misc::CheaterDetection::Enabled.Value);
 			if (Vars::Misc::CheaterDetection::Enabled.Value)
 			{
-				{
-					static std::vector flagNames{ "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" };
-					static std::vector flagValues{ 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7, 1 << 8 };
-					MultiFlags(flagNames, flagValues, &Vars::Misc::CheaterDetection::Methods.Value, "Detection Methods###CheaterDetectionMethods");
-					HelpMarker("Methods by which to detect bad actors.");
-				}
-				{
-					static std::vector flagNames{ "Double Scans", "Lagging Client", "Timing Out" };
-					static std::vector flagValues{ 1 << 0, 1 << 1, 1 << 2 };
-					MultiFlags(flagNames, flagValues, &Vars::Misc::CheaterDetection::Protections.Value, "Ignore Conditions###CheaterDetectionIgnoreMethods");
-					HelpMarker("Don't scan in certain scenarios (prevents false positives).");
-				}
-				WSlider("Suspicion Gate", &Vars::Misc::CheaterDetection::SuspicionGate.Value, 5, 50, "%d"); HelpMarker("Infractions required to mark somebody as a cheater.");
+				MultiFlags({ "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" },
+					{ 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7, 1 << 8 },
+					&Vars::Misc::CheaterDetection::Methods.Value, "Detection Methods###CheaterDetectionMethods");
+				MultiFlags({ "Double Scans", "Lagging Client", "Timing Out" }, { 1 << 0, 1 << 1, 1 << 2 }, &Vars::Misc::CheaterDetection::Protections.Value, "Ignore Conditions###CheaterDetectionIgnoreMethods");
+				WSlider("Suspicion Gate", &Vars::Misc::CheaterDetection::SuspicionGate.Value, 5, 50, "%d");
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 1))
 				{
-					WSlider("Analytical High Score Mult", &Vars::Misc::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, "%.1f"); HelpMarker("How much to multiply the average score to treat as a max score per second.");
+					WSlider("Analytical High Score Mult", &Vars::Misc::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, "%.1f");
 				}
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 3 | 1 << 2))
 				{
-					WSlider("Packet Manipulation Gate", &Vars::Misc::CheaterDetection::PacketManipGate.Value, 1, 22, "%d"); HelpMarker("Used as the minimum amount of average packet manipulation to infract someone as a cheater.");
+					WSlider("Packet Manipulation Gate", &Vars::Misc::CheaterDetection::PacketManipGate.Value, 1, 22, "%d");
 				}
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 4))
 				{
-					WSlider("BHop Sensitivity", &Vars::Misc::CheaterDetection::BHopMaxDelay.Value, 1, 5, "%d"); HelpMarker("How many ticks a player can be on the ground before their next jump isn't counted as a bhop.");
-					WSlider("BHop Minimum Detections", &Vars::Misc::CheaterDetection::BHopDetectionsRequired.Value, 2, 15, "%d"); HelpMarker("How many concurrent bunnyhops need to be executed before someone is infracted.");
+					WSlider("BHop Sensitivity", &Vars::Misc::CheaterDetection::BHopMaxDelay.Value, 1, 5, "%d");
+					WSlider("BHop Minimum Detections", &Vars::Misc::CheaterDetection::BHopDetectionsRequired.Value, 2, 15, "%d");
 				}
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 5))
 				{
-					WSlider("Minimum Aim-Flick", &Vars::Misc::CheaterDetection::MinimumFlickDistance.Value, 5.f, 30.f, "%.1f"); HelpMarker("The distance someones view angles must flick prior to be being suspected by the cheat detector.");
-					WSlider("Maximum Post Flick Noise", &Vars::Misc::CheaterDetection::MaximumNoise.Value, 5.f, 15.f, "%.1f"); HelpMarker("The maximum distance the players mouse can move post-flick before the cheat detector considers it as a legit flick (mouse moved fast, etc).");
+					WSlider("Minimum Aim-Flick", &Vars::Misc::CheaterDetection::MinimumFlickDistance.Value, 5.f, 30.f, "%.1f");
+					WSlider("Maximum Post Flick Noise", &Vars::Misc::CheaterDetection::MaximumNoise.Value, 5.f, 15.f, "%.1f");
 				}
 
 				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 7))
 				{
-					WSlider("Maximum Scaled Aimbot FoV", &Vars::Misc::CheaterDetection::MaxScaledAimbotFoV.Value, 5.f, 30.f, "%.1f"); HelpMarker("The maximum FoV (post scaling) for the aimbot detection.");
-					WSlider("Minimum Aimbot FoV", &Vars::Misc::CheaterDetection::MinimumAimbotFoV.Value, 5.f, 30.f, "%.1f"); HelpMarker("The minimum FoV to infract a player for aimbot.");
+					WSlider("Maximum Scaled Aimbot FOV", &Vars::Misc::CheaterDetection::MaxScaledAimbotFoV.Value, 5.f, 30.f, "%.1f");
+					WSlider("Minimum Aimbot FOV", &Vars::Misc::CheaterDetection::MinimumAimbotFoV.Value, 5.f, 30.f, "%.1f");
 				}
 			}
 			SectionTitle("Resolver");
@@ -1250,26 +1196,23 @@ void CMenu::MenuMisc()
 		if (TableColumnChild("MiscCol1"))
 		{
 			SectionTitle("Movement");
-			WCombo("No Push###MovementNoPush", &Vars::Misc::NoPush.Value, { "Off", "Always", "While Moving", "Partial While AFK" });
-			WCombo("Fast Stop", &Vars::Misc::AccurateMovement.Value, { "Off", "Legacy", "Instant", "Adaptive" }); HelpMarker("Will stop you from sliding once you stop pressing movement buttons");
-			WToggle("Fast Strafe", &Vars::Misc::FastDeltaStrafe.Value); HelpMarker("Allows you to change direction instantly.");
-			WToggle("Fast Accel", &Vars::Misc::FastAccel.Value); HelpMarker("Makes you accelerate to full speed faster.");
-			WToggle("Crouch Speed", &Vars::Misc::CrouchSpeed.Value); HelpMarker("Allows you to move at full speed while crouched.");
-			if (Vars::Misc::CrouchSpeed.Value)
-			{
-				WToggle("Hide Real Angle", &Vars::Misc::FakeAccelAngle.Value); HelpMarker("Tries to stop your angle from updating while using crouch speed (janky).");
-			}
-			WToggle("Bunnyhop", &Vars::Misc::AutoJump.Value); HelpMarker("Will jump as soon as you touch the ground again, keeping speed between jumps");
-			WCombo("Autostrafe", &Vars::Misc::AutoStrafe.Value, { "Off", "Legit", "Directional" }); HelpMarker("Will strafe for you in air automatically so that you gain speed");
+			WToggle("Bunnyhop", &Vars::Misc::AutoJump.Value);
+			WCombo("Autostrafe", &Vars::Misc::AutoStrafe.Value, { "Off", "Legit", "Directional" });
 			if (Vars::Misc::AutoStrafe.Value == 2)
 			{
-				WToggle("Only on movement key", &Vars::Misc::DirectionalOnlyOnMove.Value); HelpMarker("This makes it so that you dont always go forward if u just hold space");
-				WToggle("Only on space", &Vars::Misc::DirectionalOnlyOnSpace.Value); HelpMarker("only space ??"); //temporary
+				WToggle("Only on movement key", &Vars::Misc::DirectionalOnlyOnMove.Value);
+				WToggle("Only on space", &Vars::Misc::DirectionalOnlyOnSpace.Value);
 			}
+			WToggle("Fast stop", &Vars::Misc::FastStop.Value);
+			WToggle("Fast accelerate", &Vars::Misc::FastAccel.Value);
+			WToggle("Fast strafe", &Vars::Misc::FastStrafe.Value);
+			WToggle("No push", &Vars::Misc::NoPush.Value);
+			WToggle("Crouch speed", &Vars::Misc::CrouchSpeed.Value);
+
 			SectionTitle("Automation");
-			WToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value); HelpMarker("Will make you jump every now and then so you don't get kicked for idling");
-			WToggle("Taunt slide", &Vars::Misc::TauntSlide.Value); HelpMarker("Allows you to input in taunts");
-			WToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value); HelpMarker("Automatically accepts all item drops");
+			WToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value);
+			WToggle("Taunt slide", &Vars::Misc::TauntSlide.Value);
+			WToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value);
 
 			SectionTitle("Sound");
 			MultiFlags({ "Footsteps", "Noisemaker" }, { 1 << 0, 1 << 1 }, &Vars::Misc::SoundBlock.Value, "Block Sounds###SoundRemovals");
@@ -1279,14 +1222,12 @@ void CMenu::MenuMisc()
 		if (TableColumnChild("MiscCol2"))
 		{
 			SectionTitle("Exploits");
-			WToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value); HelpMarker("Allows you to use some sv_cheats commands(clientside)");
-			WToggle("Pure bypass", &Vars::Misc::BypassPure.Value); HelpMarker("Allows you to load any custom files, even if disallowed by the sv_pure setting");
-			WToggle("Ping reducer", &Vars::Misc::PingReducer.Value); HelpMarker("Reduces your ping on the scoreboard");
+			WToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value);
+			WToggle("Pure bypass", &Vars::Misc::BypassPure.Value);
+			WToggle("Ping reducer", &Vars::Misc::PingReducer.Value);
 			if (Vars::Misc::PingReducer.Value)
-			{
-				WSlider("cl_cmdrate", &Vars::Misc::PingTarget.Value, 1, 66); HelpMarker("Lower values for lower leaderboard ping");
-			}
-			WToggle("Equip region unlock", &Vars::Visuals::EquipRegionUnlock.Value); HelpMarker("This doesn't let you add the equip regions back once you turn it on."); // why is this in visuals
+				WSlider("cl_cmdrate", &Vars::Misc::PingTarget.Value, 1, 66);
+			WToggle("Equip region unlock", &Vars::Misc::EquipRegionUnlock.Value); HelpMarker("This doesn't let you add the equip regions back once you turn it on.");
 
 			if (Vars::Debug::Info.Value)
 			{
@@ -1317,21 +1258,19 @@ void CMenu::MenuMisc()
 				"Regions"
 			);
 			WToggle("Freeze queue timer", &Vars::Misc::FreezeQueue.Value);
-			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" }); HelpMarker("Automatically starts queueuing for casual");
+			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" });
 
 			SectionTitle("Chat");
-			WToggle("Chat Flags", &Vars::Misc::ChatFlags.Value); HelpMarker("Adds advanced prefixes to chat messages");
+			WToggle("Chat Flags", &Vars::Misc::ChatFlags.Value);
 
 			SectionTitle("Steam RPC");
-			WToggle("Steam RPC", &Vars::Misc::Steam::EnableRPC.Value); HelpMarker("Enable Steam Rich Presence"); HelpMarker("Enable Steam Rich Presence");
-			WCombo("Match group", &Vars::Misc::Steam::MatchGroup.Value, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" }); HelpMarker("Which match group should be used?");
-			WToggle("Override in menu", &Vars::Misc::Steam::OverrideMenu.Value); HelpMarker("Override match group to \"Main Menu\" when in main menu");
-			WCombo("Map text", &Vars::Misc::Steam::MapText.Value, { "Custom", "Fedoraware", "Figoraware", "Meowhook.club", "Rathook.cc", "Nitro.tf" }); HelpMarker("Which map text should be used?");
+			WToggle("Steam RPC", &Vars::Misc::Steam::EnableRPC.Value);
+			WCombo("Match group", &Vars::Misc::Steam::MatchGroup.Value, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" });
+			WToggle("Override in menu", &Vars::Misc::Steam::OverrideMenu.Value);
+			WCombo("Map text", &Vars::Misc::Steam::MapText.Value, { "Custom", "Fedoraware", "Figoraware", "Meowhook.club", "Rathook.cc", "Nitro.tf" });
 			if (Vars::Misc::Steam::MapText.Value == 0)
-			{
-				WInputText("Custom map text", &Vars::Misc::Steam::CustomText.Value); HelpMarker(R"(For when "Custom" is selcted in "Map text". Sets custom map text.)");
-			}
-			WInputInt("Group size", &Vars::Misc::Steam::GroupSize.Value); HelpMarker("Sets party size");
+				WInputText("Custom map text", &Vars::Misc::Steam::CustomText.Value);
+			WInputInt("Group size", &Vars::Misc::Steam::GroupSize.Value);
 		} EndChild();
 
 		EndTable();
@@ -1640,8 +1579,9 @@ void CMenu::MenuSettings()
 		/* Column 2 */
 		if (TableColumnChild("SettingsCol2"))
 		{
+			// i will probably create a new tab for this and allow logto to be changed for each individually
 			SectionTitle("Logging");
-			MultiFlags({ "Votes", "Class Changes", "Damage" }, { 1 << 0, 1 << 1, 1 << 2 }, &Vars::Logging::Logs.Value, "Logs");
+			MultiFlags({ "Vote start", "Vote cast", "Class Changes", "Damage" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, &Vars::Logging::Logs.Value, "Logs");
 			MultiFlags({ "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, &Vars::Logging::LogTo.Value, "Log to");
 			ColorPickerL("Notification background", Vars::Logging::Notification::Background.Value);
 			ColorPickerL("Notification outline", Vars::Logging::Notification::Outline.Value, 1);
@@ -1654,7 +1594,7 @@ void CMenu::MenuSettings()
 			WToggle("Allow secure servers", I::AllowSecureServers);
 			bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
 			WToggle("Pending Ping Refresh", m_bPendingPingRefresh);
-			WToggle("Show server hitboxes###tpShowServer", &Vars::Debug::ServerHitbox.Value); HelpMarker("Will show the server angles in thirdperson in localhost servers");
+			WToggle("Show server hitboxes###tpShowServer", &Vars::Debug::ServerHitbox.Value); HelpMarker("localhost servers");
 			WToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value);
 
 			// Particle tester

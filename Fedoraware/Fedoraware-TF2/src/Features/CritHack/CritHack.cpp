@@ -731,8 +731,6 @@ void CCritHack::Draw()
 			g_Draw.String(fFont, x, y + iHeight * 7, { 255, 255, 255, 255 }, align, std::format("CritBanned: {}, DamageTilUnban: {}", CritBanned, DamageTilUnban).c_str());
 			g_Draw.String(fFont, x, y + iHeight * 8, { 255, 255, 255, 255 }, align, std::format("CritChance: {:.2f}", CritChance).c_str());
 			g_Draw.String(fFont, x, y + iHeight * 9, { 255, 255, 255, 255 }, align, std::format("Force: {}, Skip: {}", ForceCmds.size(), SkipCmds.size()).c_str());
-
-			g_Draw.String(fFont, x, y + iHeight * 11, { 255, 255, 255, 255 }, align, std::format("G::WeaponCanAttack {}", G::WeaponCanAttack).c_str());
 		}
 	}
 }

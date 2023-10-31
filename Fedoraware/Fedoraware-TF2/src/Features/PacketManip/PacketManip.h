@@ -8,7 +8,7 @@ private:
 	bool WillTimeOut();
 	bool AACheck(CUserCmd* pCmd);
 public:
-	void CreateMove(CUserCmd* pCmd, bool* pSendPacket, const int nOldGroundInt, const int nOldFlags);
+	void CreateMove(CUserCmd* pCmd, bool* pSendPacket);
 };
 
 ADD_FEATURE(CPacketManip, PacketManip)

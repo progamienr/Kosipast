@@ -37,7 +37,7 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 	if (const auto pLocal = g_EntityCache.GetLocal())
 	{
 		// Voting
-		if (Vars::Logging::Logs.Value & (1 << 0) && uNameHash == FNV1A::HashConst("vote_cast"))
+		if (Vars::Logging::Logs.Value & (1 << 1) && uNameHash == FNV1A::HashConst("vote_cast"))
 		{
 			const auto pEntity = I::ClientEntityList->GetClientEntity(pEvent->GetInt("entityid"));
 			if (pEntity && pEntity->IsPlayer())
@@ -61,7 +61,7 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 		}
 
 		// Class change
-		if (Vars::Logging::Logs.Value & (1 << 1) && uNameHash == FNV1A::HashConst("player_changeclass"))
+		if (Vars::Logging::Logs.Value & (1 << 2) && uNameHash == FNV1A::HashConst("player_changeclass"))
 		{
 			if (const auto& pEntity = I::ClientEntityList->GetClientEntity(
 				I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"))))
@@ -92,7 +92,7 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 		}
 
 		// Damage
-		if (Vars::Logging::Logs.Value & (1 << 2) && uNameHash == FNV1A::HashConst("player_hurt"))
+		if (Vars::Logging::Logs.Value & (1 << 3) && uNameHash == FNV1A::HashConst("player_hurt"))
 		{
 			if (const auto pEntity = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"))))
 			{

@@ -22,10 +22,10 @@ class CMisc
 	void WeaponSway();
 
 	void FastStop(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void StopMovement(CUserCmd* pCmd, bool* pSendPacket);
 	void FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket);
-	void FastDeltaMove(CUserCmd* pCmd, bool* pSendPacket);
-	void AccurateMovement(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void FastStrafe(CUserCmd* pCmd, bool* pSendPacket);
+	void InstaStop(CUserCmd* pCmd, bool* pSendPacket);
+	void StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket);
 
@@ -42,7 +42,7 @@ public:
 	void RunPost(CUserCmd* pCmd, bool* pSendPacket);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
 
-	bool TauntControl(CUserCmd* pCmd);
+	bool TauntControl(CUserCmd* pCmd, bool bInDuck);
 	void UnlockAchievements();
 	void LockAchievements();
 	void SteamRPC();

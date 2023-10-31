@@ -63,7 +63,6 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 void CAimbot::Run(CUserCmd* pCmd)
 {
 	G::CurrentTargetIdx = 0;
-	G::PredictedPos = Vec3();
 	G::AimPos = Vec3();
 
 	if (F::Misc.bMovementStopped || F::Misc.bFastAccel)

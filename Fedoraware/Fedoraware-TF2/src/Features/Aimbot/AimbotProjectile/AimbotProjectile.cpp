@@ -313,8 +313,9 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 				G::ProjLines = projInfo.PredictionLines;
 				G::ProjLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
 
-				if (target.m_nAimedHitbox == HITBOX_HEAD)
-				{
+				/*
+				if (target.m_nAimedHitbox == HITBOX_HEAD) // attempted to have a headshot check though this seems more detrimental than useful
+				{ // i think this is accurate ?
 					const Vec3 vOffset = (trace.vEndPos - New) + (vOriginal - vPredict);
 
 					Vec3 vOld = F::ProjSim.GetOrigin() + vOffset;
@@ -329,7 +330,7 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 						return false;
 					
 					if (!cTrace.DidHit()) // loop and see if closest hitbox is head
-					{ // i think this is right
+					{
 						const model_t* pModel = target.m_pEntity->GetModel();
 						if (!pModel) return false;
 						const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
@@ -373,6 +374,7 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 						return closestId == 0;
 					}
 				}
+				*/
 
 				return true;
 			}
@@ -439,6 +441,8 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 									  vPoints.push_back(Vec3(vOff.x, vOff.y, std::min(vOff.z + Vars::Aimbot::Projectile::HuntermanShift.Value, vMaxs.z))); break; }
 							case 3: { const Vec3 vOff = Utils::GetHeadOffset(target.m_pEntity);
 									  vPoints.push_back(Vec3(vOff.x, vOff.y, std::max(vMaxs.z - Vars::Aimbot::Projectile::VerticalShift.Value, vOff.z))); break; }
+							case 4: { const Vec3 vOff = Utils::GetHeadOffset(target.m_pEntity);
+									  vPoints.push_back(Vec3(vOff.x, vOff.y, vOff.z + (vMaxs.z - vOff.z) * (Vars::Aimbot::Projectile::HuntermanLerp.Value / 100.f))); break; }
 							}
 						}
 						else
@@ -472,8 +476,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		for (const auto& vPoint : vPoints) // get most ideal point
 		{
 			iPriority++;
-
-			if (iPriority == iLowestPriority || !iLowestPriority)
+			if (iPriority >= iLowestPriority || !iLowestPriority)
 				break;
 
 			if (!CalculateAngle(vEyePos, vTargetPos + vOffset + vPoint, SolveProjectileSpeed(projInfo, pWeapon, vEyePos, vTargetPos), projInfo.m_gravity, solution))
@@ -503,7 +506,6 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
 			}
-			target.m_pEntity->SetAbsOrigin(vOriginalPos);
 		}
 
 		if (iEndTick && iEndTick == i || !iLowestPriority)
@@ -518,6 +520,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		(target.m_TargetType == ETargetType::PLAYER ? !storage.m_bFailed : true)) // don't attempt to aim at players when movesim fails
 	{
 		target.m_vAngleTo = vAngleTo;
+		target.m_vPos = vTargetPos;
 		if (Vars::Aimbot::Global::ShowHitboxes.Value)
 		{
 			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f));
@@ -655,7 +658,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		if (!CanHit(target, pLocal, pWeapon)) continue;
 
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
-		if (Vars::Aimbot::Projectile::AimMethod.Value == 1)
+		if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
 			G::AimPos = target.m_vPos;
 
 		if (Vars::Aimbot::Global::AutoShoot.Value)
@@ -677,7 +680,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 				else if (nWeaponID == TF_WEAPON_CANNON && pWeapon->GetDetonateTime() > 0.0f)
 				{
 					const Vec3 vEyePos = pLocal->GetShootPos();
-					const float bestCharge = vEyePos.DistTo(G::PredictedPos) / 1454.0f;
+					const float bestCharge = vEyePos.DistTo(target.m_vPos) / 1454.0f;
 
 					if (Vars::Aimbot::Projectile::ChargeLooseCannon.Value)
 					{

@@ -698,20 +698,33 @@ namespace Utils
 		pCmd->upmove = result.z * scale;
 	}
 
-	__inline bool StopMovement(CUserCmd* pCmd) {
-		if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
+	__inline void StopMovement(CUserCmd* pCmd)
+	{
+		const auto& pLocal = g_EntityCache.GetLocal();
+		if (!pLocal || pLocal->m_vecVelocity().IsZero())
 		{
-			const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
-			pCmd->viewangles.x = -90;	//	on projectiles we would be annoyed if we shot the ground.
+			pCmd->forwardmove = 0.f;
+			pCmd->sidemove = 0.f;
+			return;
+		}
+
+		if (!G::IsAttacking)
+		{
+			const float direction = Math::VelocityToAngles(pLocal->GetVecVelocity()).y;
+			pCmd->viewangles.x = -90; // on projectiles we would be annoyed if we shot the ground.
 			pCmd->viewangles.y = direction;
 			pCmd->viewangles.z = 0;
 			pCmd->sidemove = 0; pCmd->forwardmove = 0;
 			G::ShouldStop = false;
-
-			return true;
 		}
-
-		return false;
+		else // this can cause eye issues when shifting
+		{
+			Vec3 direction = pLocal->GetVecVelocity().toAngle();
+			direction.y = pCmd->viewangles.y - direction.y;
+			const Vec3 negatedDirection = direction.fromAngle() * -pLocal->GetVecVelocity().Length2D();
+			pCmd->forwardmove = negatedDirection.x;
+			pCmd->sidemove = negatedDirection.y;
+		}
 	}
 
 	/*
