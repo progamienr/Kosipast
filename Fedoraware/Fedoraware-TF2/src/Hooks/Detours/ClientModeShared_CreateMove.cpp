@@ -48,8 +48,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!pCmd || !pCmd->command_number)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 
-	const bool bInDuck = pCmd->buttons & IN_DUCK;
-
+	G::Buttons = pCmd->buttons;
 	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd))
 		I::Prediction->SetLocalViewAngles(pCmd->viewangles);
 
@@ -175,6 +174,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	G::ViewAngles = pCmd->viewangles;
 	G::LastUserCmd = pCmd;
 
-	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd, bInDuck));
+	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd));
 	return bShouldSkip ? false : Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 }

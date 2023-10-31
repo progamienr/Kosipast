@@ -138,7 +138,7 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 	{
 		if (Vars::Misc::DirectionalOnlyOnMove.Value && !(pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK)))
 			break;
-		if (Vars::Misc::DirectionalOnlyOnSpace.Value && !(GetAsyncKeyState(VK_SPACE) & 0x8000))
+		if (Vars::Misc::DirectionalOnlyOnSpace.Value && !(G::Buttons & IN_JUMP))
 			break;
 
 		const auto vel = pLocal->GetVelocity();
@@ -863,7 +863,7 @@ void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 
 
 
-bool CMisc::TauntControl(CUserCmd* pCmd, bool bInDuck)
+bool CMisc::TauntControl(CUserCmd* pCmd)
 {
 	bool bReturn = true;
 	// Handle Taunt Slide
@@ -889,7 +889,7 @@ bool CMisc::TauntControl(CUserCmd* pCmd, bool bInDuck)
 			if (!(pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK)))
 				pCmd->viewangles.x = 90.0f;
 				
-			if (bInDuck)
+			if (G::Buttons & IN_DUCK)
 				pCmd->buttons |= IN_DUCK;
 
 			Vec3 vAngle = I::EngineClient->GetViewAngles();

@@ -42,7 +42,7 @@ public:
 	void RunPost(CUserCmd* pCmd, bool* pSendPacket);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
 
-	bool TauntControl(CUserCmd* pCmd, bool bInDuck);
+	bool TauntControl(CUserCmd* pCmd);
 	void UnlockAchievements();
 	void LockAchievements();
 	void SteamRPC();

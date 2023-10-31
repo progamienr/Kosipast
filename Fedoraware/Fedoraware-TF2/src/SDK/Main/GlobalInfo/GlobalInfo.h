@@ -107,6 +107,7 @@ namespace G
 
 	inline CUserCmd* CurrentUserCmd{nullptr}; // Unreliable! Only use this if you really have to.
 	inline CUserCmd* LastUserCmd{nullptr};
+	inline int Buttons = 0;
 	
 	inline EWeaponType CurWeaponType = {};
 	inline std::unordered_map<int, DormantData> DormantPlayerESP; // <Index, DormantData>

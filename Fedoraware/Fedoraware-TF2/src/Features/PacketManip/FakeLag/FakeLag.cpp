@@ -64,7 +64,7 @@ void CFakeLag::PreserveBlastJump()
 		F::MoveSim.Restore(localStorage);
 	}
 	const bool bCanPreserve = pLocal->GetClassNum() == ETFClass::CLASS_SOLDIER && pLocal->GetCondEx2() & TFCondEx2_BlastJumping;
-	const bool bValid = GetAsyncKeyState(VK_SPACE) & 0x8000 && !pLocal->IsDucking();
+	const bool bValid = G::Buttons & IN_JUMP && !pLocal->IsDucking();
 
 	bPreservingBlast = bVar && bPlayerReady && bCanPreserve && bValid;
 }
