@@ -20,14 +20,9 @@
 #include "../../Features/TickHandler/TickHandler.h"
 #include "../../Features/Backtrack/Backtrack.h"
 
-void AttackingUpdate()
+void AttackingUpdate(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
 	if (!G::IsAttacking)
-		return;
-
-	const auto& pLocal = g_EntityCache.GetLocal();
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon)
 		return;
 
 	auto tfWeaponInfo = pWeapon->GetTFWeaponInfo();
@@ -45,7 +40,10 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	G::SilentTime = false;
 	G::IsAttacking = false;
 
-	if (!pCmd || !pCmd->command_number)
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto& pWeapon = g_EntityCache.GetWeapon();
+
+	if (!pCmd || !pCmd->command_number || !pLocal || !pWeapon)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 
 	G::Buttons = pCmd->buttons;
@@ -64,63 +62,56 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 	F::Backtrack.iTickCount = pCmd->tick_count;
 	G::CurrentUserCmd = pCmd;
+	if (!G::LastUserCmd)
+		G::LastUserCmd = pCmd;
 
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Misc::DisableInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
 	if (!G::DoubleTap)
 	{
-		if (const auto& pLocal = g_EntityCache.GetLocal())
+		if (const int MaxSpeed = pLocal->GetMaxSpeed())
+			G::Frozen = MaxSpeed == 1;
+
+		// Update Global Info
+		const int nItemDefIndex = pWeapon->GetItemDefIndex();
+
+		if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->GetClip1() || (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart()))
+			G::WaitForShift = 1; //Vars::CL_Move::DoubleTap::WaitReady.Value;
+
+		G::CurItemDefIndex = nItemDefIndex;
+		G::WeaponCanHeadShot = pWeapon->CanWeaponHeadShot();
+		G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
+		G::WeaponCanSecondaryAttack = pWeapon->CanSecondaryAttack(pLocal);
+		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
+		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
+
+		if (pWeapon->GetSlot() != SLOT_MELEE)
 		{
-			if (const int MaxSpeed = pLocal->GetMaxSpeed())
-				G::Frozen = MaxSpeed == 1;
+			if (pWeapon->IsInReload())
+				G::WeaponCanAttack = true;
 
-			// Update Global Info
-			if (const auto& pWeapon = g_EntityCache.GetWeapon())
-			{
-				const int nItemDefIndex = pWeapon->GetItemDefIndex();
+			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() == AC_STATE_IDLE)
+				G::WeaponCanAttack = false;
 
-				if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->GetClip1() || (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart()))
-					G::WaitForShift = 1; //Vars::CL_Move::DoubleTap::WaitReady.Value;
+			if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->GetClip1() == 0)
+				G::WeaponCanAttack = false;
 
-				G::CurItemDefIndex = nItemDefIndex;
-				G::WeaponCanHeadShot = pWeapon->CanWeaponHeadShot();
-				G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
-				G::WeaponCanSecondaryAttack = pWeapon->CanSecondaryAttack(pLocal);
-				G::CurWeaponType = Utils::GetWeaponType(pWeapon);
-				G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
+			if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
+				G::WeaponCanAttack = false;
+		}
 
-				if (pWeapon->GetSlot() != SLOT_MELEE)
-				{
-					if (pWeapon->IsInReload())
-						G::WeaponCanAttack = true;
-
-					if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() == AC_STATE_IDLE)
-						G::WeaponCanAttack = false;
-
-					if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->GetClip1() == 0)
-						G::WeaponCanAttack = false;
-
-					if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
-						G::WeaponCanAttack = false;
-				}
-			}
-
-			if (F::AimbotProjectile.bLastTickCancel)
-			{
-				pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
-				F::AimbotProjectile.bLastTickCancel = false;
-			}
+		if (F::AimbotProjectile.bLastTickCancel)
+		{
+			pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
+			F::AimbotProjectile.bLastTickCancel = false;
 		}
 	}
-	else if (const auto& pWeapon = g_EntityCache.GetWeapon())
+	else
 	{
-		if (const auto& pLocal = g_EntityCache.GetLocal())
-		{
-			G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
-			G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
-		}
-	}	//	we always need this :c
+		G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
+		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
+	} // we always need this :c
 
 	// Run Features
 	{
@@ -157,18 +148,15 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		else if(bWasSet)
 			*pSendPacket = true, bWasSet = false;
 	}
-	AttackingUpdate();
+	AttackingUpdate(pLocal, pWeapon);
 
 	// do this at the end just in case aimbot / triggerbot fired.
-	if (const auto& pWeapon = g_EntityCache.GetWeapon(); const auto & pLocal = g_EntityCache.GetLocal())
+	if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid()))
 	{
-		if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid()))
-		{
-			if (G::NextSafeTick > I::GlobalVars->tickcount && G::DoubleTap && G::ShiftedTicks)
-				pCmd->buttons &= ~IN_ATTACK;
-			else
-				G::NextSafeTick = I::GlobalVars->tickcount + g_ConVars.sv_maxusrcmdprocessticks_holdaim->GetInt() + 1;
-		}
+		if (G::NextSafeTick > I::GlobalVars->tickcount && G::DoubleTap && G::ShiftedTicks)
+			pCmd->buttons &= ~IN_ATTACK;
+		else
+			G::NextSafeTick = I::GlobalVars->tickcount + g_ConVars.sv_maxusrcmdprocessticks_holdaim->GetInt() + 1;
 	}
 	
 	G::ViewAngles = pCmd->viewangles;

@@ -35,7 +35,10 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 			Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 0.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		else
 			Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_ROCKET, pos, ang, { 1.f, 1.f, 1.f /*0.f, 0.f, 0.f i think is real size*/ }, bQuick ? 1081344.f : Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon), 0.f, true };
+		float speed = Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon);
+		if (pPlayer->IsPrecisionRune())
+			speed = 2750.f;
+		out = { TF_PROJECTILE_ROCKET, pos, ang, { 0.f, 0.f, 0.f }, bQuick ? 1081344.f : speed, 0.f, true };
 		return true;
 	}
 	case TF_WEAPON_PARTICLE_CANNON:
@@ -43,12 +46,9 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_DRG_POMSON:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
-		float speed = 1200.f;
-		switch (pWeapon->GetWeaponID())
-		{
-		case TF_WEAPON_PARTICLE_CANNON: speed = Utils::ATTRIB_HOOK_FLOAT(1100.f, "mult_projectile_speed", pWeapon); break;
-		case TF_WEAPON_DRG_POMSON: pos.z -= 13.f; break;
-		}
+		const float speed = pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON ? 1100.f : 1200.f;
+		if (pWeapon->GetWeaponID() == TF_WEAPON_DRG_POMSON)
+			pos.z -= 13.f;
 		out = { TF_PROJECTILE_ENERGY_RING, pos, ang, { 1.f, 1.f, 1.f }, bQuick ? 1081344.f : speed, 0.f, true };
 		return true;
 	}
@@ -56,9 +56,9 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
 		const bool is_lochnload = G::CurItemDefIndex == Demoman_m_TheLochnLoad;
-		float speed = is_lochnload ? 1490.f : 1200.f;
+		float speed = Utils::ATTRIB_HOOK_FLOAT(1200.f, "mult_projectile_speed", pWeapon);
 		if (pPlayer->IsPrecisionRune())
-			speed *= 2.5f;
+			speed = 3000.f;
 		float lifetime = 2.2f; // estimates
 		if (G::CurItemDefIndex == Demoman_m_TheIronBomber)
 			lifetime *= 0.7f;
@@ -68,7 +68,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_PIPEBOMBLAUNCHER:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		const float charge = flCharge > 0.f
+		const float charge = flCharge > 0.f && pWeapon->GetItemDefIndex() != Demoman_s_StickyJumper
 			? Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon) * flCharge
 			: (pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f);
 		const float speed = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 900.f, 2400.f);
@@ -90,7 +90,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_FLAREGUN:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, 2000.f, 0.3f, true };
+		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, Utils::ATTRIB_HOOK_FLOAT(2000.f, "mult_projectile_speed", pWeapon), 0.3f, true };
 		return true;
 	}
 	case TF_WEAPON_RAYGUN_REVENGE:
@@ -131,7 +131,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_CLEAVER:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.5f, 1.5f, 1.5f }, 3000.f, 2.f, false };
+		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.f, 1.f, 10.f /*weird*/ }, 3000.f, 2.f, false};
 		return true;
 	}
 	case TF_WEAPON_BAT_WOOD:
@@ -151,13 +151,13 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_JAR_MILK:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		out = { TF_PROJECTILE_JAR, pos, ang, { 1.5f, 1.5f, 1.5f }, 1000.f, 1.f, false, 2.2f };
+		out = { TF_PROJECTILE_JAR, pos, ang, { 3.f, 3.f, 3.f }, 1000.f, 1.f, false, 2.2f };
 		return true;
 	}
 	case TF_WEAPON_JAR_GAS:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		out = { TF_PROJECTILE_JAR_GAS, pos, ang, { 1.5f, 1.5f, 1.5f }, 2000.f, 1.f, false, 2.2f };
+		out = { TF_PROJECTILE_JAR_GAS, pos, ang, { 3.f, 3.f, 3.f }, 2000.f, 1.f, false, 2.2f };
 		return true;
 	}
 	}

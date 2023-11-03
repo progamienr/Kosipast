@@ -42,24 +42,23 @@ enum class BacktrackMode
 
 class CBacktrack
 {
-//	logic
+	// logic
 	bool IsTracked(const TickRecord& record);
 	bool IsEarly(CBaseEntity* pEntity, const TickRecord& record);
-	//bool IsBackLagComped(CBaseEntity* pEntity);
 
-	//	utils
-	void CleanRecords();
-	void MakeRecords();
-	std::optional<TickRecord> GetHitRecord(CUserCmd* pCmd, CBaseEntity* pEntity, Vec3 vAngles, Vec3 vPos);
-	//	utils - fake latency
+	// utils
+	void SendLerp();
 	void UpdateDatagram();
+	void StoreNolerp();
+	void MakeRecords();
+	void CleanRecords();
+	std::optional<TickRecord> GetHitRecord(CUserCmd* pCmd, CBaseEntity* pEntity, Vec3 vAngles, Vec3 vPos);
 
-	//	data
-//	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> mRecords;
+	// data
 	std::unordered_map<int, bool> mDidShoot;
 	int iLastCreationTick = 0;
 
-	//	data - fake latency
+	// data - fake latency
 	std::deque<CIncomingSequence> dSequences;
 	float flLatencyRampup = 0.f;
 	int iLastInSequence = 0;
@@ -68,33 +67,31 @@ class CBacktrack
 	bool bLastTickHeld = false;
 
 public:
-	void SetLerp(CGameEvent* pEvent);
 	float GetLerp();
 	float GetFake();
 	float GetReal();
 	int iTickCount = 0;
 
 	bool WithinRewind(const TickRecord& record);
-	//bool CanHitOriginal(CBaseEntity* pEntity); unused
 	std::deque<TickRecord>* GetRecords(CBaseEntity* pEntity);
 	std::optional<TickRecord> GetLastRecord(CBaseEntity* pEntity);
-	//std::optional<TickRecord> GetFirstRecord(CBaseEntity* pEntity); unused
 	std::deque<TickRecord> GetValidRecords(CBaseEntity* pEntity, std::deque<TickRecord> pRecords, BacktrackMode iMode = BacktrackMode::ALL);
 
-	void PlayerHurt(CGameEvent* pEvent); //	called on player_hurt event
-	void ResolverUpdate(CBaseEntity* pEntity);	//	omfg
-	void FrameStageNotify(); //	called in FrameStageNotify
+	void Restart();
+	void FrameStageNotify();
+	std::optional<TickRecord> Run(CUserCmd* pCmd);
+	void PlayerHurt(CGameEvent* pEvent);
+	void SetLerp(CGameEvent* pEvent);
+	void ResolverUpdate(CBaseEntity* pEntity);
 	void ReportShot(int iIndex);
-	std::optional<TickRecord> Run(CUserCmd* pCmd); //	returns a valid record
-	//std::optional<TickRecord> Aimbot(CBaseEntity* pEntity, BacktrackMode iMode, int nHitbox); unused
-	void AdjustPing(INetChannel* netChannel); //	blurgh
-	void Restart(); //	called whenever lol
+	void AdjustPing(INetChannel* netChannel);
 
 	bool bFakeLatency = false;
 	float flWishInterp = G::LerpTime;
 	float flFakeInterp = G::LerpTime;
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> mRecords;
-	std::unordered_map<int, Vec3> noInterpEyeAngles; // i think this works
+	std::unordered_map<int, std::pair<int, matrix3x4[128]>> noInterpBones;
+	std::unordered_map<int, Vec3> noInterpEyeAngles;
 };
 
 ADD_FEATURE(CBacktrack, Backtrack)

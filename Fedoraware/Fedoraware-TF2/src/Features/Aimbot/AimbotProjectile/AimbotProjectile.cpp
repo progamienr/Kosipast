@@ -737,7 +737,8 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && amount > Vars::Aimbot::Projectile::AutoReleaseAt.Value;
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
-	if ((bCancel || bEarly && (!(pCmd->buttons & IN_ATTACK) || bAutoRelease)) && G::LastUserCmd->buttons & IN_ATTACK && bLastTickHeld) // add user toggle to control whether to cancel or not
+	// add user toggle to control whether to cancel or not
+	if ((bCancel || bEarly && (!(pCmd->buttons & IN_ATTACK) || bAutoRelease)) && G::LastUserCmd->buttons & IN_ATTACK && bLastTickHeld)
 	{
 		switch (pWeapon->GetWeaponID())
 		{

@@ -24,7 +24,6 @@ void CMisc::RunPre(CUserCmd* pCmd, bool* pSendPacket)
 	AntiAFK(pCmd);
 	CheatsBypass();
 	PingReducer();
-	FakeInterp();
 	DetectChoke();
 	WeaponSway();
 }
@@ -526,35 +525,6 @@ void CMisc::PingReducer()
 
 		NET_SetConVar cmd("cl_cmdrate", std::to_string(iTarget).c_str());
 		netChannel->SendNetMsg(cmd);
-	}
-}
-
-void CMisc::FakeInterp()
-{
-	CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-	if (!netChannel) return;
-
-	static Timer interpTimer{};
-	if (interpTimer.Run(500))
-	{
-		float flTarget = F::Backtrack.GetLerp();
-		if (flTarget == F::Backtrack.flWishInterp) return;
-		F::Backtrack.flWishInterp = flTarget;
-
-		Utils::ConLog("SendNetMsg", std::format("cl_interp: {}", flTarget).c_str(), { 224, 255, 131, 255 }, Vars::Debug::Logging.Value);
-
-		{
-			NET_SetConVar cmd("cl_interp", std::to_string(flTarget).c_str());
-			netChannel->SendNetMsg(cmd);
-		}
-		{
-			NET_SetConVar cmd("cl_interp_ratio", "1.0");
-			netChannel->SendNetMsg(cmd);
-		}
-		{
-			NET_SetConVar cmd("cl_interpolate", "1");
-			netChannel->SendNetMsg(cmd);
-		}
 	}
 }
 

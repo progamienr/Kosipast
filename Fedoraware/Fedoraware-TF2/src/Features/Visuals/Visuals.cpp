@@ -13,8 +13,8 @@
 namespace S
 {
 	MAKE_SIGNATURE(RenderLine, ENGINE_DLL, "55 8B EC 81 EC ? ? ? ? 56 E8 ? ? ? ? 8B 0D ? ? ? ? 8B 01 FF 90 ? ? ? ? 8B F0 85 F6", 0x0);
-	MAKE_SIGNATURE(RenderBoxFace, ENGINE_DLL, "55 8B EC 51 8B 45 ? 8B C8 FF 75", 0x0);
-	MAKE_SIGNATURE(RenderBoxEdge, ENGINE_DLL, "55 8B EC 81 EC ? ? ? ? 56 E8 ? ? ? ? 8B 0D ? ? ? ? 8B 01 FF 90 ? ? ? ? 8B F0 89 75 ? 85 F6 74 ? 8B 06 8B CE FF 50 ? A1", 0x0);
+	MAKE_SIGNATURE(RenderBox, ENGINE_DLL, "55 8B EC 51 8B 45 ? 8B C8 FF 75", 0x0);
+	MAKE_SIGNATURE(RenderWireframeBox, ENGINE_DLL, "55 8B EC 81 EC ? ? ? ? 56 E8 ? ? ? ? 8B 0D ? ? ? ? 8B 01 FF 90 ? ? ? ? 8B F0 89 75 ? 85 F6 74 ? 8B 06 8B CE FF 50 ? A1", 0x0);
 	MAKE_SIGNATURE(DrawServerHitboxes, SERVER_DLL, "55 8B EC 83 EC ? 57 8B F9 80 BF ? ? ? ? ? 0F 85 ? ? ? ? 83 BF ? ? ? ? ? 75 ? E8 ? ? ? ? 85 C0 74 ? 8B CF E8 ? ? ? ? 8B 97", 0x0);
 	MAKE_SIGNATURE(GetServerAnimating, SERVER_DLL, "55 8B EC 8B 55 ? 85 D2 7E ? A1", 0x0);
 	MAKE_SIGNATURE(LoadSkys, ENGINE_DLL, "55 8B EC 81 EC ? ? ? ? 8B 0D ? ? ? ? 53 56 57 8B 01 C7 45", 0x0);
@@ -238,14 +238,19 @@ void CVisuals::ProjectileTrace()
 		CGameTrace trace = {};
 		CTraceFilterProjectile filter = {};
 		filter.pSkip = pLocal;
-		Utils::TraceHull(Old, New, projInfo.m_hull * -1.f, projInfo.m_hull, MASK_SOLID, &filter, &trace);
+		Utils::TraceHull(Old, New, projInfo.m_hull * -1, projInfo.m_hull, MASK_SOLID, &filter, &trace);
 		if (trace.DidHit())
 		{
 			Vec3 angles;
 			Math::VectorAngles(trace.Plane.normal, angles);
 
-			const Vec3 size = { projInfo.m_hull.x * 2.f, 16.f, 16.f };
-			RenderBox(trace.vEndPos, size / -2, size / 2, angles, Vars::Colors::ProjectileColor.Value, { 0, 0, 0, 0 });
+			//const Vec3 vOrigin = trace.vEndPos - trace.Plane.normal * (projInfo.m_hull.x - 1.f);
+			const float flSize = std::max(projInfo.m_hull.x, 1.f);
+			const Vec3 vSize = { 1.f, flSize, flSize };
+
+			RenderBox(trace.vEndPos, vSize * -1, vSize, angles, Vars::Colors::ProjectileColor.Value, { 0, 0, 0, 0 });
+			if (Vars::Colors::ClippedColor.Value.a)
+				RenderBox(trace.vEndPos, vSize * -1, vSize, angles, Vars::Colors::ClippedColor.Value, { 0, 0, 0, 0 }, true);
 
 			projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
 
@@ -254,18 +259,18 @@ void CVisuals::ProjectileTrace()
 	}
 
 	DrawSimLine(projInfo.PredictionLines, Vars::Colors::ProjectileColor.Value);
+	if (Vars::Colors::ClippedColor.Value.a)
+		DrawSimLine(projInfo.PredictionLines, Vars::Colors::ClippedColor.Value, false, true);
 }
 
 void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 {
 	if (!pLocal->IsAlive() || pLocal->IsAGhost() || !I::Input->CAM_IsThirdPerson())
-	{
 		return;
-	}
 
 	if (Vars::AntiHack::AntiAim::Active.Value && Vars::Debug::AntiAimLines.Value)
 	{
-		static constexpr Color_t realColour = { 0, 255,0, 255 };
+		static constexpr Color_t realColour = { 0, 255, 0, 255 };
 		static constexpr Color_t fakeColour = { 255, 0, 0, 255 };
 
 		const auto& vOrigin = pLocal->GetAbsOrigin();
@@ -363,33 +368,29 @@ void CVisuals::DrawBulletLines()
 		{
 			if (Line.m_flTime < I::GlobalVars->curtime) continue;
 
-			RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color, false);
+			RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color);
 		}
 	}
 	else
 	{
 		for (auto& Line : G::BulletsStorage)
-		{
 			Line.m_flTime = -10.f;
-		}
 	}
 	*/
 	for (auto& Line : G::BulletsStorage)
 	{
 		if (Line.m_flTime < I::GlobalVars->curtime) continue;
 
-		RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color, false);
+		RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color);
 	}
 }
 
-void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators)
+void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators, bool bZBuffer)
 {
 	if (!bSeparators)
 	{
 		for (size_t i = 1; i < Line.size(); i++)
-		{
-			RenderLine(Line.at(i - 1).first, Line.at(i).first, Color, false);
-		}
+			RenderLine(Line.at(i - 1).first, Line.at(i).first, Color, bZBuffer);
 	}
 	else
 	{
@@ -398,8 +399,8 @@ void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Colo
 			const auto& vStart = Line[i - 1].first;
 			const auto& vRotate = Line[i - 1].second;	//	splirp vec
 			const auto& vEnd = Line[i].first;
-			if ((i % Vars::Visuals::SeperatorSpacing.Value) == 0) { RenderLine(vStart, vRotate, Color, false); }
-			RenderLine(vStart, vEnd, Color, false);
+			if ((i % Vars::Visuals::SeperatorSpacing.Value) == 0) { RenderLine(vStart, vRotate, Color); }
+			RenderLine(vStart, vEnd, Color);
 		}
 	}
 }
@@ -421,9 +422,7 @@ void CVisuals::DrawSimLines()
 	else
 	{
 		for (auto& Line : G::LinesStorage)
-		{
 			Line.m_flTime = -10.f;
-		}
 	}
 	*/
 	for (auto& Line : G::LinesStorage)
@@ -452,9 +451,7 @@ void CVisuals::DrawBoxes()
 	else
 	{
 		for (auto& Box : G::BoxesStorage)
-		{
 			Box.m_flTime = -10.f;
-		}
 	}
 	*/
 	for (auto& Box : G::BoxesStorage)
@@ -468,25 +465,19 @@ void CVisuals::DrawBoxes()
 void CVisuals::RevealBulletLines()
 {
 	for (auto& Line : G::BulletsStorage)
-	{
 		Line.m_flTime = I::GlobalVars->curtime + 60.f;
-	}
 }
 
 void CVisuals::RevealSimLines()
 {
 	for (auto& PredictionLine : G::LinesStorage)
-	{
 		PredictionLine.m_flTime = I::GlobalVars->curtime + 60.f;
-	}
 }
 
 void CVisuals::RevealBoxes()
 {
 	for (auto& Box : G::BoxesStorage)
-	{
 		Box.m_flTime = I::GlobalVars->curtime + 60.f;
-	}
 }
 
 void CVisuals::ClearBulletLines()
@@ -522,9 +513,7 @@ void CVisuals::DrawServerHitboxes()
 		{
 			void* server_animating = GetServerAnimating(pLocal->GetIndex());
 			if (server_animating)
-			{
 				DrawServerHitboxes(server_animating, I::GlobalVars->interval_per_tick, true);
-			}
 		}
 	}
 }
@@ -536,17 +525,17 @@ void CVisuals::RenderLine(const Vec3& v1, const Vec3& v2, Color_t c, bool bZBuff
 	fnRenderLine(v1, v2, c, bZBuffer);
 }
 
-void CVisuals::RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace)
+void CVisuals::RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace, bool bZBuffer)
 {
 	{
 		using FN = void(__cdecl*)(const Vec3&, const Vec3&, const Vec3&, const Vec3&, Color_t, bool, bool);
-		static auto fnRenderLine = S::RenderBoxFace.As<FN>();
-		fnRenderLine(vPos, vOrientation, vMins, vMaxs, cFace, false, false);
+		static auto fnRenderBox = S::RenderBox.As<FN>();
+		fnRenderBox(vPos, vOrientation, vMins, vMaxs, cFace, bZBuffer, false);
 	}
 	{
 		using FN = void(__cdecl*)(const Vec3&, const Vec3&, const Vec3&, const Vec3&, Color_t, bool);
-		static auto fnRenderLine = S::RenderBoxEdge.As<FN>();
-		fnRenderLine(vPos, vOrientation, vMins, vMaxs, cEdge, false);
+		static auto fnRenderBox = S::RenderWireframeBox.As<FN>();
+		fnRenderBox(vPos, vOrientation, vMins, vMaxs, cEdge, bZBuffer);
 	}
 }
 
@@ -560,9 +549,7 @@ void CVisuals::FOV(CViewSetup* pView)
 	{
 		/*
 		if (pLocal->IsScoped() && !Vars::Visuals::RemoveZoom.Value)
-		{
 			return;
-		}
 		*/
 
 		const int fov = pLocal->IsScoped() ? Vars::Visuals::ZoomFieldOfView.Value : Vars::Visuals::FieldOfView.Value;
@@ -587,9 +574,7 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 			if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible())
 			{
 				if (F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
-				{
 					Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
-				}
 			}
 		}
 
@@ -598,20 +583,18 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 			|| !pLocal || pLocal->IsTaunting() || !pLocal->IsAlive() || pLocal->IsAGhost())
 		{
 			if (I::Input->CAM_IsThirdPerson())
-			{
 				I::EngineClient->ClientCmd_Unrestricted("firstperson");
-			}
 		}
 		else
 		{
 			if (!I::Input->CAM_IsThirdPerson())
 			{
-				{ //lazy
-					ConVar* sv_cheats = g_ConVars.FindVar("sv_cheats");
-					sv_cheats->m_Value.m_nValue = 1;
-					ConVar* cam_ideallag = g_ConVars.FindVar("cam_ideallag");
-					cam_ideallag->SetValue(0.f);
-				}
+				//lazy
+				ConVar* sv_cheats = g_ConVars.FindVar("sv_cheats");
+				sv_cheats->m_Value.m_nValue = 1;
+				ConVar* cam_ideallag = g_ConVars.FindVar("cam_ideallag");
+				cam_ideallag->SetValue(0.f);
+				
 				I::EngineClient->ClientCmd_Unrestricted("thirdperson");
 			}
 
@@ -661,9 +644,7 @@ void CVisuals::DrawSightlines()
 			for (const auto& sightline : m_SightLines)
 			{
 				if (sightline.m_bDraw)
-				{
-					RenderLine(sightline.m_vStart, sightline.m_vEnd, sightline.m_Color, false);
-				}
+					RenderLine(sightline.m_vStart, sightline.m_vEnd, sightline.m_Color);
 			}
 		}
 	}
@@ -677,6 +658,7 @@ void CVisuals::FillSightlines()
 		CTraceFilterHitscan filter{};
 		CGameTrace trace{};
 		m_SightLines = {}; // should get rid of residual lines
+
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
 			const int iEntityIndex = pEnemy->GetIndex();
@@ -719,9 +701,7 @@ void CVisuals::PickupTimers()
 
 		Vec3 vScreen;
 		if (Utils::W2S(pickupData->Location, vScreen))
-		{
 			g_Draw.String(g_Draw.GetFont(FONT_ESP_PICKUPS), vScreen.x, vScreen.y, color, ALIGN_CENTER, timerText.c_str());
-		}
 
 		++pickupData;
 	}
@@ -800,9 +780,7 @@ void ApplyModulation(const Color_t& clr)
 	//		std::string_view group(pMaterial->GetTextureGroupName());
 
 	//		if (group.find(_(TEXTURE_GROUP_WORLD)) != group.npos)
-	//		{
 	//			pMaterial->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
-	//		}
 	//	}
 	//}
 	if (F::Visuals.MaterialHandleDatas.empty())
@@ -834,9 +812,7 @@ void ApplySkyboxModulation(const Color_t& clr)
 	//	std::string_view group(pMaterial->GetTextureGroupName());
 
 	//	if (group._Starts_with("SkyBox"))
-	//	{
 	//		pMaterial->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
-	//	}
 	//}
 	if (F::Visuals.MaterialHandleDatas.empty())
 		return;

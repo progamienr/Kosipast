@@ -384,13 +384,13 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					if (TIME_TO_TICKS(flDelta) != 1)
 					{
 						bool bDisplay = F::Backtrack.mRecords[pPlayer].empty();
-						if (!bDisplay)
-						{
-							const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
-							const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
-							if (vDelta.Length2DSqr() > 4096.f)
-								bDisplay = true;
-						}
+						//if (!bDisplay)
+						//{
+						//	const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
+						//	const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
+						//	if (vDelta.Length2DSqr() > 4096.f)
+						//		bDisplay = true;
+						//}
 						if (bDisplay)
 						{
 							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");

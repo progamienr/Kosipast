@@ -773,6 +773,7 @@ namespace Vars
 		CVar(BulletTracer, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(PredictionColor, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(ProjectileColor, Color_t(255, 100, 100, 255), VISUAL)
+		CVar(ClippedColor, Color_t(255, 255, 255, 0), VISUAL)
 		CVar(HitboxEdge, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(HitboxFace, Color_t(255, 255, 255, 0), VISUAL)
 	NAMESPACE_END(Colors)

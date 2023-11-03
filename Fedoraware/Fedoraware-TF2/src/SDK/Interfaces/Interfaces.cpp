@@ -37,7 +37,7 @@ void CInterfaces::Init()
 
 	ClientEntityList = g_Interface.Get<CClientEntityList*>(CLIENT_DLL, VCLIENTENTITYLIST_INTERFACE_VERSION);
 	VALIDATE(ClientEntityList);
-
+	
 	Prediction = g_Interface.Get<CPrediction*>(CLIENT_DLL, VCLIENT_PREDICTION_INTERFACE_VERSION);
 	VALIDATE(Prediction);
 

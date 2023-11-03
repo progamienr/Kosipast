@@ -831,8 +831,8 @@ void CMenu::MenuVisuals()
 
 					SectionTitle("Simulation");
 					WToggle("Enabled", &Vars::Visuals::SimLines.Value);
-					ColorPickerL("Projectile Line Color", Vars::Colors::ProjectileColor.Value, 1);
-					ColorPickerL("Prediction Line Color", Vars::Colors::PredictionColor.Value);
+					ColorPickerL("Prediction Line Color", Vars::Colors::PredictionColor.Value, 1);
+					ColorPickerL("Projectile Line Color", Vars::Colors::ProjectileColor.Value);
 					WToggle("Timed", &Vars::Visuals::TimedLines.Value);
 					WToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
 					if (Vars::Visuals::SimSeperators.Value)
@@ -842,6 +842,7 @@ void CMenu::MenuVisuals()
 					}
 					WToggle("Swing Prediction Lines", &Vars::Visuals::SwingLines.Value);
 					WToggle("Projectile Trajectory", &Vars::Visuals::ProjectileTrajectory.Value);
+					ColorPickerL("Clipped Line Color", Vars::Colors::ClippedColor.Value);
 					if (Vars::Debug::Info.Value)
 					{
 						SectionTitle("debug");

@@ -756,13 +756,15 @@ namespace Utils
 	}
 	*/
 
-	__inline void ConLog(const char* cFunction, const char* cLog, Color_t cColour = { 255, 255, 255, 255 }, const bool bShouldPrint = true)
+	__inline void ConLog(const char* cFunction, const char* cLog, Color_t cColour = { 255, 255, 255, 255 }, const bool bShouldPrint = true, const bool bDebugOutput = false)
 	{
-		if (!bShouldPrint)
-			return;
-
-		I::Cvar->ConsoleColorPrintf(cColour, "[%s] ", cFunction);
-		I::Cvar->ConsoleColorPrintf({ 255, 255, 255, 255 }, "%s\n", cLog);
+		if (bShouldPrint)
+		{
+			I::Cvar->ConsoleColorPrintf(cColour, "[%s] ", cFunction);
+			I::Cvar->ConsoleColorPrintf({ 255, 255, 255, 255 }, "%s\n", cLog);
+		}
+		if (bDebugOutput)
+			OutputDebugStringA(std::format("[{}] {}\n", cFunction, cLog).c_str());
 	}
 
 	__inline void WalkTo(CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& pDestination)

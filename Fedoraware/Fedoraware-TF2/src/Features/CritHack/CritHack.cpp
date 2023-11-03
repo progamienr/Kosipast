@@ -351,6 +351,9 @@ void CCritHack::FixHeavyRevBug(CUserCmd* pCmd)
 
 bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 {
+	if (Utils::ATTRIB_HOOK_FLOAT(1, "mult_crit_chance", pWeapon) <= 0.f)
+		return false;
+
 	switch (pWeapon->GetItemDefIndex())
 	{
 	case Scout_s_MadMilk:

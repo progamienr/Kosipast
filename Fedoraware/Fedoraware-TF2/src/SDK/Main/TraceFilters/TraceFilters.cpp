@@ -23,10 +23,8 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 			case ETFClassID::CObjectSentrygun:
 			case ETFClassID::CObjectDispenser:
 			case ETFClassID::CObjectTeleporter:
-			{
 				if (pLocal->GetTeamNum() == pEntity->GetTeamNum())
 					return false;
-			}
 		}
 	}
 
@@ -43,6 +41,7 @@ ETraceType CTraceFilterHitscan::GetTraceType() const
 bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
 {
 	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
+	CBaseEntity* pLocal = this->pSkip;
 
 	switch (pEntity->GetClassID())
 	{
@@ -84,6 +83,12 @@ bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsM
 		case ETFClassID::CTFProjectile_SpellFireball:
 		case ETFClassID::CTFProjectile_BallOfFire:
 		case ETFClassID::CTFProjectile_SentryRocket:
+			return false;
+	}
+
+	if (pLocal && pLocal->IsPlayer())
+	{
+		if (pEntity->IsPlayer() && pLocal->GetTeamNum() == pEntity->GetTeamNum())
 			return false;
 	}
 

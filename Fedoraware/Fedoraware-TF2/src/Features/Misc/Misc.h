@@ -17,7 +17,6 @@ class CMisc
 	void CheatsBypass();
 	int iLastCmdrate = -1;
 	void PingReducer();
-	void FakeInterp();
 	void DetectChoke();
 	void WeaponSway();
 

@@ -1,4 +1,5 @@
 #include "Prediction.h"
+#include <iostream>
 
 namespace S
 {
@@ -14,9 +15,8 @@ int CEnginePrediction::GetTickbase(CUserCmd* pCmd, CBaseEntity* pLocal)
 	{
 		if (!pLastCmd || pLastCmd->hasbeenpredicted)
 			nTick = pLocal->GetTickBase();
-
-		else nTick++;
-
+		else
+			nTick++;
 		pLastCmd = pCmd;
 	}
 
@@ -26,87 +26,86 @@ int CEnginePrediction::GetTickbase(CUserCmd* pCmd, CBaseEntity* pLocal)
 void CEnginePrediction::Start(CUserCmd* pCmd)
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (!pLocal || !pLocal->IsAlive() || !I::MoveHelper)
+		return;
 
-	if (pLocal && pLocal->IsAlive() && I::MoveHelper)
-	{
-		static auto fnResetInstanceCounters = S::ResetInstanceCounters.As<void(__cdecl*)()>();
+	static auto fnResetInstanceCounters = S::ResetInstanceCounters.As<void(__cdecl*)()>();
+	fnResetInstanceCounters();
 
-		fnResetInstanceCounters();
-		pLocal->SetCurrentCmd(pCmd);
+	pLocal->SetCurrentCmd(pCmd);
 
-		oldrandomseed = *I::RandomSeed;
-		*I::RandomSeed = MD5_PseudoRandom(pCmd->command_number) & std::numeric_limits<int>::max();
+	oldrandomseed = *I::RandomSeed;
+	*I::RandomSeed = MD5_PseudoRandom(pCmd->command_number) & std::numeric_limits<int>::max();
 
-		m_nOldTickCount = I::GlobalVars->tickcount;
-		m_fOldCurrentTime = I::GlobalVars->curtime;
-		m_fOldFrameTime = I::GlobalVars->frametime;
+	m_nOldTickCount = I::GlobalVars->tickcount;
+	m_fOldCurrentTime = I::GlobalVars->curtime;
+	m_fOldFrameTime = I::GlobalVars->frametime;
 
-		const int nOldTickBase = pLocal->GetTickBase();
-		const bool bOldIsFirstPrediction = I::Prediction->m_bFirstTimePredicted;
-		const bool bOldInPrediction = I::Prediction->m_bInPrediction;
+	const int nOldTickBase = pLocal->GetTickBase();
+	const bool bOldIsFirstPrediction = I::Prediction->m_bFirstTimePredicted;
+	const bool bOldInPrediction = I::Prediction->m_bInPrediction;
 
-		I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal);
-		I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
-		I::GlobalVars->frametime = (I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL);
-		G::TickBase = I::GlobalVars->tickcount;
+	I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal);
+	I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
+	I::GlobalVars->frametime = (I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL);
+	G::TickBase = I::GlobalVars->tickcount;
 
-		I::Prediction->m_bFirstTimePredicted = false;
-		I::Prediction->m_bInPrediction = true;
+	I::Prediction->m_bFirstTimePredicted = false;
+	I::Prediction->m_bInPrediction = true;
 
-		I::GameMovement->StartTrackPredictionErrors(pLocal);
+	I::GameMovement->StartTrackPredictionErrors(pLocal);
 
-		//if (pCmd->weaponselect) {
-		//	if (CBaseCombatWeapon* pWeapon = pLocal->GetActiveWeapon()) { 
-		//		pLocal->SelectItem(pWeapon->GetName(), pCmd->weaponsubtype); 
-		//	}
-		//}
+	//if (pCmd->weaponselect)
+	//{
+	//	if (CBaseCombatWeapon* pWeapon = pLocal->GetActiveWeapon())
+	//	{ 
+	//		pLocal->SelectItem(pWeapon->GetName(), pCmd->weaponsubtype); 
+	//	}
+	//}
 
-		pLocal->UpdateButtonState(pCmd->buttons);
+	pLocal->UpdateButtonState(pCmd->buttons);
 
-		I::Prediction->SetLocalViewAngles(pCmd->viewangles);
+	I::Prediction->SetLocalViewAngles(pCmd->viewangles);
 		
-		const int iThinkTick = pLocal->m_nNextThinkTick();
+	const int iThinkTick = pLocal->m_nNextThinkTick();
 
-		if (pLocal->PhysicsRunThink(0))
-		{
-			pLocal->PreThink();
-		}
+	if (pLocal->PhysicsRunThink(0))
+		pLocal->PreThink();
 
-		if (iThinkTick > 0 && iThinkTick <= I::GlobalVars->tickcount)
-		{
-			pLocal->SetNextThink(-1, NULL);
-			pLocal->Think();
-		}
-
-		I::MoveHelper->SetHost(pLocal);
-
-		I::Prediction->SetupMove(pLocal, pCmd, I::MoveHelper, &m_MoveData);
-		I::GameMovement->ProcessMovement(pLocal, &m_MoveData);
-		I::Prediction->FinishMove(pLocal, pCmd, &m_MoveData);
-
-		pLocal->PostThink();
-		I::GameMovement->FinishTrackPredictionErrors(pLocal);
-		pLocal->SetTickBase(nOldTickBase);
-
-		I::Prediction->m_bInPrediction = bOldInPrediction;
-		I::Prediction->m_bFirstTimePredicted = bOldIsFirstPrediction;
+	if (iThinkTick > 0 && iThinkTick <= I::GlobalVars->tickcount)
+	{
+		pLocal->SetNextThink(-1, NULL);
+		pLocal->Think();
 	}
+
+	I::MoveHelper->SetHost(pLocal);
+
+	I::Prediction->SetupMove(pLocal, pCmd, I::MoveHelper, &m_MoveData);
+	I::GameMovement->ProcessMovement(pLocal, &m_MoveData);
+	// I::Prediction->FinishMove occasionally fucks with pCmd, might only be when respawning within a tick
+	I::Prediction->FinishMove(pLocal, pCmd, &m_MoveData); // CRASH: read access violation. pCmd was 0x... (after call)
+
+	pLocal->PostThink();
+	I::GameMovement->FinishTrackPredictionErrors(pLocal);
+	pLocal->SetTickBase(nOldTickBase);
+
+	I::Prediction->m_bInPrediction = bOldInPrediction;
+	I::Prediction->m_bFirstTimePredicted = bOldIsFirstPrediction;
 }
 
 void CEnginePrediction::End(CUserCmd* pCmd)
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (!pLocal || !pLocal->IsAlive() || !I::MoveHelper)
+		return;
 
-	if (pLocal && pLocal->IsAlive() && I::MoveHelper)
-	{
-		I::MoveHelper->SetHost(nullptr);
+	I::MoveHelper->SetHost(nullptr);
 
-		I::GlobalVars->tickcount = m_nOldTickCount;
-		I::GlobalVars->curtime = m_fOldCurrentTime;
-		I::GlobalVars->frametime = m_fOldFrameTime;
+	I::GlobalVars->tickcount = m_nOldTickCount;
+	I::GlobalVars->curtime = m_fOldCurrentTime;
+	I::GlobalVars->frametime = m_fOldFrameTime;
 
-		pLocal->SetCurrentCmd(nullptr);
+	pLocal->SetCurrentCmd(nullptr);
 
-		*I::RandomSeed = -1;
-	}
+	*I::RandomSeed = -1;
 }
