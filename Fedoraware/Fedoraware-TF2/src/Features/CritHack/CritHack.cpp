@@ -351,75 +351,28 @@ void CCritHack::FixHeavyRevBug(CUserCmd* pCmd)
 
 bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 {
-	if (Utils::ATTRIB_HOOK_FLOAT(1, "mult_crit_chance", pWeapon) <= 0.f)
+	if (Utils::ATTRIB_HOOK_FLOAT(1.f, "mult_crit_chance", pWeapon) <= 0.f)
 		return false;
 
-	switch (pWeapon->GetItemDefIndex())
+	switch (pWeapon->GetWeaponID())
 	{
-	case Scout_s_MadMilk:
-	case Scout_s_MutatedMilk:
-	case Scout_s_BonkAtomicPunch:
-	case Scout_s_CritaCola:
-	case Soldier_m_RocketJumper:
-	case Soldier_t_TheMarketGardener:
-	case Soldier_s_TheBuffBanner:
-	case Soldier_s_FestiveBuffBanner:
-	case Soldier_s_TheConcheror:
-	case Soldier_s_TheBattalionsBackup:
-	case Pyro_m_DragonsFury:
-	case Pyro_m_ThePhlogistinator:
-	case Pyro_s_TheManmelter:
-	case Pyro_s_GasPasser:
-	case Pyro_t_NeonAnnihilator:
-	case Pyro_t_NeonAnnihilatorG:
-	case Pyro_t_TheAxtinguisher:
-	case Pyro_t_TheFestiveAxtinguisher:
-	case Pyro_t_ThePostalPummeler:
-	case Demoman_s_StickyJumper:
-	case Demoman_t_UllapoolCaber:
-	case Engi_m_ThePomson6000:
-	case Engi_m_TheFrontierJustice:
-	case Engi_m_FestiveFrontierJustice:
-	case Engi_s_TheShortCircuit:
-	case Engi_s_TheWrangler:
-	case Engi_s_FestiveWrangler:
-	case Engi_s_TheGigarCounter:
-	case Engi_t_TheGunslinger:
-	case Engi_t_TheSouthernHospitality:
-	case Sniper_m_TheHuntsman:
-	case Sniper_m_TheFortifiedCompound:
-	case Sniper_s_TheCleanersCarbine:
-	case Sniper_s_Jarate:
-	case Sniper_s_TheSelfAwareBeautyMark:
-	case Sniper_t_TheBushwacka:
-	case Spy_m_TheAmbassador:
-	case Spy_m_FestiveAmbassador:
-	case Spy_m_TheDiamondback:
-	case Spy_m_TheEnforcer:
+	case TF_WEAPON_LUNCHBOX:
+	case TF_WEAPON_JAR:
+	case TF_WEAPON_BUFF_ITEM:
+	case TF_WEAPON_FLAMETHROWER_ROCKET:
+	case TF_WEAPON_JAR_GAS:
+	case TF_WEAPON_ROCKETPACK:
+	case TF_WEAPON_LASER_POINTER:
+	case TF_WEAPON_MEDIGUN:
+	case TF_WEAPON_COMPOUND_BOW:
+	case TF_WEAPON_KNIFE:
+	case TF_WEAPON_PDA_SPY:
+	case TF_WEAPON_PDA_SPY_BUILD:
+	case TF_WEAPON_PDA:
+	case TF_WEAPON_PDA_ENGINEER_BUILD:
+	case TF_WEAPON_PDA_ENGINEER_DESTROY:
+	case TF_WEAPON_BUILDER:
 		return false;
-	default:
-	{
-		switch (pWeapon->GetWeaponID())
-		{
-		case TF_WEAPON_SNIPERRIFLE:
-		case TF_WEAPON_SNIPERRIFLE_CLASSIC:
-		case TF_WEAPON_SNIPERRIFLE_DECAP:
-		case TF_WEAPON_CLEAVER:
-		case TF_WEAPON_FLAMETHROWER_ROCKET:
-		case TF_WEAPON_MEDIGUN:
-		case TF_WEAPON_SWORD:
-		case TF_WEAPON_KNIFE:
-		case TF_WEAPON_PDA_SPY:
-		case TF_WEAPON_BUILDER:
-		case TF_WEAPON_PDA_SPY_BUILD:
-		case TF_WEAPON_PDA:
-		case TF_WEAPON_PDA_ENGINEER_BUILD:
-		case TF_WEAPON_PDA_ENGINEER_DESTROY:
-		case TF_WEAPON_PARTICLE_CANNON:
-		case TF_WEAPON_LUNCHBOX:
-			return false;
-		}
-	}
 	}
 
 	return true;
