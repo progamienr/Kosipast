@@ -31,7 +31,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 	case TF_WEAPON_ROCKETLAUNCHER:
 	{
-		if (pWeapon->GetItemDefIndex() == Soldier_m_TheOriginal)
+		if (G::CurItemDefIndex== Soldier_m_TheOriginal)
 			Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 0.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
 		else
 			Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
@@ -55,20 +55,19 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_GRENADELAUNCHER:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		const bool is_lochnload = G::CurItemDefIndex == Demoman_m_TheLochnLoad;
 		float speed = Utils::ATTRIB_HOOK_FLOAT(1200.f, "mult_projectile_speed", pWeapon);
 		if (pPlayer->IsPrecisionRune())
 			speed = 3000.f;
 		float lifetime = 2.2f; // estimates
 		if (G::CurItemDefIndex == Demoman_m_TheIronBomber)
 			lifetime *= 0.7f;
-		out = { TF_PROJECTILE_PIPEBOMB, pos, ang, { 4.f, 4.f, 4.f }, speed, 1.f, is_lochnload, lifetime };
+		out = { TF_PROJECTILE_PIPEBOMB, pos, ang, { 4.f, 4.f, 4.f }, speed, 1.f, G::CurItemDefIndex == Demoman_m_TheLochnLoad, lifetime };
 		return true;
 	}
 	case TF_WEAPON_PIPEBOMBLAUNCHER:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		const float charge = flCharge > 0.f && pWeapon->GetItemDefIndex() != Demoman_s_StickyJumper
+		const float charge = flCharge > 0.f && G::CurItemDefIndex != Demoman_s_StickyJumper
 			? Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon) * flCharge
 			: (pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f);
 		const float speed = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 900.f, 2400.f);
@@ -112,7 +111,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_ARROW, pos, ang, { 3.f, 3.f, 3.f }, 2400.f, 0.2f, true };
+		out = { TF_PROJECTILE_ARROW, pos, ang, pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW ? Vec3(3.f, 3.f, 3.f) : Vec3(1.f, 1.f, 1.f), 2400.f, 0.2f, true };
 		return true;
 	}
 	case TF_WEAPON_SYRINGEGUN_MEDIC:
@@ -121,17 +120,25 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		out = { TF_PROJECTILE_SYRINGE, pos, ang, { 1.f, 1.f, 1.f }, 1000.f, 0.3f, true };
 		return true;
 	}
+	case TF_WEAPON_FLAMETHROWER:
+	{
+		if (bQuick)
+			return false;
+		// used only in aimbot
+		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 40.f, bFlipped ? -5.f : 5.f /*doesn't flip*/, 0.f}, pos, ang, true, false);
+		out = { TF_PROJECTILE_FLAME_ROCKET, pos, ang, { 12.f, 12.f, 12.f }, 1000.f, 0.f, true, 0.33f };
+		return true;
+	}
 	case TF_WEAPON_FLAME_BALL:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 70.f, bFlipped ? -7.f : 7.f /*doesn't flip*/, -9.f}, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_BALLOFFIRE, pos, ang, { 1.f, 1.f, 1.f }, 3000.f, 0.f, true, 0.2f };
-		// unrelated note to self: flamethrower offset { 40, 5, 0 }
+		out = { TF_PROJECTILE_BALLOFFIRE, pos, ang, { 1.f, 1.f, 1.f /*damaging hull much bigger, shouldn't matter here*/ }, 3000.f, 0.f, true, 0.2f};
 		return true;
 	}
 	case TF_WEAPON_CLEAVER:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.f, 1.f, 10.f /*weird*/ }, 3000.f, 2.f, false};
+		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.f, 1.f, 10.f /*weird, probably still inaccurate*/ }, 3000.f, 2.f, false};
 		return true;
 	}
 	case TF_WEAPON_BAT_WOOD:
@@ -162,7 +169,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	}
 	}
 
-	switch (pWeapon->GetItemDefIndex())
+	switch (G::CurItemDefIndex)
 	{
 	case Heavy_s_RoboSandvich:
 	case Heavy_s_Sandvich:
@@ -186,6 +193,10 @@ bool CProjectileSimulation::GetInfo(CBaseEntity* pPlayer, CBaseCombatWeapon* pWe
 	if (!GetInfoMain(pPlayer, pWeapon, vAngles, out, bQuick, flCharge))
 		return false;
 
+	if (!bQuick)
+		return true;
+
+	// visual check
 	const Vec3 vStart = bQuick ? pPlayer->GetEyePosition() : pPlayer->GetShootPos();
 	const Vec3 vEnd = out.m_pos;
 

@@ -577,8 +577,8 @@ void CAimbotProjectile::Aim(CUserCmd* pCmd, Vec3& vAngle)
 	}
 	else if (G::IsAttacking)
 	{
+		Utils::FixMovement(pCmd, vAngle);
 		pCmd->viewangles = vAngle;
-		Utils::FixMovement(pCmd, pCmd->viewangles);
 		//if (bFlameThrower)
 		//	G::UpdateView = false;
 		//else

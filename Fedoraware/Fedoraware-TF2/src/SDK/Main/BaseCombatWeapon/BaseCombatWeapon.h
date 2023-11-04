@@ -33,20 +33,22 @@ class CBaseCombatWeapon : public CBaseEntity
 public: //Netvars
 	M_DYNVARGET(Clip1, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip1")
 	M_DYNVARGET(Clip2, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip2")
+	M_DYNVARGET(Energy, float, this, "DT_TFWeaponBase", "m_flEnergy")
 	M_DYNVARGET(nViewModelIndex, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_nViewModelIndex")
 	M_DYNVARGET(iViewModelIndex, int, this, "DT_BaseCombatWeapon", "m_iViewModelIndex")
 	M_DYNVARGET(ItemDefIndex, int, this, "DT_EconEntity", "m_AttributeManager", "m_Item", "m_iItemDefinitionIndex")
 	M_DYNVARGET(ChargeBeginTime, float, this, "DT_WeaponPipebombLauncher", "PipebombLauncherLocalData", "m_flChargeBeginTime")
 	M_DYNVARGET(ChargeDamage, float, this, "DT_TFSniperRifle", "SniperRifleLocalData", "m_flChargedDamage")
 	M_DYNVARGET(LastFireTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastFireTime")
-	M_DYNVARGET(NextSecondaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextSecondaryAttack")
 	M_DYNVARGET(NextPrimaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack")
+	M_DYNVARGET(NextSecondaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextSecondaryAttack")
 	M_DYNVARGET(ChargeResistType, int, this, "DT_WeaponMedigun", "m_nChargeResistType")
 	M_DYNVARGET(ReloadMode, int, this, "DT_TFWeaponBase", "m_iReloadMode")
 	M_DYNVARGET(DetonateTime, float, this, "DT_WeaponGrenadeLauncher", "m_flDetonateTime")
 	//M_DYNVARGET(ObservedCritChance, float, this, "DT_LocalTFWeaponData", "m_flObservedCritChance")
 	M_DYNVARGET(LastCritCheckTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastCritCheckTime")
 	M_DYNVARGET(ObservedCritChance, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flObservedCritChance")
+	M_DYNVARGET(RechargeScale, float, this, "DT_WeaponFlameBall", "m_flRechargeScale")
 	inline void SetObservedCritChance(float crit_chance)
 	{
 		static auto offset = GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
@@ -84,11 +86,6 @@ public: //Everything else, lol
 	int GetBulletAmount();
 
 	bool IsStreamingWeapon();
-
-	__inline float ObservedCritChance()
-	{
-		DYNVAR_RETURN(float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flObservedCritChance");
-	}
 
 	inline int& m_iWeaponMode()
 	{
@@ -254,6 +251,26 @@ public: //Everything else, lol
 	{
 		if (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart() || pLocal->m_fFlags() & FL_FROZEN)
 			return false;
+
+		// there might be a better way of doing this (whatever the model uses ?)
+		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
+		{
+			static bool bCooldown = false;
+			if (bCooldown && GetRechargeScale() == 1.f)
+			{
+				return pLocal->GetTickBase() - GetLastFireTime() / I::GlobalVars->interval_per_tick > 53;
+			}
+			else
+			{
+				if (GetRechargeScale() == 1.f)
+				{
+					bCooldown = true;
+					return true;
+				}
+				bCooldown = false;
+				return false;
+			}
+		}
 
 		if (pLocal->GetClassNum() == CLASS_SPY)
 		{

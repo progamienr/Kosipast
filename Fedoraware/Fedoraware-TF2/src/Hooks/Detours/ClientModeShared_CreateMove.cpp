@@ -85,7 +85,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		G::WeaponCanSecondaryAttack = pWeapon->CanSecondaryAttack(pLocal);
 		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
 		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
-
+		
 		if (pWeapon->GetSlot() != SLOT_MELEE)
 		{
 			if (pWeapon->IsInReload())
@@ -143,7 +143,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!G::DoubleTap)
 	{
 		static bool bWasSet = false;
-		if (G::SilentTime)
+		if (G::SilentTime && !bWasSet) // failsafe
 			*pSendPacket = false, bWasSet = true;
 		else if(bWasSet)
 			*pSendPacket = true, bWasSet = false;

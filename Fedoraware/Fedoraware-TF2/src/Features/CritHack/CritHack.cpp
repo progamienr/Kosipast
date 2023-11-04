@@ -351,21 +351,24 @@ void CCritHack::FixHeavyRevBug(CUserCmd* pCmd)
 
 bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 {
-	Utils::ConLog("dumb", std::format("{}, {}, {}", Utils::ATTRIB_HOOK_FLOAT(1, "mult_crit_chance", pWeapon), pWeapon->GetWeaponID(), pWeapon->GetItemDefIndex()).c_str());
 	if (Utils::ATTRIB_HOOK_FLOAT(1.f, "mult_crit_chance", pWeapon) <= 0.f)
 		return false;
 
 	switch (pWeapon->GetWeaponID())
 	{
 	case TF_WEAPON_LUNCHBOX:
-	case TF_WEAPON_JAR:
+	case TF_WEAPON_JAR_MILK:
 	case TF_WEAPON_BUFF_ITEM:
 	case TF_WEAPON_FLAME_BALL:
 	case TF_WEAPON_JAR_GAS:
 	case TF_WEAPON_ROCKETPACK:
 	case TF_WEAPON_LASER_POINTER:
 	case TF_WEAPON_MEDIGUN:
+	case TF_WEAPON_SNIPERRIFLE:
+	case TF_WEAPON_SNIPERRIFLE_DECAP:
+	case TF_WEAPON_SNIPERRIFLE_CLASSIC:
 	case TF_WEAPON_COMPOUND_BOW:
+	case TF_WEAPON_JAR:
 	case TF_WEAPON_KNIFE:
 	case TF_WEAPON_PDA_SPY:
 	case TF_WEAPON_PDA_SPY_BUILD:
