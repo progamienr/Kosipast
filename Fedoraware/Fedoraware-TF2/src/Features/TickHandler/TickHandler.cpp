@@ -69,7 +69,11 @@ void CTickshiftHandler::Doubletap(const CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	if (G::WeaponCanAttack && (G::IsAttacking || G::CurWeaponType == EWeaponType::MELEE && pCmd->buttons & IN_ATTACK) &&
 		(Vars::CL_Move::DoubleTap::NotInAir.Value ? pLocal->OnSolid() : true))
+	{
 		G::DoubleTap = true;
+		if (Vars::CL_Move::DoubleTap::AntiWarp.Value)
+			G::AntiWarp = true;
+	}
 
 	if (G::DoubleTap && bGoalReached)
 		G::ShiftedGoal = G::ShiftedTicks - std::min(Vars::CL_Move::DoubleTap::TickLimit.Value, G::MaxShift);
@@ -135,7 +139,9 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 		CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
 		if (pWeapon)
 		{
-			if (G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload())
+			const auto iWeaponID = pWeapon->GetWeaponID();
+			if ((G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload()) &&
+				iWeaponID != TF_WEAPON_PIPEBOMBLAUNCHER && iWeaponID != TF_WEAPON_CANNON)
 				G::WaitForShift = G::ShiftedTicks;
 		}
 	}
@@ -152,44 +158,6 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 	{
 		G::ShiftedTicks = 0;
 		return;
-	} // ruhroh
-
-	/* disabling as users can now toggle at will
-	if (!Vars::CL_Move::DoubleTap::Enabled.Value || I::EngineClient->IsPlayingTimeDemo())
-	{
-		while (G::ShiftedTicks > 1)
-			CLMoveFunc(accumulated_extra_samples, false);
-		return CLMoveFunc(accumulated_extra_samples, true);
-	}
-	*/
-
-	// shiftedticks might not be fully accurate immediately
-	G::ShiftedGoal = std::clamp(G::ShiftedGoal, 0, G::MaxShift);
-	if (G::ShiftedTicks - 1 > G::ShiftedGoal) // doubletap/teleport
-	{
-		//if (G::DoubleTap && Vars::CL_Move::DoubleTap::AntiWarp.Value)
-		//	G::AntiWarp = true;
-		const int iGoal = G::ShiftedGoal;
-		while (G::ShiftedTicks > iGoal)
-		{
-			if (G::DoubleTap && Vars::CL_Move::DoubleTap::AntiWarp.Value)
-				G::ShouldStop = true;
-			CLMoveFunc(accumulated_extra_samples, G::ShiftedTicks - 1 == iGoal);
-		}
-		//G::AntiWarp = false;
-		G::ShouldStop = false;
-		if (G::Teleport) // low values won't midigate this
-			iDeficit = 0;
-
-		G::Teleport = G::DoubleTap = false;
-		return;
-	}
-	else if (G::ShiftedTicks - 1 < G::ShiftedGoal) // recharge
-	{
-		CBaseEntity* pLocal = g_EntityCache.GetLocal();
-		if (pLocal)
-			Recharge(G::LastUserCmd, pLocal);
-		return;
 	}
 
 	if (bSpeedhack)
@@ -199,7 +167,25 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 		return;
 	}
 
-	return CLMoveFunc(accumulated_extra_samples, true);
+	G::ShiftedGoal = std::clamp(G::ShiftedGoal, 0, G::MaxShift);
+	if (G::ShiftedTicks > G::ShiftedGoal) // normal use/doubletap/teleport
+	{
+		while (G::ShiftedTicks > G::ShiftedGoal)
+			CLMoveFunc(accumulated_extra_samples, bFinalTick);
+		G::AntiWarp = false;
+		if (G::Teleport)
+			iDeficit = 0;
+
+		G::Teleport = G::DoubleTap = false;
+		return;
+	}
+	else if (G::ShiftedTicks < G::ShiftedGoal) // recharge
+	{
+		CBaseEntity* pLocal = g_EntityCache.GetLocal();
+		if (pLocal)
+			Recharge(G::LastUserCmd, pLocal);
+		return;
+	}
 }
 
 void CTickshiftHandler::MovePre()

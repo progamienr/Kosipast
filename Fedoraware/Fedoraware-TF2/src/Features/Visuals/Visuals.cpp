@@ -64,7 +64,7 @@ void CVisuals::DrawTickbaseText()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	const int iTicks = std::clamp(G::ShiftedTicks + G::ChokeAmount - (G::AntiAim ? 1 : 0), 0, G::MaxShift);
+	const int iTicks = std::clamp(G::ShiftedTicks + G::ChokeAmount, 0, G::MaxShift);
 
 	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position.Value;
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
@@ -95,7 +95,7 @@ void CVisuals::DrawTickbaseBars()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	const int iTicks = std::clamp(G::ShiftedTicks + G::ChokeAmount - (G::AntiAim ? 1 : 0), 0, G::MaxShift);
+	const int iTicks = std::clamp(G::ShiftedTicks + G::ChokeAmount, 0, G::MaxShift);
 
 	const DragBox_t dtPos = Vars::CL_Move::DoubleTap::Position.Value;
 	const float ratioCurrent = (float)iTicks / (float)G::MaxShift;

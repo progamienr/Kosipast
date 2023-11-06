@@ -13,6 +13,7 @@
 
 namespace S
 {
+	MAKE_SIGNATURE(CBasePlayer_WeaponShootPosition, CLIENT_DLL, "55 8B EC 56 8B 75 08 57 8B F9 56 8B 07 FF 90", 0x0);
 	MAKE_SIGNATURE(TeamFortress_CalculateMaxSpeed, CLIENT_DLL, "55 8B EC 83 EC ? 83 3D ? ? ? ? ? 56 8B F1 75", 0x0);
 
 	MAKE_SIGNATURE(CBaseEntity_GetAmmoCount, CLIENT_DLL, "55 8B EC 56 8B 75 ? 57 8B F9 83 FE ? 75 ? 5F", 0x0);
@@ -139,6 +140,7 @@ public: //Netvars & conditions
 	M_OFFSETGET(WaterJumpTime, float, 0x10FC)
 	M_OFFSETGET(SurfaceFriction, float, 0x12D4)
 	M_OFFSETGET(MoveType, MoveType_t, 0x1A4)
+	M_OFFSETGET(TankPressure, float, 0x1B40)
 
 	M_CONDGET(OnGround, GetFlags(), FL_ONGROUND)
 	M_CONDGET(InWater, GetFlags(), FL_INWATER)
@@ -792,7 +794,6 @@ public: //Everything else, lol.
 		return out;
 	}
 
-	// This does not return your actual shoot pos for projectile weapons! Use Utils::GetRealShootPos(...) instead
 	__inline Vec3 GetShootPos()
 	{
 		return GetVecOrigin() + GetViewOffset();
@@ -1044,5 +1045,4 @@ public: //Everything else, lol.
 		typedef bool(__thiscall* FN)(PVOID);
 		GetVFunc<FN>(this, 261)(this);
 	}
-
 };

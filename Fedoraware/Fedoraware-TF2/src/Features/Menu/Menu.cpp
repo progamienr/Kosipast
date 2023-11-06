@@ -1232,22 +1232,20 @@ void CMenu::MenuMisc()
 
 			if (Vars::Debug::Info.Value)
 			{
+				SectionTitle("Convar spoofer");
+				WInputText("Convar", &Vars::Misc::ConvarName.Value);
+				WInputText("Value", &Vars::Misc::ConvarValue.Value);
+				if (Button("Send", ImVec2(GetWindowSize().x - 2 * GetStyle().WindowPadding.x, 20)))
 				{
-					SectionTitle("Convar spoofer");
-					WInputText("Convar", &Vars::Misc::ConvarName.Value);
-					WInputText("Value", &Vars::Misc::ConvarValue.Value);
-					if (Button("Send", ImVec2(GetWindowSize().x - 2 * GetStyle().WindowPadding.x, 20)))
-					{
-						CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-						if (netChannel == nullptr) { return; }
+					CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
+					if (netChannel == nullptr) { return; }
 
-						Utils::ConLog("Convar", std::format("Sent {} as {}", Vars::Misc::ConvarName.Value, Vars::Misc::ConvarValue.Value).c_str(), { 255, 0, 255, 255 });
-						NET_SetConVar cmd(Vars::Misc::ConvarName.Value.c_str(), Vars::Misc::ConvarValue.Value.c_str());
-						netChannel->SendNetMsg(cmd);
+					Utils::ConLog("Convar", std::format("Sent {} as {}", Vars::Misc::ConvarName.Value, Vars::Misc::ConvarValue.Value).c_str(), Vars::Menu::Theme::Accent.Value);
+					NET_SetConVar cmd(Vars::Misc::ConvarName.Value.c_str(), Vars::Misc::ConvarValue.Value.c_str());
+					netChannel->SendNetMsg(cmd);
 
-						//Vars::Misc::ConvarName = "";
-						//Vars::Misc::ConvarValue = "";
-					}
+					//Vars::Misc::ConvarName = "";
+					//Vars::Misc::ConvarValue = "";
 				}
 			}
 

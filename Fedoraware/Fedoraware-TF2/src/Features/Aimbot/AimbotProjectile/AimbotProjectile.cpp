@@ -1,4 +1,5 @@
 #include "AimbotProjectile.h"
+
 #include "../../Vars.h"
 #include "../../Simulation/MovementSimulation/MovementSimulation.h"
 #include "../../Simulation/ProjectileSimulation/ProjectileSimulation.h"
@@ -174,12 +175,27 @@ bool IsPipe(CBaseCombatWeapon* pWeapon)
 	switch (pWeapon->GetWeaponID())
 	{
 	case TF_WEAPON_GRENADELAUNCHER:
+	case TF_WEAPON_CANNON:
 	case TF_WEAPON_PIPEBOMBLAUNCHER:
 	case TF_WEAPON_STICKBOMB:
 	case TF_WEAPON_STICKY_BALL_LAUNCHER: return true;
 	}
 
 	return false;
+}
+
+float PrimeTime(CBaseCombatWeapon* pWeapon)
+{
+	switch (pWeapon->GetItemDefIndex())
+	{
+	case Demoman_s_StickybombLauncher:
+	case Demoman_s_StickybombLauncherR:
+	case Demoman_s_FestiveStickybombLauncher: return 0.8f;
+	case Demoman_s_TheQuickiebombLauncher: return 0.6f;
+	case Demoman_s_TheScottishResistance: return 1.6f;
+	}
+
+	return 0.f;
 }
 
 float SolveProjectileSpeed(ProjectileInfo projInfo, CBaseCombatWeapon* pWeapon, const Vec3& vLocalPos, const Vec3& vTargetPos)
@@ -313,8 +329,8 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 				G::ProjLines = projInfo.PredictionLines;
 				G::ProjLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
 
-				/*
-				if (target.m_nAimedHitbox == HITBOX_HEAD) // attempted to have a headshot check though this seems more detrimental than useful
+				// attempted to have a headshot check though this seems more detrimental than useful outside of smooth aimbot
+				if (Vars::Aimbot::Projectile::AimMethod.Value == 1 && target.m_nAimedHitbox == HITBOX_HEAD)
 				{ // i think this is accurate ?
 					const Vec3 vOffset = (trace.vEndPos - New) + (vOriginal - vPredict);
 
@@ -374,7 +390,6 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 						return closestId == 0;
 					}
 				}
-				*/
 
 				return true;
 			}
@@ -484,7 +499,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 			if (!iEndTick)
 			{
-				if (solution.m_flTime + flLatency + latOff > TICKS_TO_TIME(i)) // TICKS_TO_TIME(flLatency)
+				if (solution.m_flTime + flLatency + latOff > TICKS_TO_TIME(i) || PrimeTime(pWeapon) + flLatency + latOff > TICKS_TO_TIME(i)) // TICKS_TO_TIME(flLatency)
 					continue;
 				iEndTick = i + vPoints.size() - 1;
 			}
@@ -621,11 +636,14 @@ Vec3 CAimbotProjectile::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 
 bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
+	const int nWeaponID = pWeapon->GetWeaponID();
 	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && G::LastUserCmd->buttons & IN_ATTACK;
+
 	if (bKeepFiring && !G::WeaponCanAttack && F::AimbotGlobal.IsKeyDown())
 		pCmd->buttons |= IN_ATTACK;
 
-	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 2 && !G::DoubleTap)
+	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Projectile::Active.Value ||
+		!G::WeaponCanAttack && Vars::Aimbot::Projectile::AimMethod.Value == 2 /*&& !G::DoubleTap*/ && nWeaponID != TF_WEAPON_PIPEBOMBLAUNCHER && nWeaponID != TF_WEAPON_CANNON)
 		return true;
 
 	const bool bShouldAim = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
@@ -637,15 +655,17 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		return true;
 	}
 
-	const int nWeaponID = pWeapon->GetWeaponID();
-
 	auto targets = SortTargets(pLocal, pWeapon);
 	if (targets.empty())
 		return true;
 
 	if (bShouldAim && (nWeaponID == TF_WEAPON_COMPOUND_BOW ||
 		nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER || nWeaponID == TF_WEAPON_CANNON))
+	{
 		pCmd->buttons |= IN_ATTACK;
+		if (!G::WeaponCanAttack)
+			return true;
+	}
 
 	for (auto& target : targets)
 	{
@@ -738,7 +758,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
 	// add user toggle to control whether to cancel or not
-	if ((bCancel || bEarly && (!(pCmd->buttons & IN_ATTACK) || bAutoRelease)) && G::LastUserCmd->buttons & IN_ATTACK && bLastTickHeld)
+	if ((bCancel || bEarly && (!(G::Buttons & IN_ATTACK) || bAutoRelease)) && G::LastUserCmd->buttons & IN_ATTACK && bLastTickHeld)
 	{
 		switch (pWeapon->GetWeaponID())
 		{
@@ -758,5 +778,5 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		pCmd->buttons &= ~IN_ATTACK;
 	}
 
-	bLastTickHeld = bHeld, bLastTickReload = pWeapon->IsInReload();
+	bLastTickHeld = bHeld && !bEarly, bLastTickReload = pWeapon->IsInReload();
 }

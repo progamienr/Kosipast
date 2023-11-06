@@ -340,10 +340,10 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			// Player conditions
 			{
 				// Ping warning, idea from nitro
-				if (Vars::ESP::Players::Conditions::Ping.Value)
+				if (Vars::ESP::Players::Conditions::Ping.Value && pPlayer != pLocal)
 				{
 					int ping = cResource->GetPing(pPlayer->GetIndex());
-					if (const INetChannel* netChannel = I::EngineClient->GetNetChannelInfo()) //safety net
+					if (const INetChannel* netChannel = I::EngineClient->GetNetChannelInfo()) // safety net
 					{
 						if (!netChannel->IsLoopback() && ping != 0 && (ping >= 200 || ping <= 5))
 						{
@@ -354,7 +354,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				}
 
 				// Idea from rijin
-				if (Vars::ESP::Players::Conditions::KD.Value)
+				if (Vars::ESP::Players::Conditions::KD.Value && pPlayer != pLocal)
 				{
 					const int kills = cResource->GetKills(pPlayer->GetIndex());
 					const int deaths = cResource->GetDeaths(pPlayer->GetIndex());
@@ -367,30 +367,29 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 							rOffset += fFontCond.nTall;
 						}
 					}
-					else
+					else if (kills >= 12)
 					{
-						if (kills >= 12)
-						{
-							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "HIGH K/D [%d]", kills);
-							rOffset += fFontCond.nTall;
-						}
+						g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "HIGH K/D [%d]", kills);
+						rOffset += fFontCond.nTall;
 					}
 				}
 
 				// Lagcomp cond, idea from nitro
-				if (Vars::ESP::Players::Conditions::LagComp.Value)
+				if (Vars::ESP::Players::Conditions::LagComp.Value && pPlayer != pLocal)
 				{
 					const float flDelta = pPlayer->GetSimulationTime() - pPlayer->GetOldSimulationTime();
 					if (TIME_TO_TICKS(flDelta) != 1)
 					{
 						bool bDisplay = F::Backtrack.mRecords[pPlayer].empty();
-						//if (!bDisplay)
-						//{
-						//	const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
-						//	const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
-						//	if (vDelta.Length2DSqr() > 4096.f)
-						//		bDisplay = true;
-						//}
+						/*
+						if (!bDisplay)
+						{
+							const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
+							const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
+							if (vDelta.Length2DSqr() > 4096.f)
+								bDisplay = true;
+						}
+						*/
 						if (bDisplay)
 						{
 							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
@@ -398,16 +397,9 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						}
 					}
 				}
-								
-				const int nCond = pPlayer->GetCond();
-				const int nCondEx = pPlayer->GetCondEx();
-				const int nCondEx2 = pPlayer->GetCondEx2();
 
 				//colors
 				const Color_t teamColors = GetTeamColor(pPlayer->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
-				const static Color_t pink = { 255, 100, 200, 255 };
-				const static Color_t green = { 0, 255, 0, 255 };
-				const static Color_t yellow = { 255, 255, 0, 255 };
 
 				{ //this is here just so i can collapse this entire section to reduce clutter
 					auto drawCond = [](const char* text, Color_t color, int x, int y, int& rOffset, const Font_t& fFont)
@@ -493,7 +485,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					if (Vars::ESP::Players::Conditions::Other.Value)
 					{
 						if (Vars::Visuals::RemoveTaunts.Value && pPlayer->InCond(TF_COND_TAUNTING)) // i dont really see a need for this condition unless you have this enabled
-							drawCond("TAUNT", pink, x + w + 2, y, rOffset, fFontCond);
+							drawCond("TAUNT", { 255, 100, 200, 255 }, x + w + 2, y, rOffset, fFontCond);
 
 						if (pPlayer->GetFeignDeathReady())
 							drawCond("DR", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
@@ -522,7 +514,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 							drawCond("ZOOM", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
 
 						if (pPlayer->InCond(TF_COND_STEALTHED) || pPlayer->InCond(TF_COND_STEALTHED_BLINK) || pPlayer->InCond(TF_COND_STEALTHED_USER_BUFF) || pPlayer->InCond(TF_COND_STEALTHED_USER_BUFF_FADING))
-							drawCond(std::format("CLOAK {:.0f}%", pPlayer->GetInvisPercentage()).c_str(), Vars::Colors::Cloak.Value, x + w + 2, y, rOffset, fFontCond);
+							drawCond(std::format("CLOAK {:.0f}%%", pPlayer->GetInvisPercentage()).c_str(), Vars::Colors::Cloak.Value, x + w + 2, y, rOffset, fFontCond);
 
 						if (pPlayer->InCond(TF_COND_DISGUISING) || pPlayer->InCond(TF_COND_DISGUISE_WEARINGOFF) || pPlayer->InCond(TF_COND_DISGUISED))
 							drawCond("DISGUISE", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);

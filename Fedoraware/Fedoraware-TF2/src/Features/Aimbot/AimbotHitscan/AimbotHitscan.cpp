@@ -1,4 +1,5 @@
 #include "AimbotHitscan.h"
+
 #include "../../Vars.h"
 #include "../../Backtrack/Backtrack.h"
 #include "../../Resolver/Resolver.h"
@@ -598,7 +599,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 	if (bKeepFiring && !G::WeaponCanAttack && F::AimbotGlobal.IsKeyDown())
 		pCmd->buttons |= IN_ATTACK;
 
-	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2 && !G::DoubleTap)
+	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2/* && !G::DoubleTap*/)
 	{
 		bLastTickHeld = false;
 		if (pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() != AC_STATE_IDLE)
@@ -659,12 +660,6 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 
 		if (bShouldFire)
 		{
-			if (G::CurItemDefIndex == Engi_s_TheWrangler || G::CurItemDefIndex ==
-				Engi_s_FestiveWrangler)
-			{
-				pCmd->buttons |= IN_ATTACK2;
-			}
-
 			if (G::CurItemDefIndex != Sniper_m_TheClassic)
 				pCmd->buttons |= IN_ATTACK;
 			else
@@ -672,6 +667,9 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 				pCmd->buttons &= ~IN_ATTACK;
 				bLastTickHeld = false;
 			}
+
+			if (G::CurItemDefIndex == Engi_s_TheWrangler || G::CurItemDefIndex == Engi_s_FestiveWrangler)
+				pCmd->buttons |= IN_ATTACK2;
 
 			/*
 			// Get circular gaussian spread. Under some cases we fire a bullet right down the crosshair:
@@ -682,13 +680,9 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 			{
 				float flTimeSinceLastShot = (gpGlobals->curtime - pWpn->m_flLastFireTime );
 				if ( nBulletsPerShot > 1 && flTimeSinceLastShot > 0.25 )
-				{
 					bFirePerfect = true;
-				}
 				else if ( nBulletsPerShot == 1 && flTimeSinceLastShot > 1.25 )
-				{
 					bFirePerfect = true;
-				}
 			}
 			*/
 
@@ -705,14 +699,10 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 					if (pWeapon->GetWeaponData().m_nBulletsPerShot > 1)
 					{
 						if (flTimeSinceLastShot <= 0.25f)
-						{
 							pCmd->buttons &= ~IN_ATTACK;
-						}
 					}
 					else if (flTimeSinceLastShot <= 1.25f)
-					{
 						pCmd->buttons &= ~IN_ATTACK;
-					}
 				}
 			}
 		}
@@ -734,9 +724,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 					G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value });
 				}
 				if (Vars::Aimbot::Global::ShowHitboxes.Value)
-				{
 					F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
-				}
 			}
 		}
 

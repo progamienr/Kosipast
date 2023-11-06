@@ -574,6 +574,9 @@ namespace Utils
 
 	__inline bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	{
+		if (pWeapon->IsInReload())
+			return false;
+
 		if (pWeapon->GetSlot() == SLOT_MELEE)
 		{
 			if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
@@ -628,7 +631,7 @@ namespace Utils
 			{
 				static float flThrowTime = 0.0f;
 
-				if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack && !flThrowTime)
+				if (pCmd->buttons & IN_ATTACK && G::WeaponCanAttack && !flThrowTime)
 				{
 					flThrowTime = I::GlobalVars->curtime + I::GlobalVars->interval_per_tick;
 				}
@@ -641,13 +644,16 @@ namespace Utils
 			}
 			case TF_WEAPON_MINIGUN:
 			{
-				if (pWeapon->GetMinigunState() == AC_STATE_FIRING && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
+				if (pWeapon->GetMinigunState() != AC_STATE_IDLE && pWeapon->GetMinigunState() != AC_STATE_STARTFIRING &&
+					pCmd->buttons & IN_ATTACK && G::WeaponCanAttack)
+				{
 					return true;
+				}
 				break;
 			}
 			default:
 			{
-				if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
+				if (pCmd->buttons & IN_ATTACK && G::WeaponCanAttack)
 					return true;
 				break;
 			}
@@ -711,13 +717,13 @@ namespace Utils
 		if (!G::IsAttacking)
 		{
 			const float direction = Math::VelocityToAngles(pLocal->GetVecVelocity()).y;
-			pCmd->viewangles.x = -90; // on projectiles we would be annoyed if we shot the ground.
+			pCmd->viewangles.x = -90;
 			pCmd->viewangles.y = direction;
 			pCmd->viewangles.z = 0;
 			pCmd->sidemove = 0; pCmd->forwardmove = 0;
 			G::ShouldStop = false;
 		}
-		else // this can cause eye issues when shifting
+		else
 		{
 			Vec3 direction = pLocal->GetVecVelocity().toAngle();
 			direction.y = pCmd->viewangles.y - direction.y;

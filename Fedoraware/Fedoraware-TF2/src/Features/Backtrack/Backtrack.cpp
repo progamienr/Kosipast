@@ -55,7 +55,7 @@ void CBacktrack::SendLerp()
 	if (!netChannel) return;
 
 	static Timer interpTimer{};
-	if (interpTimer.Run(500))
+	if (interpTimer.Run(100))
 	{
 		float flTarget = GetLerp();
 		if (flTarget == flWishInterp) return;
@@ -111,12 +111,6 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
 	if (!iNetChan)
 		return false;
-
-	int iTarget = TIME_TO_TICKS(record.flSimTime);
-	int iLerpTicks = TIME_TO_TICKS(flFakeInterp);
-
-	float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + TICKS_TO_TIME(iLerpTicks) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
-	
 	/*
 	if (I::GlobalVars->tickcount == G::TickBase)
 	{
@@ -126,8 +120,10 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	}
 	*/
 
-	int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
-	float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - iTarget);
+	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
+	const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+
+	float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(record.flSimTime));
 
 	return fabsf(flDelta) < (Vars::Backtrack::Window.Value - (flDelta > 0.f ? Vars::Backtrack::NWindowSub.Value : Vars::Backtrack::OWindowSub.Value)) / 1000.f; // older end seems more unreliable, possibly due to 1 tick choke ?
 	// in short, check if the record is +- 200ms from us
@@ -205,6 +201,21 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::de
 
 		break;
 	}
+
+	// sort by distance from fake latency value (rather than newest to oldest)
+	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!iNetChan)
+		return validRecords;
+
+	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
+	const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+
+	std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
+		{
+			float flADelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(a.flSimTime));
+			float flBDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(b.flSimTime));
+			return fabsf(flADelta) < fabsf(flBDelta);
+		});
 
 	return validRecords;
 }
@@ -400,9 +411,12 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 			G::AnticipatedChoke = 1;
 		break;
 	}
-	const int iChoke = G::ChokeAmount - (G::AntiAim ? 1 : 0);
-	if (iChoke && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value)
+	const int iChoke = G::ChokeAmount;
+	if (iChoke && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value &&
+		G::ShiftedTicks == G::ShiftedGoal && !G::DoubleTap)
+	{
 		G::AnticipatedChoke = G::ChokeGoal - iChoke;
+	}
 	// iffy, unsure if there is a good way to get it to work well without unchoking
 
 	UpdateDatagram();

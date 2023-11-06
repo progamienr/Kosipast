@@ -6,6 +6,7 @@
 #include "../Backtrack/Backtrack.h"
 #include "../AntiHack/CheaterDetection.h"
 #include "../PacketManip/AntiAim/AntiAim.h"
+#include "../TickHandler/TickHandler.h"
 
 extern int attackStringW;
 extern int attackStringH;
@@ -514,7 +515,7 @@ void CMisc::PingReducer()
 		return;
 
 	static Timer updateRateTimer{};
-	if (updateRateTimer.Run(500))
+	if (updateRateTimer.Run(100))
 	{
 		const int iTarget = Vars::Misc::PingReducer.Value ? Vars::Misc::PingTarget.Value : cl_cmdrate->GetInt();
 		if (iTarget == iLastCmdrate)
@@ -724,77 +725,27 @@ void CMisc::InstaStop(CUserCmd* pCmd, bool* pSendPacket)
 	*pSendPacket = false;
 }
 
-//	Accelerate ( wishdir, wishspeed, sv_accelerate.GetFloat() );
-//	accelspeed = accel * gpGlobals->frametime * wishspeed * player->m_surfaceFriction;
-//	wishspeed = side/forwardmove from pCmd
-//	accel = sv_accelerate value
-//	10 * .015 * 450 * surfaceFriction	=	acceleration
-//	67.5(surfaceFriction)				=	acceleration
-//	acceleration = 60
-//	surfaceFriction = 1.125	// this doesn't account for ice, etc. (it is also possible that the reason our accel is lower is because we are locked below 450 with our actual acceleration)
-//	if our forward velocity is 400, to get it to 0, we would need to spend ~7 ticks of time decelerating.
 void CMisc::StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
-	// 1<<17 = TFCond_Charging
-
-	if (pLocal && pLocal->IsAlive() && !pLocal->IsAGhost() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned() && pLocal->GetVelocity().Length2D() > 5.f)
+	if (pLocal && G::AntiWarp && pLocal->IsAlive() && !pLocal->IsAGhost() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned())
 	{
-		static Vec3 prediction = {};
-		static Vec3 origin = {};
-		static Vec3 angles = {};
-		static int nShiftTickG = 0;
-		static int nShiftTickA = 0;
-
-		if (G::AntiWarp && G::ShiftedTicks && pLocal->OnSolid())
+		const int iDoubletapTicks = F::Ticks.GetTicks(pLocal);
+		if (iDoubletapTicks > std::max(Vars::CL_Move::DoubleTap::TickLimit.Value - 7, 3))
 		{
-			/*
-			pCmd->forwardmove = 0.f; pCmd->sidemove = 0.f;
+			Vec3 angles = {}, forward = {};
 
-			Vec3 origin = pLocal->GetAbsOrigin();
-			Vec3 velocity; pLocal->EstimateAbsVelocity(velocity);
-			Vec3 predicted = origin + (velocity * TICKS_TO_TIME(G::ShiftedTicks));
-			Vec3 predicted_max = origin + (velocity * TICKS_TO_TIME(22 - G::ChokeAmount));
+			Math::VectorAngles(pLocal->GetVelocity(), angles);
+			angles.y = pCmd->viewangles.y - angles.y;
+			Math::AngleVectors(angles, &forward);
+			forward *= pLocal->GetVelocity().Length();
 
-			float scale = Math::RemapValClamped(predicted.DistTo(origin), 0.0f, predicted_max.DistTo(origin) * 1.27f, 1.0f, 0.0f);
-			float scale_ = Math::RemapValClamped(velocity.Length2D(), 0.0f, 520.0f, 0.0f, 1.0f);
-
-			if (pLocal->IsClass(CLASS_SCOUT))
-			{
-				Utils::WalkTo(pCmd, pLocal, predicted, origin, TICKS_TO_TIME(22 - G::ChokeAmount));
-			}
-			else
-			{
-				Utils::WalkTo(pCmd, pLocal, predicted_max, origin, scale * scale_);
-			}
-			*/
-
-			switch (nShiftTickG)
-			{
-			case 0:
-				G::ShouldStop = true;
-				prediction = pLocal->GetVecOrigin() + pLocal->GetVecVelocity();
-				origin = pLocal->GetVecOrigin();
-				angles = I::EngineClient->GetViewAngles();
-
-				nShiftTickG++;
-				break;
-			default:
-				nShiftTickG++;
-				break;
-			}
-
-			Utils::WalkTo(pCmd, pLocal, prediction, origin, (1.f / origin.Dist2D(prediction)));
-			pCmd->viewangles = angles;
-			//	the "slight stop" that u can see when we do this is due to (i believe) the player reaching the desired point, and then constantly accelerating backwards, meaning their velocity-
-			//	when they finish shifting ticks, is lower than when they started.
-			//	alot of things worked better than (1/dist) as the scale, but caused issues on different classes, for now this is the best I can get it to.
-			return;
+			pCmd->forwardmove = -forward.x;
+			pCmd->sidemove = -forward.y;
 		}
-		else
+		else if (iDoubletapTicks > 3)
 		{
-			nShiftTickG = 0;
-			nShiftTickA = 0;
-			return;
+			pCmd->forwardmove = pCmd->sidemove = 0.0f;
+			pCmd->buttons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
 		}
 	}
 }

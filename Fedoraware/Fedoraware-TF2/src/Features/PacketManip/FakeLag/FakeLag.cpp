@@ -92,12 +92,10 @@ void CFakeLag::Run(CUserCmd* pCmd, bool* pSendPacket)
 	if (Vars::CL_Move::FakeLag::Mode.Value == 2 && F::KeyHandler.Pressed(Vars::CL_Move::FakeLag::Key.Value))
 		Vars::CL_Move::FakeLag::Enabled.Value = !Vars::CL_Move::FakeLag::Enabled.Value;
 
-	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!iNetChan || !pLocal)
+	if (!pLocal)
 		return;
 
-	G::ChokeAmount = iNetChan->m_nChokedPackets;
 	Prediction(pCmd);
 
 	// Set the selected choke amount (if not random)
@@ -111,7 +109,7 @@ void CFakeLag::Run(CUserCmd* pCmd, bool* pSendPacket)
 	if (!IsAllowed(pLocal))
 	{
 		vLastPosition = pLocal->m_vecOrigin();
-		G::ChokeGoal = 0;
+		G::ChokeAmount = G::ChokeGoal = 0;
 		iAirTicks = 0;
 		bUnducking = false;
 		if (Vars::CL_Move::FakeLag::Type.Value == FL_Random)
@@ -120,6 +118,7 @@ void CFakeLag::Run(CUserCmd* pCmd, bool* pSendPacket)
 	}
 
 	*pSendPacket = false;
+	G::ChokeAmount++;
 
 	if (!pLocal->OnSolid())
 		iAirTicks++;

@@ -30,7 +30,8 @@ void AttackingUpdate(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 		return;
 
 	const float flFireDelay = tfWeaponInfo->GetWeaponData(0).m_flTimeFireDelay; // pWeapon->GetWeaponData().m_flTimeFireDelay is wrong
-	pWeapon->m_flNextPrimaryAttack() = static_cast<float>(pLocal->GetTickBase()) * I::GlobalVars->interval_per_tick + flFireDelay;
+	pWeapon->m_flNextPrimaryAttack() = TICKS_TO_TIME(pLocal->GetTickBase() - G::ShiftedTicks) + flFireDelay;
+	// this doesn't really work as intended since tickbase will be constant while shifting but it afaik it doesn't break anything
 }
 
 MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 21), bool, __fastcall,
@@ -60,15 +61,16 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	static float fOldSide = pCmd->sidemove;
 	static float fOldForward = pCmd->forwardmove;
 
-	F::Backtrack.iTickCount = pCmd->tick_count;
 	G::CurrentUserCmd = pCmd;
 	if (!G::LastUserCmd)
 		G::LastUserCmd = pCmd;
 
+	if (!G::DoubleTap && !G::Teleport)
+		F::Backtrack.iTickCount = pCmd->tick_count;
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Misc::DisableInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
-	if (!G::DoubleTap)
+	//if (!G::DoubleTap)
 	{
 		if (const int MaxSpeed = pLocal->GetMaxSpeed())
 			G::Frozen = MaxSpeed == 1;
@@ -76,23 +78,23 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		// Update Global Info
 		const int nItemDefIndex = pWeapon->GetItemDefIndex();
 
-		if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->GetClip1() || (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart()))
+		if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->GetClip1() || !pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart())
 			G::WaitForShift = 1; //Vars::CL_Move::DoubleTap::WaitReady.Value;
 
 		G::CurItemDefIndex = nItemDefIndex;
 		G::WeaponCanHeadShot = pWeapon->CanWeaponHeadShot();
 		G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
 		G::WeaponCanSecondaryAttack = pWeapon->CanSecondaryAttack(pLocal);
-		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
-		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
-		
 		if (pWeapon->GetSlot() != SLOT_MELEE)
 		{
 			if (pWeapon->IsInReload())
 				G::WeaponCanAttack = true;
 
-			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() == AC_STATE_IDLE)
+			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN &&
+				(pWeapon->GetMinigunState() == AC_STATE_IDLE || pWeapon->GetMinigunState() == AC_STATE_STARTFIRING))
+			{
 				G::WeaponCanAttack = false;
+			}
 
 			if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->GetClip1() == 0)
 				G::WeaponCanAttack = false;
@@ -100,6 +102,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
 				G::WeaponCanAttack = false;
 		}
+		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
+		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
 
 		if (F::AimbotProjectile.bLastTickCancel)
 		{
@@ -107,32 +111,33 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			F::AimbotProjectile.bLastTickCancel = false;
 		}
 	}
+	/*
 	else
 	{
+		//const int nOldTickBase = pLocal->GetTickBase();
+		//pLocal->GetTickBase() -= G::ShiftedTicks + 1; // silly
 		G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
 		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
-	} // we always need this :c
+		//pLocal->GetTickBase() = nOldTickBase;
+	}
+	*/
 
 	// Run Features
+	F::Misc.RunPre(pCmd, pSendPacket);
+	F::BadActors.OnTick();
+	F::Backtrack.Run(pCmd);
+	F::EnginePrediction.Start(pCmd);
 	{
-		F::Misc.RunPre(pCmd, pSendPacket);
-		F::BadActors.OnTick();
-		F::Backtrack.Run(pCmd);
-
-		F::EnginePrediction.Start(pCmd);
-		{
-			F::Aimbot.Run(pCmd);
-			F::Auto.Run(pCmd);
-			F::PacketManip.CreateMove(pCmd, pSendPacket);
-		}
-		F::EnginePrediction.End(pCmd);
-
-		F::Ticks.MovePost(pCmd);
-		F::CritHack.Run(pCmd);
-		F::NoSpread.Run(pCmd);
-		F::Misc.RunPost(pCmd, pSendPacket);
-		F::Resolver.CreateMove();
+		F::Aimbot.Run(pCmd);
+		F::Auto.Run(pCmd);
+		F::PacketManip.CreateMove(pCmd, pSendPacket);
 	}
+	F::EnginePrediction.End(pCmd);
+	F::Ticks.MovePost(pCmd);
+	F::CritHack.Run(pCmd);
+	F::NoSpread.Run(pCmd);
+	F::Misc.RunPost(pCmd, pSendPacket);
+	F::Resolver.CreateMove();
 
 	if (*pSendPacket)
 	{
@@ -148,7 +153,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		else if(bWasSet)
 			*pSendPacket = true, bWasSet = false;
 	}
-	AttackingUpdate(pLocal, pWeapon);
+	else
+		AttackingUpdate(pLocal, pWeapon); // this does not work correctly when dting
 
 	// do this at the end just in case aimbot / triggerbot fired.
 	if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid()))

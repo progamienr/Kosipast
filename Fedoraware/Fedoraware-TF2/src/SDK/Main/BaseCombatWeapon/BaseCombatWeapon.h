@@ -244,7 +244,7 @@ public: //Everything else, lol
 
 	__inline bool CanWeaponHeadShot()
 	{
-		return ((GetDamageType() & DMG_USE_HITLOCATIONS) && CanFireCriticalShot(true)); //credits to bertti
+		return GetDamageType() & DMG_USE_HITLOCATIONS && CanFireCriticalShot(true); //credits to bertti
 	}
 
 	__inline bool CanShoot(CBaseEntity* pLocal)
@@ -252,56 +252,35 @@ public: //Everything else, lol
 		if (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart() || pLocal->m_fFlags() & FL_FROZEN)
 			return false;
 
-		// there might be a better way of doing this (whatever the model uses ?)
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-		{
-			static bool bCooldown = false;
-			if (bCooldown && GetRechargeScale() == 1.f)
-			{
-				return pLocal->GetTickBase() - GetLastFireTime() / I::GlobalVars->interval_per_tick > 53;
-			}
-			else
-			{
-				if (GetRechargeScale() == 1.f)
-				{
-					bCooldown = true;
-					return true;
-				}
-				bCooldown = false;
-				return false;
-			}
-		}
+			return (pLocal->GetTankPressure() >= 100.0f);
 
 		if (pLocal->GetClassNum() == CLASS_SPY)
 		{
 			if (pLocal->GetFeignDeathReady() && !pLocal->IsCloaked())
 				return false;
 
-			{ //Invis
-				static float flTimer = 0.0f;
+			//Invis
+			static float flTimer = 0.0f;
+			if (pLocal->IsCloaked())
+			{
+				flTimer = 0.0f;
+				return false;
+			}
+			else
+			{
+				if (!flTimer)
+					flTimer = I::GlobalVars->curtime;
 
-				if (pLocal->IsCloaked())
-				{
+				if (flTimer > I::GlobalVars->curtime)
 					flTimer = 0.0f;
+
+				if ((I::GlobalVars->curtime - flTimer) < 2.0f)
 					return false;
-				}
-				else
-				{
-					if (!flTimer)
-						flTimer = I::GlobalVars->curtime;
-
-					if (flTimer > I::GlobalVars->curtime)
-						flTimer = 0.0f;
-
-					if ((I::GlobalVars->curtime - flTimer) < 2.0f)
-						return false;
-				}
 			}
 		}
 
-		float flCurTime = static_cast<float>(pLocal->GetTickBase()) * I::GlobalVars->interval_per_tick;
-
-		return GetNextPrimaryAttack() <= flCurTime && pLocal->GetNextAttack() <= flCurTime;
+		return m_flNextPrimaryAttack() <= TICKS_TO_TIME(pLocal->GetTickBase());
 	}
 
 	__inline bool CanSecondaryAttack(CBaseEntity* pLocal)
@@ -309,9 +288,9 @@ public: //Everything else, lol
 		if (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart())
 			return false;
 
-		float flCurTime = static_cast<float>(pLocal->GetTickBase()) * I::GlobalVars->interval_per_tick;
+		float flCurTime = TICKS_TO_TIME(pLocal->GetTickBase());
 
-		return GetNextSecondaryAttack() <= flCurTime && pLocal->GetNextAttack() <= flCurTime;
+		return m_flNextPrimaryAttack() <= flCurTime && pLocal->GetNextAttack() <= flCurTime;
 	}
 
 	__inline bool IsInReload()

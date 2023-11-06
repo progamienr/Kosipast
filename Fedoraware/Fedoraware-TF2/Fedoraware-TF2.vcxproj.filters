@@ -119,7 +119,6 @@
     <ClCompile Include="src\Hooks\Detours\EngineClient_ClientCmd_Unrestricted.cpp" />
     <ClCompile Include="src\Hooks\Detours\EngineVGui_Paint.cpp" />
     <ClCompile Include="src\Hooks\Detours\FX_FireBullets.cpp" />
-    <ClCompile Include="src\Hooks\Detours\GetClientInterpAmount.cpp" />
     <ClCompile Include="src\Hooks\Detours\Input_GetUserCmd.cpp" />
     <ClCompile Include="src\Hooks\Detours\ISteamNetworkingUtils_GetDirectPingToPOP.cpp" />
     <ClCompile Include="src\Hooks\Detours\KeyValues_SetInt.cpp" />
@@ -163,6 +162,7 @@
     <ClCompile Include="src\Hooks\Detours\CTFMatchSummary_OnTick.cpp" />
     <ClCompile Include="src\Features\NetVarHooks\NetVarHooks.cpp" />
     <ClCompile Include="src\Features\Logs\Logs.cpp" />
+    <ClCompile Include="src\Hooks\Detours\GetClientInterpAmount.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />

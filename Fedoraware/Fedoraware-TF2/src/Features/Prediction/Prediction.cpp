@@ -1,5 +1,8 @@
 #include "Prediction.h"
+
 #include <iostream>
+
+#include "../TickHandler/TickHandler.h"
 
 namespace S
 {
@@ -41,27 +44,23 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 	m_fOldCurrentTime = I::GlobalVars->curtime;
 	m_fOldFrameTime = I::GlobalVars->frametime;
 
-	const int nOldTickBase = pLocal->GetTickBase();
-	const bool bOldIsFirstPrediction = I::Prediction->m_bFirstTimePredicted;
-	const bool bOldInPrediction = I::Prediction->m_bInPrediction;
-
 	I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal);
 	I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
 	I::GlobalVars->frametime = (I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL);
 	G::TickBase = I::GlobalVars->tickcount;
 
+	// don't mess up eye pos with antiwarp
+	if (G::DoubleTap && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid())
+		return;
+
+	const int nOldTickBase = pLocal->GetTickBase();
+	const bool bOldIsFirstPrediction = I::Prediction->m_bFirstTimePredicted;
+	const bool bOldInPrediction = I::Prediction->m_bInPrediction;
+
 	I::Prediction->m_bFirstTimePredicted = false;
 	I::Prediction->m_bInPrediction = true;
 
 	I::GameMovement->StartTrackPredictionErrors(pLocal);
-
-	//if (pCmd->weaponselect)
-	//{
-	//	if (CBaseCombatWeapon* pWeapon = pLocal->GetActiveWeapon())
-	//	{ 
-	//		pLocal->SelectItem(pWeapon->GetName(), pCmd->weaponsubtype); 
-	//	}
-	//}
 
 	pLocal->UpdateButtonState(pCmd->buttons);
 
@@ -81,6 +80,9 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 	I::MoveHelper->SetHost(pLocal);
 
 	I::Prediction->SetupMove(pLocal, pCmd, I::MoveHelper, &m_MoveData);
+	// demo charge fix pt 2 (still currently iffy with antiwarp occasionally)
+	if (G::DoubleTap && G::CurWeaponType == EWeaponType::MELEE && pLocal->IsCharging() && F::Ticks.GetTicks(pLocal) <= 14)
+		m_MoveData.m_flMaxSpeed = m_MoveData.m_flClientMaxSpeed = pLocal->TeamFortress_CalculateMaxSpeed(true);
 	I::GameMovement->ProcessMovement(pLocal, &m_MoveData);
 	// I::Prediction->FinishMove occasionally fucks with pCmd, might only be when respawning within a tick
 	I::Prediction->FinishMove(pLocal, pCmd, &m_MoveData); // CRASH: read access violation. pCmd was 0x... (after call)
@@ -89,8 +91,8 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 	I::GameMovement->FinishTrackPredictionErrors(pLocal);
 	pLocal->SetTickBase(nOldTickBase);
 
-	I::Prediction->m_bInPrediction = bOldInPrediction;
 	I::Prediction->m_bFirstTimePredicted = bOldIsFirstPrediction;
+	I::Prediction->m_bInPrediction = bOldInPrediction;
 }
 
 void CEnginePrediction::End(CUserCmd* pCmd)

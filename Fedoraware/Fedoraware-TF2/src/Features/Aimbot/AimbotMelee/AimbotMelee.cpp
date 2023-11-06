@@ -1,4 +1,5 @@
 #include "AimbotMelee.h"
+
 #include "../../Vars.h"
 #include "../../Simulation/MovementSimulation/MovementSimulation.h"
 #include "../../TickHandler/TickHandler.h"
@@ -196,7 +197,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 	// swing prediction / auto warp
 	const int iSwingTicks = GetSwingTime(pWeapon);
 	int iMax = (iDoubletapTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid())
-		? 0 //std::max(iSwingTicks - iDoubletapTicks, 0)
+		? std::max(iSwingTicks - Vars::CL_Move::DoubleTap::TickLimit.Value, 0)
 		: std::max(iSwingTicks, iDoubletapTicks);
 
 	if ((Vars::Aimbot::Melee::SwingPrediction.Value || iDoubletapTicks) && pWeapon->GetSmackTime() < 0.f && iMax)
@@ -215,7 +216,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 		{
 			if (i < iMax/* - 1*/)
 			{
-				if (pLocal->InCond(TF_COND_SHIELD_CHARGE) && iMax - i <= GetSwingTime(pWeapon)) // demo charge fix for swing pred
+				if (pLocal->IsCharging() && iMax - i <= GetSwingTime(pWeapon)) // demo charge fix for swing pred
 				{
 					localStorage.m_MoveData.m_flMaxSpeed = pLocal->TeamFortress_CalculateMaxSpeed(true);
 					localStorage.m_MoveData.m_flClientMaxSpeed = localStorage.m_MoveData.m_flMaxSpeed;
@@ -354,7 +355,9 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 	const float flLocalPos = (pLocal->GetCollideableMaxs().z - pLocal->GetCollideableMins().z) * 65.f / 82.f;
 	const Vec3 vecDiff = { 0, 0, std::min(flTargetPos, flLocalPos) };
 
-	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER ? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value) : pRecords;
+	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER
+		? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value)
+		: pRecords;
 	for (auto& pTick : validRecords)
 	{
 		const Vec3 vRestore = target.m_pEntity->GetAbsOrigin();
@@ -426,15 +429,7 @@ bool CAimbotMelee::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		return pCmd->buttons & IN_ATTACK;
 
-	static int iCount = 14; // hacky
-	if (pWeapon->GetSmackTime() < 0.f || !iDoubletapTicks)
-		iCount = 14;
-	else
-		iCount--;
-
-	return iDoubletapTicks
-		? !iCount
-		: TIME_TO_TICKS(pWeapon->GetSmackTime()) == I::GlobalVars->tickcount - 1; // seems to work most (?) of the time
+	return TIME_TO_TICKS(pWeapon->GetSmackTime()) == I::GlobalVars->tickcount - 1; // seems to work most (?) of the time
 }
 
 // assume angle calculated outside with other overload
@@ -488,11 +483,10 @@ Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 
 void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::WeaponCanAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->GetSmackTime() < 0.f)
-	{
+	if (lockedTarget.m_pEntity && pWeapon->GetSmackTime() < 0.f)
 		lockedTarget.m_pEntity = nullptr;
+	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::WeaponCanAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->GetSmackTime() < 0.f)
 		return;
-	}
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
 	if (!bShouldAim && !lockedTarget.m_pEntity)
@@ -502,12 +496,9 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 	if (targets.empty())
 		return;
 
-	// get auto warp to work better
-		// fix eye pos issues (antiwarp)
-		// fix weird movement when aiming (no antiwarp)
+	// fix eye pos issues with antiwarp (global issue, not solely related to melee)
 	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
-	const bool bShouldSwing = iDoubletapTicks <= GetSwingTime(pWeapon) || Vars::CL_Move::DoubleTap::AntiWarp.Value;
-	// might be better to hardcode 13 (12 if using silent ?) ticks or something so that the swing is finished at the start of the next packet ?
+	const bool bShouldSwing = iDoubletapTicks <= (GetSwingTime(pWeapon) ? 14 : 0) || Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid();
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;
@@ -525,13 +516,24 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
 			G::AimPos = target.m_vPos;
 
-		if (Vars::Aimbot::Global::AutoShoot.Value)
+		if (Vars::Aimbot::Global::AutoShoot.Value && pWeapon->GetSmackTime() < 0.f)
 		{
 			if (bShouldSwing)
 				pCmd->buttons |= IN_ATTACK;
 			if (iDoubletapTicks)
 				G::DoubleTap = true;
 		}
+		// game will not manage this while shifting, do it manually
+		static float flSmackTime = -1.f;
+		if (G::DoubleTap && pCmd->buttons & IN_ATTACK && pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
+		{
+			flSmackTime = TICKS_TO_TIME(I::GlobalVars->tickcount + 13 - (Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0));
+			pWeapon->GetSmackTime() = flSmackTime;
+		}
+		else if (pWeapon->GetSmackTime() > 0.f && flSmackTime > 0.f)
+			pWeapon->GetSmackTime() = flSmackTime;
+		else if (pWeapon->GetSmackTime() < 0.f)
+			flSmackTime = -1.f;
 
 		const bool bAttacking = IsAttacking(pCmd, pWeapon);
 		G::IsAttacking = bAttacking || bShouldSwing && G::DoubleTap; // dumb but works
@@ -565,7 +567,6 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		Aim(pCmd, target.m_vAngleTo);
 
 		G::IsAttacking = bAttacking;
-
 		break;
 	}
 }
