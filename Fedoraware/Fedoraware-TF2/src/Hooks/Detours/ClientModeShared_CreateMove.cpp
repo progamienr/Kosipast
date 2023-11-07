@@ -22,7 +22,7 @@
 
 void AttackingUpdate(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
-	if (!G::IsAttacking)
+	if (!G::IsAttacking || !pLocal || !pWeapon)
 		return;
 
 	auto tfWeaponInfo = pWeapon->GetTFWeaponInfo();
@@ -44,7 +44,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	const auto& pLocal = g_EntityCache.GetLocal();
 	const auto& pWeapon = g_EntityCache.GetWeapon();
 
-	if (!pCmd || !pCmd->command_number || !pLocal || !pWeapon)
+	if (!pCmd || !pCmd->command_number)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 
 	G::Buttons = pCmd->buttons;
@@ -65,12 +65,13 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!G::LastUserCmd)
 		G::LastUserCmd = pCmd;
 
-	if (!G::DoubleTap && !G::Teleport)
+	//if (!G::DoubleTap)
 		F::Backtrack.iTickCount = pCmd->tick_count;
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Misc::DisableInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
 	//if (!G::DoubleTap)
+	if (pLocal && pWeapon)
 	{
 		if (const int MaxSpeed = pLocal->GetMaxSpeed())
 			G::Frozen = MaxSpeed == 1;
@@ -154,10 +155,10 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			*pSendPacket = true, bWasSet = false;
 	}
 	else
-		AttackingUpdate(pLocal, pWeapon); // this does not work correctly when dting
+		AttackingUpdate(pLocal, pWeapon);
 
 	// do this at the end just in case aimbot / triggerbot fired.
-	if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && !pLocal->OnSolid()))
+	if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && pLocal && !pLocal->OnSolid()))
 	{
 		if (G::NextSafeTick > I::GlobalVars->tickcount && G::DoubleTap && G::ShiftedTicks)
 			pCmd->buttons &= ~IN_ATTACK;

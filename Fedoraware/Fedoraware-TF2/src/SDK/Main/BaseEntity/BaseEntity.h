@@ -13,7 +13,6 @@
 
 namespace S
 {
-	MAKE_SIGNATURE(CBasePlayer_WeaponShootPosition, CLIENT_DLL, "55 8B EC 56 8B 75 08 57 8B F9 56 8B 07 FF 90", 0x0);
 	MAKE_SIGNATURE(TeamFortress_CalculateMaxSpeed, CLIENT_DLL, "55 8B EC 83 EC ? 83 3D ? ? ? ? ? 56 8B F1 75", 0x0);
 
 	MAKE_SIGNATURE(CBaseEntity_GetAmmoCount, CLIENT_DLL, "55 8B EC 56 8B 75 ? 57 8B F9 83 FE ? 75 ? 5F", 0x0);

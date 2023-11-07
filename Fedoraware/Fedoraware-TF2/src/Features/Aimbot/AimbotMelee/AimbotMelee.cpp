@@ -496,7 +496,6 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 	if (targets.empty())
 		return;
 
-	// fix eye pos issues with antiwarp (global issue, not solely related to melee)
 	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
 	const bool bShouldSwing = iDoubletapTicks <= (GetSwingTime(pWeapon) ? 14 : 0) || Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid();
 

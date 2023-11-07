@@ -48,7 +48,6 @@ public: //Netvars
 	//M_DYNVARGET(ObservedCritChance, float, this, "DT_LocalTFWeaponData", "m_flObservedCritChance")
 	M_DYNVARGET(LastCritCheckTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastCritCheckTime")
 	M_DYNVARGET(ObservedCritChance, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flObservedCritChance")
-	M_DYNVARGET(RechargeScale, float, this, "DT_WeaponFlameBall", "m_flRechargeScale")
 	inline void SetObservedCritChance(float crit_chance)
 	{
 		static auto offset = GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
