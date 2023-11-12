@@ -15,7 +15,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 			return false;
 	}
 
-	if (pLocal && pLocal->IsPlayer() && pLocal->GetClassNum() == CLASS_SNIPER)
+	if (pLocal && pLocal->IsPlayer() && pLocal->m_iClass() == CLASS_SNIPER)
 	{
 		switch (pEntity->GetClassID())
 		{
@@ -23,7 +23,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 			case ETFClassID::CObjectSentrygun:
 			case ETFClassID::CObjectDispenser:
 			case ETFClassID::CObjectTeleporter:
-				if (pLocal->GetTeamNum() == pEntity->GetTeamNum())
+				if (pLocal->m_iTeamNum() == pEntity->m_iTeamNum())
 					return false;
 		}
 	}
@@ -86,9 +86,9 @@ bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsM
 			return false;
 	}
 
-	if (pLocal && pLocal->IsPlayer())
+	if (pLocal && pLocal->IsPlayer() && pLocal->m_iClass() != CLASS_MEDIC)
 	{
-		if (pEntity->IsPlayer() && pLocal->GetTeamNum() == pEntity->GetTeamNum())
+		if (pEntity->IsPlayer() && pLocal->m_iTeamNum() == pEntity->m_iTeamNum())
 			return false;
 	}
 

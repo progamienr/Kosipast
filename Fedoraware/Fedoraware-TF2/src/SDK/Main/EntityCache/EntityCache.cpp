@@ -12,12 +12,12 @@ void CEntityCache::Fill()
 		m_pLocal = _pLocal;
 		m_pLocalWeapon = m_pLocal->GetActiveWeapon();
 
-		switch (m_pLocal->GetObserverMode())
+		switch (m_pLocal->m_iObserverMode())
 		{
 			case OBS_MODE_FIRSTPERSON:
 			case OBS_MODE_THIRDPERSON:
 			{
-				m_pObservedTarget = I::ClientEntityList->GetClientEntityFromHandle(m_pLocal->GetObserverTarget());
+				m_pObservedTarget = I::ClientEntityList->GetClientEntityFromHandle(m_pLocal->m_hObserverTarget());
 				break;
 			}
 			default: break;
@@ -65,7 +65,7 @@ void CEntityCache::Fill()
 				case ETFClassID::CTFPlayer:
 				{
 					m_vecGroups[EGroupType::PLAYERS_ALL].push_back(pEntity);
-					m_vecGroups[pEntity->GetTeamNum() != m_pLocal->GetTeamNum() ? EGroupType::PLAYERS_ENEMIES : EGroupType::PLAYERS_TEAMMATES].push_back(pEntity);
+					m_vecGroups[pEntity->m_iTeamNum() != m_pLocal->m_iTeamNum() ? EGroupType::PLAYERS_ENEMIES : EGroupType::PLAYERS_TEAMMATES].push_back(pEntity);
 					break;
 				}
 
@@ -74,7 +74,7 @@ void CEntityCache::Fill()
 				case ETFClassID::CObjectTeleporter:
 				{
 					m_vecGroups[EGroupType::BUILDINGS_ALL].push_back(pEntity);
-					m_vecGroups[pEntity->GetTeamNum() != m_pLocal->GetTeamNum() ? EGroupType::BUILDINGS_ENEMIES : EGroupType::BUILDINGS_TEAMMATES].push_back(pEntity);
+					m_vecGroups[pEntity->m_iTeamNum() != m_pLocal->m_iTeamNum() ? EGroupType::BUILDINGS_ENEMIES : EGroupType::BUILDINGS_TEAMMATES].push_back(pEntity);
 					break;
 				}
 
@@ -131,7 +131,7 @@ void CEntityCache::Fill()
 					if (nClassID == ETFClassID::CTFGrenadePipebombProjectile && (pEntity->GetPipebombType() == TYPE_STICKY || pEntity->GetPipebombPulsed()))
 					{
 						CBaseEntity* pThrower = I::ClientEntityList->GetClientEntityFromHandle(reinterpret_cast<int>(pEntity->GetThrower()));
-						CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->GethOwner());
+						CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity());
 						if (pThrower == m_pLocal || pOwner == m_pLocal)
 							m_vecGroups[EGroupType::LOCAL_STICKIES].push_back(pEntity);
 #ifdef DEBUG
@@ -152,7 +152,7 @@ void CEntityCache::Fill()
 						{
 							if (pSecondary->GetItemDefIndex() == ETFWeapons::Pyro_s_TheDetonator)
 							{
-								if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->GethOwner()) == m_pLocal)
+								if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()) == m_pLocal)
 									m_vecGroups[EGroupType::LOCAL_FLARES].push_back(pEntity);
 							}
 						}

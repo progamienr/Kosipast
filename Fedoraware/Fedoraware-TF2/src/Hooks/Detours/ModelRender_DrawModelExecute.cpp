@@ -42,8 +42,7 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 
 			if (!F::Glow.m_bRendering && !F::Chams.m_bRendering)
 			{
-				if (Vars::Backtrack::BtChams::EnemyOnly.Value && g_EntityCache.GetLocal() && pEntity->GetTeamNum() ==
-					g_EntityCache.GetLocal()->GetTeamNum())
+				if (Vars::Backtrack::BtChams::EnemyOnly.Value && g_EntityCache.GetLocal() && pEntity->m_iTeamNum() == g_EntityCache.GetLocal()->m_iTeamNum())
 					return;
 
 				IMaterial* chosenMat = nullptr; // fake latency material
@@ -61,7 +60,6 @@ void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& 
 						Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.Value.g),
 						Color::TOFLOAT(Vars::Backtrack::BtChams::BacktrackColor.Value.b));
 				}
-
 
 				if (const auto& pRenderContext = I::MaterialSystem->GetRenderContext())
 				{

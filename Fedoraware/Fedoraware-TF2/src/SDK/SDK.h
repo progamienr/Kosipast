@@ -775,7 +775,7 @@ namespace Utils
 
 	__inline void WalkTo(CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& pDestination)
 	{
-		Vec3 localPos = pLocal->GetVecOrigin();
+		Vec3 localPos = pLocal->m_vecOrigin();
 		WalkTo(pCmd, pLocal, localPos, pDestination, 1.f);
 	}
 
@@ -831,7 +831,7 @@ namespace Utils
 
 			if (nType == EBuildingType::TELEPORTER && building->GetObjectMode() == 1 && building->GetOwner()->GetIndex() == ownerIdx)
 			{
-				*out = building->GetAbsOrigin();
+				*out = building->m_vecOrigin();
 				return true;
 			}
 		}
@@ -860,7 +860,7 @@ namespace Utils
 	__inline Vec3 GetHeadOffset(CBaseEntity* pEntity, const Vec3 vOffset = {})
 	{
 		const Vec3 headPos = pEntity->GetHitboxPos(HITBOX_HEAD, vOffset);
-		const Vec3 entPos = pEntity->GetVecOrigin();
+		const Vec3 entPos = pEntity->m_vecOrigin();
 		return headPos - entPos;
 	}
 }

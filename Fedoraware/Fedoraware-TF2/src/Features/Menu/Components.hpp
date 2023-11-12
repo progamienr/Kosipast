@@ -170,11 +170,11 @@ namespace ImGui
 
 				for (short key = 0; key < 255; key++)
 				{
-					if (!(GetAsyncKeyState(key) & 0x8000))
-						continue;
 					if (key == VK_INSERT || key == VK_F3)
 						continue;
 					if (bHovered && key == VK_LBUTTON)
+						continue;
+					if (!(GetAsyncKeyState(key) & 0x8000))
 						continue;
 
 					output = key;

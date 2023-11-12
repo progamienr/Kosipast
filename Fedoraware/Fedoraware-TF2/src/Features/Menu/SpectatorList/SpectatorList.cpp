@@ -11,13 +11,12 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 
 	for (const auto& pTeammate : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
 	{
-		CBaseEntity* pObservedPlayer = I::ClientEntityList->GetClientEntityFromHandle(
-			pTeammate->GetObserverTarget());
+		CBaseEntity* pObservedPlayer = I::ClientEntityList->GetClientEntityFromHandle(pTeammate->m_hObserverTarget());
 
 		if (pTeammate && !pTeammate->IsAlive() && pObservedPlayer == pLocal)
 		{
 			std::wstring szMode;
-			switch (pTeammate->GetObserverMode())
+			switch (pTeammate->m_iObserverMode())
 			{
 				case OBS_MODE_FIRSTPERSON:
 				{
@@ -58,7 +57,7 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 			{
 				Spectators.push_back({
 					Utils::ConvertUtf8ToWide(playerInfo.name), szMode, respawnIn, respawnTimeIncreased, g_EntityCache.IsFriend(pTeammate->GetIndex()),
-					pTeammate->GetTeamNum(), pTeammate->GetIndex()
+					pTeammate->m_iTeamNum(), pTeammate->GetIndex()
 				});
 			}
 		}

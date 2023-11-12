@@ -150,53 +150,37 @@ MAKE_HOOK(C_BaseEntity_FireBullets, S::CBaseEntity_FireBullets(), void, __fastca
 		const int iAttachment = pWeapon->LookupAttachment("muzzle");
 		pWeapon->GetAttachment(iAttachment, trace.vStartPos);
 
-		const int team = pLocal->GetTeamNum();
+		const int team = pLocal->m_iTeamNum();
 		switch (pLocal->IsCritBoosted() ? Vars::Visuals::Tracers::ParticleTracerCrits.Value : Vars::Visuals::Tracers::ParticleTracer.Value)
 		{
-			//Default
-			case 0:
+			case 0: // Default
 				Hook.Original<FN>()(ecx, edx, pWeapon, info, bDoEffects, nDamageType, nCustomDamageType);
 				break;
-
-			//Machina
-			case 1:
+			case 1: // Machina
 				Particles::ParticleTracer(team == TEAM_RED ? "dxhr_sniper_rail_red" : "dxhr_sniper_rail_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);	
 				break;
-
-			//C.A.P.P.E.R
-			case 2:
+			case 2: // C.A.P.P.E.R
 				Particles::ParticleTracer(team == TEAM_RED ? "bullet_tracer_raygun_red" : "bullet_tracer_raygun_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
-			//Short circuit
-			case 3:
+			case 3: // Short circuit
 				Particles::ParticleTracer(team == TEAM_RED ? "dxhr_lightningball_hit_zap_red" : "dxhr_lightningball_hit_zap_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
-			//Merasmus ZAP
-			case 4:
+			case 4: // Merasmus ZAP
 				Particles::ParticleTracer("merasmus_zap", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
-			//Merasmus ZAP Beam 2
-			case 5:
+			case 5: // Merasmus ZAP Beam 2
 				Particles::ParticleTracer("merasmus_zap_beam02", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
 			case 6:
 				Particles::ParticleTracer(team == TEAM_RED ? "bullet_bignasty_tracer01_blue" : "bullet_bignasty_tracer01_red", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
 			case 7:
 				Particles::ParticleTracer("tfc_sniper_distortion_trail", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
 			case 8: // black_ink, demo'd: https://youtu.be/Ba0lcMOfm9w 
 				Particles::ParticleTracer("merasmus_zap_beam01", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
-
-			case 9:
-				// custom particle tracer, def not pasted from deathpole or anything. list @ dump_particlemanifest or @ https://github.com/tf2cheater2013/particles.txt
+			case 9: // custom particle tracer, def not pasted from deathpole or anything. list @ dump_particlemanifest or @ https://github.com/tf2cheater2013/particles.txt
 				Particles::ParticleTracer(Vars::Visuals::Tracers::ParticleName.Value.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 				break;
 		}

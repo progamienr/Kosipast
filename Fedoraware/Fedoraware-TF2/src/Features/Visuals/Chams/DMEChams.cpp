@@ -371,11 +371,11 @@ Chams_t GetPlayerChams(CBaseEntity* pEntity)
 		{
 			return Vars::Chams::Players::Friend.Value;
 		}
-		if (pEntity->GetTeamNum() != pLocal->GetTeamNum())
+		if (pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
 		{
 			return Vars::Chams::Players::Enemy.Value;
 		}
-		if (pEntity->GetTeamNum() == pLocal->GetTeamNum())
+		if (pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
 		{
 			return Vars::Chams::Players::Team.Value;
 		}
@@ -400,11 +400,11 @@ Chams_t GetBuildingChams(CBaseEntity* pEntity)
 		{
 			return Vars::Chams::Buildings::Friend.Value;
 		}
-		if (pEntity->GetTeamNum() != pLocal->GetTeamNum())
+		if (pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
 		{
 			return Vars::Chams::Buildings::Enemy.Value;
 		}
-		if (pEntity->GetTeamNum() == pLocal->GetTeamNum())
+		if (pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
 		{
 			return Vars::Chams::Buildings::Team.Value;
 		}
@@ -469,12 +469,12 @@ Chams_t getChamsType(int nIndex, CBaseEntity* pEntity = nullptr)
 		{
 			return GetBuildingChams(pOwner);
 		}
-		else if (int teamNum = pEntity->GetTeamNum())
+		else if (int teamNum = pEntity->m_iTeamNum())
 		{	// if we don't have an owner, we need to do this, or else spawned buildings that do have a team will return no cham struct.
 			CBaseEntity* pLocal = g_EntityCache.GetLocal();
 			if (pLocal)
 			{
-				return (teamNum = pLocal->GetTeamNum()) ? Vars::Chams::Buildings::Team.Value : Vars::Chams::Buildings::Enemy.Value;
+				return (teamNum = pLocal->m_iTeamNum()) ? Vars::Chams::Buildings::Team.Value : Vars::Chams::Buildings::Enemy.Value;
 			}
 		}
 		return Chams_t();
@@ -649,7 +649,7 @@ bool CDMEChams::Render(const DrawModelState_t& pState, const ModelRenderInfo_t& 
 			{
 				if (Vars::Visuals::RagdollEffects::EnemyOnly.Value)
 				{
-					if (pEntity->GetTeamNum() == pLocal->GetTeamNum())
+					if (pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
 					{
 						return false;
 					}
@@ -726,7 +726,7 @@ bool CDMEChams::Render(const DrawModelState_t& pState, const ModelRenderInfo_t& 
 					pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity());
 				}
 
-				if (pOwner && pOwner->IsPlayer() && pOwner != pLocal && pOwner->GetTeamNum() == pLocal->GetTeamNum() && pLocal->IsAlive())
+				if (pOwner && pOwner->IsPlayer() && pOwner != pLocal && pOwner->m_iTeamNum() == pLocal->m_iTeamNum() && pLocal->IsAlive())
 				{
 					if (alpha < 0.01f)
 					{	//dont draw if we are too close

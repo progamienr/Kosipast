@@ -1,11 +1,120 @@
 #include "MovementSimulation.h"
+
+#include "../../Backtrack/Backtrack.h"
+
 #pragma warning (disable : 4018)
 #pragma warning (disable : 4552)
 
 //we'll use this to set current player's command, without it CGameMovement::CheckInterval will try to access a nullptr
 static CUserCmd DummyCmd = {};
 
-void CMovementSimulation::FillInfo()
+
+
+void CMovementSimulation::Store(PlayerStorage& playerStorage)
+{
+	playerStorage.m_PlayerData.m_vecOrigin = playerStorage.m_pPlayer->m_vecOrigin();
+	playerStorage.m_PlayerData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();
+	playerStorage.m_PlayerData.m_vecBaseVelocity = playerStorage.m_pPlayer->m_vecBaseVelocity();
+	playerStorage.m_PlayerData.m_vecViewOffset = playerStorage.m_pPlayer->m_vecViewOffset();
+	playerStorage.m_PlayerData.m_hGroundEntity = playerStorage.m_pPlayer->m_hGroundEntity();
+	playerStorage.m_PlayerData.m_fFlags = playerStorage.m_pPlayer->m_fFlags();
+	playerStorage.m_PlayerData.m_flDucktime = playerStorage.m_pPlayer->m_flDucktime();
+	playerStorage.m_PlayerData.m_flDuckJumpTime = playerStorage.m_pPlayer->m_flDuckJumpTime();
+	playerStorage.m_PlayerData.m_bDucked = playerStorage.m_pPlayer->m_bDucked();
+	playerStorage.m_PlayerData.m_bDucking = playerStorage.m_pPlayer->m_bDucking();
+	playerStorage.m_PlayerData.m_bInDuckJump = playerStorage.m_pPlayer->m_bInDuckJump();
+	playerStorage.m_PlayerData.m_flModelScale = playerStorage.m_pPlayer->m_flModelScale();
+	playerStorage.m_PlayerData.m_nButtons = playerStorage.m_pPlayer->m_nButtons();
+	playerStorage.m_PlayerData.m_flLastMovementStunChange = playerStorage.m_pPlayer->m_flLastMovementStunChange();
+	playerStorage.m_PlayerData.m_flStunLerpTarget = playerStorage.m_pPlayer->m_flStunLerpTarget();
+	playerStorage.m_PlayerData.m_bStunNeedsFadeOut = playerStorage.m_pPlayer->m_bStunNeedsFadeOut();
+	playerStorage.m_PlayerData.m_flPrevTauntYaw = playerStorage.m_pPlayer->m_flPrevTauntYaw();
+	playerStorage.m_PlayerData.m_flTauntYaw = playerStorage.m_pPlayer->m_flTauntYaw();
+	playerStorage.m_PlayerData.m_flCurrentTauntMoveSpeed = playerStorage.m_pPlayer->m_flCurrentTauntMoveSpeed();
+	playerStorage.m_PlayerData.m_iKartState = playerStorage.m_pPlayer->m_iKartState();
+	playerStorage.m_PlayerData.m_flVehicleReverseTime = playerStorage.m_pPlayer->m_flVehicleReverseTime();
+	playerStorage.m_PlayerData.m_flHypeMeter = playerStorage.m_pPlayer->m_flHypeMeter();
+	playerStorage.m_PlayerData.m_flMaxspeed = playerStorage.m_pPlayer->m_flMaxspeed();
+	playerStorage.m_PlayerData.m_nAirDucked = playerStorage.m_pPlayer->m_nAirDucked();
+	playerStorage.m_PlayerData.m_bJumping = playerStorage.m_pPlayer->m_bJumping();
+	playerStorage.m_PlayerData.m_iAirDash = playerStorage.m_pPlayer->m_iAirDash();
+	playerStorage.m_PlayerData.m_flWaterJumpTime = playerStorage.m_pPlayer->m_flWaterJumpTime();
+	playerStorage.m_PlayerData.m_flSwimSoundTime = playerStorage.m_pPlayer->m_flSwimSoundTime();
+	playerStorage.m_PlayerData.m_surfaceProps = playerStorage.m_pPlayer->m_surfaceProps();
+	playerStorage.m_PlayerData.m_pSurfaceData = playerStorage.m_pPlayer->m_pSurfaceData();
+	playerStorage.m_PlayerData.m_surfaceFriction = playerStorage.m_pPlayer->m_surfaceFriction();
+	playerStorage.m_PlayerData.m_chTextureType = playerStorage.m_pPlayer->m_chTextureType();
+	playerStorage.m_PlayerData.m_vecPunchAngle = playerStorage.m_pPlayer->m_vecPunchAngle();
+	playerStorage.m_PlayerData.m_vecPunchAngleVel = playerStorage.m_pPlayer->m_vecPunchAngleVel();
+	playerStorage.m_PlayerData.m_MoveType = playerStorage.m_pPlayer->m_MoveType();
+	playerStorage.m_PlayerData.m_MoveCollide = playerStorage.m_pPlayer->m_MoveCollide();
+	playerStorage.m_PlayerData.m_vecLadderNormal = playerStorage.m_pPlayer->m_vecLadderNormal();
+	playerStorage.m_PlayerData.m_flGravity = playerStorage.m_pPlayer->m_flGravity();
+	playerStorage.m_PlayerData.m_nWaterLevel = playerStorage.m_pPlayer->m_nWaterLevel();
+	playerStorage.m_PlayerData.m_nWaterType = playerStorage.m_pPlayer->m_nWaterType();
+	playerStorage.m_PlayerData.m_flFallVelocity = playerStorage.m_pPlayer->m_flFallVelocity();
+	playerStorage.m_PlayerData.m_nPlayerCond = playerStorage.m_pPlayer->m_nPlayerCond();
+	playerStorage.m_PlayerData.m_nPlayerCondEx = playerStorage.m_pPlayer->m_nPlayerCondEx();
+	playerStorage.m_PlayerData.m_nPlayerCondEx2 = playerStorage.m_pPlayer->m_nPlayerCondEx2();
+	playerStorage.m_PlayerData.m_nPlayerCondEx3 = playerStorage.m_pPlayer->m_nPlayerCondEx3();
+	playerStorage.m_PlayerData.m_nPlayerCondEx4 = playerStorage.m_pPlayer->m_nPlayerCondEx4();
+	playerStorage.m_PlayerData._condition_bits = playerStorage.m_pPlayer->_condition_bits();
+}
+
+void CMovementSimulation::Reset(PlayerStorage& playerStorage)
+{
+	playerStorage.m_pPlayer->m_vecOrigin() = playerStorage.m_PlayerData.m_vecOrigin;
+	playerStorage.m_pPlayer->m_vecVelocity() = playerStorage.m_PlayerData.m_vecVelocity;
+	playerStorage.m_pPlayer->m_vecBaseVelocity() = playerStorage.m_PlayerData.m_vecBaseVelocity;
+	playerStorage.m_pPlayer->m_vecViewOffset() = playerStorage.m_PlayerData.m_vecViewOffset;
+	playerStorage.m_pPlayer->m_hGroundEntity() = playerStorage.m_PlayerData.m_hGroundEntity;
+	playerStorage.m_pPlayer->m_fFlags() = playerStorage.m_PlayerData.m_fFlags;
+	playerStorage.m_pPlayer->m_flDucktime() = playerStorage.m_PlayerData.m_flDucktime;
+	playerStorage.m_pPlayer->m_flDuckJumpTime() = playerStorage.m_PlayerData.m_flDuckJumpTime;
+	playerStorage.m_pPlayer->m_bDucked() = playerStorage.m_PlayerData.m_bDucked;
+	playerStorage.m_pPlayer->m_bDucking() = playerStorage.m_PlayerData.m_bDucking;
+	playerStorage.m_pPlayer->m_bInDuckJump() = playerStorage.m_PlayerData.m_bInDuckJump;
+	playerStorage.m_pPlayer->m_flModelScale() = playerStorage.m_PlayerData.m_flModelScale;
+	playerStorage.m_pPlayer->m_nButtons() = playerStorage.m_PlayerData.m_nButtons;
+	playerStorage.m_pPlayer->m_flLastMovementStunChange() = playerStorage.m_PlayerData.m_flLastMovementStunChange;
+	playerStorage.m_pPlayer->m_flStunLerpTarget() = playerStorage.m_PlayerData.m_flStunLerpTarget;
+	playerStorage.m_pPlayer->m_bStunNeedsFadeOut() = playerStorage.m_PlayerData.m_bStunNeedsFadeOut;
+	playerStorage.m_pPlayer->m_flPrevTauntYaw() = playerStorage.m_PlayerData.m_flPrevTauntYaw;
+	playerStorage.m_pPlayer->m_flTauntYaw() = playerStorage.m_PlayerData.m_flTauntYaw;
+	playerStorage.m_pPlayer->m_flCurrentTauntMoveSpeed() = playerStorage.m_PlayerData.m_flCurrentTauntMoveSpeed;
+	playerStorage.m_pPlayer->m_iKartState() = playerStorage.m_PlayerData.m_iKartState;
+	playerStorage.m_pPlayer->m_flVehicleReverseTime() = playerStorage.m_PlayerData.m_flVehicleReverseTime;
+	playerStorage.m_pPlayer->m_flHypeMeter() = playerStorage.m_PlayerData.m_flHypeMeter;
+	playerStorage.m_pPlayer->m_flMaxspeed() = playerStorage.m_PlayerData.m_flMaxspeed;
+	playerStorage.m_pPlayer->m_nAirDucked() = playerStorage.m_PlayerData.m_nAirDucked;
+	playerStorage.m_pPlayer->m_bJumping() = playerStorage.m_PlayerData.m_bJumping;
+	playerStorage.m_pPlayer->m_iAirDash() = playerStorage.m_PlayerData.m_iAirDash;
+	playerStorage.m_pPlayer->m_flWaterJumpTime() = playerStorage.m_PlayerData.m_flWaterJumpTime;
+	playerStorage.m_pPlayer->m_flSwimSoundTime() = playerStorage.m_PlayerData.m_flSwimSoundTime;
+	playerStorage.m_pPlayer->m_surfaceProps() = playerStorage.m_PlayerData.m_surfaceProps;
+	playerStorage.m_pPlayer->m_pSurfaceData() = playerStorage.m_PlayerData.m_pSurfaceData;
+	playerStorage.m_pPlayer->m_surfaceFriction() = playerStorage.m_PlayerData.m_surfaceFriction;
+	playerStorage.m_pPlayer->m_chTextureType() = playerStorage.m_PlayerData.m_chTextureType;
+	playerStorage.m_pPlayer->m_vecPunchAngle() = playerStorage.m_PlayerData.m_vecPunchAngle;
+	playerStorage.m_pPlayer->m_vecPunchAngleVel() = playerStorage.m_PlayerData.m_vecPunchAngleVel;
+	playerStorage.m_pPlayer->m_MoveType() = playerStorage.m_PlayerData.m_MoveType;
+	playerStorage.m_pPlayer->m_MoveCollide() = playerStorage.m_PlayerData.m_MoveCollide;
+	playerStorage.m_pPlayer->m_vecLadderNormal() = playerStorage.m_PlayerData.m_vecLadderNormal;
+	playerStorage.m_pPlayer->m_flGravity() = playerStorage.m_PlayerData.m_flGravity;
+	playerStorage.m_pPlayer->m_nWaterLevel() = playerStorage.m_PlayerData.m_nWaterLevel;
+	playerStorage.m_pPlayer->m_nWaterType() = playerStorage.m_PlayerData.m_nWaterType;
+	playerStorage.m_pPlayer->m_flFallVelocity() = playerStorage.m_PlayerData.m_flFallVelocity;
+	playerStorage.m_pPlayer->m_nPlayerCond() = playerStorage.m_PlayerData.m_nPlayerCond;
+	playerStorage.m_pPlayer->m_nPlayerCondEx() = playerStorage.m_PlayerData.m_nPlayerCondEx;
+	playerStorage.m_pPlayer->m_nPlayerCondEx2() = playerStorage.m_PlayerData.m_nPlayerCondEx2;
+	playerStorage.m_pPlayer->m_nPlayerCondEx3() = playerStorage.m_PlayerData.m_nPlayerCondEx3;
+	playerStorage.m_pPlayer->m_nPlayerCondEx4() = playerStorage.m_PlayerData.m_nPlayerCondEx4;
+	playerStorage.m_pPlayer->_condition_bits() = playerStorage.m_PlayerData._condition_bits;
+}
+
+
+
+void CMovementSimulation::FillVelocities()
 {
 	const auto pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
@@ -65,6 +174,8 @@ void CMovementSimulation::FillInfo()
 		m_Velocities.clear();
 }
 
+
+
 bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& playerStorageOut, bool useHitchance, bool cancelStrafe)
 {
 	if (!pPlayer || !pPlayer->IsPlayer() || pPlayer->deadflag())
@@ -82,49 +193,43 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	playerStorageOut.m_pPlayer->SetCurrentCmd(&DummyCmd);
 
 	//store player's data
-	playerStorageOut.m_PlayerData.m_vecOrigin = pPlayer->GetVecOrigin();
-	playerStorageOut.m_PlayerData.m_vecVelocity = pPlayer->m_vecVelocity();
-	playerStorageOut.m_PlayerData.m_vecBaseVelocity = pPlayer->m_vecBaseVelocity();
-	playerStorageOut.m_PlayerData.m_vecViewOffset = pPlayer->m_vecViewOffset();
-	playerStorageOut.m_PlayerData.m_hGroundEntity = pPlayer->m_hGroundEntity();
-	playerStorageOut.m_PlayerData.m_vecWorldSpaceCenter = pPlayer->GetWorldSpaceCenter();
-	playerStorageOut.m_PlayerData.m_fFlags = pPlayer->m_fFlags();
-	playerStorageOut.m_PlayerData.m_flDucktime = pPlayer->m_flDucktime();
-	playerStorageOut.m_PlayerData.m_flDuckJumpTime = pPlayer->m_flDuckJumpTime();
-	playerStorageOut.m_PlayerData.m_bDucked = pPlayer->m_bDucked();
-	playerStorageOut.m_PlayerData.m_bDucking = pPlayer->m_bDucking();
-	playerStorageOut.m_PlayerData.m_bInDuckJump = pPlayer->m_bInDuckJump();
-	playerStorageOut.m_PlayerData.m_flModelScale = pPlayer->m_flModelScale();
+	Store(playerStorageOut);
 
-	//store vars
+	// store vars
 	m_bOldInPrediction = I::Prediction->m_bInPrediction;
 	m_bOldFirstTimePredicted = I::Prediction->m_bFirstTimePredicted;
 	m_flOldFrametime = I::GlobalVars->frametime;
 
-	//the hacks that make it work
+	// the hacks that make it work
 	{
 		if (pPlayer->m_fFlags() & FL_DUCKING)
 		{
-			pPlayer->m_fFlags() &= ~FL_DUCKING; //breaks origin's z if FL_DUCKING is not removed
-			pPlayer->m_bDucked() = true; //(mins/maxs will be fine when ducking as long as m_bDucked is true)
+			pPlayer->m_fFlags() &= ~FL_DUCKING; // breaks origin's z if FL_DUCKING is not removed
+			pPlayer->m_bDucked() = true; // (mins/maxs will be fine when ducking as long as m_bDucked is true)
 			pPlayer->m_flDucktime() = 0.0f;
 			pPlayer->m_flDuckJumpTime() = 0.0f;
 			pPlayer->m_bDucking() = false;
 			pPlayer->m_bInDuckJump() = false;
 		}
 
-		pPlayer->m_flModelScale() -= 0.03125f; //fixes issues with corners
+		if (pPlayer != g_EntityCache.GetLocal())
+			pPlayer->m_hGroundEntity() = -1; // fix for velocity.z being set to 0 even if in air
 
 		if (pPlayer->IsOnGround())
-			pPlayer->GetVecOrigin().z += 0.03125f; //to prevent getting stuck in the ground
-		else if (pPlayer != g_EntityCache.GetLocal())
-			pPlayer->m_hGroundEntity() = -1; // fix for velocity being set to 0 even if in air
+			pPlayer->m_vecOrigin().z += 0.03125f; // to prevent getting stuck in the ground
+
+		pPlayer->m_flModelScale() -= 0.03125f; // fixes issues with corners
 
 		//for some reason if xy vel is zero it doesn't predict
 		if (fabsf(pPlayer->m_vecVelocity().x) < 0.01f)
 			pPlayer->m_vecVelocity().x = 0.015f;
 		if (fabsf(pPlayer->m_vecVelocity().y) < 0.01f)
 			pPlayer->m_vecVelocity().y = 0.015f;
+
+		if (pPlayer->OnSolid())
+			pPlayer->m_vecVelocity().z = 0.0f; // step fix
+
+		pPlayer->m_vecBaseVelocity() = Vec3(); // i think residual basevelocity causes issues
 	}
 
 	// setup move data
@@ -139,7 +244,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 		StrafePrediction(playerStorageOut);
 
 	// really hope this doesn't work like shit
-	if (useHitchance && !pPlayer->m_vecVelocity().IsZero())
+	if (useHitchance && playerStorageOut.m_flAverageYaw && !pPlayer->m_vecVelocity().IsZero())
 	{
 		const auto& mVelocityRecords = m_Velocities[playerStorageOut.m_pPlayer->GetIndex()];
 		const int iSamples = mVelocityRecords.size();
@@ -184,28 +289,36 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	playerStorage.m_MoveData.m_bGameCodeMovedPlayer = false;
 	playerStorage.m_MoveData.m_nPlayerHandle = reinterpret_cast<IHandleEntity*>(playerStorage.m_pPlayer)->GetRefEHandle();
 
-	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->GetVecOrigin();
-	playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();	//	m_vecBaseVelocity hits -1950?
-	if (playerStorage.m_pPlayer->OnSolid() && !playerStorage.m_MoveData.m_vecVelocity.IsZero())
-		playerStorage.m_MoveData.m_vecVelocity.z = 0.015f; // step fix
+	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->m_vecOrigin();
+	playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();
 	playerStorage.m_MoveData.m_flMaxSpeed = playerStorage.m_pPlayer->TeamFortress_CalculateMaxSpeed();
 	if (playerStorage.m_PlayerData.m_fFlags & FL_DUCKING)
 		playerStorage.m_MoveData.m_flMaxSpeed *= 0.3333f;
-	playerStorage.m_MoveData.m_flClientMaxSpeed = playerStorage.m_MoveData.m_flMaxSpeed;
 
-	//need a better way to determine angles probably
 	playerStorage.m_MoveData.m_vecViewAngles = { 0.f, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity).y, 0.f };
 
 	Vec3 vForward = {}, vRight = {};
 	Math::AngleVectors(playerStorage.m_MoveData.m_vecViewAngles, &vForward, &vRight, nullptr);
-
 	playerStorage.m_MoveData.m_flForwardMove = (playerStorage.m_MoveData.m_vecVelocity.y - vRight.y / vRight.x * playerStorage.m_MoveData.m_vecVelocity.x) / (vForward.y - vRight.y / vRight.x * vForward.x);
 	playerStorage.m_MoveData.m_flSideMove = (playerStorage.m_MoveData.m_vecVelocity.x - vForward.x * playerStorage.m_MoveData.m_flForwardMove) / vRight.x;
+	if (playerStorage.m_pPlayer->m_vecVelocity().Length2D() <= playerStorage.m_MoveData.m_flMaxSpeed * 0.1f)
+		playerStorage.m_MoveData.m_flForwardMove = playerStorage.m_MoveData.m_flSideMove = 0.f;
+
+	playerStorage.m_MoveData.m_flClientMaxSpeed = playerStorage.m_MoveData.m_flMaxSpeed;
+	playerStorage.m_MoveData.m_vecAngles = playerStorage.m_MoveData.m_vecViewAngles;
+	playerStorage.m_MoveData.m_vecOldAngles = playerStorage.m_MoveData.m_vecViewAngles;
+	//if (playerStorage.m_pPlayer->m_hConstraintEntity())
+	//	playerStorage.m_MoveData.m_vecConstraintCenter = I::ClientEntityList->GetClientEntityFromHandle(playerStorage.m_pPlayer->m_hConstraintEntity())->GetAbsOrigin();
+	///else
+		playerStorage.m_MoveData.m_vecConstraintCenter = playerStorage.m_pPlayer->m_vecConstraintCenter();
+	playerStorage.m_MoveData.m_flConstraintRadius = playerStorage.m_pPlayer->m_flConstraintRadius();
+	playerStorage.m_MoveData.m_flConstraintWidth = playerStorage.m_pPlayer->m_flConstraintWidth();
+	playerStorage.m_MoveData.m_flConstraintSpeedFactor = playerStorage.m_pPlayer->m_flConstraintSpeedFactor();
 
 	return true;
 }
 
-float CMovementSimulation::GetAverageYaw(const int iSamples, PlayerStorage& playerStorage)
+float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int iSamples)
 {
 	const int iEntIndex = playerStorage.m_pPlayer->GetIndex();
 	const auto& mVelocityRecords = m_Velocities[iEntIndex];
@@ -224,8 +337,9 @@ float CMovementSimulation::GetAverageYaw(const int iSamples, PlayerStorage& play
 		flCompareYaw = flRecordYaw;
 	}
 	flAverageYaw /= iSamples;
-	fmod(flAverageYaw + 180.0f, 360.0f) - 180.0f;
+	flAverageYaw = fmod(flAverageYaw + 180.0f, 360.0f) - 180.0f;
 
+	/*
 	auto get_velocity_degree = [](float velocity)
 	{
 		auto tmp = RAD2DEG(atan(30.0f / velocity));
@@ -240,13 +354,12 @@ float CMovementSimulation::GetAverageYaw(const int iSamples, PlayerStorage& play
 			return tmp;
 	};
 
-	/*
 	const float flMaxDelta = get_velocity_degree(fabsf(flAverageYaw)) / fmaxf((float)iSamples, 2.f);
 
 	if (fabsf(flAverageYaw) > flMaxDelta) {
 		m_Velocities[iEntIndex].clear();
 		return 0.f;
-	}	//	ugly fix for sweaty pricks
+	} // ugly fix for sweaty pricks
 	*/
 
 	Utils::ConLog("MovementSimulation", std::format("flAverageYaw calculated to {} from {}", flAverageYaw, iSamples).c_str(), { 83, 255, 83, 255 }, Vars::Debug::Logging.Value);
@@ -256,10 +369,10 @@ float CMovementSimulation::GetAverageYaw(const int iSamples, PlayerStorage& play
 
 void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 {
-	if (!(playerStorage.m_pPlayer->OnSolid() ? Vars::Aimbot::Projectile::StrafePredictionGround.Value : Vars::Aimbot::Projectile::StrafePredictionAir.Value))
+	if (playerStorage.m_pPlayer->OnSolid() ? !Vars::Aimbot::Projectile::StrafePredictionGround.Value : !Vars::Aimbot::Projectile::StrafePredictionAir.Value)
 		return;
 
-	float flAverageYaw = GetAverageYaw(Vars::Aimbot::Projectile::iSamples.Value, playerStorage);
+	float flAverageYaw = GetAverageYaw(playerStorage, Vars::Aimbot::Projectile::iSamples.Value);
 
 	if (fabsf(flAverageYaw) < Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value)
 	{
@@ -267,11 +380,11 @@ void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 		return;
 	}
 
-	if (flAverageYaw == 0.f)
-		return;
+	//if (flAverageYaw == 0.f)
+	//	return;
 
-	if (playerStorage.m_pPlayer->OnSolid())
-		playerStorage.m_MoveData.m_vecViewAngles.y += 22.5f * (flAverageYaw > 0.f ? 1.f : -1.f); // fix for ground strafe delay
+	//if (playerStorage.m_pPlayer->OnSolid())
+	//	playerStorage.m_MoveData.m_vecViewAngles.y += 22.5f * (flAverageYaw > 0.f ? 1.f : -1.f); // fix for ground strafe delay
 	playerStorage.m_flAverageYaw = flAverageYaw;
 }
 
@@ -280,28 +393,28 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	if (playerStorage.m_bFailed || !playerStorage.m_pPlayer || !playerStorage.m_pPlayer->IsPlayer())
 		return;
 
-	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecAbsOrigin, Math::GetRotatedPosition( playerStorage.m_MoveData.m_vecAbsOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value ) });
+	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecAbsOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecAbsOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value)});
 
 	//make sure frametime and prediction vars are right
 	I::Prediction->m_bInPrediction = true;
 	I::Prediction->m_bFirstTimePredicted = false;
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL;
 	
-	float airCorrection = 0.f;
+	float flCorrection = 0.f;
 	if (playerStorage.m_flAverageYaw)
 	{
-		if (!playerStorage.m_pPlayer->OnSolid() && playerStorage.m_flAverageYaw)
-			airCorrection = 90.f * (playerStorage.m_flAverageYaw > 0.f ? 1.f : -1.f);
+		if (!playerStorage.m_pPlayer->OnSolid())
+			flCorrection = 90.f * (playerStorage.m_flAverageYaw > 0.f ? 1.f : -1.f);
 
-		playerStorage.m_MoveData.m_vecViewAngles.y += playerStorage.m_flAverageYaw + airCorrection;
+		playerStorage.m_MoveData.m_vecViewAngles.y += playerStorage.m_flAverageYaw + flCorrection;
 	}
 	//else
 	//	playerStorage.m_MoveData.m_vecViewAngles.y = Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity).y;
 
-	// occasionally offsets position
 	I::TFGameMovement->ProcessMovement(playerStorage.m_pPlayer, &playerStorage.m_MoveData);
 
-	playerStorage.m_MoveData.m_vecViewAngles.y -= airCorrection;
+
+	playerStorage.m_MoveData.m_vecViewAngles.y -= flCorrection;
 }
 
 void CMovementSimulation::Restore(PlayerStorage& playerStorage)
@@ -311,18 +424,7 @@ void CMovementSimulation::Restore(PlayerStorage& playerStorage)
 
 	playerStorage.m_pPlayer->SetCurrentCmd(nullptr);
 
-	playerStorage.m_pPlayer->SetVecOrigin(playerStorage.m_PlayerData.m_vecOrigin);
-	playerStorage.m_pPlayer->m_vecVelocity() = playerStorage.m_PlayerData.m_vecVelocity;
-	playerStorage.m_pPlayer->m_vecBaseVelocity() = playerStorage.m_PlayerData.m_vecBaseVelocity;
-	playerStorage.m_pPlayer->m_vecViewOffset() = playerStorage.m_PlayerData.m_vecViewOffset;
-	playerStorage.m_pPlayer->m_hGroundEntity() = playerStorage.m_PlayerData.m_hGroundEntity;
-	playerStorage.m_pPlayer->m_fFlags() = playerStorage.m_PlayerData.m_fFlags;
-	playerStorage.m_pPlayer->m_flDucktime() = playerStorage.m_PlayerData.m_flDucktime;
-	playerStorage.m_pPlayer->m_flDuckJumpTime() = playerStorage.m_PlayerData.m_flDuckJumpTime;
-	playerStorage.m_pPlayer->m_bDucked() = playerStorage.m_PlayerData.m_bDucked;
-	playerStorage.m_pPlayer->m_bDucking() = playerStorage.m_PlayerData.m_bDucking;
-	playerStorage.m_pPlayer->m_bInDuckJump() = playerStorage.m_PlayerData.m_bInDuckJump;
-	playerStorage.m_pPlayer->m_flModelScale() = playerStorage.m_PlayerData.m_flModelScale;
+	Reset(playerStorage);
 
 	I::Prediction->m_bInPrediction = m_bOldInPrediction;
 	I::Prediction->m_bFirstTimePredicted = m_bOldFirstTimePredicted;

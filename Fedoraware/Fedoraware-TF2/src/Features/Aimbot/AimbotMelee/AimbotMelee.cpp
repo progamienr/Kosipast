@@ -86,7 +86,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			if (!pBuilding || !pObject->IsAlive())
 				continue;
 
-			if (pBuilding->GetTeamNum() == pLocal->GetTeamNum())
+			if (pBuilding->m_iTeamNum() == pLocal->m_iTeamNum())
 			{
 				if (hasWrench)
 				{
@@ -219,7 +219,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 				if (pLocal->IsCharging() && iMax - i <= GetSwingTime(pWeapon)) // demo charge fix for swing pred
 				{
 					localStorage.m_MoveData.m_flMaxSpeed = pLocal->TeamFortress_CalculateMaxSpeed(true);
-					localStorage.m_MoveData.m_flClientMaxSpeed = localStorage.m_MoveData.m_flMaxSpeed;
+					//localStorage.m_MoveData.m_flClientMaxSpeed = localStorage.m_MoveData.m_flMaxSpeed;
 				}
 				F::MoveSim.RunTick(localStorage);
 			}
@@ -230,7 +230,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 					F::MoveSim.RunTick(targetStorage[target.m_pEntity]);
 					if (!targetStorage[target.m_pEntity].m_bFailed)
 						pRecordMap[target.m_pEntity].push_front({
-							target.m_pEntity->GetSimulationTime() + TICKS_TO_TIME(i + 1),
+							target.m_pEntity->m_flSimulationTime() + TICKS_TO_TIME(i + 1),
 							I::GlobalVars->curtime + TICKS_TO_TIME(i + 1),
 							I::GlobalVars->tickcount + i + 1,
 							false,
@@ -240,7 +240,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 				}
 			}
 		}
-		vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->GetViewOffset();
+		vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->m_vecViewOffset();
 
 		if (Vars::Visuals::SwingLines.Value)
 		{
@@ -272,7 +272,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 		return false;
 
 	Vector vecToTarget;
-	vecToTarget = pTarget->GetAbsOrigin() - pLocal->GetVecOrigin();
+	vecToTarget = pTarget->GetAbsOrigin() - pLocal->m_vecOrigin();
 	vecToTarget.z = 0.0f;
 	float vecDist = vecToTarget.Length();
 	vecToTarget.NormalizeInPlace();
@@ -291,7 +291,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	float flPosVsOwnerViewDot = vecToTarget.Dot(vecOwnerForward); // Facing?
 	float flViewAnglesDot = vecTargetForward.Dot(vecOwnerForward); // Facestab?
 
-	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->GetClassNum() == CLASS_SNIPER)
+	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->m_iClass() == CLASS_SNIPER)
 	{
 		auto pWeapon = pTarget->GetWeaponFromSlot(SLOT_SECONDARY);
 		if (pWeapon && pWeapon->GetItemDefIndex() == Sniper_s_TheRazorback)
@@ -316,7 +316,7 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 	CGameTrace trace;
 
 	matrix3x4 bones[128];
-	target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->GetSimulationTime());
+	target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime());
 
 	std::deque<TickRecord> pRecords;
 	{
@@ -324,7 +324,7 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 		if (!records || !Vars::Backtrack::Enabled.Value || target.m_TargetType != ETargetType::PLAYER)
 		{
 			pRecords.push_front({
-				target.m_pEntity->GetSimulationTime(),
+				target.m_pEntity->m_flSimulationTime(),
 				I::GlobalVars->curtime,
 				I::GlobalVars->tickcount,
 				false,
@@ -351,8 +351,8 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 	}
 
 	// this might be retarded
-	const float flTargetPos = (target.m_pEntity->GetCollideableMaxs().z - target.m_pEntity->GetCollideableMins().z) * 65.f / 82.f;
-	const float flLocalPos = (pLocal->GetCollideableMaxs().z - pLocal->GetCollideableMins().z) * 65.f / 82.f;
+	const float flTargetPos = (target.m_pEntity->m_vecMaxs().z - target.m_pEntity->m_vecMins().z) * 65.f / 82.f;
+	const float flLocalPos = (pLocal->m_vecMaxs().z - pLocal->m_vecMins().z) * 65.f / 82.f;
 	const Vec3 vecDiff = { 0, 0, std::min(flTargetPos, flLocalPos) };
 
 	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER

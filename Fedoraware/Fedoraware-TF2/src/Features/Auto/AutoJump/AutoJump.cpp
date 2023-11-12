@@ -2,7 +2,7 @@
 
 void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	const Vec3 vCurrPos = pLocal->GetVecOrigin();
+	const Vec3 vCurrPos = pLocal->m_vecOrigin();
 	const bool bCurrGrounded = pLocal->OnSolid();
 
 	bool bValidWeapon = false;

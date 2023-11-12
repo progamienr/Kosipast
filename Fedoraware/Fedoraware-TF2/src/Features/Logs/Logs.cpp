@@ -46,8 +46,8 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 				PlayerInfo_t pi{};
 				I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pi);
 
-				std::string string = std::format("{}{} voted {}", (pEntity->GetTeamNum() == pLocal->GetTeamNum() ? "" : "[Enemy] "), (pi.name), (bVotedYes ? "Yes" : "No"));
-				std::string cstring = std::format("\x3{}{} voted {}{}", (pEntity->GetTeamNum() == pLocal->GetTeamNum() ? "" : "[Enemy] "), (pi.name), (bVotedYes ? green : red), (bVotedYes ? "Yes" : "No"));
+				std::string string = std::format("{}{} voted {}", (pEntity->m_iTeamNum() == pLocal->m_iTeamNum() ? "" : "[Enemy] "), (pi.name), (bVotedYes ? "Yes" : "No"));
+				std::string cstring = std::format("\x3{}{} voted {}{}", (pEntity->m_iTeamNum() == pLocal->m_iTeamNum() ? "" : "[Enemy] "), (pi.name), (bVotedYes ? green : red), (bVotedYes ? "Yes" : "No"));
 
 				if (Vars::Logging::LogTo.Value & (1 << 0))
 					F::Notifications.Add(string);
@@ -148,7 +148,7 @@ void CLogs::UserMessage(UserMessageType type, bf_read& msgData)
 		{
 			if (target && caller && I::EngineClient->GetPlayerInfo(target, &infoTarget) && I::EngineClient->GetPlayerInfo(caller, &infoCaller))
 			{
-				const bool bSameTeam = team == pLocal->GetTeamNum();
+				const bool bSameTeam = team == pLocal->m_iTeamNum();
 
 				std::string string = std::format("{}{} called a vote on {}", (bSameTeam ? "" : "[Enemy] "), (infoCaller.name), (infoTarget.name));
 				std::string cstring = std::format("\x3{}{}{}\x3 called a vote on {}{}", (bSameTeam ? "" : "[Enemy] "), (yellow), (infoCaller.name), (yellow), (infoTarget.name));

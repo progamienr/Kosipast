@@ -5,7 +5,6 @@ class CEnginePrediction
 {
 private:
 	CMoveData m_MoveData = {};
-	int32_t oldrandomseed = -1;
 private:
 	int GetTickbase(CUserCmd* pCmd, CBaseEntity* pLocal);
 

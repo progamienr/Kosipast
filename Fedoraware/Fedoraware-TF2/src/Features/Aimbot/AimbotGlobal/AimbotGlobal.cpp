@@ -24,7 +24,7 @@ namespace SandvichAimbot
 
 		if (bShouldAim)
 		{
-			Vec3 tr = pTarget->GetAbsOrigin() - pLocal->GetEyePosition();
+			Vec3 tr = pTarget->m_vecOrigin() - pLocal->GetEyePosition();
 			Vec3 angle;
 			Math::VectorAngles(tr, angle);
 			Math::ClampAngles(angle);
@@ -78,29 +78,29 @@ bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun)
 		return true;
 	if (!I::EngineClient->GetPlayerInfo(pTarget->GetIndex(), &pInfo))
 		return true;
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DEADRINGER) && pTarget->GetFeignDeathReady())
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & DEADRINGER && pTarget->m_bFeignDeathReady())
 		return true;
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (TAUNTING) && pTarget->IsTaunting())
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & TAUNTING && pTarget->IsTaunting())
 		return true;
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (DISGUISED) && pTarget->IsDisguised())
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & DISGUISED && pTarget->IsDisguised())
 		return true;
 	if (pow(pTarget->TickVelocity2D(), 2) > 4096.f && G::CurWeaponType != EWeaponType::PROJECTILE)
 		return true;
 
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (INVUL) && !pTarget->IsVulnerable())
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & INVUL && pTarget->IsInvulnerable())
 	{
 		if (G::CurItemDefIndex != Heavy_t_TheHolidayPunch)
 			return true;
 	}
 
-	if (Vars::Aimbot::Global::IgnoreOptions.Value & (CLOAKED) && pTarget->IsVisible())
+	if (Vars::Aimbot::Global::IgnoreOptions.Value & CLOAKED && pTarget->IsInvisible())
 	{
 		if (pTarget->GetInvisPercentage() >= Vars::Aimbot::Global::IgnoreCloakPercentage.Value)
 			return true;
 	}
 
 	// Special conditions for mediguns //
-	if (!hasMedigun || pLocal->GetTeamNum() != pTarget->GetTeamNum())
+	if (!hasMedigun || pLocal->m_iTeamNum() != pTarget->m_iTeamNum())
 	{
 		if (G::IsIgnored(pInfo.friendsID))
 			return true;
@@ -165,11 +165,11 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 		return false;
 
 	CBaseEntity* pTarget;
-	for (CEntitySphereQuery sphere(pBomb->GetAbsOrigin(), 250.f);
+	for (CEntitySphereQuery sphere(pBomb->m_vecOrigin(), 250.f);
 		(pTarget = sphere.GetCurrentEntity()) != nullptr;
 		sphere.NextEntity())
 	{
-		if (!pTarget || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->GetTeamNum() == pLocal->GetTeamNum())
+		if (!pTarget || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
 			continue;
 
 		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & (PLAYER) && pTarget->IsPlayer();
@@ -183,7 +183,7 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 			if (isPlayer && F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
-			if (!Utils::VisPosMask(pBomb, pTarget, pBomb->GetAbsOrigin(), pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+			if (!Utils::VisPosMask(pBomb, pTarget, pBomb->m_vecOrigin(), pTarget->GetWorldSpaceCenter(), MASK_SOLID))
 				continue;
 
 			return true;

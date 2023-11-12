@@ -19,7 +19,7 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 			{
 				const auto& record = G::VelFixRecords[pBasePlayer];
 
-				const float flSimTimeDelta = pBasePlayer->GetSimulationTime() - record.m_flSimulationTime;
+				const float flSimTimeDelta = pBasePlayer->m_flSimulationTime() - record.m_flSimulationTime;
 				if (flSimTimeDelta > 0.0f)
 				{
 					Vec3 vOldOrigin = record.m_vecOrigin;

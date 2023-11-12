@@ -323,7 +323,7 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity)
 	if (!pModel) return;
 	const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
 	if (!pHDR) return;
-	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(pEntity->GetHitboxSet());
+	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(pEntity->m_nHitboxSet());
 	if (!pSet) return;
 
 	G::BoxesStorage.clear();
@@ -331,7 +331,7 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity)
 	for (int i = 0; i < pSet->numhitboxes; ++i)
 	{
 		const mstudiobbox_t* bbox = pSet->hitbox(i);
-		if (!bbox) { continue; }
+		if (!bbox) continue;
 
 		/*if (bbox->m_radius <= 0.f) {*/
 		matrix3x4 rotMatrix;
@@ -354,7 +354,7 @@ void CVisuals::DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime)
 {
 	G::BoxesStorage.clear();
 
-	G::BoxesStorage.push_back({ vOrigin, pTarget->GetCollideableMins(), pTarget->GetCollideableMaxs(), Vec3(), flTime, Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value });
+	G::BoxesStorage.push_back({ vOrigin, pTarget->m_vecMins(), pTarget->m_vecMaxs(), Vec3(), flTime, Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value });
 }
 
 void CVisuals::DrawBulletLines()
@@ -664,8 +664,8 @@ void CVisuals::FillSightlines()
 			const int iEntityIndex = pEnemy->GetIndex();
 			if (!pEnemy->IsAlive() ||
 				pEnemy->IsAGhost() ||
-				pEnemy->GetClassNum() != CLASS_SNIPER ||
-				!(pEnemy->GetCond() & TFCond_Zoomed) ||
+				pEnemy->m_iClass() != CLASS_SNIPER ||
+				!pEnemy->InCond(TF_COND_AIMING) ||
 				pEnemy->GetDormant())
 			{
 				m_SightLines[iEntityIndex] = { Vec3(), Vec3(), Color_t(), false };

@@ -93,7 +93,7 @@ void CPlayerArrows::Run()
 			Color_t color;
 			if (!Vars::ESP::Main::EnableTeamEnemyColors.Value)
 			{
-				if (pLocal->GetTeamNum() == 2)
+				if (pLocal->m_iTeamNum() == 2)
 					color = Vars::Colors::TeamBlu.Value;
 				else
 					color = Vars::Colors::TeamRed.Value;

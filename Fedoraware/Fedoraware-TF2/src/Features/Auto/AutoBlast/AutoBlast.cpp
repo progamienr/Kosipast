@@ -25,7 +25,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 
 		for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 		{
-			if (pProjectile->GetTeamNum() == pLocal->GetTeamNum())
+			if (pProjectile->m_iTeamNum() == pLocal->m_iTeamNum())
 				continue; //Ignore team's projectiles
 
 			switch (pProjectile->GetClassID())
@@ -48,7 +48,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 			Vec3 vPredicted = (pProjectile->GetAbsOrigin() + pProjectile->GetVelocity().Scale(flLatency / 1000.f));
 			CGameTrace trace = {};
 			static CTraceFilterWorldAndPropsOnly traceFilter = {};
-			Utils::TraceHull(pProjectile->GetAbsOrigin(), vPredicted, pProjectile->GetCollideableMaxs(), pProjectile->GetCollideableMaxs() * -1.f, MASK_SHOT_HULL, &traceFilter, &trace);
+			Utils::TraceHull(pProjectile->GetAbsOrigin(), vPredicted, pProjectile->m_vecMins(), pProjectile->m_vecMaxs() * -1.f, MASK_SHOT_HULL, &traceFilter, &trace);
 			if (trace.flFraction < 0.98f && !trace.entity) { continue; }
 
 			if (Vars::Triggerbot::Blast::Rage.Value) //possibly implement proj aimbot somehow ?

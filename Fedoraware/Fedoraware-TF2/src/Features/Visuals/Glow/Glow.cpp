@@ -215,12 +215,12 @@ void CGlowEffect::Render()
 					case 0: break;
 					case 1:
 						{
-							if (Player->GetTeamNum() == pLocal->GetTeamNum()) { continue; }
+							if (Player->m_iTeamNum() == pLocal->m_iTeamNum()) { continue; }
 							break;
 						}
 					case 2:
 						{
-							if (Player->GetTeamNum() == pLocal->GetTeamNum() && !g_EntityCache.IsFriend(Player->GetIndex())) { continue; }
+							if (Player->m_iTeamNum() == pLocal->m_iTeamNum() && !g_EntityCache.IsFriend(Player->GetIndex())) { continue; }
 							break;
 						}
 					}
@@ -257,7 +257,7 @@ void CGlowEffect::Render()
 				}
 				else
 				{
-					DrawColor = GetHealthColor(Player->GetHealth(), Player->GetMaxHealth());
+					DrawColor = GetHealthColor(Player->m_iHealth(), Player->GetMaxHealth());
 				}
 
 				m_vecGlowEntities.push_back({Player, DrawColor, Vars::Glow::Players::Alpha.Value});
@@ -307,7 +307,7 @@ void CGlowEffect::Render()
 				if (!Building->IsAlive())
 					continue;
 
-				if (Vars::Glow::Buildings::IgnoreTeammates.Value && Building->GetTeamNum() == pLocal->GetTeamNum())
+				if (Vars::Glow::Buildings::IgnoreTeammates.Value && Building->m_iTeamNum() == pLocal->m_iTeamNum())
 					continue;
 
 				if (!Utils::IsOnScreen(pLocal, Building))
@@ -370,9 +370,9 @@ void CGlowEffect::Render()
 					if (*reinterpret_cast<byte*>(Projectile + 0x7C) & EF_NODRAW)
 						continue;
 
-					int nTeam = Projectile->GetTeamNum();
+					int nTeam = Projectile->m_iTeamNum();
 
-					if (Vars::Glow::World::Projectiles.Value == 2 && nTeam == pLocal->GetTeamNum())
+					if (Vars::Glow::World::Projectiles.Value == 2 && nTeam == pLocal->m_iTeamNum())
 						continue;
 
 					if (!Utils::IsOnScreen(pLocal, Projectile))

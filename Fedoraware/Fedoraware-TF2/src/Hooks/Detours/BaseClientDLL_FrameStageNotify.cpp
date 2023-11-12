@@ -37,7 +37,7 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 	case EClientFrameStage::FRAME_NET_UPDATE_END:
 		g_EntityCache.Fill();
 		F::Backtrack.FrameStageNotify();
-		F::MoveSim.FillInfo();
+		F::MoveSim.FillVelocities();
 		F::Visuals.FillSightlines();
 		for (auto& Line : G::LinesStorage)
 		{
@@ -59,7 +59,7 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		{
 			if (const auto& player = I::ClientEntityList->GetClientEntity(i))
 			{
-				const VelFixRecord record = { player->m_vecOrigin(), player->m_fFlags(), player->GetSimulationTime() };
+				const VelFixRecord record = { player->m_vecOrigin(), player->m_fFlags(), player->m_flSimulationTime() };
 				G::VelFixRecords[player] = record;
 			}
 		}

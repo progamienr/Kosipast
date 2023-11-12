@@ -31,7 +31,7 @@ bool CESP::GetDrawBounds(CBaseEntity* pEntity, int& x, int& y, int& w, int& h)
 	Vec3 vMins, vMaxs;
 
 	if (pEntity->IsPlayer())
-	{
+	{	// is this necessary?
 		bIsPlayer = true;
 		const bool bIsDucking = pEntity->IsDucking();
 		vMins = I::GameMovement->GetPlayerMins(bIsDucking);
@@ -39,8 +39,8 @@ bool CESP::GetDrawBounds(CBaseEntity* pEntity, int& x, int& y, int& w, int& h)
 	}
 	else
 	{
-		vMins = pEntity->GetCollideableMins();
-		vMaxs = pEntity->GetCollideableMaxs();
+		vMins = pEntity->m_vecMins();
+		vMaxs = pEntity->m_vecMaxs();
 	}
 
 	const matrix3x4& transform = pEntity->GetRgflCoordinateFrame();
@@ -119,7 +119,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			if (Vars::ESP::Players::IgnoreCloaked.Value && pPlayer->IsCloaked())
 				continue;
 
-			if (Vars::ESP::Players::IgnoreTeam.Value && pPlayer->GetTeamNum() == pLocal->GetTeamNum())
+			if (Vars::ESP::Players::IgnoreTeam.Value && pPlayer->m_iTeamNum() == pLocal->m_iTeamNum())
 			{
 				if (Vars::ESP::Players::IgnoreFriends.Value || !g_EntityCache.IsFriend(nIndex))
 					continue;
@@ -134,8 +134,8 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			int lOffset = 0, rOffset = 0, bOffset = 2, tOffset = 0;
 			const auto &fFontEsp = g_Draw.GetFont(FONT_ESP), &fFontName = g_Draw.GetFont(FONT_ESP_NAME), &fFontCond = g_Draw.GetFont(FONT_ESP_COND);
 
-			const Color_t drawColor = GetTeamColor(pPlayer->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
-			const int nMaxHealth = pPlayer->GetMaxHealth(), nHealth = pPlayer->GetHealth(), nClassNum = pPlayer->GetClassNum();
+			const Color_t drawColor = GetTeamColor(pPlayer->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
+			const int nMaxHealth = pPlayer->GetMaxHealth(), nHealth = pPlayer->m_iHealth(), nClassNum = pPlayer->m_iClass();
 
 			// Bone ESP
 			if (Vars::ESP::Players::Bones.Value)
@@ -273,7 +273,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					static auto getItemName = reinterpret_cast<const char* (__thiscall*)(void*)>(S::C_EconItemView_GetItemName());
 
 					int iWeaponSlot = pWeapon->GetSlot();
-					int iPlayerClass = pPlayer->GetClassNum();
+					int iPlayerClass = pPlayer->m_iClass();
 
 					const char* szItemName = "";
 
@@ -377,7 +377,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				// Lagcomp cond, idea from nitro
 				if (Vars::ESP::Players::Conditions::LagComp.Value && pPlayer != pLocal)
 				{
-					const float flDelta = pPlayer->GetSimulationTime() - pPlayer->GetOldSimulationTime();
+					const float flDelta = pPlayer->m_flSimulationTime() - pPlayer->m_flOldSimulationTime();
 					if (TIME_TO_TICKS(flDelta) != 1)
 					{
 						bool bDisplay = F::Backtrack.mRecords[pPlayer].empty();
@@ -399,7 +399,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				}
 
 				//colors
-				const Color_t teamColors = GetTeamColor(pPlayer->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
+				const Color_t teamColors = GetTeamColor(pPlayer->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
 
 				{ //this is here just so i can collapse this entire section to reduce clutter
 					auto drawCond = [](const char* text, Color_t color, int x, int y, int& rOffset, const Font_t& fFont)
@@ -428,10 +428,10 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 							pPlayer->InCond(TF_COND_NOHEALINGDAMAGEBUFF))
 							drawCond("MINI-CRITS", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
 
-						if (pPlayer->GetHealth() > pPlayer->GetMaxHealth())
+						if (pPlayer->m_iHealth() > pPlayer->GetMaxHealth())
 							drawCond("HP", Vars::Colors::Overheal.Value, x + w + 2, y, rOffset, fFontCond);
 
-						if (pPlayer->InCond(TF_COND_HEALTH_BUFF) || pPlayer->InCond(TF_COND_MEGAHEAL) || pPlayer->IsKingBuffed())
+						if (pPlayer->InCond(TF_COND_HEALTH_BUFF) || pPlayer->InCond(TF_COND_MEGAHEAL) || pPlayer->IsBuffedByKing())
 							drawCond("HP+", Vars::Colors::Overheal.Value, x + w + 2, y, rOffset, fFontCond);
 
 						if (pPlayer->InCond(TF_COND_INVULNERABLE) ||
@@ -487,7 +487,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						if (Vars::Visuals::RemoveTaunts.Value && pPlayer->InCond(TF_COND_TAUNTING)) // i dont really see a need for this condition unless you have this enabled
 							drawCond("TAUNT", { 255, 100, 200, 255 }, x + w + 2, y, rOffset, fFontCond);
 
-						if (pPlayer->GetFeignDeathReady())
+						if (pPlayer->m_bFeignDeathReady())
 							drawCond("DR", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
 				
 						if (pPlayer->InCond(TF_COND_AIMING))
@@ -545,7 +545,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 			int lOffset = 0, rOffset = 0, /*bOffset = 0, */tOffset = 0;
 			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_ESP_NAME), & fFontCond = g_Draw.GetFont(FONT_ESP_COND);
 
-			const Color_t drawColor = GetTeamColor(oBuilding->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
+			const Color_t drawColor = GetTeamColor(oBuilding->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
 			const int nMaxHealth = oBuilding->GetMaxHealth(), nHealth = std::min(oBuilding->GetHealth(), nMaxHealth);
 
 			const auto nType = static_cast<EBuildingType>(oBuilding->GetType());
@@ -691,21 +691,21 @@ void CESP::DrawWorld() const
 	for (const auto& health : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
 	{
 		int x = 0, y = 0, w = 0, h = 0;
-		if (Vars::ESP::World::Health.Value && GetDrawBounds(health, x, y, w, h) && Utils::W2S(health->GetVecOrigin(), vScreen))
+		if (Vars::ESP::World::Health.Value && GetDrawBounds(health, x, y, w, h) && Utils::W2S(health->m_vecOrigin(), vScreen))
 			g_Draw.String(fFont, vScreen.x, y, Vars::Colors::Health.Value, ALIGN_CENTER, L"Health");
 	}
 
 	for(const auto& ammo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
 	{
 		int x = 0, y = 0, w = 0, h = 0;
-		if (Vars::ESP::World::Ammo.Value && GetDrawBounds(ammo, x, y, w, h) && Utils::W2S(ammo->GetVecOrigin(), vScreen))
+		if (Vars::ESP::World::Ammo.Value && GetDrawBounds(ammo, x, y, w, h) && Utils::W2S(ammo->m_vecOrigin(), vScreen))
 			g_Draw.String(fFont, vScreen.x, y, Vars::Colors::Ammo.Value, ALIGN_CENTER, L"Ammo");
 	}
 
 	for (const auto& NPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 	{
 		int x = 0, y = 0, w = 0, h = 0;
-		if (Vars::ESP::World::NPC.Value && GetDrawBounds(NPC, x, y, w, h) && Utils::W2S(NPC->GetVecOrigin(), vScreen))
+		if (Vars::ESP::World::NPC.Value && GetDrawBounds(NPC, x, y, w, h) && Utils::W2S(NPC->m_vecOrigin(), vScreen))
 		{
 			const wchar_t* szName;
 			switch (NPC->GetClassID())

@@ -269,8 +269,8 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 				continue;
 			}
 
-			const int nEntTeam = player->GetTeamNum();
-			const int nLocalTeam = pLocal->GetTeamNum();
+			const int nEntTeam = player->m_iTeamNum();
+			const int nLocalTeam = pLocal->m_iTeamNum();
 
 			switch (Vars::Radar::Players::IgnoreCloaked.Value)
 			{
@@ -338,7 +338,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 					}
 					else
 					{
-						int nTexture = player->GetClassNum();
+						int nTexture = player->m_iClass();
 
 						// Portrait
 						if (Vars::Radar::Players::IconType.Value == 1)
@@ -365,7 +365,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 				//Make the healthbar toggleable from left side to bottom.
 				if (Vars::Radar::Players::Health.Value)
 				{
-					const int nHealth = player->GetHealth();
+					const int nHealth = player->m_iHealth();
 					const int nMaxHealth = player->GetMaxHealth();
 					Color_t clrHealth = GetHealthColor(nHealth, nMaxHealth);
 

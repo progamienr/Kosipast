@@ -9,7 +9,7 @@ __inline Color_t GetTeamColor(int iTeam, bool bOther)
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
 			if (pLocal->IsInValidTeam() && (iTeam == 2 || iTeam == 3))
-				return pLocal->GetTeamNum() == iTeam ? Vars::Colors::Team.Value : Vars::Colors::Enemy.Value;
+				return pLocal->m_iTeamNum() == iTeam ? Vars::Colors::Team.Value : Vars::Colors::Enemy.Value;
 		}
 	}
 	else {
@@ -25,7 +25,7 @@ __inline Color_t GetTeamColor(int iTeam, bool bOther)
 
 __inline Color_t GetEntityDrawColor(CBaseEntity* pEntity, bool enableOtherColors)
 {
-	Color_t out = GetTeamColor(pEntity->GetTeamNum(), enableOtherColors);
+	Color_t out = GetTeamColor(pEntity->m_iTeamNum(), enableOtherColors);
 	PlayerInfo_t info{}; I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &info);
 
 	if (pEntity->IsPlayer())
@@ -38,7 +38,7 @@ __inline Color_t GetEntityDrawColor(CBaseEntity* pEntity, bool enableOtherColors
 			out = Vars::Colors::Ignored.Value;
 		else if (pEntity->IsCloaked())
 			out = Vars::Colors::Cloak.Value;
-		else if (!pEntity->IsVulnerable())
+		else if (pEntity->IsInvulnerable())
 			out = Vars::Colors::Invulnerable.Value;
 	}
 

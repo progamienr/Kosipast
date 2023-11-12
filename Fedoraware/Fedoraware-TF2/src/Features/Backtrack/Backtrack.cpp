@@ -22,7 +22,7 @@ bool CBacktrack::IsTracked(const TickRecord& record)
 
 bool CBacktrack::IsEarly(CBaseEntity* pEntity, const TickRecord& record)
 {
-	return !Vars::Backtrack::AllowForward.Value && record.flSimTime > pEntity->GetSimulationTime();
+	return !Vars::Backtrack::AllowForward.Value && record.flSimTime > pEntity->m_flSimulationTime();
 }
 
 
@@ -259,7 +259,7 @@ void CBacktrack::StoreNolerp()
 			return;
 
 		// bones are more of a placeholder as i haven't gotten them to work correctly yet
-		noInterpBones[pEntity->GetIndex()].first = pEntity->SetupBones(noInterpBones[pEntity->GetIndex()].second, 128, BONE_USED_BY_ANYTHING, pEntity->GetSimulationTime());
+		noInterpBones[pEntity->GetIndex()].first = pEntity->SetupBones(noInterpBones[pEntity->GetIndex()].second, 128, BONE_USED_BY_ANYTHING, pEntity->m_flSimulationTime());
 		noInterpEyeAngles[pEntity->GetIndex()] = pEntity->GetEyeAngles();
 	}
 }
@@ -281,10 +281,10 @@ void CBacktrack::MakeRecords()
 		if (!pEntity->IsPlayer())
 			return;
 
-		const float flSimTime = pEntity->GetSimulationTime(), flOldSimTime = pEntity->GetOldSimulationTime();
+		const float flSimTime = pEntity->m_flSimulationTime(), flOldSimTime = pEntity->m_flOldSimulationTime();
 		const float flDelta = flSimTime - flOldSimTime;
 
-		const Vec3 vOrigin = pEntity->GetVecOrigin();
+		const Vec3 vOrigin = pEntity->m_vecOrigin();
 		if (!mRecords[pEntity].empty())
 		{ // as long as we have 1 record we can check for lagcomp breaking here
 			const Vec3 vPrevOrigin = mRecords[pEntity].front().vOrigin;

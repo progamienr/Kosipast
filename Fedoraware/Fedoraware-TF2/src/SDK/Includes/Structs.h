@@ -207,7 +207,7 @@ struct Ray_t
 		vaStartOffset = min + max;
 
 		vaStartOffset *= 0.5f;
-		vaStartP = source - vaStartOffset;
+		vaStartP = source + vaStartOffset;
 		vaStartOffset *= -1.0f;
 	}
 };

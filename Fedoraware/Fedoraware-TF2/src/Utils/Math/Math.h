@@ -446,7 +446,8 @@ public:
 				z > -0.01f && z < 0.01f);
 	}
 
-	Vec3 Scale(float fl) {
+	Vec3 Scale(float fl)
+	{
 		return Vec3(x * fl, y * fl, z * fl);
 	}
 
@@ -759,6 +760,16 @@ namespace Math
 		const auto perpendicularPoint = origin + (direction * temporaryOffset);
 
 		return (point - perpendicularPoint).Length();
+	}
+
+	inline Vec3 AngleVector(const Vec3& angles)
+	{
+		float sp, sy, cp, cy;
+
+		SinCos(DEG2RAD(angles.x), &sp, &cp);
+		SinCos(DEG2RAD(angles.y), &sy, &cy);
+
+		return Vec3(cp * cy, cp * sy, -sp);
 	}
 
 	inline void AngleVectors(const Vec3& angles, Vec3* forward)

@@ -61,7 +61,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		float lifetime = 2.2f; // estimates
 		if (G::CurItemDefIndex == Demoman_m_TheIronBomber)
 			lifetime *= 0.7f;
-		out = { TF_PROJECTILE_PIPEBOMB, pos, ang, { 4.f, 4.f, 4.f }, speed, 1.f, G::CurItemDefIndex == Demoman_m_TheLochnLoad, lifetime };
+		out = { TF_PROJECTILE_PIPEBOMB, pos, ang, { 5.f, 5.f, 5.f }, speed, 1.f, G::CurItemDefIndex == Demoman_m_TheLochnLoad, lifetime };
 		return true;
 	}
 	case TF_WEAPON_PIPEBOMBLAUNCHER:
@@ -71,7 +71,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 			? Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon) * flCharge
 			: (pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f);
 		const float speed = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 900.f, 2400.f);
-		out = { TF_PROJECTILE_PIPEBOMB_REMOTE, pos, ang, { 4.f, 4.f, 4.f }, speed, 1.f, false };
+		out = { TF_PROJECTILE_PIPEBOMB_REMOTE, pos, ang, { 5.f, 5.f, 5.f }, speed, 1.f, false };
 		return true;
 	}
 	case TF_WEAPON_CANNON:
@@ -83,7 +83,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		float lifetime = pWeapon->GetDetonateTime() - I::GlobalVars->curtime;
 		if (pWeapon->GetDetonateTime() <= 0.f)
 			lifetime = 1.06f;
-		out = { TF_PROJECTILE_CANNONBALL, pos, ang, { 4.f, 4.f, 4.f }, speed, 1.f, false, lifetime };
+		out = { TF_PROJECTILE_CANNONBALL, pos, ang, { 5.f, 5.f, 5.f }, speed, 1.f, false, lifetime };
 		return true;
 	}
 	case TF_WEAPON_FLAREGUN:
@@ -150,7 +150,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 0.f, 0.f, 0.f }, pos, ang, true, bQuick);
 		Vec3 forward; Math::AngleVectors(ang, &forward);
-		pos = (bQuick ? pLocal->GetAbsOrigin() : pLocal->GetVecOrigin()) + (Vec3(0, 0, 50) + forward * 32.f) * pLocal->m_flModelScale(); // why?
+		pos = (bQuick ? pLocal->GetAbsOrigin() : pLocal->m_vecOrigin()) + (Vec3(0, 0, 50) + forward * 32.f) * pLocal->m_flModelScale(); // why?
 		out = { TF_PROJECTILE_THROWABLE, pos, ang, { 3.f, 3.f, 3.f }, 2000.f, 1.f, false };
 		return true;
 	}

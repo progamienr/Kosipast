@@ -6,7 +6,7 @@ int CalculateTick(int simTicks, CBaseEntity* player)
 
 	const int nIdealFinalTick = I::GlobalVars->tickcount + TIME_TO_TICKS(I::EngineClient->GetNetChannelInfo()->GetLatency(0)) + clockcorrect;
 
-	const int estimatedFinal = player->GetTickBase() + simTicks;
+	const int estimatedFinal = player->m_nTickBase() + simTicks;
 
 	const int fast = nIdealFinalTick + clockcorrect;
 	const int slow = nIdealFinalTick - clockcorrect;
@@ -31,16 +31,15 @@ MAKE_HOOK(Prediction_RunCommand, Utils::GetVFuncPtr(I::Prediction, 17), void, __
 
 	if (pEntity && pEntity->IsAlive() && pLocal && pLocal->IsAlive() && pLocal == pEntity && pCmd && pCmd->command_number)
 	{
-		const int backupTick = pEntity->GetTickBase();
+		const int backupTick = pEntity->m_nTickBase();
 		const float curtimeBackup = I::GlobalVars->curtime;
 
 		if (Vars::CL_Move::DoubleTap::Enabled.Value && G::DoubleTap)
 		{
 			if (pCmd->command_number == G::LastUserCmd->command_number)
 			{
-				pEntity->SetTickBase(CalculateTick(I::ClientState->chokedcommands + G::ShiftedTicks + 1,
-									 pEntity));
-				I::GlobalVars->curtime = TICKS_TO_TIME(pEntity->GetTickBase());
+				pEntity->m_nTickBase() = CalculateTick(I::ClientState->chokedcommands + G::ShiftedTicks + 1, pEntity);
+				I::GlobalVars->curtime = TICKS_TO_TIME(pEntity->m_nTickBase());
 			}
 		}
 
@@ -50,7 +49,7 @@ MAKE_HOOK(Prediction_RunCommand, Utils::GetVFuncPtr(I::Prediction, 17), void, __
 		{
 			if (pCmd->command_number == G::LastUserCmd->command_number)
 			{
-				pEntity->SetTickBase(backupTick);
+				pEntity->m_nTickBase() = backupTick;
 				I::GlobalVars->curtime = curtimeBackup;
 			}
 		}

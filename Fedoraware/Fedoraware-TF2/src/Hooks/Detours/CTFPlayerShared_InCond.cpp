@@ -49,7 +49,7 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 		{
 			if (const auto& pEntity = GetOuter())
 			{
-				if (pEntity->GetTeamNum() != pLocal->GetTeamNum())
+				if (pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
 				{
 					return false;
 				}

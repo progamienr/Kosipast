@@ -14,10 +14,11 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 	const Vec3 vLocalPos = pLocal->GetShootPos();
 	const Vec3 vLocalAngles = I::EngineClient->GetViewAngles();
 
+	const bool bIsMedigun = pWeapon->GetWeaponID() == TF_WEAPON_MEDIGUN;
+
 	// Players
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
 	{
-		const bool bIsMedigun = pWeapon->GetWeaponID() == TF_WEAPON_MEDIGUN;
 		const bool hasPissRifle = G::CurItemDefIndex == Sniper_m_TheSydneySleeper;
 
 		EGroupType groupType = EGroupType::PLAYERS_ENEMIES;
@@ -33,7 +34,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 				continue;
 
 			// Can we extinguish a teammate using the piss rifle?
-			if (hasPissRifle && (pTarget->GetTeamNum() == pLocal->GetTeamNum()))
+			if (hasPissRifle && (pTarget->m_iTeamNum() == pLocal->m_iTeamNum()))
 			{
 				if (!Vars::Aimbot::Hitscan::ExtinguishTeam.Value || !pTarget->IsOnFire())
 					continue;
@@ -59,6 +60,9 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			validTargets.push_back({ pTarget, ETargetType::PLAYER, vPos, vAngleTo, flFOVTo, flDistTo, -1, false, priority });
 		}
 	}
+
+	if (bIsMedigun) // do not attempt to heal buildings or other
+		return validTargets;
 
 	// Buildings
 	if (Vars::Aimbot::Global::AimAt.Value)
@@ -106,7 +110,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (!pOwner)
 				continue;
 
-			if ((!pProjectile->GetTouched()) || (pOwner->GetTeamNum() == pLocal->GetTeamNum()))
+			if ((!pProjectile->GetTouched()) || (pOwner->m_iTeamNum() == pLocal->m_iTeamNum()))
 				continue;
 
 			Vec3 vPos = pProjectile->GetWorldSpaceCenter();
@@ -221,7 +225,7 @@ int CAimbotHitscan::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCom
 {
 	bool bHeadshot = false;
 	{
-		const int nClassNum = pLocal->GetClassNum();
+		const int nClassNum = pLocal->m_iClass();
 
 		if (nClassNum == CLASS_SNIPER)
 		{
@@ -246,16 +250,16 @@ int CAimbotHitscan::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCom
 				case Sniper_m_TheMachina:
 				case Sniper_m_ShootingStar: if (pWeapon->GetChargeDamage() > 149.9f) flBodyMult = 1.15f;
 				}
-				if (pWeapon->GetChargeDamage() * flBodyMult >= pTarget->GetHealth())
+				if (pWeapon->GetChargeDamage() * flBodyMult >= pTarget->m_iHealth())
 					bHeadshot = false;
 			}
 
 			if (G::CurItemDefIndex == Spy_m_TheAmbassador || G::CurItemDefIndex == Spy_m_FestiveAmbassador)
 			{
-				const float flDistTo = pTarget->GetVecOrigin().DistTo(pLocal->GetVecOrigin());
+				const float flDistTo = pTarget->m_vecOrigin().DistTo(pLocal->m_vecOrigin());
 				const int nAmbassadorBodyshotDamage = Math::RemapValClamped(flDistTo, 90, 900, 51, 18);
 
-				if (pTarget->GetHealth() < (nAmbassadorBodyshotDamage + 2)) // whatever
+				if (pTarget->m_iHealth() < (nAmbassadorBodyshotDamage + 2)) // whatever
 					bHeadshot = false;
 			}
 		}
@@ -298,7 +302,7 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 	if (!pModel) return false;
 	const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
 	if (!pHDR) return false;
-	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->GetHitboxSet());
+	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->m_nHitboxSet());
 	if (!pSet) return false;
 
 	std::deque<TickRecord> pRecords;
@@ -307,11 +311,11 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 		if (!records || !Vars::Backtrack::Enabled.Value || target.m_TargetType != ETargetType::PLAYER)
 		{
 			matrix3x4 bones[128];
-			if (!target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->GetSimulationTime()))
+			if (!target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
 				return false;
 
 			pRecords.push_front({
-				target.m_pEntity->GetSimulationTime(),
+				target.m_pEntity->m_flSimulationTime(),
 				I::GlobalVars->curtime,
 				I::GlobalVars->tickcount,
 				false,
@@ -412,8 +416,8 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 		else
 		{
 			const float flScale = Vars::Aimbot::Hitscan::PointScale.Value;
-			const Vec3 vMins = target.m_pEntity->GetCollideableMins() * flScale;
-			const Vec3 vMaxs = target.m_pEntity->GetCollideableMaxs() * flScale;
+			const Vec3 vMins = target.m_pEntity->m_vecMins() * flScale;
+			const Vec3 vMaxs = target.m_pEntity->m_vecMaxs() * flScale;
 
 			std::vector<Vec3> vecPoints = { Vec3() }; 
 			if (flScale > 0.f)
@@ -463,7 +467,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 {
 	if (!Vars::Aimbot::Global::AutoShoot.Value) return false;
 
-	switch (pLocal->GetClassNum())
+	switch (pLocal->m_iClass())
 	{
 	case CLASS_SNIPER:
 	{
@@ -481,7 +485,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 		if (Vars::Aimbot::Hitscan::WaitForCharge.Value && (bIsScoped || G::CurItemDefIndex == Sniper_m_TheClassic))
 		{
-			const int nHealth = target.m_pEntity->GetHealth();
+			const int nHealth = target.m_pEntity->m_iHealth();
 			const bool bIsCritBoosted = pLocal->IsCritBoosted();
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD && G::CurItemDefIndex != Sniper_m_TheSydneySleeper && (G::CurItemDefIndex != Sniper_m_TheClassic || G::CurItemDefIndex == Sniper_m_TheClassic && pWeapon->GetChargeDamage() > 149.9f))
@@ -522,7 +526,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 					const float flMax = 150.0f * flCritMult * flBodyMult;
 					const int nDamage = static_cast<int>(pWeapon->GetChargeDamage() * flCritMult * flBodyMult);
 
-					if (nDamage < target.m_pEntity->GetHealth() && nDamage != static_cast<int>(flMax))
+					if (nDamage < target.m_pEntity->m_iHealth() && nDamage != static_cast<int>(flMax))
 						return false;
 				}
 			}
@@ -625,7 +629,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 	}
 
 	if (nWeaponID != TF_WEAPON_COMPOUND_BOW
-		&& pLocal->GetClassNum() == CLASS_SNIPER
+		&& pLocal->m_iClass() == CLASS_SNIPER
 		&& pWeapon->GetSlot() == SLOT_PRIMARY)
 	{
 		const bool bScoped = pLocal->IsScoped();
@@ -694,7 +698,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 
 				if (bDo && pWeapon->GetWeaponSpread() != 0.f)
 				{
-					const float flTimeSinceLastShot = (pLocal->GetTickBase() * TICK_INTERVAL) - pWeapon->GetLastFireTime();
+					const float flTimeSinceLastShot = (pLocal->m_nTickBase() * TICK_INTERVAL) - pWeapon->GetLastFireTime();
 
 					if (pWeapon->GetWeaponData().m_nBulletsPerShot > 1)
 					{

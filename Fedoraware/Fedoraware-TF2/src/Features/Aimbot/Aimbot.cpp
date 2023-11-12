@@ -22,7 +22,7 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	if (!pLocal->IsAlive() ||
 		pLocal->IsTaunting() ||
 		pLocal->IsBonked() ||
-		pLocal->GetFeignDeathReady() ||
+		pLocal->m_bFeignDeathReady() ||
 		pLocal->IsCloaked() ||
 		pLocal->IsInBumperKart() ||
 		pLocal->IsAGhost())

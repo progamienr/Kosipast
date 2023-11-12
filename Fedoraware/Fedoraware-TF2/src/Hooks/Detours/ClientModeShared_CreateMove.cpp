@@ -1,6 +1,6 @@
 #include "../Hooks.h"
 
-#include "../../Features/Prediction/Prediction.h"
+#include "../../Features/EnginePrediction/EnginePrediction.h"
 #include "../../Features/Aimbot/Aimbot.h"
 #include "../../Features/Aimbot/AimbotProjectile/AimbotProjectile.h"
 #include "../../Features/Auto/Auto.h"
@@ -30,7 +30,7 @@ void AttackingUpdate(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 		return;
 
 	const float flFireDelay = tfWeaponInfo->GetWeaponData(0).m_flTimeFireDelay; // pWeapon->GetWeaponData().m_flTimeFireDelay is wrong
-	pWeapon->m_flNextPrimaryAttack() = TICKS_TO_TIME(pLocal->GetTickBase() - G::ShiftedTicks) + flFireDelay;
+	pWeapon->m_flNextPrimaryAttack() = TICKS_TO_TIME(pLocal->m_nTickBase() - G::ShiftedTicks) + flFireDelay;
 	// this doesn't really work as intended since tickbase will be constant while shifting but it afaik it doesn't break anything
 }
 
@@ -73,7 +73,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	//if (!G::DoubleTap)
 	if (pLocal && pWeapon)
 	{
-		if (const int MaxSpeed = pLocal->GetMaxSpeed())
+		if (const int MaxSpeed = pLocal->m_flMaxspeed())
 			G::Frozen = MaxSpeed == 1;
 
 		// Update Global Info

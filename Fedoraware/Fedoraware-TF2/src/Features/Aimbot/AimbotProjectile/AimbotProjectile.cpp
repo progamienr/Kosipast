@@ -31,13 +31,13 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 
 			// Check if weapon should shoot at friendly players
 			if ((groupType == EGroupType::PLAYERS_ALL || groupType == EGroupType::PLAYERS_TEAMMATES) &&
-				pTarget->GetTeamNum() == pLocal->GetTeamNum())
+				pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
 			{
-				if (pTarget->GetHealth() >= pTarget->GetMaxHealth())
+				if (pTarget->m_iHealth() >= pTarget->GetMaxHealth())
 					continue;
 			}
 
-			if (pTarget->GetTeamNum() != pLocal->GetTeamNum())
+			if (pTarget->m_iTeamNum() != pLocal->m_iTeamNum())
 			{
 				if (F::AimbotGlobal.ShouldIgnore(pTarget))
 					continue;
@@ -77,7 +77,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 		if (!pBuilding->IsAlive()) { continue; }
 
 		// Check if the Rescue Ranger should shoot at friendly buildings
-		if (bIsRescueRanger && (pBuilding->GetTeamNum() == pLocal->GetTeamNum()))
+		if (bIsRescueRanger && (pBuilding->m_iTeamNum() == pLocal->m_iTeamNum()))
 		{
 			if (Building->GetHealth() >= Building->GetMaxHealth())
 				continue;
@@ -251,7 +251,7 @@ int CAimbotProjectile::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBase
 		float damage = Math::RemapValClamped(charge, 0.f, 1.f, 50.f, 120.f);
 		if (pLocal->IsMiniCritBoosted())
 			damage *= 1.36f;
-		if (damage >= target.m_pEntity->GetHealth())
+		if (damage >= target.m_pEntity->m_iHealth())
 			bHeadshot = false;
 
 		if (pLocal->IsCritBoosted()) // for reliability
@@ -351,11 +351,11 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 						if (!pModel) return false;
 						const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
 						if (!pHDR) return false;
-						const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->GetHitboxSet());
+						const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->m_nHitboxSet());
 						if (!pSet) return false;
 
 						matrix3x4 BoneMatrix[128];
-						if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->GetSimulationTime()))
+						if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
 							return false;
 
 						QAngle direction; Vector forward;
@@ -542,17 +542,17 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
-				const Vec3 vOriginOffset = target.m_pEntity->GetVecOrigin() - vTargetPos;
+				const Vec3 vOriginOffset = target.m_pEntity->m_vecOrigin() - vTargetPos;
 
 				const model_t* pModel = target.m_pEntity->GetModel();
 				if (!pModel) return true;
 				const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
 				if (!pHDR) return true;
-				const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->GetHitboxSet());
+				const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->m_nHitboxSet());
 				if (!pSet) return true;
 
 				matrix3x4 BoneMatrix[128];
-				if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->GetSimulationTime()))
+				if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
 					return true;
 
 				const mstudiobbox_t* bbox = pSet->hitbox(HITBOX_HEAD);
@@ -712,7 +712,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 							pCmd->buttons &= ~IN_ATTACK;
 						}
 
-						if (target.m_pEntity->GetHealth() > 50) // check if we even need to double donk to kill first
+						if (target.m_pEntity->m_iHealth() > 50) // check if we even need to double donk to kill first
 						{
 							if (pWeapon->GetDetonateTime() - I::GlobalVars->curtime <= bestCharge)
 								pCmd->buttons &= ~IN_ATTACK;

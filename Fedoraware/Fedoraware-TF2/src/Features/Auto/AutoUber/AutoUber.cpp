@@ -26,7 +26,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		if (player->GetDormant())
 			continue;
 
-		switch (player->GetClassNum())
+		switch (player->m_iClass())
 		{
 			case 1: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 0)) continue;
 				  break; //	scout
@@ -45,7 +45,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			default: { continue; }
 		}
 
-		if (HAS_CONDITION(player, TFCond_Bonked))
+		if (player->InCond(TF_COND_PHASE))
 			return false;
 
 		const auto& pWeapon = player->GetActiveWeapon();
@@ -71,7 +71,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 				continue; // account for choking :D
 		}
 
-		if (HAS_CONDITION(player, TFCond_Zoomed))
+		if (player->InCond(TF_COND_AIMING))
 		{
 			anyZoomedSnipers = true;
 			if (Utils::VisPos(pPatient, player, pPatient->GetHitboxPos(HITBOX_HEAD), player->GetEyePosition()))
@@ -84,13 +84,13 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		{
 			if (const auto& pWeapon = player->GetActiveWeapon())
 			{
-				if (player->GetClassNum() == CLASS_SPY && pWeapon->GetSlot() == SLOT_PRIMARY || player->GetClassNum() == CLASS_SCOUT || player->GetClassNum() == CLASS_HEAVY || player->GetClassNum() ==
-					CLASS_MEDIC || player->GetClassNum() == CLASS_SNIPER || player->GetClassNum() == CLASS_ENGINEER)
+				if (player->m_iClass() == CLASS_SPY && pWeapon->GetSlot() == SLOT_PRIMARY || player->m_iClass() == CLASS_SCOUT || player->m_iClass() == CLASS_HEAVY || player->m_iClass() ==
+					CLASS_MEDIC || player->m_iClass() == CLASS_SNIPER || player->m_iClass() == CLASS_ENGINEER)
 				{
-					if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 350.f ||
-						(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 600.f &&
-						(player->GetClassNum() == CLASS_SPY || player->GetClassNum() == CLASS_SCOUT || player->GetClassNum() == CLASS_HEAVY || player->GetClassNum() == CLASS_MEDIC || player->
-						GetClassNum() == CLASS_SNIPER || player->GetClassNum() == CLASS_ENGINEER)))
+					if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 350.f ||
+						(pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 600.f &&
+						(player->m_iClass() == CLASS_SPY || player->m_iClass() == CLASS_SCOUT || player->m_iClass() == CLASS_HEAVY || player->m_iClass() == CLASS_MEDIC || player->
+						m_iClass() == CLASS_SNIPER || player->m_iClass() == CLASS_ENGINEER)))
 					{
 						return 2;
 					}
@@ -99,16 +99,16 @@ int BulletDangerValue(CBaseEntity* pPatient)
 				if (pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro || pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier)
 				{
 					{
-						if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 50.f ||
-							(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 250.f && (
-							(player->GetClassNum() == CLASS_PYRO))))
+						if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 50.f ||
+							(pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 250.f && (
+							(player->m_iClass() == CLASS_PYRO))))
 						{
 							return 2;
 						}
 
-						if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 50.f ||
-							(pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) < 250.f && (
-							(player->GetClassNum() == CLASS_SOLDIER))))
+						if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 50.f ||
+							(pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 250.f && (
+							(player->m_iClass() == CLASS_SOLDIER))))
 						{
 							return 2;
 						}
@@ -127,7 +127,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		if (pProjectile->GetVelocity().IsZero())
 			continue;
 
-		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum())
+		if (pProjectile->m_iTeamNum() == pPatient->m_iTeamNum())
 			continue;
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Arrow &&
@@ -139,10 +139,10 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			continue;
 		}
 
-		const Vec3 vPredicted = (pProjectile->GetAbsOrigin() + pProjectile->GetVelocity());
-		const float flHypPred = sqrtf(pPatient->GetVecOrigin().DistToSqr(vPredicted));
-		const float flHyp = sqrtf(pPatient->GetVecOrigin().DistToSqr(pProjectile->GetVecOrigin()));
-		if (flHypPred < flHyp && pPatient->GetVecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
+		const Vec3 vPredicted = pProjectile->m_vecOrigin() + pProjectile->GetVelocity();
+		const float flHypPred = sqrtf(pPatient->m_vecOrigin().DistToSqr(vPredicted));
+		const float flHyp = sqrtf(pPatient->m_vecOrigin().DistToSqr(pProjectile->m_vecOrigin()));
+		if (flHypPred < flHyp && pPatient->m_vecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
 		{
 			if (pProjectile->IsCritBoosted())
 				return 2;
@@ -152,7 +152,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 
 	if (hasHitscan)
 	{
-		if (pPatient->GetHealth() < 449)
+		if (pPatient->m_iHealth() < 449)
 			return 2;
 	}
 
@@ -168,10 +168,10 @@ int FireDangerValue(CBaseEntity* pPatient)
 		if (!player->IsAlive())
 			continue;
 
-		if (player->GetClassNum() != CLASS_PYRO) // Pyro only
+		if (player->m_iClass() != CLASS_PYRO) // Pyro only
 			continue;
 
-		if (pPatient->GetVecOrigin().DistTo(player->GetVecOrigin()) > 450.f)
+		if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) > 450.f)
 			continue;
 
 		const auto& pPlayerWeapon = player->GetActiveWeapon();
@@ -181,14 +181,14 @@ int FireDangerValue(CBaseEntity* pPatient)
 
 		if (pPlayerWeapon->GetClassID() == ETFClassID::CTFFlameThrower)
 		{
-			if (HAS_CONDITION(pPatient, TFCond_OnFire) && pPatient->GetHealth() < 250)
+			if (pPatient->InCond(TF_COND_BURNING) && pPatient->m_iHealth() < 250)
 			{
-				if (pPatient->GetClassNum() == CLASS_PYRO)
+				if (pPatient->m_iClass() == CLASS_PYRO)
 					return 1;
 				return 2;
 			}
 
-			if (HAS_CONDITION(player, TFCondEx_PhlogUber)) 
+			if (player->InCond(TFCondEx_PhlogUber))
 				return 2;
 			shouldSwitch = 1;
 		}
@@ -196,7 +196,7 @@ int FireDangerValue(CBaseEntity* pPatient)
 
 	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
-		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum() || pProjectile->GetVelocity().IsZero())
+		if (pProjectile->m_iTeamNum() == pPatient->m_iTeamNum() || pProjectile->GetVelocity().IsZero())
 			continue;
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Flare &&
@@ -206,10 +206,10 @@ int FireDangerValue(CBaseEntity* pPatient)
 			continue;
 		}
 
-		const Vec3 vPredicted = (pProjectile->GetAbsOrigin() + pProjectile->GetVelocity());
-		const float flHypPred = sqrtf(pPatient->GetVecOrigin().DistToSqr(vPredicted));
-		const float flHyp = sqrtf(pPatient->GetVecOrigin().DistToSqr(pProjectile->GetVecOrigin()));
-		if (flHypPred < flHyp && pPatient->GetVecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
+		const Vec3 vPredicted = (pProjectile->m_vecOrigin() + pProjectile->GetVelocity());
+		const float flHypPred = sqrtf(pPatient->m_vecOrigin().DistToSqr(vPredicted));
+		const float flHyp = sqrtf(pPatient->m_vecOrigin().DistToSqr(pProjectile->m_vecOrigin()));
+		if (flHypPred < flHyp && pPatient->m_vecOrigin().DistTo(vPredicted) < pProjectile->GetVelocity().Length())
 		{
 			if (pProjectile->IsCritBoosted() || pPatient->InCond(TF_COND_BURNING))
 				return 2;
@@ -235,7 +235,7 @@ int BlastDangerValue(CBaseEntity* pPatient)
 		if (pProjectile->GetTouched()) // Ignore landed Stickies
 			continue;
 
-		if (pProjectile->GetTeamNum() == pPatient->GetTeamNum())
+		if (pProjectile->m_iTeamNum() == pPatient->m_iTeamNum())
 			continue;
 
 		if (pProjectile->GetClassID() != ETFClassID::CTFProjectile_Rocket &&
@@ -246,13 +246,13 @@ int BlastDangerValue(CBaseEntity* pPatient)
 		}
 
 		// Projectile is getting closer
-		if (pPatient->GetAbsOrigin().DistTo(pProjectile->GetAbsOrigin()) <= 275.f)
+		if (pPatient->m_vecOrigin().DistTo(pProjectile->m_vecOrigin()) <= 275.f)
 			hasRockets = true;
 	}
 
 	if (hasRockets)
 	{
-		if (pPatient->GetHealth() < 235)
+		if (pPatient->m_iHealth() < 235)
 			return 2;
 		return 1;
 	}
@@ -367,9 +367,9 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	}
 
 	//Check local status, if enabled. Don't pop if local already is not vulnerable
-	if (Vars::Triggerbot::Uber::PopLocal.Value && pLocal->IsVulnerable())
+	if (Vars::Triggerbot::Uber::PopLocal.Value && !pLocal->IsInvulnerable())
 	{
-		m_flHealth = static_cast<float>(pLocal->GetHealth());
+		m_flHealth = static_cast<float>(pLocal->m_iHealth());
 		m_flMaxHealth = static_cast<float>(pLocal->GetMaxHealth());
 
 		if (Vars::Triggerbot::Uber::AutoVacc.Value && G::CurItemDefIndex == Medic_s_TheVaccinator)
@@ -401,7 +401,7 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	if (const auto& pTarget = pWeapon->GetHealingTarget())
 	{
 		//Ignore if target is somehow dead, or already not vulnerable
-		if (!pTarget->IsAlive() || !pTarget->IsVulnerable() || pTarget->GetDormant())
+		if (!pTarget->IsAlive() || pTarget->IsInvulnerable() || pTarget->GetDormant())
 			return;
 
 		//Dont waste if not a friend, fuck off scrub
@@ -409,7 +409,7 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			return;
 
 		//Check target's status
-		m_flHealth = static_cast<float>(pTarget->GetHealth());
+		m_flHealth = static_cast<float>(pTarget->m_iHealth());
 		m_flMaxHealth = static_cast<float>(pTarget->GetMaxHealth());
 
 		if (Vars::Triggerbot::Uber::VoiceCommand.Value)

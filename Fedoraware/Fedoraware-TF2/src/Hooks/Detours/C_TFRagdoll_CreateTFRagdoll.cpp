@@ -15,7 +15,8 @@ void ClearEffects(CBaseEntity* pEntity)
 MAKE_HOOK(C_TFRagdoll_CreateTFRagdoll, S::CTFRagdoll_CreateTFRagdoll(), void, __fastcall,
 	void* ecx, void* edx)
 {
-	if (Vars::Visuals::RemoveRagdolls.Value) { return; }
+	if (Vars::Visuals::RemoveRagdolls.Value)
+		return;
 
 	if (const auto& pEntity = static_cast<CBaseEntity*>(ecx))
 	{
@@ -23,11 +24,8 @@ MAKE_HOOK(C_TFRagdoll_CreateTFRagdoll, S::CTFRagdoll_CreateTFRagdoll(), void, __
 		{
 			if (const auto& pLocal = g_EntityCache.GetLocal())
 			{
-				if (Offset(int*, pEntity, 0xCBC) == pLocal->GetTeamNum())
-				{
-					//Team offset
+				if (Offset(int*, pEntity, 0xCBC) == pLocal->m_iTeamNum()) // Team offset
 					return;
-				}
 			}
 		}
 

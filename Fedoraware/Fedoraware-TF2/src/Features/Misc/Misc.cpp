@@ -141,8 +141,7 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 		if (Vars::Misc::DirectionalOnlyOnSpace.Value && !(G::Buttons & IN_JUMP))
 			break;
 
-		const auto vel = pLocal->GetVelocity();
-		const float speed = vel.Length2D();
+		const float speed = pLocal->m_vecVelocity().Length2D();
 		if (speed < 2.0f)
 			break;
 
@@ -285,7 +284,7 @@ void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
 
 	for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->GetClassNum() != CLASS_SPY || pEnemy->IsCloaked() || pEnemy->IsAGhost() || pEnemy->GetFeignDeathReady())
+		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->m_iClass() != CLASS_SPY || pEnemy->IsCloaked() || pEnemy->IsAGhost() || pEnemy->m_bFeignDeathReady())
 			continue;
 
 		if (CBaseCombatWeapon* pWeapon = pEnemy->GetActiveWeapon())
@@ -542,7 +541,7 @@ void CMisc::DetectChoke()
 			continue;
 		}
 
-		if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime())
+		if (pEntity->m_flSimulationTime() == pEntity->m_flOldSimulationTime())
 			G::ChokeMap[pEntity->GetIndex()]++;
 		else
 		{
@@ -635,12 +634,12 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 		pLocal->GetMoveType() == MOVETYPE_NOCLIP || pLocal->GetMoveType() == MOVETYPE_LADDER || pLocal->GetMoveType() == MOVETYPE_OBSERVER)
 		return;
 
-	const int maxSpeed = std::min(pLocal->GetMaxSpeed() * (pCmd->forwardmove < 0 && !pCmd->sidemove ? 0.9f : 1.f), 520.f) - 10.f;
+	const int maxSpeed = std::min(pLocal->m_flMaxspeed() * (pCmd->forwardmove < 0 && !pCmd->sidemove ? 0.9f : 1.f), 520.f) - 10.f;
 	const float curSpeed = pLocal->GetVecVelocity().Length2D();
 	if (curSpeed > maxSpeed)
 		return;
 
-	if (pLocal->GetClassNum() == ETFClass::CLASS_HEAVY && pCmd->buttons & IN_ATTACK2 && pLocal->IsDucking())
+	if (pLocal->m_iClass() == ETFClass::CLASS_HEAVY && pCmd->buttons & IN_ATTACK2 && pLocal->IsDucking())
 		return;
 
 	if (pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT))
@@ -734,10 +733,10 @@ void CMisc::StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal)
 		{
 			Vec3 angles = {}, forward = {};
 
-			Math::VectorAngles(pLocal->GetVelocity(), angles);
+			Math::VectorAngles(pLocal->m_vecVelocity(), angles);
 			angles.y = pCmd->viewangles.y - angles.y;
 			Math::AngleVectors(angles, &forward);
-			forward *= pLocal->GetVelocity().Length();
+			forward *= pLocal->m_vecVelocity().Length();
 
 			pCmd->forwardmove = -forward.x;
 			pCmd->sidemove = -forward.y;
@@ -942,14 +941,18 @@ void CMisc::InstantRespawnMVM() {
 
 void CMisc::PrintProjAngles(CBaseEntity* pLocal)
 {
-	if (!Vars::Debug::Logging.Value) { return; }
-	if (!pLocal->IsAlive() || pLocal->IsAGhost()) { return; }
-	static float flNextPrint = 0.f; if (flNextPrint > I::GlobalVars->curtime) { return; }
+	if (!Vars::Debug::Logging.Value)
+		return;
+	if (!pLocal->IsAlive() || pLocal->IsAGhost())
+		return;
+	static float flNextPrint = 0.f; if (flNextPrint > I::GlobalVars->curtime)
+		return;
 	const Vec3 vLocalEyeAngles = pLocal->GetEyeAngles();
 	const Vec3 vLocalEyePosition = pLocal->GetEyePosition();
 	for (CBaseEntity* pEntity : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
-		if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->GethOwner()) != pLocal) { continue; }
+		if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()) != pLocal)
+			continue;
 		const Vec3 vProjAngles = pEntity->GetAbsAngles();
 		const Vec3 vProjPosition = pEntity->GetAbsOrigin();
 

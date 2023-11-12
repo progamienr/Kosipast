@@ -17,7 +17,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 			 (pTarget = sphere.GetCurrentEntity()) != nullptr;
 			 sphere.NextEntity())
 		{
-			if (!pTarget || pTarget == pLocal || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->GetTeamNum() == pLocal->GetTeamNum())
+			if (!pTarget || pTarget == pLocal || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
 				continue;
 
 			const Vec3 vOrigin = pExplosive->GetWorldSpaceCenter();

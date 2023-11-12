@@ -12,7 +12,7 @@ MAKE_HOOK(C_BaseAnimating_FrameAdvance, S::CBaseAnimating_FrameAdvance(), float,
 	{
 		if (pEntity->IsPlayer())
 		{
-			if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime() || I::GlobalVars->tickcount == pAnimatingInfo[ecx].first)
+			if (pEntity->m_flSimulationTime() == pEntity->m_flOldSimulationTime() || I::GlobalVars->tickcount == pAnimatingInfo[ecx].first)
 			{
 				pAnimatingInfo[ecx].second += flInterval;
 				return 0.0f;

@@ -12,7 +12,7 @@ bool CNoSpread::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUser
 	if (!pLocal->IsAlive()
 		|| pLocal->IsTaunting()
 		|| pLocal->IsBonked()
-		|| pLocal->GetFeignDeathReady()
+		|| pLocal->m_bFeignDeathReady()
 		|| pLocal->IsCloaked()
 		|| pLocal->IsInBumperKart()
 		|| pLocal->IsAGhost())

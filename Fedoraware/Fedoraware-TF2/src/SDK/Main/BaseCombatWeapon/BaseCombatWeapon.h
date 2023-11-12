@@ -228,9 +228,9 @@ public: //Everything else, lol
 	__inline bool CanFireCriticalShot(const bool bHeadShot)
 	{
 		bool bResult = false;
-		if (const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(GethOwner()))
+		if (const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(m_hOwnerEntity()))
 		{
-			const int nOldFov = pOwner->GetFov(); pOwner->SetFov(-1);
+			const int nOldFov = pOwner->m_iFOV(); pOwner->SetFov(-1);
 			bResult = GetVFunc<bool(__thiscall*)(decltype(this), bool, CBaseEntity*)>(this, 425)(this, bHeadShot, nullptr);
 			pOwner->SetFov(nOldFov);
 		} return bResult;
@@ -254,9 +254,9 @@ public: //Everything else, lol
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
 			return (pLocal->GetTankPressure() >= 100.0f);
 
-		if (pLocal->GetClassNum() == CLASS_SPY)
+		if (pLocal->m_iClass() == CLASS_SPY)
 		{
-			if (pLocal->GetFeignDeathReady() && !pLocal->IsCloaked())
+			if (pLocal->m_bFeignDeathReady() && !pLocal->IsCloaked())
 				return false;
 
 			//Invis
@@ -279,7 +279,7 @@ public: //Everything else, lol
 			}
 		}
 
-		return m_flNextPrimaryAttack() <= TICKS_TO_TIME(pLocal->GetTickBase());
+		return m_flNextPrimaryAttack() <= TICKS_TO_TIME(pLocal->m_nTickBase());
 	}
 
 	__inline bool CanSecondaryAttack(CBaseEntity* pLocal)
@@ -287,7 +287,7 @@ public: //Everything else, lol
 		if (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart())
 			return false;
 
-		float flCurTime = TICKS_TO_TIME(pLocal->GetTickBase());
+		float flCurTime = TICKS_TO_TIME(pLocal->m_nTickBase());
 
 		return m_flNextPrimaryAttack() <= flCurTime && pLocal->GetNextAttack() <= flCurTime;
 	}
@@ -381,7 +381,7 @@ public: //Everything else, lol
 
 		if (GetClip1() == 0)
 			return false;
-		return (nextAttack <= (TICKS_TO_TIME(I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer())->GetTickBase())));
+		return (nextAttack <= (TICKS_TO_TIME(I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer())->m_nTickBase())));
 	}
 
 	__inline bool IsFlipped()
