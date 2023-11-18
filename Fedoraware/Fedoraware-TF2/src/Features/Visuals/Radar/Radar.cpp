@@ -49,18 +49,6 @@ void CRadar::DrawWindow()
 
 void CRadar::DrawRadar()
 {
-	// Title gradient
-	if (!F::Menu.IsOpen && !Vars::Radar::Main::NoTitleGradient.Value)
-	{
-		g_Draw.GradientRect(RadarX - RadarSize, RadarY - RadarSize - 3,
-							RadarX - RadarSize + RadarSize, RadarY - RadarSize, { 43, 43, 45, 250 },
-							Vars::Menu::Theme::Accent.Value, true);
-
-		g_Draw.GradientRect(RadarX - RadarSize + RadarSize, RadarY - RadarSize - 3,
-							RadarX - RadarSize + (RadarSize * 2), RadarY - RadarSize,
-							Vars::Menu::Theme::Accent.Value, { 43, 43, 45, 250 }, true);
-	}
-
 	//Build the bg color with the wanted alpha.
 	const Color_t clrBack = { 36, 36, 36, static_cast<byte>(Vars::Radar::Main::BackAlpha.Value) };
 

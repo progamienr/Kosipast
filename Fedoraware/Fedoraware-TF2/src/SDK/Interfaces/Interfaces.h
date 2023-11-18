@@ -154,6 +154,7 @@ public:
 	byte pad2[0x110];
 	int				m_nMaxClients;			// 0x2B4	
 	byte pad3[0x486C];
+	//float			m_frameTime;
 	int				lastoutgoingcommand;	// 0x4B24
 	int				chokedcommands;			// 0x4B28
 	int				last_command_ack;		// 0x4B2C

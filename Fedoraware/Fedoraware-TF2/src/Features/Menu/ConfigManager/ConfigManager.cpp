@@ -89,18 +89,12 @@ void CConfigManager::SaveJson(const char* name, const Vec3& val)
 void CConfigManager::SaveJson(const char* name, const Chams_t& val)
 {
 	boost::property_tree::ptree chamTree;
-	chamTree.put("ShowObstructed", val.ShowObstructed);
-	chamTree.put("DrawMaterial", val.DrawMaterial);
-	chamTree.put("OverlayType", val.OverlayType);
 	chamTree.put("ChamsActive", val.ChamsActive);
-	chamTree.put("Rainbow", val.Rainbow);
-	chamTree.put("OverlayRainbow", val.OverlayRainbow);
-	chamTree.put("OverlayPulse", val.OverlayPulse);
-	chamTree.put("OverlayIntensity", val.OverlayIntensity);
-	chamTree.put_child("FresnelBase", ColorToTree(val.FresnelBase));
+	chamTree.put("IgnoreZ", val.IgnoreZ);
+	chamTree.put("Material", val.Material);
 	chamTree.put_child("Color", ColorToTree(val.Color));
+	chamTree.put("OverlayMaterial", val.OverlayMaterial);
 	chamTree.put_child("OverlayColor", ColorToTree(val.OverlayColor));
-	chamTree.put("CustomMaterial", val.CustomMaterial);
 
 	WriteTree.put_child(name, chamTree);
 }
@@ -180,18 +174,12 @@ void CConfigManager::LoadJson(const char* name, Chams_t& val)
 {
 	if (const auto getChild = ReadTree.get_child_optional(name))
 	{
-		if (auto getValue = getChild->get_optional<bool>("ShowObstructed")) { val.ShowObstructed = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("DrawMaterial")) { val.DrawMaterial = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("OverlayType")) { val.OverlayType = *getValue; }
 		if (auto getValue = getChild->get_optional<bool>("ChamsActive")) { val.ChamsActive = *getValue; }
-		if (auto getValue = getChild->get_optional<bool>("Rainbow")) { val.Rainbow = *getValue; }
-		if (auto getValue = getChild->get_optional<bool>("OverlayRainbow")) { val.OverlayRainbow = *getValue; }
-		if (auto getValue = getChild->get_optional<bool>("OverlayPulse")) { val.OverlayPulse = *getValue; }
-		if (auto getValue = getChild->get_optional<float>("OverlayIntensity")) { val.OverlayIntensity = *getValue; }
-		if (const auto getChildColor = getChild->get_child_optional("FresnelBase")) { TreeToColor(*getChildColor, val.FresnelBase); }
+		if (auto getValue = getChild->get_optional<bool>("IgnoreZ")) { val.IgnoreZ = *getValue; }
+		if (auto getValue = getChild->get_optional<std::string>("Material")) { val.Material = *getValue; }
 		if (const auto getChildColor = getChild->get_child_optional("Color")) { TreeToColor(*getChildColor, val.Color); }
+		if (auto getValue = getChild->get_optional<std::string>("OverlayMaterial")) { val.OverlayMaterial = *getValue; }
 		if (const auto getChildColor = getChild->get_child_optional("OverlayColor")) { TreeToColor(*getChildColor, val.OverlayColor); }
-		if (auto getValue = getChild->get_optional<std::string>("CustomMaterial")) { val.CustomMaterial = *getValue; }
 	}
 }
 
@@ -243,7 +231,7 @@ CConfigManager::CConfigManager()
 #define LoadType(type) LoadJson(var->m_sName.c_str(), var->GetVar<type>()->Value)
 #define LoadT(type) if (IsType(type)) LoadType(type);
 
-bool CConfigManager::SaveConfig(const std::string& configName)
+bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 {
 	try
 	{
@@ -266,7 +254,8 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 		}
 
 		write_json(ConfigPath + "\\" + configName + ConfigExtension, WriteTree);
-		F::Notifications.Add("Config " + configName + " saved");
+		if (bNotify)
+			F::Notifications.Add("Config " + configName + " saved");
 	}
 	catch (...)
 	{
@@ -276,14 +265,14 @@ bool CConfigManager::SaveConfig(const std::string& configName)
 	return true;
 }
 
-bool CConfigManager::LoadConfig(const std::string& configName)
+bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 {
 	// Check if the config exists
 	if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + configName + ConfigExtension))
 	{
 		// Save default config if one doesn't yet exist
 		if (configName == std::string("default"))
-			SaveConfig("default");
+			SaveConfig("default", false);
 
 		return false;
 	}
@@ -312,7 +301,8 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 
 
 		CurrentConfig = configName;
-		F::Notifications.Add("Config " + configName + " loaded");
+		if (bNotify)
+			F::Notifications.Add("Config " + configName + " loaded");
 	}
 	catch (...)
 	{
@@ -322,7 +312,7 @@ bool CConfigManager::LoadConfig(const std::string& configName)
 	return true;
 }
 
-bool CConfigManager::SaveVisual(const std::string& configName)
+bool CConfigManager::SaveVisual(const std::string& configName, bool bNotify)
 {
 	try
 	{
@@ -345,7 +335,8 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 		}
 
 		write_json(ConfigPath + "\\Visuals\\" + configName + ConfigExtension, WriteTree);
-		F::Notifications.Add("Visual config " + configName + " saved");
+		if (bNotify)
+			F::Notifications.Add("Visual config " + configName + " saved");
 	}
 	catch (...)
 	{
@@ -354,7 +345,7 @@ bool CConfigManager::SaveVisual(const std::string& configName)
 	return true;
 }
 
-bool CConfigManager::LoadVisual(const std::string& configName)
+bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 {
 	// Check if the visual config exists
 	if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + configName + ConfigExtension))
@@ -388,6 +379,8 @@ bool CConfigManager::LoadVisual(const std::string& configName)
 		g_Draw.RemakeFonts();
 
 		CurrentVisuals = configName;
+		if (bNotify)
+			F::Notifications.Add("Visual config " + configName + " loaded");
 	}
 	catch (...)
 	{

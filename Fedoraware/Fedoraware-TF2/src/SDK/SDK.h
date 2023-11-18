@@ -582,14 +582,17 @@ namespace Utils
 			if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 				return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
 
-			return TIME_TO_TICKS(pWeapon->GetSmackTime()) == G::TickBase;
+			auto pLocal = g_EntityCache.GetLocal();
+			float flTime = pLocal ? TICKS_TO_TIME(pLocal->m_nTickBase() + 1) : I::GlobalVars->curtime;
+
+			return fabsf(pWeapon->m_flSmackTime() - flTime) < I::GlobalVars->interval_per_tick/* * 2.0f*/;
 		}
 
 		if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
 		{
 			static bool bLoading = false, bFiring = false;
 
-			if (pWeapon->GetClip1() == 0)
+			if (pWeapon->m_iClip1() == 0)
 				bLoading = false,
 				bFiring = false;
 			else if (!bFiring)
@@ -614,7 +617,7 @@ namespace Utils
 			{
 				static bool bCharging = false;
 
-				if (pWeapon->GetChargeBeginTime() > 0.0f)
+				if (pWeapon->m_flChargeBeginTime() > 0.0f)
 					bCharging = true;
 
 				if (!(pCmd->buttons & IN_ATTACK) && bCharging) {
@@ -860,7 +863,7 @@ namespace Utils
 	__inline Vec3 GetHeadOffset(CBaseEntity* pEntity, const Vec3 vOffset = {})
 	{
 		const Vec3 headPos = pEntity->GetHitboxPos(HITBOX_HEAD, vOffset);
-		const Vec3 entPos = pEntity->m_vecOrigin();
+		const Vec3 entPos = pEntity->GetAbsOrigin();
 		return headPos - entPos;
 	}
 }

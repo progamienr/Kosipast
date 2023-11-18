@@ -198,6 +198,7 @@
     <ClCompile Include="src\Features\Misc\Misc.cpp" />
     <ClCompile Include="src\Features\Misc\Notifications\Notifications.cpp" />
     <ClCompile Include="src\Features\NetVarHooks\NetVarHooks.cpp" />
+    <ClCompile Include="src\Features\NetworkFix\NetworkFix.cpp" />
     <ClCompile Include="src\Features\NoSpread\NoSpread.cpp" />
     <ClCompile Include="src\Features\PacketManip\AntiAim\AntiAim.cpp" />
     <ClCompile Include="src\Features\PacketManip\FakeLag\FakeLag.cpp" />
@@ -208,11 +209,11 @@
     <ClCompile Include="src\Features\Simulation\ProjectileSimulation\ProjectileSimulation.cpp" />
     <ClCompile Include="src\Features\TickHandler\TickHandler.cpp" />
     <ClCompile Include="src\Features\Visuals\Chams\Chams.cpp" />
-    <ClCompile Include="src\Features\Visuals\Chams\DMEChams.cpp" />
     <ClCompile Include="src\Features\Visuals\ESP\ESP.cpp" />
     <ClCompile Include="src\Features\Visuals\FakeAngleManager\FakeAng.cpp" />
     <ClCompile Include="src\Features\Visuals\Glow\Glow.cpp" />
     <ClCompile Include="src\Features\Visuals\LocalConditions\LocalConditions.cpp" />
+    <ClCompile Include="src\Features\Visuals\Materials\Materials.cpp" />
     <ClCompile Include="src\Features\Visuals\PlayerArrows\PlayerArrows.cpp" />
     <ClCompile Include="src\Features\Visuals\Radar\Radar.cpp" />
     <ClCompile Include="src\Features\Visuals\Visuals.cpp" />
@@ -246,6 +247,7 @@
     <ClCompile Include="src\Hooks\Detours\CMaterial_Uncache.cpp" />
     <ClCompile Include="src\Hooks\Detours\CNetChan_SendNetMsg.cpp" />
     <ClCompile Include="src\Hooks\Detours\COcclusionSystem_IsOccluded.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CPrediction_RunCommand.cpp" />
     <ClCompile Include="src\Hooks\Detours\CSequenceTransitioner_CheckForSequenceChange.cpp" />
     <ClCompile Include="src\Hooks\Detours\CSoundEmitterSystem_EmitSound.cpp" />
     <ClCompile Include="src\Hooks\Detours\CStaticPropMgr_ComputePropOpacity.cpp" />
@@ -260,11 +262,13 @@
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_FrameAdvance.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_Interpolate.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_MaintainSequenceTransitions.cpp" />
+    <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_SetupBones.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_UpdateClientSideAnimations.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseCombatWeapon_AddToCritBucket.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseCombatWeapon_IsAllowedToWithdrawFromCritBucket.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_FireBullets.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_Interpolate.cpp" />
+    <ClCompile Include="src\Hooks\Detours\C_BaseEntity_ResetLatched.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_SetAbsVelocity.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BasePlayer_CalcViewModelView.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_OP_RenderSprites_RenderSpriteCard.cpp" />
@@ -416,6 +420,7 @@
     <ClInclude Include="src\Features\Misc\Misc.h" />
     <ClInclude Include="src\Features\Misc\Notifications\Notifications.h" />
     <ClInclude Include="src\Features\NetVarHooks\NetVarHooks.h" />
+    <ClInclude Include="src\Features\NetworkFix\NetworkFix.h" />
     <ClInclude Include="src\Features\NoSpread\NoSpread.h" />
     <ClInclude Include="src\Features\PacketManip\AntiAim\AntiAim.h" />
     <ClInclude Include="src\Features\PacketManip\FakeLag\FakeLag.h" />
@@ -427,11 +432,11 @@
     <ClInclude Include="src\Features\TickHandler\TickHandler.h" />
     <ClInclude Include="src\Features\Vars.h" />
     <ClInclude Include="src\Features\Visuals\Chams\Chams.h" />
-    <ClInclude Include="src\Features\Visuals\Chams\DMEChams.h" />
     <ClInclude Include="src\Features\Visuals\ESP\ESP.h" />
     <ClInclude Include="src\Features\Visuals\FakeAngleManager\FakeAng.h" />
     <ClInclude Include="src\Features\Visuals\Glow\Glow.h" />
     <ClInclude Include="src\Features\Visuals\LocalConditions\LocalConditions.h" />
+    <ClInclude Include="src\Features\Visuals\Materials\Materials.h" />
     <ClInclude Include="src\Features\Visuals\PlayerArrows\PlayerArrows.h" />
     <ClInclude Include="src\Features\Visuals\Radar\Radar.h" />
     <ClInclude Include="src\Features\Visuals\Visuals.h" />

@@ -7,7 +7,7 @@ MAKE_HOOK(ClientModeShared_OverrrideView, Utils::GetVFuncPtr(I::ClientModeShared
 {
 	Hook.Original<FN>()(ecx, edx, pView);
 
-	if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value)
+	if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 	{
 		return Hook.Original<FN>()(ecx, edx, pView);
 	}

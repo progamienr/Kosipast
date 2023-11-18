@@ -1,5 +1,6 @@
 #pragma once
 #include "ImGui/imgui_internal.h"
+#include "../Visuals/Materials/Materials.h"
 
 namespace ImGui
 {
@@ -200,18 +201,23 @@ namespace ImGui
 		return true;
 	}
 
-	/* Combobox for custom materials */
-	__inline bool MaterialCombo(const char* label, std::string* current_mat, ImGuiComboFlags flags = 0)
+	/* Combobox for materials */
+	__inline bool MaterialCombo(const char* label, std::string* current_mat, const char* first = "None", ImGuiComboFlags flags = 0)
 	{
 		bool active = false;
 		PushItemWidth(F::Menu.ItemWidth);
 		if (BeginCombo(label, current_mat->c_str(), flags))
 		{
-			for (const auto& [name, mat] : F::MaterialEditor.MaterialMap)
+			if (Selectable(first, first == *current_mat))
 			{
-				if (Selectable(name.c_str(), name == *current_mat))
+				*current_mat = first;
+				active = true;
+			}
+			for (const auto& mat : F::Materials.m_ChamMaterials)
+			{
+				if (Selectable(mat.sName.c_str(), mat.sName == *current_mat))
 				{
-					*current_mat = name;
+					*current_mat = mat.sName;
 					active = true;
 				}
 			}

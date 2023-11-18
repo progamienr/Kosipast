@@ -13,7 +13,7 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 		case TF_WEAPON_PARTICLE_CANNON: bValidWeapon = true;
 		}
-		if (bValidWeapon && pWeapon->GetItemDefIndex() == Soldier_m_TheBeggarsBazooka)
+		if (bValidWeapon && pWeapon->m_iItemDefinitionIndex() == Soldier_m_TheBeggarsBazooka)
 			bValidWeapon = G::IsAttacking;
 	}
 	if (bValidWeapon && (Vars::Triggerbot::Jump::JumpKey.Value == VK_RBUTTON || Vars::Triggerbot::Jump::CTapKey.Value == VK_RBUTTON))
@@ -21,7 +21,7 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 
 	// barebones (doesn't seem 100% consistent, unsure if it's fps related, user error, or what)
 	if (bValidWeapon && iJumpFrame == -1 && bCurrGrounded && bCurrGrounded == bLastGrounded &&
-		G::WeaponCanAttack && !pLocal->IsDucking() && pWeapon->GetClip1() > 0)
+		G::WeaponCanAttack && !pLocal->IsDucking() && pWeapon->m_iClip1() > 0)
 	{
 		if (F::KeyHandler.Down(Vars::Triggerbot::Jump::JumpKey.Value))
 		{
@@ -86,7 +86,7 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		{
 			G::UpdateView = false; // would use G::SilentTime but that would mess with timing
 
-			const bool bOriginal = pWeapon->GetItemDefIndex() == Soldier_m_TheOriginal;
+			const bool bOriginal = pWeapon->m_iItemDefinitionIndex() == Soldier_m_TheOriginal;
 			const bool bMoving = pLocal->m_vecVelocity().Length2D() > 200.f;
 
 			float v_x = 0.f;

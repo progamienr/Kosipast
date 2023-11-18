@@ -28,7 +28,7 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 	{
 		if (dwRetAddr == dwPlayerShouldDraw ||
 			dwRetAddr == dwWearableShouldDraw ||
-			(Vars::Visuals::RemoveScope.Value && dwRetAddr == dwHudScopeShouldDraw))
+			Vars::Visuals::RemoveScope.Value && dwRetAddr == dwHudScopeShouldDraw)
 		{
 			return false;
 		}
@@ -42,30 +42,18 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 		return *reinterpret_cast<CBaseEntity**>(reinterpret_cast<DWORD>(ecx) + dwOff);
 	};
 
-	//Compare team's, removing team's taunt is useless
+	// Compare team's, removing team's taunt is useless
 	if (nCond == TF_COND_TAUNTING && Vars::Visuals::RemoveTaunts.Value)
 	{
-		if (const auto& pLocal = g_EntityCache.GetLocal())
-		{
-			if (const auto& pEntity = GetOuter())
-			{
-				if (pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
-				{
-					return false;
-				}
-			}
-		}
+		const auto& pLocal = g_EntityCache.GetLocal();
+		const auto& pEntity = GetOuter();
+		if (pLocal && pEntity && pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
+			return false;
 	}
 
-	//Just compare entity ptr's, filtering out local is enough. Also prevents T pose.
+	// Just compare entity ptr's, filtering out local is enough. Also prevents T pose.
 	if (nCond == TF_COND_DISGUISED && Vars::Visuals::RemoveDisguises.Value && g_EntityCache.GetLocal() != GetOuter())
-	{
 		return false;
-	}
-
-	//if (nCond == TF_COND_FEIGN_DEATH) { // stops the death chat message when you kill a dead ringer?
-	//	return false;
-	//}
 
 	return Hook.Original<FN>()(ecx, edx, nCond);
 }

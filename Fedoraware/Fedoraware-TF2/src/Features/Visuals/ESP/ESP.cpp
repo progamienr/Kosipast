@@ -177,14 +177,14 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				{
 					if (Vars::ESP::Players::UberText.Value)
 					{
-						g_Draw.String(fFontEsp, x + w + 2, y + rOffset, Vars::Colors::UberBar.Value, ALIGN_DEFAULT, L"%.0f%%", pMedGun->GetUberCharge() * 100.0f);
+						g_Draw.String(fFontEsp, x + w + 2, y + rOffset, Vars::Colors::UberBar.Value, ALIGN_DEFAULT, L"%.0f%%", pMedGun->m_flChargeLevel() * 100.0f);
 						rOffset += fFontEsp.nTall;
 					}
 
-					if (Vars::ESP::Players::UberBar.Value && pMedGun->GetUberCharge())
+					if (Vars::ESP::Players::UberBar.Value && pMedGun->m_flChargeLevel())
 					{
-						const float flMaxUber = (pMedGun->GetItemDefIndex() == Medic_s_TheVaccinator ? 400.0f : 100.0f);
-						const float flUber = std::min(pMedGun->GetUberCharge() * flMaxUber, flMaxUber);
+						const float flMaxUber = (pMedGun->m_iItemDefinitionIndex() == Medic_s_TheVaccinator ? 400.0f : 100.0f);
+						const float flUber = std::min(pMedGun->m_flChargeLevel() * flMaxUber, flMaxUber);
 						float ratio = flUber / flMaxUber;
 
 						g_Draw.RectOverlay(x + 1, y + h + 3, w * ratio, 2, 4, Vars::Colors::UberBar.Value, { 0, 0, 0, 255 }, false);
@@ -402,16 +402,16 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				const Color_t teamColors = GetTeamColor(pPlayer->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
 
 				{ //this is here just so i can collapse this entire section to reduce clutter
-					auto drawCond = [](const char* text, Color_t color, int x, int y, int& rOffset, const Font_t& fFont)
+					auto drawCond = [&rOffset, &fFontCond](const char* text, Color_t color, int x, int y)
 					{
-						g_Draw.String(fFont, x, y + rOffset, color, ALIGN_DEFAULT, text);
-						rOffset += fFont.nTall;
+						g_Draw.String(fFontCond, x, y + rOffset, color, ALIGN_DEFAULT, text);
+						rOffset += fFontCond.nTall;
 					};
 
 					if (Vars::ESP::Players::Conditions::Buffs.Value)
 					{
 						if (pPlayer->InCond(TF_COND_CRITBOOSTED))
-							drawCond("KRITS", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("KRITS", { 255, 107, 108, 255 }, x + w + 2, y);
 						else if (pPlayer->InCond(TF_COND_CRITBOOSTED_PUMPKIN) ||
 							pPlayer->InCond(TF_COND_CRITBOOSTED_USER_BUFF) ||
 							pPlayer->InCond(TF_COND_CRITBOOSTED_DEMO_CHARGE) ||
@@ -422,102 +422,102 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 							pPlayer->InCond(TF_COND_CRITBOOSTED_RAGE_BUFF) ||
 							pPlayer->InCond(TF_COND_CRITBOOSTED_CARD_EFFECT) ||
 							pPlayer->InCond(TF_COND_CRITBOOSTED_RUNE_TEMP))
-							drawCond("CRITS", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("CRITS", { 255, 107, 108, 255 }, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_ENERGY_BUFF) ||
 							pPlayer->InCond(TF_COND_NOHEALINGDAMAGEBUFF))
-							drawCond("MINI-CRITS", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("MINI-CRITS", { 254, 202, 87, 255 }, x + w + 2, y);
 
 						if (pPlayer->m_iHealth() > pPlayer->GetMaxHealth())
-							drawCond("HP", Vars::Colors::Overheal.Value, x + w + 2, y, rOffset, fFontCond);
+							drawCond("HP", Vars::Colors::Overheal.Value, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_HEALTH_BUFF) || pPlayer->InCond(TF_COND_MEGAHEAL) || pPlayer->IsBuffedByKing())
-							drawCond("HP+", Vars::Colors::Overheal.Value, x + w + 2, y, rOffset, fFontCond);
+							drawCond("HP+", Vars::Colors::Overheal.Value, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_INVULNERABLE) ||
 							pPlayer->InCond(TF_COND_INVULNERABLE_HIDE_UNLESS_DAMAGED) ||
 							pPlayer->InCond(TF_COND_INVULNERABLE_USER_BUFF) ||
 							pPlayer->InCond(TF_COND_INVULNERABLE_CARD_EFFECT))
-							drawCond("UBER", Vars::Colors::UberBar.Value, x + w + 2, y, rOffset, fFontCond);
+							drawCond("UBER", Vars::Colors::UberBar.Value, x + w + 2, y);
 						else if (pPlayer->InCond(TF_COND_PHASE))
-							drawCond("BONK", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BONK", { 254, 202, 87, 255 }, x + w + 2, y);
 
 						/* vaccinator effects */
 						if (pPlayer->InCond(TF_COND_MEDIGUN_UBER_BULLET_RESIST) || pPlayer->InCond(TF_COND_BULLET_IMMUNE))
-							drawCond("BULLET+", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BULLET+", { 255, 107, 108, 255 }, x + w + 2, y);
 						else if (pPlayer->InCond(TF_COND_MEDIGUN_SMALL_BULLET_RESIST))
-							drawCond("BULLET", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BULLET", { 255, 107, 108, 255 }, x + w + 2, y);
 						if (pPlayer->InCond(TF_COND_MEDIGUN_UBER_BLAST_RESIST) || pPlayer->InCond(TF_COND_BLAST_IMMUNE))
-							drawCond("BLAST+", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BLAST+", { 255, 107, 108, 255 }, x + w + 2, y);
 						else if (pPlayer->InCond(TF_COND_MEDIGUN_SMALL_BLAST_RESIST))
-							drawCond("BLAST", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BLAST", { 255, 107, 108, 255 }, x + w + 2, y);
 						if (pPlayer->InCond(TF_COND_MEDIGUN_UBER_FIRE_RESIST) || pPlayer->InCond(TF_COND_FIRE_IMMUNE))
-							drawCond("FIRE+", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("FIRE+", { 255, 107, 108, 255 }, x + w + 2, y);
 						else if (pPlayer->InCond(TF_COND_MEDIGUN_SMALL_FIRE_RESIST))
-							drawCond("FIRE", { 255, 107, 108, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("FIRE", { 255, 107, 108, 255 }, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_OFFENSEBUFF))
-							drawCond("BANNER", teamColors, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BANNER", teamColors, x + w + 2, y);
 						if (pPlayer->InCond(TF_COND_DEFENSEBUFF))
-							drawCond("BATTALIONS", teamColors, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BATTALIONS", teamColors, x + w + 2, y);
 						if (pPlayer->InCond(TF_COND_REGENONDAMAGEBUFF))
-							drawCond("CONCH", teamColors, x + w + 2, y, rOffset, fFontCond);
+							drawCond("CONCH", teamColors, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_BLASTJUMPING))
-							drawCond("BLASTJUMP", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BLASTJUMP", { 254, 202, 87, 255 }, x + w + 2, y);
 					}
 					
 					if (Vars::ESP::Players::Conditions::Debuffs.Value)
 					{
 						if (pPlayer->InCond(TF_COND_URINE))
-							drawCond("JARATE", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("JARATE", { 254, 202, 87, 255 }, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_MARKEDFORDEATH) || pPlayer->InCond(TF_COND_MARKEDFORDEATH_SILENT))
-							drawCond("MARKED", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("MARKED", { 254, 202, 87, 255 }, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_BURNING))
-							drawCond("BURN", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("BURN", { 254, 202, 87, 255 }, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_MAD_MILK))
-							drawCond("MILK", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("MILK", { 254, 202, 87, 255 }, x + w + 2, y);
 					}
 					
 					if (Vars::ESP::Players::Conditions::Other.Value)
 					{
 						if (Vars::Visuals::RemoveTaunts.Value && pPlayer->InCond(TF_COND_TAUNTING)) // i dont really see a need for this condition unless you have this enabled
-							drawCond("TAUNT", { 255, 100, 200, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("TAUNT", { 255, 100, 200, 255 }, x + w + 2, y);
 
 						if (pPlayer->m_bFeignDeathReady())
-							drawCond("DR", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("DR", { 254, 202, 87, 255 }, x + w + 2, y);
 				
 						if (pPlayer->InCond(TF_COND_AIMING))
 						{
 							if (const auto& pWeapon = pPlayer->GetActiveWeapon())
 							{
 								if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN)
-									drawCond("REV", { 128, 128, 128, 255 }, x + w + 2, y, rOffset, fFontCond);
+									drawCond("REV", { 128, 128, 128, 255 }, x + w + 2, y);
 
 								if (pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW)
 								{
-									if ((I::GlobalVars->curtime - pWeapon->GetChargeBeginTime()) >= 1.0f)
-										drawCond("CHARGED", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+									if ((I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime()) >= 1.0f)
+										drawCond("CHARGED", { 254, 202, 87, 255 }, x + w + 2, y);
 									else
-										drawCond("CHARGING", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+										drawCond("CHARGING", { 254, 202, 87, 255 }, x + w + 2, y);
 								}
 
 								if (pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON)
-									drawCond("CHARGING", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+									drawCond("CHARGING", { 254, 202, 87, 255 }, x + w + 2, y);
 							}
 						}
 
 						if (pPlayer->InCond(TF_COND_ZOOMED))
-							drawCond("ZOOM", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("ZOOM", { 254, 202, 87, 255 }, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_STEALTHED) || pPlayer->InCond(TF_COND_STEALTHED_BLINK) || pPlayer->InCond(TF_COND_STEALTHED_USER_BUFF) || pPlayer->InCond(TF_COND_STEALTHED_USER_BUFF_FADING))
-							drawCond(std::format("CLOAK {:.0f}%%", pPlayer->GetInvisPercentage()).c_str(), Vars::Colors::Cloak.Value, x + w + 2, y, rOffset, fFontCond);
+							drawCond(std::format("CLOAK {:.0f}%%", pPlayer->GetInvisPercentage()).c_str(), Vars::Colors::Cloak.Value, x + w + 2, y);
 
 						if (pPlayer->InCond(TF_COND_DISGUISING) || pPlayer->InCond(TF_COND_DISGUISE_WEARINGOFF) || pPlayer->InCond(TF_COND_DISGUISED))
-							drawCond("DISGUISE", { 254, 202, 87, 255 }, x + w + 2, y, rOffset, fFontCond);
+							drawCond("DISGUISE", { 254, 202, 87, 255 }, x + w + 2, y);
 					}																				
 				}
 			}

@@ -4,7 +4,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-#include "../../Features/Visuals/Chams/DMEChams.h"
+#include "../../Features/Visuals/Materials/Materials.h"
 
 bool CCommands::Run(const std::string& cmd, const std::deque<std::string>& args)
 {
@@ -101,9 +101,10 @@ void CCommands::Init()
 			 });
 	Register("f_dumpmaterials", [](const std::deque<std::string>& args)
 			 {
-				 for (IMaterial* scanMat : F::DMEChams.v_MatList)
+				 for (IMaterial* scanMat : F::Materials.v_MatList)
 				 {
-					 if (!scanMat) { continue; }
+					 if (!scanMat)
+						 continue;
 
 					 const char* matName = scanMat->GetName();
 					 const char* matGroupName = scanMat->GetTextureGroupName();

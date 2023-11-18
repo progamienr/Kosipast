@@ -1,6 +1,8 @@
 #include "TickHandler.h"
+
 #include "../../Hooks/HookManager.h"
 #include "../../Hooks/Hooks.h"
+#include "../NetworkFix/NetworkFix.h"
 
 void CTickshiftHandler::Reset()
 {
@@ -135,20 +137,18 @@ void CTickshiftHandler::CLMoveFunc(float accumulated_extra_samples, bool bFinalT
 
 void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTick)
 {
+	if (auto pWeapon = g_EntityCache.GetWeapon())
 	{
-		CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
-		if (pWeapon)
-		{
-			const auto iWeaponID = pWeapon->GetWeaponID();
-			if ((G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload()) &&
-				iWeaponID != TF_WEAPON_PIPEBOMBLAUNCHER && iWeaponID != TF_WEAPON_CANNON)
-				G::WaitForShift = G::ShiftedTicks;
-		}
+		const auto iWeaponID = pWeapon->GetWeaponID();
+		if ((G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload()) &&
+			iWeaponID != TF_WEAPON_PIPEBOMBLAUNCHER && iWeaponID != TF_WEAPON_CANNON)
+			G::WaitForShift = G::ShiftedTicks;
 	}
+	
 
 	G::MaxShift = g_ConVars.sv_maxusrcmdprocessticks ? g_ConVars.sv_maxusrcmdprocessticks->GetInt() : 24;
 	if (G::AntiAim)
-		G::MaxShift -= 1;
+		G::MaxShift -= 3;
 
 	while (G::ShiftedTicks > G::MaxShift)
 		CLMoveFunc(accumulated_extra_samples, false); // skim any excess ticks
@@ -214,6 +214,8 @@ void CTickshiftHandler::MovePost(CUserCmd* pCmd)
 
 void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 {
+	F::NetworkFix.FixInputDelay(bFinalTick);
+
 	MovePre();
 	MoveMain(accumulated_extra_samples, bFinalTick);
 }

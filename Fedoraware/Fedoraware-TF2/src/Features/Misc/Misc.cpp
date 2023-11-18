@@ -331,7 +331,7 @@ bool CanAttack(CBaseEntity* pLocal, const Vec3& pPos)
 	{
 		if (!G::WeaponCanHeadShot && pLocal->IsScoped())
 			return false;
-		if (!pWeapon->CanShoot(pLocal))
+		if (!pWeapon->CanPrimary(pLocal))
 			return false;
 
 		for (const auto& target : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))

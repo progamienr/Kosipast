@@ -3,10 +3,7 @@
 #include "../Vars.h"
 #include "../Visuals/Radar/Radar.h"
 #include "../Misc/Misc.h"
-#include "../Visuals/Chams/DMEChams.h"
-#include "../Visuals/Glow/Glow.h"
 #include "../Visuals/Visuals.h"
-#include "../Backtrack/Backtrack.h"
 
 #include <ImGui/imgui_impl_win32.h>
 #include <ImGui/imgui_impl_dx9.h>
@@ -207,7 +204,7 @@ void CMenu::MenuAimbot()
 
 			SectionTitle("Crits");
 			WToggle("Crit hack", &Vars::CritHack::Active.Value);
-			MultiCombo({ "Indicators", "Avoid Random", "Always Melee" }, { &Vars::CritHack::Indicators.Value, &Vars::CritHack::AvoidRandom.Value, &Vars::CritHack::AlwaysMelee.Value }, "Misc###CrithackMiscOptions");
+			MultiCombo({ "Indicator", "Avoid Random", "Always Melee" }, { &Vars::CritHack::Indicators.Value, &Vars::CritHack::AvoidRandom.Value, &Vars::CritHack::AlwaysMelee.Value }, "Misc###CrithackMiscOptions");
 			InputKeybind("Crit key", Vars::CritHack::CritKey.Value);
 
 			SectionTitle("Backtrack");
@@ -385,7 +382,7 @@ void CMenu::MenuVisuals()
 				/* Column 1 */
 				if (TableColumnChild("VisualsESPCol1"))
 				{
-					SectionTitle("Main");
+					SectionTitle("ESP");
 					WToggle("Active###EnableESP", &Vars::ESP::Main::Active.Value);
 					WToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value);
 					if (Vars::ESP::Main::EnableTeamEnemyColors.Value)
@@ -402,7 +399,7 @@ void CMenu::MenuVisuals()
 					if (Vars::ESP::Main::DormantSoundESP.Value)
 						WSlider("Dormant Decay Time###GlobalDormantDecayTime", &Vars::ESP::Main::DormantTime.Value, 0.015f, 5.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
 
-					SectionTitle("Players");
+					SectionTitle("Player");
 					WToggle("Active###PlayerESP", &Vars::ESP::Players::Active.Value);
 					WToggle("Ignore local###SelfESP", &Vars::ESP::Players::IgnoreLocal.Value); ColorPickerL("Local color", Vars::Colors::Local.Value);
 					WToggle("Ignore team###IgnoreTeamESPp", &Vars::ESP::Players::IgnoreTeam.Value); ColorPickerL("Friend color", Vars::Colors::Friend.Value);
@@ -435,7 +432,7 @@ void CMenu::MenuVisuals()
 				/* Column 2 */
 				if (TableColumnChild("VisualsESPCol2"))
 				{
-					SectionTitle("Buildings");
+					SectionTitle("Building");
 					WToggle("Active###BuildingESP", &Vars::ESP::Buildings::Active.Value);
 					WToggle("Ignore team buildings###BuildingESPIgnoreTeammates", &Vars::ESP::Buildings::IgnoreTeam.Value);
 					WToggle("Name###BuildingNameESP", &Vars::ESP::Buildings::Name.Value);
@@ -472,9 +469,10 @@ void CMenu::MenuVisuals()
 				/* Column 1 */
 				if (TableColumnChild("VisualsChamsCol1"))
 				{
-					SectionTitle("Chams Main");
+					SectionTitle("Chams");
 					WToggle("Active###ChamsMasterSwitch", &Vars::Chams::Active.Value);
 
+					SectionTitle("Player");
 					static std::vector chamOptions{
 						"Local",
 						"FakeAngles",
@@ -482,31 +480,11 @@ void CMenu::MenuVisuals()
 						"Enemies",
 						"Teammates",
 						"Target",
-						"Ragdolls",
-						"ViewModel",
-						"VM Weapon"
+						"Backtrack",
+						"Weapon",
+						"Hands",
+						"Ragdoll"
 					};
-					static std::vector DMEProxyMaterials{
-						"None",
-						"Spectrum splattered",
-						"Electro skulls",
-						"Jazzy",
-						"Frozen aurora",
-						"Hana",
-						"IDK",
-						"Ghost thing",
-						"Flames",
-						"Spook wood",
-						"Edgy",
-						"Starlight serenity",
-						"Fade"
-					};
-					static std::vector dmeGlowMaterial{
-						"None",
-						"Fresnel Glow",
-						"Wireframe Glow"
-					};
-
 					static int currentSelected = 0;
 					Chams_t& currentStruct = ([&]() -> Chams_t&
 						{
@@ -518,64 +496,35 @@ void CMenu::MenuVisuals()
 							case 3: return Vars::Chams::Players::Enemy.Value;
 							case 4: return Vars::Chams::Players::Team.Value;
 							case 5: return Vars::Chams::Players::Target.Value;
-							case 6: return Vars::Chams::Players::Ragdoll.Value;
-							case 7: return Vars::Chams::DME::Hands.Value;
-							case 8: return Vars::Chams::DME::Weapon.Value;
+							case 6: return Vars::Chams::Players::Backtrack.Value;
+							case 7: return Vars::Chams::Players::Weapon.Value;
+							case 8: return Vars::Chams::Players::Hands.Value;
+							case 9: return Vars::Chams::Players::Ragdoll.Value;
 							}
 
 							return Vars::Chams::Players::Local.Value;
 						}());
-					static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
-					//WToggle("Player chams###PlayerChamsBox", &Vars::Chams::Players::Active.Value);
-
-					MultiCombo({ "Render Wearable", "Render Weapon" }, { &Vars::Chams::Players::Wearables.Value, &Vars::Chams::Players::Weapons.Value }, "Flags");
 					WCombo("Config", &currentSelected, chamOptions);
 					{
-						ColorPickerL("Color", currentStruct.Color);
-						MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options");
+						if (currentSelected != 7 && currentSelected != 8) // has to be done for some reason, otherwise won't work
+							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.IgnoreZ }, "Options");
 
-						WCombo("Material", &currentStruct.DrawMaterial, DMEChamMaterials);
-						if (currentStruct.DrawMaterial == 7)
-							ColorPickerL("Fresnel base color", currentStruct.FresnelBase);
-						if (currentStruct.DrawMaterial == 9)
-							MaterialCombo("Custom Material", &currentStruct.CustomMaterial);
-						WCombo("Overlay", &currentStruct.OverlayType, dmeGlowMaterial);
-						ColorPickerL("Glow Color", currentStruct.OverlayColor);
-						WToggle("Rainbow Glow", &currentStruct.OverlayRainbow);
-						WToggle("Pulse Glow", &currentStruct.OverlayPulse);
-						WSlider("Glow Reduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+						MaterialCombo("Base Material", &currentStruct.Material, "Original");
+						ColorPickerL("Base Color", currentStruct.Color);
+						MaterialCombo("Overlay Material", &currentStruct.OverlayMaterial);
+						ColorPickerL("Overlay Color", currentStruct.OverlayColor);
 
-						if (currentSelected == 7 || currentSelected == 8)
-						{
-							int& proxySkinIndex = currentSelected == 8 ? Vars::Chams::DME::WeaponsProxySkin.Value : Vars::Chams::DME::HandsProxySkin.Value;
-							WCombo("Proxy Material", &proxySkinIndex, DMEProxyMaterials);
-
-						}
+						if (currentSelected == 6)
+							WToggle("Only last", &Vars::Backtrack::LastOnly.Value);
 					}
-
-					SectionTitle("Backtrack Chams");
-					WToggle("Active###BacktrackChamsActive", &Vars::Backtrack::BtChams::Enabled.Value);
-					ColorPickerL("Backtrack color", Vars::Backtrack::BtChams::BacktrackColor.Value);
-					WToggle("Only draw last tick", &Vars::Backtrack::BtChams::LastOnly.Value);
-					WToggle("Enemy only", &Vars::Backtrack::BtChams::EnemyOnly.Value); // maybe remove this and make chams automatically display teammates if using medigun/whip
-
-					WCombo("Material##BtMaterial", &Vars::Backtrack::BtChams::Material.Value, DMEChamMaterials);
-					if (Vars::Backtrack::BtChams::Material.Value == 9)
-					{
-						MaterialCombo("Custom Material##BtCustom", &Vars::Backtrack::BtChams::Custom.Value);
-					}
-					WCombo("Overlay##BtOverlay", &Vars::Backtrack::BtChams::Overlay.Value, dmeGlowMaterial);
-					WToggle("Ignore Z###BtIgnoreZ", &Vars::Backtrack::BtChams::IgnoreZ.Value);
 				} EndChild();
 
 				/* Column 2 */
 				if (TableColumnChild("VisualsChamsCol2"))
 				{
 					{
-						SectionTitle("Building Chams");
-						WToggle("Active###BuildingChams", &Vars::Chams::Buildings::Active.Value);
-
+						SectionTitle("Building");
 						static std::vector chamOptions{
 							"Local",
 							"Friends",
@@ -583,13 +532,7 @@ void CMenu::MenuVisuals()
 							"Teammates",
 							"Target"
 						};
-						static std::vector dmeGlowMaterial{
-							"None",
-							"Fresnel Glow",
-							"Wireframe Glow"
-						};
-
-						static int currentSelected = 0; //
+						static int currentSelected = 0;
 						Chams_t& currentStruct = ([&]() -> Chams_t&
 							{
 								switch (currentSelected)
@@ -603,42 +546,26 @@ void CMenu::MenuVisuals()
 
 								return Vars::Chams::Buildings::Local.Value;
 							}());
-						static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
 						WCombo("Config###BuildingConfig", &currentSelected, chamOptions);
 						{
-							ColorPickerL("Color###BuildingColor", currentStruct.Color);
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options###BuildingOptions");
+							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.IgnoreZ }, "Options###BuildingOptions");
 
-							WCombo("Material###BuildingMaterial", &currentStruct.DrawMaterial, DMEChamMaterials);
-							if (currentStruct.DrawMaterial == 7)
-								ColorPickerL("Fresnel base color###BuildingFresnel", currentStruct.FresnelBase);
-							if (currentStruct.DrawMaterial == 9)
-								MaterialCombo("Custom Material###BuildingCustom", &currentStruct.CustomMaterial);
-							WCombo("Overlay###BuildingOverlay", &currentStruct.OverlayType, dmeGlowMaterial);
-							ColorPickerL("Glow Color###BuildingOverlayColor", currentStruct.OverlayColor);
-							WToggle("Rainbow Glow###BuildingRainbow", &currentStruct.OverlayRainbow);
-							WToggle("Pulse Glow###BuildingPulse", &currentStruct.OverlayPulse);
-							WSlider("Glow Reduction###BuildingReduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+							MaterialCombo("Base Material###BuildingBase", &currentStruct.Material, "Original");
+							ColorPickerL("Base Color###BuildingBaseColor", currentStruct.Color);
+							MaterialCombo("Overlay Material###BuildingOverlay", &currentStruct.OverlayMaterial);
+							ColorPickerL("Overlay Color###BuildingOverlayColor", currentStruct.OverlayColor);
 						}
 					}
 					{
-						SectionTitle("World Chams");
-						WToggle("Active###WorldChams", &Vars::Chams::World::Active.Value);
-
+						SectionTitle("World");
 						static std::vector chamOptions{
 							"Healthpacks",
 							"Ammopacks",
 							"Team Projectiles",
 							"Enemy Projectiles",
 						};
-						static std::vector dmeGlowMaterial{
-							"None",
-							"Fresnel Glow",
-							"Wireframe Glow"
-						};
-
-						static int currentSelected = 0; //
+						static int currentSelected = 0;
 						Chams_t& currentStruct = ([&]() -> Chams_t&
 							{
 								switch (currentSelected)
@@ -651,23 +578,15 @@ void CMenu::MenuVisuals()
 
 								return Vars::Chams::World::Health.Value;
 							}());
-						static std::vector DMEChamMaterials{ "Original", "Shaded", "Shiny", "Flat", "Wireframe shaded", "Wireframe shiny", "Wireframe flat", "Fresnel", "Brick", "Custom" };
 
 						WCombo("Config###WorldConfig", &currentSelected, chamOptions);
 						{
-							ColorPickerL("Color###WorldColor", currentStruct.Color);
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.ShowObstructed }, "Options###WorldOptions");
+							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.IgnoreZ }, "Options###WorldOptions");
 
-							WCombo("Material###WorldMaterial", &currentStruct.DrawMaterial, DMEChamMaterials);
-							if (currentStruct.DrawMaterial == 7)
-								ColorPickerL("Fresnel base color###WorldFresnel", currentStruct.FresnelBase);
-							if (currentStruct.DrawMaterial == 9)
-								MaterialCombo("Custom Material###WorldCustom", &currentStruct.CustomMaterial);
-							WCombo("Overlay###WorldOverlay", &currentStruct.OverlayType, dmeGlowMaterial);
-							ColorPickerL("Glow Color###WorldOverlayColor", currentStruct.OverlayColor);
-							WToggle("Rainbow Glow###WorldRainbow", &currentStruct.OverlayRainbow);
-							WToggle("Pulse Glow###WorldPulse", &currentStruct.OverlayPulse);
-							WSlider("Glow Reduction###WorldReduction", &currentStruct.OverlayIntensity, 150.f, 0.1f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+							MaterialCombo("Base Material###WorldBase", &currentStruct.Material, "Original");
+							ColorPickerL("Base Color###WorldBaseColor", currentStruct.Color);
+							MaterialCombo("Overlay Material###WorldOverlay", &currentStruct.OverlayMaterial);
+							ColorPickerL("Overlay Color###WorldOverlayColor", currentStruct.OverlayColor);
 						}
 					}
 				} EndChild();
@@ -685,32 +604,25 @@ void CMenu::MenuVisuals()
 				/* Column 1 */
 				if (TableColumnChild("VisualsGlowCol1"))
 				{
-					SectionTitle("Glow Main");
+					SectionTitle("Glow");
 					WToggle("Active###GlowActive", &Vars::Glow::Main::Active.Value);
 					WCombo("Glow Type###GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" });
 					WSlider("Glow scale", &Vars::Glow::Main::Scale.Value, 1, 20, "%d", ImGuiSliderFlags_AlwaysClamp);
 
-					SectionTitle("Player Glow");
+					SectionTitle("Player");
 					WToggle("Active###PlayerGlow", &Vars::Glow::Players::Active.Value);
 					WToggle("Self glow###SelfGlow", &Vars::Glow::Players::ShowLocal.Value);
-					WToggle("Self rainbow glow###SelfGlowRainbow", &Vars::Glow::Players::LocalRainbow.Value);
 					WCombo("Ignore team###IgnoreTeamGlowp", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" });
-					WToggle("Wearable glow###PlayerWearableGlow", &Vars::Glow::Players::Wearables.Value);
-					WToggle("Weapon glow###PlayerWeaponGlow", &Vars::Glow::Players::Weapons.Value);
-					WSlider("Glow alpha###PlayerGlowAlpha", &Vars::Glow::Players::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-					WCombo("Glow color###GlowColour", &Vars::Glow::Players::Color.Value, { "Team", "Health" });
+
+					SectionTitle("Building");
+					WToggle("Active###BuildiongGlow", &Vars::Glow::Buildings::Active.Value);
+					WToggle("Ignore team buildings###buildingglowignoreteams", &Vars::Glow::Buildings::IgnoreTeammates.Value);
 				} EndChild();
 
 				/* Column 2 */
 				if (TableColumnChild("VisualsGlowCol2"))
 				{
-					SectionTitle("Building Glow");
-					WToggle("Active###BuildiongGlow", &Vars::Glow::Buildings::Active.Value);
-					WToggle("Ignore team buildings###buildingglowignoreteams", &Vars::Glow::Buildings::IgnoreTeammates.Value);
-					WSlider("Glow alpha###BuildingGlowAlpha", &Vars::Glow::Buildings::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-					WCombo("Glow color###GlowColourBuildings", &Vars::Glow::Buildings::Color.Value, { "Team", "Health" });
-
-					SectionTitle("World Glow");
+					SectionTitle("World");
 					WToggle("Active###WorldGlow", &Vars::Glow::World::Active.Value);
 					WToggle("Healthpacks###worldhealthpackglow", &Vars::Glow::World::Health.Value);
 					WToggle("Ammopacks###worldammopackglow", &Vars::Glow::World::Ammo.Value);
@@ -719,7 +631,6 @@ void CMenu::MenuVisuals()
 					WToggle("Spellbook###worldspellbookglow", &Vars::Glow::World::Spellbook.Value);
 					WToggle("Gargoyle###worldgargoyleglow", &Vars::Glow::World::Gargoyle.Value);
 					WCombo("Projectile glow###teamprojectileglow", &Vars::Glow::World::Projectiles.Value, { "Off", "All", "Only enemies" });
-					WSlider("Glow alpha###WorldGlowAlpha", &Vars::Glow::World::Alpha.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
 				} EndChild();
 
 				EndTable();
@@ -950,39 +861,38 @@ void CMenu::MenuVisuals()
 				if (TableColumnChild("VisualsRadarCol1"))
 				{
 					SectionTitle("Main");
-					WToggle("Enable Radar###RadarActive", &Vars::Radar::Main::Active.Value);
-					WSlider("Range###RadarRange", &Vars::Radar::Main::Range.Value, 50, 3000, "%d");
-					WSlider("Background alpha###RadarBGA", &Vars::Radar::Main::BackAlpha.Value, 0, 255, "%d");
-					WSlider("Line alpha###RadarLineA", &Vars::Radar::Main::LineAlpha.Value, 0, 255, "%d");
-					WToggle("No Title Gradient", &Vars::Radar::Main::NoTitleGradient.Value);
+					WToggle("Active###RadarActive", &Vars::Radar::Main::Active.Value);
+					WSlider("Range", &Vars::Radar::Main::Range.Value, 50, 3000, "%d");
+					WSlider("Background alpha", &Vars::Radar::Main::BackAlpha.Value, 0, 255, "%d");
+					WSlider("Line alpha", &Vars::Radar::Main::LineAlpha.Value, 0, 255, "%d");
 
-					SectionTitle("Players");
-					WToggle("Show players###RIOJSADFIOSAJIDPFOJASDFOJASOPDFJSAPOFDJOPS", &Vars::Radar::Players::Active.Value);
-					WCombo("Icon###radari", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" });
-					WCombo("Background###radarb", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" });
-					WToggle("Outline###radaro", &Vars::Radar::Players::Outline.Value);
-					WCombo("Ignore teammates###radarplayersteam", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" });
-					WCombo("Ignore cloaked###radarplayerscloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" });
-					WToggle("Health bar###radarhealt", &Vars::Radar::Players::Health.Value);
-					WSlider("Icon size###playersizeiconradar", &Vars::Radar::Players::IconSize.Value, 12, 30, "%d");
-					WToggle("Height indicator###RadarPlayersZ", &Vars::Radar::Players::Height.Value);
+					SectionTitle("Player");
+					WToggle("Active###PlayerActive", &Vars::Radar::Players::Active.Value);
+					WCombo("Icon", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" });
+					WCombo("Background", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" });
+					WToggle("Outline", &Vars::Radar::Players::Outline.Value);
+					WCombo("Ignore teammates", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" });
+					WCombo("Ignore cloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" });
+					WToggle("Health bar", &Vars::Radar::Players::Health.Value);
+					WSlider("Icon size", &Vars::Radar::Players::IconSize.Value, 12, 30, "%d");
+					WToggle("Height indicator", &Vars::Radar::Players::Height.Value);
 				} EndChild();
 
 				/* Column 2 */
 				if (TableColumnChild("VisualsRadarCol2"))
 				{
 					SectionTitle("Building");
-					WToggle("Show buildings###radarbuildingsa", &Vars::Radar::Buildings::Active.Value);
-					WToggle("Outline###radarbuildingsao", &Vars::Radar::Buildings::Outline.Value);
-					WToggle("Ignore team###radarbuildingsb", &Vars::Radar::Buildings::IgnoreTeam.Value);
-					WToggle("Health bar###radarbuildingsc", &Vars::Radar::Buildings::Health.Value);
-					WSlider("Icon size###buildingsizeiconradar", &Vars::Radar::Buildings::IconSize.Value, 12, 30, "%d");
+					WToggle("Active###BuildingActive", &Vars::Radar::Buildings::Active.Value);
+					WToggle("Outline", &Vars::Radar::Buildings::Outline.Value);
+					WToggle("Ignore team", &Vars::Radar::Buildings::IgnoreTeam.Value);
+					WToggle("Health bar", &Vars::Radar::Buildings::Health.Value);
+					WSlider("Icon size###BuildingIconSize", &Vars::Radar::Buildings::IconSize.Value, 12, 30, "%d");
 
 					SectionTitle("World");
-					WToggle("Active###radarworldd", &Vars::Radar::World::Active.Value);
-					WToggle("Healthpack###radarworldda", &Vars::Radar::World::Health.Value);
-					WToggle("Ammopack###radarworlddb", &Vars::Radar::World::Ammo.Value);
-					WSlider("Icon size###worldsizeiconradar", &Vars::Radar::World::IconSize.Value, 12, 30, "%d");
+					WToggle("Active###WorldActive", &Vars::Radar::World::Active.Value);
+					WToggle("Healthpack", &Vars::Radar::World::Health.Value);
+					WToggle("Ammopack", &Vars::Radar::World::Ammo.Value);
+					WSlider("Icon size###WorldIconSize", &Vars::Radar::World::IconSize.Value, 12, 30, "%d");
 				} EndChild();
 
 				EndTable();
@@ -1210,18 +1120,6 @@ void CMenu::MenuMisc()
 			WToggle("No push", &Vars::Misc::NoPush.Value);
 			WToggle("Crouch speed", &Vars::Misc::CrouchSpeed.Value);
 
-			SectionTitle("Automation");
-			WToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value);
-			WToggle("Taunt slide", &Vars::Misc::TauntSlide.Value);
-			WToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value);
-
-			SectionTitle("Sound");
-			MultiFlags({ "Footsteps", "Noisemaker" }, { 1 << 0, 1 << 1 }, &Vars::Misc::SoundBlock.Value, "Block Sounds###SoundRemovals");
-		} EndChild();
-
-		/* Column 2 */
-		if (TableColumnChild("MiscCol2"))
-		{
 			SectionTitle("Exploits");
 			WToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value);
 			WToggle("Pure bypass", &Vars::Misc::BypassPure.Value);
@@ -1249,6 +1147,15 @@ void CMenu::MenuMisc()
 				}
 			}
 
+			SectionTitle("Game");
+			WToggle("Network fix", &Vars::Misc::NetworkFix.Value);
+			WToggle("Prediction error jitter fix", &Vars::Misc::PredictionErrorJitterFix.Value);
+			WToggle("SetupBones optimization", &Vars::Misc::SetupBonesOptimization.Value);
+		} EndChild();
+
+		/* Column 2 */
+		if (TableColumnChild("MiscCol2"))
+		{
 			SectionTitle("Queueing");
 			WToggle("Region selector", &Vars::Misc::RegionChanger.Value);
 			MultiFlags({ "Atlanta", "Chicago", "Los Angeles", "Moses Lake", "Seattle", "Virginia", "Washington", "Amsterdam", "Frankfurt", "London", "Madrid", "Paris", "Stockholm", "Vienna", "Warsaw", "Buenos Aires", "Lima", "Santiago", "Sao Paulo", "Chennai", "Dubai", "Guangzhou", "Hong Kong", "Mumbai", "Seoul", "Shanghai", "Singapore", "Tianjin", "Tokyo", "Sydney", "Johannesburg" },
@@ -1258,6 +1165,14 @@ void CMenu::MenuMisc()
 			);
 			WToggle("Freeze queue timer", &Vars::Misc::FreezeQueue.Value);
 			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" });
+
+			SectionTitle("Automation");
+			WToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value);
+			WToggle("Taunt slide", &Vars::Misc::TauntSlide.Value);
+			WToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value);
+
+			SectionTitle("Sound");
+			MultiFlags({ "Footsteps", "Noisemaker" }, { 1 << 0, 1 << 1 }, &Vars::Misc::SoundBlock.Value, "Block Sounds###SoundRemovals");
 
 			SectionTitle("Chat");
 			WToggle("Chat Flags", &Vars::Misc::ChatFlags.Value);
@@ -1616,9 +1531,7 @@ void CMenu::MenuSettings()
 				I::EngineClient->ClientCmd_Unrestricted("showconsole");
 			if (Button("Fix Chams", SIZE_FULL_WIDTH))
 			{
-				F::DMEChams.CreateMaterials();
-				F::Glow.CreateMaterials();
-				F::MaterialEditor.LoadMaterials();
+				F::Materials.ReloadMaterials();
 			}
 #ifdef DEBUG
 			if (Button("Dump Classes", SIZE_FULL_WIDTH))
@@ -1909,5 +1822,4 @@ void CMenu::Init(IDirect3DDevice9* pDevice)
 	}
 
 	LoadStyle();
-	F::MaterialEditor.Init();
 }

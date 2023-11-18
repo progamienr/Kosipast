@@ -87,7 +87,7 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 				if (iCmdCount > iAllowedNewCommands)
 				{
 					Utils::ConLog("clc_Move", std::format("{:d} sent <{:d} | {:d}>, max was {:d}.", iCmdCount, moveMsg.m_nNewCommands, moveMsg.m_nBackupCommands, iAllowedNewCommands).c_str(), { 0, 222, 255, 255 }, Vars::Debug::Logging.Value);
-					G::ShiftedTicks -= iCmdCount - iAllowedNewCommands;
+					G::ShiftedTicks = G::ShiftedGoal -= iCmdCount - iAllowedNewCommands;
 					F::Ticks.iDeficit = iCmdCount - iAllowedNewCommands;
 				}
 			}

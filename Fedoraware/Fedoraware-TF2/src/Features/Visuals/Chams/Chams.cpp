@@ -1,203 +1,295 @@
 #include "Chams.h"
+
 #include "../../Vars.h"
-#include "../../Menu/MaterialEditor/MaterialEditor.h"
+#include "../../../Hooks/Hooks.h"
+#include "../../../Hooks/HookManager.h"
+#include "../Materials/Materials.h"
+#include "../FakeAngleManager/FakeAng.h"
 
-bool CChams::ShouldRun()
+bool CDMEChams::ShouldRun()
 {
-	return !I::EngineVGui->IsGameUIVisible();
+	if (!Vars::Chams::Active.Value || I::EngineVGui->IsGameUIVisible())
+		return false;
+
+	return true;
 }
 
-void CChams::DrawModel(CBaseEntity* pEntity)
+int GetType(int EntIndex)
 {
-	m_bRendering = true;
-	pEntity->DrawModel(STUDIO_RENDER | STUDIO_NOSHADOWS);
-	m_DrawnEntities[pEntity] = true;
+	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(EntIndex);
+	if (!pEntity)
+		return 0;
+
+	switch (pEntity->GetClassID())
+	{
+	case ETFClassID::CTFViewModel:
+		return 1;
+	case ETFClassID::CBasePlayer:
+	case ETFClassID::CTFPlayer:
+		return 2;
+	case ETFClassID::CRagdollPropAttached:
+	case ETFClassID::CRagdollProp:
+	case ETFClassID::CTFRagdoll:
+		return 3;
+	case ETFClassID::CTFWearable:
+		return 4;
+	case ETFClassID::CTFAmmoPack:
+		return 6;
+	case ETFClassID::CBaseAnimating:
+	{
+		const auto szName = pEntity->GetModelName();
+		if (Hash::IsAmmo(szName))
+			return 6;
+		if (Hash::IsHealth(szName))
+			return 7;
+		break;
+	}
+	case ETFClassID::CObjectSentrygun:
+	case ETFClassID::CObjectDispenser:
+	case ETFClassID::CObjectTeleporter:
+		return 8;
+	case ETFClassID::CTFProjectile_Rocket:
+	case ETFClassID::CTFGrenadePipebombProjectile:
+	case ETFClassID::CTFProjectile_Jar:
+	case ETFClassID::CTFProjectile_JarGas:
+	case ETFClassID::CTFProjectile_JarMilk:
+	case ETFClassID::CTFProjectile_Arrow:
+	case ETFClassID::CTFProjectile_SentryRocket:
+	case ETFClassID::CTFProjectile_Flare:
+	case ETFClassID::CTFProjectile_Cleaver:
+	case ETFClassID::CTFProjectile_EnergyBall:
+	case ETFClassID::CTFProjectile_HealingBolt:
+	case ETFClassID::CTFProjectile_ThrowableBreadMonster:
+		return 9;
+	case ETFClassID::CBaseDoor:
+		return 10;
+	}
+
+	CBaseCombatWeapon* pWeapon = reinterpret_cast<CBaseCombatWeapon*>(pEntity);
+	if (pWeapon)
+		return 5;
+
+	return -1;
+}
+
+Chams_t GetPlayerChams(CBaseEntity* pEntity)
+{
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (pEntity && pLocal)
+	{
+		if (pEntity->GetIndex() == G::CurrentTargetIdx && Vars::Chams::Players::Target.Value.ChamsActive)
+			return Vars::Chams::Players::Target.Value;
+		if (pEntity == pLocal)
+			return Vars::Chams::Players::Local.Value;
+		if (g_EntityCache.IsFriend(pEntity->GetIndex()) && Vars::Chams::Players::Friend.Value.ChamsActive)
+			return Vars::Chams::Players::Friend.Value;
+		if (pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
+			return Vars::Chams::Players::Enemy.Value;
+		if (pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
+			return Vars::Chams::Players::Team.Value;
+	}
+
+	return Chams_t();
+}
+
+Chams_t GetBuildingChams(CBaseEntity* pEntity)
+{
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (pEntity && pLocal)
+	{
+		if (pEntity->GetIndex() == G::CurrentTargetIdx && Vars::Chams::Buildings::Target.Value.ChamsActive)
+			return Vars::Chams::Buildings::Target.Value;
+		if (pEntity->GetIndex() == pLocal->GetIndex())
+			return Vars::Chams::Buildings::Local.Value;
+		if (g_EntityCache.IsFriend(pEntity->GetIndex()) && Vars::Chams::Buildings::Friend.Value.ChamsActive)
+			return Vars::Chams::Buildings::Friend.Value;
+		if (pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
+			return Vars::Chams::Buildings::Enemy.Value;
+		if (pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
+			return Vars::Chams::Buildings::Team.Value;
+	}
+
+	return Chams_t();
+}
+
+Chams_t GetChamsType(int nIndex, CBaseEntity* pEntity = nullptr)
+{
+	switch (nIndex)
+	{
+	case 0:
+		Vars::Chams::Players::Weapon.Value.ChamsActive = true;
+		Vars::Chams::Players::Weapon.Value.IgnoreZ = true;
+		return Vars::Chams::Players::Weapon.Value;
+	case 1:
+		Vars::Chams::Players::Hands.Value.ChamsActive = true;
+		Vars::Chams::Players::Hands.Value.IgnoreZ = true;
+		return Vars::Chams::Players::Hands.Value;
+	case 2:
+		return GetPlayerChams(pEntity);
+	case 3:
+		return Vars::Chams::Players::Ragdoll.Value;
+	case 4:
+		if (!pEntity)
+			return Chams_t();
+		if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()))
+			return GetPlayerChams(pOwner);
+		return Chams_t();
+	case 5:
+		if (!pEntity)
+			return Chams_t();
+		if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()))
+			return GetPlayerChams(pOwner);
+		return Chams_t();
+	case 6:
+		return Vars::Chams::World::Ammo.Value;
+	case 7:
+		return Vars::Chams::World::Health.Value;
+	case 8:
+	{
+		if (!pEntity)
+			return Chams_t();
+		const auto& pBuilding = reinterpret_cast<CBaseObject*>(pEntity);
+		if (!pBuilding || !(!pBuilding->GetCarried() && pBuilding->GetConstructed()))
+			return Chams_t();
+		if (CBaseEntity* pOwner = pBuilding->GetOwner())
+			return GetBuildingChams(pOwner);
+		else if (int teamNum = pEntity->m_iTeamNum())
+		{	// if we don't have an owner, we need to do this, or else spawned buildings that do have a team will return no cham struct.
+			CBaseEntity* pLocal = g_EntityCache.GetLocal();
+			if (pLocal)
+				return (teamNum = pLocal->m_iTeamNum()) ? Vars::Chams::Buildings::Team.Value : Vars::Chams::Buildings::Enemy.Value;
+		}
+		return Chams_t();
+	}
+	case 9:
+		if (!pEntity)
+			return Chams_t();
+		if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(reinterpret_cast<int>(pEntity->GetThrower())))
+			return GetPlayerChams(pOwner);
+		return Chams_t();
+	}
+
+	return Chams_t();
+}
+
+void CDMEChams::RenderFakeAng(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+{
+	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
+	const auto& pRenderContext = I::MaterialSystem->GetRenderContext();
+	if (!ModelRender_DrawModelExecute || !pRenderContext)
+		return;
+
+
+
+	Chams_t chams = Vars::Chams::Players::FakeAng.Value;
+	if (!chams.ChamsActive || !F::FakeAng.DrawChams)
+		return;
+
+	auto baseMaterial = F::Materials.GetMaterial(chams.Material), overlayMaterial = F::Materials.GetMaterial(chams.OverlayMaterial);
+	pRenderContext->DepthRange(0.0f, chams.IgnoreZ ? 0.2f : 1.f);
+	F::Materials.SetColor(baseMaterial, chams.Color);
+	if (baseMaterial)
+		I::ModelRender->ForcedMaterialOverride(baseMaterial);
+	ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, reinterpret_cast<matrix3x4*>(&F::FakeAng.BoneMatrix));
+	if (overlayMaterial)
+	{
+		F::Materials.SetColor(overlayMaterial, chams.OverlayColor);
+		I::ModelRender->ForcedMaterialOverride(overlayMaterial);
+
+		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, reinterpret_cast<matrix3x4*>(&F::FakeAng.BoneMatrix));
+	}
+
+	pRenderContext->DepthRange(0.0f, 1.f);
+	I::ModelRender->ForcedMaterialOverride(nullptr);
+	I::RenderView->SetColorModulation(1.0f, 1.0f, 1.0f);
+
+	I::RenderView->SetBlend(1.0f);
+	return;
+}
+
+bool CDMEChams::Render(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+{
 	m_bRendering = false;
-}
+	if (!ShouldRun())
+		return false;
 
-void CChams::Init()
-{
-	{
-		auto kv = new KeyValues("VertexLitGeneric");
-		kv->SetString("$basetexture", "vgui/white_additive");
-		kv->SetString("$bumpmap", "models/player/shared/shared_normal");
-		kv->SetString("$envmap", "skybox/sky_dustbowl_01");
-		kv->SetString("$envmapfresnel", "1");
-		kv->SetString("$phong", "1");
-		kv->SetString("$phongfresnelranges", "[0 0.05 0.1]");
-		kv->SetString("$selfillum", "1");
-		kv->SetString("$selfillumfresnel", "1");
-		kv->SetString("$selfillumfresnelminmaxexp", "[0.5 0.5 0]");
-		kv->SetString("$selfillumtint", "[0 0 0]");
-		kv->SetString("$envmaptint", "[0 1 0]");
-		m_pMatFresnel = I::MaterialSystem->Create("m_pMatFresnel", kv);
-	}
+	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
+	const auto& pRenderContext = I::MaterialSystem->GetRenderContext();
+	if (!ModelRender_DrawModelExecute || !pRenderContext)
+		return false;
 
-	{
-		auto kv = new KeyValues("VertexLitGeneric");
-		kv->SetString("$basetexture", "vgui/white_additive");
-		kv->SetString("$bumpmap", "vgui/white_additive");
-		kv->SetString("$selfillum", "1");
-		kv->SetString("$selfillumfresnel", "1");
-		kv->SetString("$selfillumfresnelminmaxexp", "[-0.25 1 1]");
-		m_pMatShaded = I::MaterialSystem->Create("m_pMatShaded", kv);
-	}
-
-	{
-		auto kv = new KeyValues("VertexLitGeneric");
-		kv->SetString("$basetexture", "brick/brickwall031b");
-		kv->SetString("$additive", "1");
-		kv->SetString("$phong", "1");
-		kv->SetString("$phongfresnelrangse", "[0 0.5 10]");
-		kv->SetString("$envmap", "cubemaps/cubemap_sheen001");
-		kv->SetString("$envmapfresnel", "1");
-		kv->SetString("$selfillum", "1");
-		kv->SetString("$rimlight", "1");
-		kv->SetString("$rimlightboost", "100");
-		kv->SetString("$envmapfresnelminmaxexp", "[0 1 2]");
-		m_pMatBrick = I::MaterialSystem->Create("m_pMatBrick", kv);
-	}
-
-	{
-		auto kv = new KeyValues("VertexLitGeneric");
-		kv->SetString("$basetexture", "vgui/white_additive");
-		kv->SetString("$bumpmap", "vgui/white_additive");
-		kv->SetString("$envmap", "cubemaps/cubemap_sheen001");
-		kv->SetString("$selfillum", "1");
-		kv->SetString("$selfillumfresnel", "1");
-		kv->SetString("$selfillumfresnelminmaxexp", "[-0.25 1 1]");
-		m_pMatShiny = I::MaterialSystem->Create("m_pMatShiny", kv);
-	}
+	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(pInfo.m_nEntIndex);
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	//if (pEntity && !pEntity->ShouldDraw())
+	//	return false;
 
 
-	{
-		auto kv = new KeyValues("UnlitGeneric");
-		kv->SetString("$basetexture", "vgui/white_additive");
-		m_pMatFlat = I::MaterialSystem->Create("m_pMatFlat", kv);
-	}
 
-	{
-		auto kv = new KeyValues("VertexLitGeneric");
+	const int drawType = GetType(pInfo.m_nEntIndex);
+	if (drawType == -1)
+		return false;
+
+	if (drawType == 0)
+	{	// filter weapon draws
+		std::string_view szModelName = I::ModelInfoClient->GetModelName(pInfo.m_pModel);
+		if (!(szModelName.find("weapon") != std::string_view::npos
+			&& szModelName.find("arrow") == std::string_view::npos
+			&& szModelName.find("w_syringe") == std::string_view::npos
+			&& szModelName.find("nail") == std::string_view::npos
+			&& szModelName.find("shell") == std::string_view::npos
+			&& szModelName.find("parachute") == std::string_view::npos
+			&& szModelName.find("buffbanner") == std::string_view::npos
+			&& szModelName.find("shogun_warbanner") == std::string_view::npos
+			&& szModelName.find("targe") == std::string_view::npos // same as world model, can't filter
+			&& szModelName.find("shield") == std::string_view::npos // same as world model, can't filter
+			&& szModelName.find("repair_claw") == std::string_view::npos))
 		{
-			kv->SetString("$basetexture", "models/player/shared/ice_player");
-			kv->SetString("$bumpmap", "models/player/shared/shared_normal");
-			kv->SetString("$phong", "1");
-			kv->SetString("$phongexponent", "10");
-			kv->SetString("$phongboost", "1");
-			kv->SetString("$phongfresnelranges", "[0 0 0]");
-			kv->SetString("$basemapalphaphongmask", "1");
-			kv->SetString("$phongwarptexture", "models/player/shared/ice_player_warp");
-			m_pMatPlastic = I::MaterialSystem->Create("m_pMatPlastic", kv);
+			return false;
 		}
 	}
 
-	m_pMatBlur = I::MaterialSystem->Find("models/effects/muzzleflash/blurmuzzle", "Model textures");
-}
-
-void CChams::Render()
-{
-	if (!m_DrawnEntities.empty())
-		m_DrawnEntities.clear();
-
-	m_bHasSetStencil = false;
-
-	if (const auto& pLocal = g_EntityCache.GetLocal())
-	{
-		if (!ShouldRun())
-			return;
-
-		if (const auto& pRenderContext = I::MaterialSystem->GetRenderContext())
+	if (drawType == 3)
+	{	// don't interfere with ragdolls
+		if (Vars::Visuals::RagdollEffects::RagdollType.Value)
 		{
-			//Let's do this in advance if Glow is enabled.
-			/*if (Vars::Glow::Main::Active.m_Var)
-			{*/
-			ShaderStencilState_t StencilState = {};
-			StencilState.m_bEnable = true;
-			StencilState.m_nReferenceValue = 1;
-			StencilState.m_CompareFunc = STENCILCOMPARISONFUNCTION_ALWAYS;
-			StencilState.m_PassOp = STENCILOPERATION_REPLACE;
-			StencilState.m_FailOp = STENCILOPERATION_KEEP;
-			StencilState.m_ZFailOp = STENCILOPERATION_REPLACE;
-			StencilState.SetStencilState(pRenderContext);
-			m_bHasSetStencil = true;
-			//}
-
-			RenderEnts(pLocal, pRenderContext);
+			if (Vars::Visuals::RagdollEffects::EnemyOnly.Value && pEntity && pLocal && pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
+				return false;
+			else
+				return false;
 		}
 	}
-}
 
-void CChams::RenderEnts(CBaseEntity* pLocal, IMatRenderContext* pRenderContext)
-{
-	if (!Vars::Chams::Active.Value)
-		return;
+	if (pEntity == pLocal)
+		RenderFakeAng(pState, pInfo, pBoneToWorld);
 
-	std::vector<CBaseEntity*> Entities = g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL);
 
-	for (const auto& Entity : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL))
+
+	Chams_t chams = GetChamsType(drawType, pEntity);
+	if (!chams.ChamsActive)
+		return false;
+
+	m_bRendering = true;
+
+	auto baseMaterial = F::Materials.GetMaterial(chams.Material), overlayMaterial = F::Materials.GetMaterial(chams.OverlayMaterial);
+	pRenderContext->DepthRange(0.0f, chams.IgnoreZ ? 0.2f : 1.f);
+	F::Materials.SetColor(baseMaterial, chams.Color);
+	if (baseMaterial)
+		I::ModelRender->ForcedMaterialOverride(baseMaterial);
+	ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
+	if (overlayMaterial)
 	{
-		Entities.push_back(Entity);
-	}
-	for (const auto& Entity : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
-	{
-		Entities.push_back(Entity);
-	}
-	for (const auto& Entity : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
-	{
-		Entities.push_back(Entity);
-	}
-	for (const auto& Entity : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
-	{
-		Entities.push_back(Entity);
+		F::Materials.SetColor(overlayMaterial, chams.OverlayColor);
+		I::ModelRender->ForcedMaterialOverride(overlayMaterial);
+
+		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
 	}
 
-	if (Entities.empty())
-		return;
+	pRenderContext->DepthRange(0.0f, 1.f);
+	I::RenderView->SetColorModulation(1.0f, 1.0f, 1.0f);
+	I::RenderView->SetBlend(1.0f);
+	I::ModelRender->ForcedMaterialOverride(nullptr);
 
-	for (const auto& Entity : Entities)
-	{
-		if (Entity->GetDormant())
-			continue;
+	m_bRendering = false;
 
-		const bool isPlayer = Entity->IsPlayer();
-		if (isPlayer && (!Entity->IsAlive() || Entity->IsAGhost()))
-			continue;
-
-		if (!Utils::IsOnScreen(pLocal, Entity))
-			continue;
-
-		DrawModel(Entity);
-
-		if (isPlayer)
-		{
-			if (Vars::Chams::Players::Wearables.Value)
-			{
-				CBaseEntity* pAttachment = Entity->FirstMoveChild();
-
-				for (int n = 0; n < 32; n++)
-				{
-					if (!pAttachment)
-						continue;
-
-					if (pAttachment->IsWearable())
-						DrawModel(pAttachment);
-
-					pAttachment = pAttachment->NextMovePeer();
-				}
-			}
-
-			if (Vars::Chams::Players::Weapons.Value)
-			{
-				if (const auto& pWeapon = Entity->GetActiveWeapon())
-					DrawModel(pWeapon);
-			}
-		}
-
-		I::ModelRender->ForcedMaterialOverride(nullptr);
-		I::RenderView->SetColorModulation(1.0f, 1.0f, 1.0f);
-
-		I::RenderView->SetBlend(1.0f);
-
-		pRenderContext->DepthRange(0.0f, 1.0f);
-	}
+	return true;
 }

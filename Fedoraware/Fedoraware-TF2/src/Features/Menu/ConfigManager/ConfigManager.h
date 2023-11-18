@@ -35,10 +35,10 @@ public:
 	const std::string ConfigExtension = ".fw";
 
 	CConfigManager();
-	bool SaveConfig(const std::string& configName);
-	bool LoadConfig(const std::string& configName);
-	bool SaveVisual(const std::string& configName);
-	bool LoadVisual(const std::string& configName);
+	bool SaveConfig(const std::string& configName, bool bNotify = true);
+	bool LoadConfig(const std::string& configName, bool bNotify = true);
+	bool SaveVisual(const std::string& configName, bool bNotify = true);
+	bool LoadVisual(const std::string& configName, bool bNotify = true);
 	void RemoveConfig(const std::string& configName);
 	void RemoveVisual(const std::string& configName);
 

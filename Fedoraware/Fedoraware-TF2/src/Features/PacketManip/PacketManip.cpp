@@ -16,7 +16,10 @@ inline bool CPacketManip::AACheck(CUserCmd* pCmd)
 	if (!iNetChan || !pLocal)
 		return false;
 
-	return !iNetChan->m_nChokedPackets && F::AntiAim.ShouldAntiAim(pLocal);
+	if ((G::DoubleTap || G::Teleport) && G::ShiftedTicks == G::ShiftedGoal)
+		return false;
+
+	return iNetChan->m_nChokedPackets < 3 && F::AntiAim.ShouldAntiAim(pLocal);
 }
 
 void CPacketManip::CreateMove(CUserCmd* pCmd, bool* pSendPacket)
@@ -36,6 +39,9 @@ void CPacketManip::CreateMove(CUserCmd* pCmd, bool* pSendPacket)
 		// F::AntiAim.Run(pCmd, pSendPacket);
 		F::FakeLag.Run(pCmd, pSendPacket);
 	}
+	else
+		G::ChokeAmount = 0;
+
 	//if (G::DoubleTap)
 	//	*pSendPacket = G::ShiftedTicks == 1;
 	//if (*pSendPacket)

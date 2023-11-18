@@ -230,7 +230,7 @@ int CAimbotHitscan::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCom
 		if (nClassNum == CLASS_SNIPER)
 		{
 			if (G::CurItemDefIndex != Sniper_m_TheClassic && pLocal->IsScoped() ||
-				G::CurItemDefIndex == Sniper_m_TheClassic && pWeapon->GetChargeDamage() > 149.9f)
+				G::CurItemDefIndex == Sniper_m_TheClassic && pWeapon->m_flChargedDamage() > 149.9f)
 				bHeadshot = true;
 		}
 		if (nClassNum == CLASS_SPY)
@@ -248,9 +248,9 @@ int CAimbotHitscan::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCom
 				case Sniper_m_TheClassic: flBodyMult = 0.9f; break;
 				case Sniper_m_TheHitmansHeatmaker: flBodyMult = 0.8f; break;
 				case Sniper_m_TheMachina:
-				case Sniper_m_ShootingStar: if (pWeapon->GetChargeDamage() > 149.9f) flBodyMult = 1.15f;
+				case Sniper_m_ShootingStar: if (pWeapon->m_flChargedDamage() > 149.9f) flBodyMult = 1.15f;
 				}
-				if (pWeapon->GetChargeDamage() * flBodyMult >= pTarget->m_iHealth())
+				if (pWeapon->m_flChargedDamage() * flBodyMult >= pTarget->m_iHealth())
 					bHeadshot = false;
 			}
 
@@ -488,11 +488,11 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			const int nHealth = target.m_pEntity->m_iHealth();
 			const bool bIsCritBoosted = pLocal->IsCritBoosted();
 
-			if (target.m_nAimedHitbox == HITBOX_HEAD && G::CurItemDefIndex != Sniper_m_TheSydneySleeper && (G::CurItemDefIndex != Sniper_m_TheClassic || G::CurItemDefIndex == Sniper_m_TheClassic && pWeapon->GetChargeDamage() > 149.9f))
+			if (target.m_nAimedHitbox == HITBOX_HEAD && G::CurItemDefIndex != Sniper_m_TheSydneySleeper && (G::CurItemDefIndex != Sniper_m_TheClassic || G::CurItemDefIndex == Sniper_m_TheClassic && pWeapon->m_flChargedDamage() > 149.9f))
 			{
 				if (nHealth > 150)
 				{
-					const float flDamage = Math::RemapValClamped(pWeapon->GetChargeDamage(), 0.0f, 150.0f, 0.0f, 450.0f);
+					const float flDamage = Math::RemapValClamped(pWeapon->m_flChargedDamage(), 0.0f, 150.0f, 0.0f, 450.0f);
 					const int nDamage = static_cast<int>(flDamage);
 
 					if (nDamage < nHealth && nDamage != 450)
@@ -520,11 +520,11 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 					case Sniper_m_TheClassic: flBodyMult = 0.9f; break;
 					case Sniper_m_TheHitmansHeatmaker: flBodyMult = 0.8f; break;
 					case Sniper_m_TheMachina:
-					case Sniper_m_ShootingStar: if (pWeapon->GetChargeDamage() > 149.9f) flBodyMult = 1.15f;
+					case Sniper_m_ShootingStar: if (pWeapon->m_flChargedDamage() > 149.9f) flBodyMult = 1.15f;
 					}
 
 					const float flMax = 150.0f * flCritMult * flBodyMult;
-					const int nDamage = static_cast<int>(pWeapon->GetChargeDamage() * flCritMult * flBodyMult);
+					const int nDamage = static_cast<int>(pWeapon->m_flChargedDamage() * flCritMult * flBodyMult);
 
 					if (nDamage < target.m_pEntity->m_iHealth() && nDamage != static_cast<int>(flMax))
 						return false;
@@ -698,7 +698,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 
 				if (bDo && pWeapon->GetWeaponSpread() != 0.f)
 				{
-					const float flTimeSinceLastShot = (pLocal->m_nTickBase() * TICK_INTERVAL) - pWeapon->GetLastFireTime();
+					const float flTimeSinceLastShot = (pLocal->m_nTickBase() * TICK_INTERVAL) - pWeapon->m_flLastFireTime();
 
 					if (pWeapon->GetWeaponData().m_nBulletsPerShot > 1)
 					{

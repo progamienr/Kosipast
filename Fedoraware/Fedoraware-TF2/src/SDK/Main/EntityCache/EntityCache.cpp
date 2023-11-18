@@ -150,7 +150,7 @@ void CEntityCache::Fill()
 					{
 						if (const auto& pSecondary = m_pLocal->GetWeaponFromSlot(EWeaponSlots::SLOT_SECONDARY))
 						{
-							if (pSecondary->GetItemDefIndex() == ETFWeapons::Pyro_s_TheDetonator)
+							if (pSecondary->m_iItemDefinitionIndex() == ETFWeapons::Pyro_s_TheDetonator)
 							{
 								if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()) == m_pLocal)
 									m_vecGroups[EGroupType::LOCAL_FLARES].push_back(pEntity);

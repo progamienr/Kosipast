@@ -69,7 +69,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
 		const float charge = flCharge > 0.f && G::CurItemDefIndex != Demoman_s_StickyJumper
 			? Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon) * flCharge
-			: (pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f);
+			: (pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f);
 		const float speed = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 900.f, 2400.f);
 		out = { TF_PROJECTILE_PIPEBOMB_REMOTE, pos, ang, { 5.f, 5.f, 5.f }, speed, 1.f, false };
 		return true;
@@ -80,8 +80,8 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		float speed = 1454.f;
 		if (pPlayer->IsPrecisionRune())
 			speed *= 2.5f;
-		float lifetime = pWeapon->GetDetonateTime() - I::GlobalVars->curtime;
-		if (pWeapon->GetDetonateTime() <= 0.f)
+		float lifetime = pWeapon->m_flDetonateTime() - I::GlobalVars->curtime;
+		if (pWeapon->m_flDetonateTime() <= 0.f)
 			lifetime = 1.06f;
 		out = { TF_PROJECTILE_CANNONBALL, pos, ang, { 5.f, 5.f, 5.f }, speed, 1.f, false, lifetime };
 		return true;
@@ -101,7 +101,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_COMPOUND_BOW:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
-		const float charge = pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f;
+		const float charge = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
 		const float speed = Math::RemapValClamped(charge, 0.f, 1.f, 1800.f, 2600.f);
 		const float gravity = Math::RemapValClamped(charge, 0.f, 1.f, 0.5f, 0.1f);
 		out = { TF_PROJECTILE_ARROW, pos, ang, { 1.f, 1.f, 1.f }, speed, gravity, true };

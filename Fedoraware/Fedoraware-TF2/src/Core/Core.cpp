@@ -12,14 +12,16 @@
 #include "../Features/Menu/ConfigManager/ConfigManager.h"
 #include "../Features/Commands/Commands.h"
 
+#include "../Features/Visuals/Materials/Materials.h"
+
 #include "../Utils/Events/Events.h"
 #include "../Utils/Minidump/Minidump.h"
 
 void LoadDefaultConfig()
 {
 	// Load default visuals
-	g_CFG.LoadConfig(g_CFG.GetCurrentConfig());
-	//g_CFG.LoadVisual(g_CFG.GetCurrentVisuals()); // LoadConfig loads all vars
+	g_CFG.LoadConfig(g_CFG.GetCurrentConfig(), false);
+	//g_CFG.LoadVisual(g_CFG.GetCurrentVisuals(), false); // LoadConfig loads all vars
 
 	g_Draw.RemakeFonts();
 
@@ -36,9 +38,7 @@ void CCore::OnLoaded()
 	// Check the DirectX version
 	const int dxLevel = g_ConVars.FindVar("mat_dxlevel")->GetInt();
 	if (dxLevel < 90)
-	{
 		MessageBoxA(nullptr, "Your DirectX version is too low!\nPlease use dxlevel 90 or higher", "dxlevel too low", MB_OK | MB_ICONWARNING);
-	}
 }
 
 void CCore::Load()
@@ -58,6 +58,8 @@ void CCore::Load()
 	F::Ticks.Reset();
 
 	F::Commands.Init();
+
+	F::Materials.ReloadMaterials();
 
 	g_Events.Setup({ "client_beginconnect", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect", "player_spawn", "player_changeclass", "player_hurt", "player_death", "vote_started", "vote_cast", "achievement_earned", "item_pickup" }); // all events @ https://github.com/tf2cheater2013/gameevents.txt
 

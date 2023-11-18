@@ -8,260 +8,96 @@
 
 namespace S
 {
-	MAKE_SIGNATURE(GetLocalizedBaseItemName, CLIENT_DLL, "55 8B EC 56 8B 75 ? 8B 4E ? 85 C9 74 ? 57", 0x0);
-	MAKE_SIGNATURE(GLocalizationProvider, CLIENT_DLL, "A1 ? ? ? ? A8 ? 75 ? 83 C8 ? C7 05 ? ? ? ? ? ? ? ? A3 ? ? ? ? B8 ? ? ? ? C3", 0x0);
-	MAKE_SIGNATURE(C_EconItemView_GetStaticData, CLIENT_DLL, "0F B7 41 ? 50 E8 ? ? ? ? 8B C8 E8 ? ? ? ? 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 50 E8 ? ? ? ? 83 C4 ? C3 CC CC CC CC CC CC CC 83 C1", 0x0);
-	MAKE_SIGNATURE(C_BaseCombatWeapon_GetName, CLIENT_DLL, "0F B7 81 ? ? ? ? 50 E8 ? ? ? ? 83 C4 ? 83 C0 ? C3 CC CC CC CC CC CC CC CC CC CC CC CC D9 05", 0x0);
+	MAKE_SIGNATURE(CBaseCombatWeapon_HasAmmo, CLIENT_DLL, "56 8B F1 83 BE ? ? ? ? ? 75 0D 83 BE ? ? ? ? ? 75 04", 0x0);
 
-	MAKE_SIGNATURE(CBaseCombatWeapon_GetWeaponData, CLIENT_DLL, "55 8B EC 66 8B 45 ? 66 3B 05 ? ? ? ? 73", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_CanFireCriticalShot, CLIENT_DLL, "6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? E8 ? ? ? ? 50 E8 ? ? ? ? 83 C4 ? C3 CC CC CC 55", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_GetTFWeaponInfo, CLIENT_DLL, "55 8B EC FF 75 ? E8 ? ? ? ? 83 C4 ? 85 C0 75 ? 5D C3", 0x0);
-	MAKE_SIGNATURE(CBaseCombatWeapon_GetWeaponSpread, CLIENT_DLL, "55 8B EC 83 EC ? 56 8B F1 57 6A ? 6A", 0x0);
-
-	MAKE_SIGNATURE(CTFWeaponBaseMelee_DoSwingTraceInternal, CLIENT_DLL, "53 8B DC 83 EC ? 83 E4 ? 83 C4 ? 55 8B 6B ? 89 6C 24 ? 8B EC 81 EC ? ? ? ? A1 ? ? ? ? 56 8B F1", 0x0);
-
-	MAKE_SIGNATURE(CBaseCombatWeapon_GetSpreadAngles, CLIENT_DLL, "55 8B EC 83 EC ? 56 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 ? 85 F6", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_GetProjectileFireSetup, CLIENT_DLL, "53 8B DC 83 EC ? 83 E4 ? 83 C4 ? 55 8B 6B ? 89 6C 24 ? 8B EC 81 EC ? ? ? ? 56 8B F1 57 8B 06 8B 80 ? ? ? ? FF D0 84 C0", 0x0);
-
+	MAKE_SIGNATURE(CBaseCombatWeapon_GetSpreadAngles, CLIENT_DLL, "55 8B EC 83 EC ? 56 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 ? 85 F6", 0x0);
+	MAKE_SIGNATURE(CBaseCombatWeapon_GetWeaponSpread, CLIENT_DLL, "55 8B EC 83 EC ? 56 8B F1 57 6A ? 6A", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_CalcIsAttackCritical, CLIENT_DLL, "53 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B D8 83 C4 ? 85 DB 0F 84", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_CalcIsAttackCriticalHelper, CLIENT_DLL, "55 8B EC 83 EC ? 56 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 ? 89 75", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_CalcIsAttackCriticalHelperMelee, CLIENT_DLL, "55 8B EC A1 ? ? ? ? 83 EC ? 83 78 ? ? 57 8B F9 75", 0x0);
+	MAKE_SIGNATURE(CTFWeaponBaseMelee_DoSwingTraceInternal, CLIENT_DLL, "53 8B DC 83 EC ? 83 E4 ? 83 C4 ? 55 8B 6B ? 89 6C 24 ? 8B EC 81 EC ? ? ? ? A1 ? ? ? ? 56 8B F1", 0x0);
+	MAKE_SIGNATURE(CTFWeaponBase_GetAppropriateWorldOrViewModel, CLIENT_DLL, "56 57 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 8B F1 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F8 83 C4 14 85 FF 74 ? 8B CE", 0x0);
+	MAKE_SIGNATURE(CTFWeaponBase_UpdateAllViewmodelAddons, CLIENT_DLL, "55 8B EC 83 EC 08 56 57 8B F1 E8 ? ? ? ? 8B F8 85 FF 0F 84 ? ? ? ? 8B 17", 0x0);
+
+	MAKE_SIGNATURE(GetLocalizedBaseItemName, CLIENT_DLL, "55 8B EC 56 8B 75 ? 8B 4E ? 85 C9 74 ? 57", 0x0);
+	MAKE_SIGNATURE(GLocalizationProvider, CLIENT_DLL, "A1 ? ? ? ? A8 ? 75 ? 83 C8 ? C7 05 ? ? ? ? ? ? ? ? A3 ? ? ? ? B8 ? ? ? ? C3", 0x0);
+	MAKE_SIGNATURE(C_EconItemView_GetStaticData, CLIENT_DLL, "0F B7 41 ? 50 E8 ? ? ? ? 8B C8 E8 ? ? ? ? 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 50 E8 ? ? ? ? 83 C4 ? C3 CC CC CC CC CC CC CC 83 C1", 0x0);
 }
 
 class CBaseCombatWeapon : public CBaseEntity
 {
 public: //Netvars
-	M_DYNVARGET(Clip1, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip1")
-	M_DYNVARGET(Clip2, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip2")
-	M_DYNVARGET(Energy, float, this, "DT_TFWeaponBase", "m_flEnergy")
-	M_DYNVARGET(nViewModelIndex, int, this, "DT_BaseCombatWeapon", "LocalWeaponData", "m_nViewModelIndex")
-	M_DYNVARGET(iViewModelIndex, int, this, "DT_BaseCombatWeapon", "m_iViewModelIndex")
-	M_DYNVARGET(ItemDefIndex, int, this, "DT_EconEntity", "m_AttributeManager", "m_Item", "m_iItemDefinitionIndex")
-	M_DYNVARGET(ChargeBeginTime, float, this, "DT_WeaponPipebombLauncher", "PipebombLauncherLocalData", "m_flChargeBeginTime")
-	M_DYNVARGET(ChargeDamage, float, this, "DT_TFSniperRifle", "SniperRifleLocalData", "m_flChargedDamage")
-	M_DYNVARGET(LastFireTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastFireTime")
-	M_DYNVARGET(NextPrimaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack")
-	M_DYNVARGET(NextSecondaryAttack, float, this, "DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextSecondaryAttack")
-	M_DYNVARGET(ChargeResistType, int, this, "DT_WeaponMedigun", "m_nChargeResistType")
-	M_DYNVARGET(ReloadMode, int, this, "DT_TFWeaponBase", "m_iReloadMode")
-	M_DYNVARGET(DetonateTime, float, this, "DT_WeaponGrenadeLauncher", "m_flDetonateTime")
-	//M_DYNVARGET(ObservedCritChance, float, this, "DT_LocalTFWeaponData", "m_flObservedCritChance")
-	M_DYNVARGET(LastCritCheckTime, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastCritCheckTime")
-	M_DYNVARGET(ObservedCritChance, float, this, "DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flObservedCritChance")
-	inline void SetObservedCritChance(float crit_chance)
+	NETVAR(m_iClip1, int, "CBaseCombatWeapon", "m_iClip1")
+	NETVAR(m_iClip2, int, "CBaseCombatWeapon", "m_iClip2")
+	NETVAR(m_iPrimaryAmmoType, int, "CBaseCombatWeapon", "m_iPrimaryAmmoType")
+	NETVAR(m_iSecondaryAmmoType, int, "CBaseCombatWeapon", "m_iSecondaryAmmoType")
+	NETVAR(m_nViewModelIndex, int, "CBaseCombatWeapon", "m_nViewModelIndex")
+	NETVAR(m_bFlipViewModel, bool, "CBaseCombatWeapon", "m_bFlipViewModel")
+	NETVAR(m_flNextPrimaryAttack, float, "CBaseCombatWeapon", "m_flNextPrimaryAttack")
+	NETVAR(m_flNextSecondaryAttack, float, "CBaseCombatWeapon", "m_flNextSecondaryAttack")
+	NETVAR(m_nNextThinkTick, int, "CBaseCombatWeapon", "m_nNextThinkTick")
+	NETVAR(m_flTimeWeaponIdle, float, "CBaseCombatWeapon", "m_flTimeWeaponIdle")
+	NETVAR(m_iViewModelIndex, int, "CBaseCombatWeapon", "m_iViewModelIndex")
+	NETVAR(m_iWorldModelIndex, int, "CBaseCombatWeapon", "m_iWorldModelIndex")
+	NETVAR(m_iState, int, "CBaseCombatWeapon", "m_iState")
+	NETVAR(m_hOwner, int /*EHANDLE*/, "CBaseCombatWeapon", "m_hOwner")
+
+	bool HasAmmo()
 	{
-		static auto offset = GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
-		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + offset) = crit_chance;
+		return S::CBaseCombatWeapon_HasAmmo.As<bool(__thiscall*)(void*)>()(this);
 	}
 
-	M_OFFSETGET(UberCharge, float, 0xC6C) //DT_WeaponMedigun -> NonLocalTFWeaponMedigundata -> m_flChargeLevel
-	//M_OFFSETGET(HealingTarget, int, 0xC48) //DT_WeaponMedigun -> m_hHealingTarget
-	M_OFFSETGET(Healing, int, 0xC51) //DT_WeaponMedigun -> m_bHealing
-	M_OFFSETGET(CurrentSeed, int, 0x2D7)
+	NETVAR(m_bLowered, bool, "CTFWeaponBase", "m_bLowered")
+	NETVAR(m_iReloadMode, int, "CTFWeaponBase", "m_iReloadMode")
+	NETVAR(m_bResetParity, bool, "CTFWeaponBase", "m_bResetParity")
+	NETVAR(m_bReloadedThroughAnimEvent, bool, "CTFWeaponBase", "m_bReloadedThroughAnimEvent")
+	NETVAR(m_bDisguiseWeapon, bool, "CTFWeaponBase", "m_bDisguiseWeapon")
+	NETVAR(m_flLastCritCheckTime, float, "CTFWeaponBase", "m_flLastCritCheckTime")
+	NETVAR(m_flReloadPriorNextFire, float, "CTFWeaponBase", "m_flReloadPriorNextFire")
+	NETVAR(m_flLastFireTime, float, "CTFWeaponBase", "m_flLastFireTime")
+	NETVAR(m_flEffectBarRegenTime, float, "CTFWeaponBase", "m_flEffectBarRegenTime")
+	NETVAR(m_flObservedCritChance, float, "CTFWeaponBase", "m_flObservedCritChance")
+	NETVAR(m_flEnergy, float, "CTFWeaponBase", "m_flEnergy")
+	NETVAR(m_hExtraWearable, int /*EHANDLE*/, "CTFWeaponBase", "m_hExtraWearable")
+	NETVAR(m_hExtraWearableViewModel, int /*EHANDLE*/, "CTFWeaponBase", "m_hExtraWearableViewModel")
+	NETVAR(m_bBeingRepurposedForTaunt, bool, "CTFWeaponBase", "m_bBeingRepurposedForTaunt")
+	NETVAR(m_nKillComboClass, int, "CTFWeaponBase", "m_nKillComboClass")
+	NETVAR(m_nKillComboCount, int, "CTFWeaponBase", "m_nKillComboCount")
+	NETVAR(m_flInspectAnimEndTime, float, "CTFWeaponBase", "m_flInspectAnimEndTime")
+	NETVAR(m_nInspectStage, int, "CTFWeaponBase", "m_nInspectStage")
+	NETVAR(m_iConsecutiveShots, int, "CTFWeaponBase", "m_iConsecutiveShots")
+
 	M_OFFSETGET(CritTokenBucket, float, 0xA54)
 	M_OFFSETGET(CritChecks, int, 0xA58)
 	M_OFFSETGET(CritSeedRequests, int, 0xA5C)
 	M_OFFSETGET(CritTime, float, 0xB50)
 	M_OFFSETGET(LastRapidFireCritCheckTime, float, 0xB60)
 
-	NETVAR(m_iPrimaryAmmoType, int, "CBaseCombatWeapon", "m_iPrimaryAmmoType");
-	NETVAR(m_flNextPrimaryAttack, float, "CBaseCombatWeapon", "m_flNextPrimaryAttack")
-
-public: //Virtuals
-	M_VIRTUALGET(WeaponID, int, this, int(__thiscall*)(void*), 381)
 	M_VIRTUALGET(Slot, int, this, int(__thiscall*)(void*), 330)
+	M_VIRTUALGET(WeaponID, int, this, int(__thiscall*)(void*), 381)
 	M_VIRTUALGET(DamageType, int, this, int(__thiscall*)(void*), 340)
 	M_VIRTUALGET(FinishReload, void, this, void(__thiscall*)(void*), 275)
 	M_VIRTUALGET(BulletSpread, Vec3&, this, Vec3& (__thiscall*)(void*), 286)
 
-public: //Everything else, lol
-	__inline float& GetSmackTime()
-	{
-//credits to KGB
-		static auto dwOffset = g_NetVars.get_offset("DT_TFWeaponBase", "m_nInspectStage") + 0x1C;
-		return *reinterpret_cast<float*>(this + dwOffset);
-	}
-
 	int GetBulletAmount();
-
 	bool IsStreamingWeapon();
-
-	inline int& m_iWeaponMode()
+	CHudTexture* GetWeaponIcon();
+	__inline bool CanAttack(CBaseEntity* pOwner)
 	{
-		static int offset = 716;
-		return *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + offset);
-	}
-
-	inline int& m_iCurrentSeed()
-	{
-		static int offset = 727;
-		return *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + offset);
-	}
-
-	inline bool GetLocalizedBaseItemName(wchar_t(&szItemName)[128])
-	{
-		static auto fnGetLocalizedBaseItemName = S::GetLocalizedBaseItemName.As<bool(__cdecl*)(wchar_t(&)[128], const void*, const void*)>();
-		static auto fnGLocalizationProvider = S::GLocalizationProvider.As<void* (__cdecl*)()>();
-		static auto fnGetStaticData = S::C_EconItemView_GetStaticData.As<void* (__thiscall*)(void*)>();
-
-		void* pItem = m_Item();
-		const void* pItemStaticData = fnGetStaticData(pItem);
-
-		return fnGetLocalizedBaseItemName(szItemName, fnGLocalizationProvider(), pItemStaticData);
-	}
-
-	NETVAR(m_Item, void*, "CEconEntity", "m_Item");
-
-	/*
-	55 8B EC 56 8B 75 10 8B 4E 34 85 C9 74 44 57 8B 7D 0C 51 8B CF 8B 07 FF 10  - GetLocalizedBaseItemName
-	A1 ? ? ? ? A8 01 75 12 83 C8 01 C7 05 ? ? ? ? ? ? ? ? A3 ? ? ? ? B8 ? ? ? ? C3 - GLocalizationProvider
-
-	CEconItemDefinition comes from C_EconItemView::GetStaticData so i need to get a C_EconItemView from C_TFWeaponBase
-	NETVAR(m_Item, void *, "CEconEntity", "m_Item");
-	*/
-
-	inline const char* GetName()
-	{
-		//static auto C_BaseCombatWeapon_GetName = S::C_BaseCombatWeapon_GetName.As<const char* (__thiscall*)(void*)>();
-		return GetVFunc<const char* (__thiscall*)(void*)>(this, 333)(this);
-		//return C_BaseCombatWeapon_GetName(this);
-	}
-
-	//str8 outta cathook
-	__inline bool AmbassadorCanHeadshot()
-	{
-		if (GetItemDefIndex() == Spy_m_TheAmbassador || GetItemDefIndex() == Spy_m_FestiveAmbassador)
-		{
-			if ((I::GlobalVars->curtime - GetLastFireTime()) <= 1.0)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	__inline CAttributeList* GetAttributeList()
-	{
-		static auto dwOff = g_NetVars.get_offset("DT_EconEntity", "m_AttributeManager", "m_AttributeList");
-		return reinterpret_cast<CAttributeList*>(this + dwOff);
-	}
-
-	__inline void SetItemDefIndex(const int nIndex)
-	{
-		static auto dwOff = g_NetVars.get_offset("DT_EconEntity", "m_AttributeManager", "m_Item", "m_iItemDefinitionIndex");
-		*reinterpret_cast<int*>(this + dwOff) = nIndex;
-	}
-
-	__inline CBaseEntity* GetHealingTarget()
-	{
-		return I::ClientEntityList->GetClientEntityFromHandle(GetHealingTargetHandle());
-	}
-
-	__inline int GetHealingTargetHandle()
-	{
-		return *reinterpret_cast<int*>(this + 0xC48);
-	}
-
-	__inline WeaponData_t GetWeaponData()
-	{
-		static auto fnGetWeaponData = S::CBaseCombatWeapon_GetWeaponData.As<CTFWeaponInfo * (__cdecl*)(int)>();
-		return fnGetWeaponData(GetWeaponID())->m_WeaponData[0];
-	}
-
-	__inline bool CanFireCriticalShot()
-	{
-		static auto fnCanFireCriticalShot = S::CBaseCombatWeapon_CanFireCriticalShot.As<bool* (__cdecl*)(CBaseCombatWeapon*)>();
-		return fnCanFireCriticalShot(this);
-	}
-
-	__inline CTFWeaponInfo* GetTFWeaponInfo()
-	{
-		static auto fnGetTFWeaponInfo = S::CBaseCombatWeapon_GetTFWeaponInfo.As<CTFWeaponInfo * (__cdecl*)(int)>();
-		return fnGetTFWeaponInfo(GetWeaponID());
-	}
-
-	__inline float GetSwingRange(CBaseEntity* pLocal)
-	{
-		return static_cast<float>(GetVFunc<int(__thiscall*)(CBaseEntity*)>(this, 455)(pLocal));
-	}
-
-	__inline float GetWeaponSpread()
-	{
-		static auto fnGetWeaponSpread = S::CBaseCombatWeapon_GetWeaponSpread.As<float(__thiscall*)(decltype(this))>();
-		return fnGetWeaponSpread(this);
-	}
-
-	/*__inline bool WillCrit() {
-		static auto dwCalcIsAttackCritical = g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 18 56 57 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 14 89 75 EC");
-		return reinterpret_cast<bool(__thiscall*)(decltype(this))>(dwCalcIsAttackCritical);
-	}*/
-
-	/*__inline bool CalcIsAttackCritical() {
-		typedef bool(__thiscall* OriginalFn)(CBaseCombatWeapon*);
-		static DWORD dwFunc = g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 18 56 57 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 14 89 75 EC");
-		return ((OriginalFn)dwFunc)(this);
-	}*/
-
-	__inline bool DoSwingTrace(CGameTrace& Trace)
-	{
-		return GetVFunc<int(__thiscall*)(CGameTrace&)>(this, 454)(Trace);
-	}
-
-	__inline bool DoSwingTraceInternal(CGameTrace& Trace)
-	{
-		static auto fnDoSwingTraceInternal = S::CTFWeaponBaseMelee_DoSwingTraceInternal.As<bool(__thiscall*)(decltype(this), CGameTrace&, bool, void*)>();
-		return fnDoSwingTraceInternal(this, Trace, false, nullptr);
-	}
-
-	__inline int LookupAttachment(const char* pAttachmentName)
-	{
-		const auto pRend = Renderable();
-		return GetVFunc<int(__thiscall*)(void*, const char*)>(pRend, 35)(pRend, pAttachmentName);
-	}
-
-	__inline bool GetAttachment(int number, Vec3& origin)
-	{
-		return GetVFunc<bool(__thiscall*)(void*, int, Vec3&)>(this, 71)(this, number, origin);
-	}
-
-
-	__inline bool CanFireCriticalShot(const bool bHeadShot)
-	{
-		bool bResult = false;
-		if (const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(m_hOwnerEntity()))
-		{
-			const int nOldFov = pOwner->m_iFOV(); pOwner->SetFov(-1);
-			bResult = GetVFunc<bool(__thiscall*)(decltype(this), bool, CBaseEntity*)>(this, 425)(this, bHeadShot, nullptr);
-			pOwner->SetFov(nOldFov);
-		} return bResult;
-	}
-
-	__inline bool CanFireRandomCriticalShot(const float flCritChance)
-	{
-		return GetVFunc<bool(__thiscall*)(decltype(this), float)>(this, 424)(this, flCritChance);
-	}
-
-	__inline bool CanWeaponHeadShot()
-	{
-		return GetDamageType() & DMG_USE_HITLOCATIONS && CanFireCriticalShot(true); //credits to bertti
-	}
-
-	__inline bool CanShoot(CBaseEntity* pLocal)
-	{
-		if (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart() || pLocal->m_fFlags() & FL_FROZEN)
+		if (!pOwner->IsAlive() || pOwner->IsTaunting() || pOwner->IsBonked() || pOwner->IsAGhost() || pOwner->IsInBumperKart() || pOwner->m_fFlags() & FL_FROZEN)
 			return false;
 
-		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return (pLocal->GetTankPressure() >= 100.0f);
-
-		if (pLocal->m_iClass() == CLASS_SPY)
+		if (pOwner->m_iClass() == CLASS_SPY)
 		{
-			if (pLocal->m_bFeignDeathReady() && !pLocal->IsCloaked())
+			if (pOwner->m_bFeignDeathReady() && !pOwner->IsCloaked())
 				return false;
 
 			//Invis
 			static float flTimer = 0.0f;
-			if (pLocal->IsCloaked())
+			if (pOwner->IsCloaked())
 			{
 				flTimer = 0.0f;
 				return false;
@@ -279,52 +115,196 @@ public: //Everything else, lol
 			}
 		}
 
-		return m_flNextPrimaryAttack() <= TICKS_TO_TIME(pLocal->m_nTickBase());
+		return true;
+	}
+	__inline bool CanPrimaryAttack(CBaseEntity* pOwner)
+	{
+		bool bOut = false;
+
+		if (pOwner)
+		{
+			float flCurTime = static_cast<float>(pOwner->m_nTickBase()) * I::GlobalVars->interval_per_tick;
+			bOut = m_flNextPrimaryAttack() <= flCurTime && pOwner->m_flNextAttack() <= flCurTime;
+		}
+
+		return bOut;
+	}
+	__inline bool CanSecondaryAttack(CBaseEntity* pOwner)
+	{
+		bool bOut = false;
+
+		if (pOwner)
+		{
+			float flCurTime = static_cast<float>(pOwner->m_nTickBase()) * I::GlobalVars->interval_per_tick;
+			bOut = m_flNextSecondaryAttack() <= flCurTime && pOwner->m_flNextAttack() <= flCurTime;
+		}
+
+		return bOut;
 	}
 
-	__inline bool CanSecondaryAttack(CBaseEntity* pLocal)
+	__inline bool CanPrimary(CBaseEntity* pLocal)
 	{
-		if (!pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart())
+		if (!CanAttack(pLocal))
 			return false;
 
-		float flCurTime = TICKS_TO_TIME(pLocal->m_nTickBase());
+		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
+			return (pLocal->GetTankPressure() >= 100.0f);
 
-		return m_flNextPrimaryAttack() <= flCurTime && pLocal->GetNextAttack() <= flCurTime;
+		return CanPrimaryAttack(pLocal);
 	}
+	__inline bool CanSecondary(CBaseEntity* pLocal)
+	{
+		if (!CanAttack(pLocal))
+			return false;
 
+		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
+			return (pLocal->GetTankPressure() >= 100.0f);
+
+		return CanSecondaryAttack(pLocal);
+	}
 	__inline bool IsInReload()
 	{
-		static DWORD dwNextPrimaryAttack = g_NetVars.get_offset("DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack");
-		bool m_bInReload = *reinterpret_cast<bool*>(this + (dwNextPrimaryAttack + 0xC));
-		int m_iReloadMode = *reinterpret_cast<int*>(this + 0xB28);
+		static int nOffset = GetNetVar("CBaseCombatWeapon", "m_flNextPrimaryAttack");
+		bool m_bInReload = *reinterpret_cast<bool*>(reinterpret_cast<DWORD>(this) + nOffset + 0xC);
+		int m_iReloadMode = *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + 0xB28);
 		return (m_bInReload || m_iReloadMode != 0);
 	}
-
-	__inline void GetSpreadAngles(Vec3& vOut)
+	__inline float GetFireRate()
 	{
-		static auto fnGetSpreadAngles = S::CBaseCombatWeapon_GetSpreadAngles.As<void(__thiscall*)(decltype(this), Vec3&)>();
-		fnGetSpreadAngles(this, vOut);
+		typedef float(__thiscall* FN)(PVOID);
+		return GetVFunc<FN>(this, 359)(this);
 	}
-
-	__inline void GetProjectileFireSetup(CBaseEntity* pPlayer, Vec3 vOffset, Vec3* vSrc, Vec3* vForward, bool bHitTeam, float flEndDist)
+	__inline bool CanFireCriticalShot(const bool bHeadShot)
 	{
-		static auto fnGetProjectileFireSetu = S::CBaseCombatWeapon_GetProjectileFireSetup.As<void(__thiscall*)(CBaseEntity*, CBaseEntity*, Vec3, Vec3*, Vec3*, bool, float)>();
-		fnGetProjectileFireSetu(this, pPlayer, vOffset, vSrc, vForward, bHitTeam, flEndDist);
+		bool bResult = false;
+		if (const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(m_hOwnerEntity()))
+		{
+			const int nOldFov = pOwner->m_iFOV(); pOwner->SetFov(-1);
+			bResult = GetVFunc<bool(__thiscall*)(decltype(this), bool, CBaseEntity*)>(this, 425)(this, bHeadShot, nullptr);
+			pOwner->SetFov(nOldFov);
+		} return bResult;
 	}
-
+	__inline bool CanFireCriticalShot()
+	{
+		return S::CBaseCombatWeapon_CanFireCriticalShot.As<bool*(__cdecl*)(CBaseCombatWeapon*)>()(this);
+	}
+	__inline bool CanFireRandomCriticalShot(const float flCritChance)
+	{
+		return GetVFunc<bool(__thiscall*)(decltype(this), float)>(this, 424)(this, flCritChance);
+	}
+	//__inline bool CanFireCriticalShot(CBaseEntity* pWeapon)		// this does not fucking work no matter what i do and i have no idea why :DDD
+	//{
+	//	typedef bool (*fn_t)(CBaseEntity*, bool, CBaseEntity*);
+	//	return GetVFunc<fn_t>(this, 492)(pWeapon, false, nullptr);
+	//}
+	__inline bool CanWeaponHeadShot()
+	{
+		return GetDamageType() & DMG_USE_HITLOCATIONS && CanFireCriticalShot(true); //credits to bertti
+	}
+	//str8 outta cathook
+	__inline bool AmbassadorCanHeadshot()
+	{
+		if (m_iItemDefinitionIndex() == Spy_m_TheAmbassador || m_iItemDefinitionIndex() == Spy_m_FestiveAmbassador)
+		{
+			if ((I::GlobalVars->curtime - m_flLastFireTime()) <= 1.0)
+				return false;
+		}
+		return true;
+	}
+	__inline float GetSwingRange(CBaseEntity* pLocal)
+	{
+		return static_cast<float>(GetVFunc<int(__thiscall*)(CBaseEntity*)>(this, 455)(pLocal));
+	}
+	__inline float GetSwingRangeSimple()
+	{
+		return GetWeaponID() == TF_WEAPON_SWORD ? 72.0f : 48.0f;
+	}
+	__inline float& m_flSmackTime()
+	{	//credits to KGB
+		static int nOffset = GetNetVar("CTFWeaponBase", "m_nInspectStage") + 0x1C;
+		return *reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
+	}
+	__inline CTFWeaponInfo* GetTFWeaponInfo()
+	{
+		return S::CBaseCombatWeapon_GetTFWeaponInfo.As<CTFWeaponInfo * (__cdecl*)(int)>()(GetWeaponID());
+	}
+	__inline WeaponData_t GetWeaponData()
+	{
+		return GetTFWeaponInfo()->m_WeaponData[0];
+	}
+	__inline CTFWeaponInfo* GetWeaponInfo()
+	{
+		static int nOffset = GetNetVar("CTFWeaponBase", "m_flEffectBarRegenTime") + 0x10;
+		return *reinterpret_cast<CTFWeaponInfo**>(reinterpret_cast<DWORD>(this) + nOffset);
+	}
 	__inline bool IsRapidFire()
 	{
-		const bool ret = GetWeaponData().m_bUseRapidFireCrits;
+		auto tfWeaponInfo = GetTFWeaponInfo();
+		if (!tfWeaponInfo)
+			return false;
+
+		const bool ret = tfWeaponInfo->GetWeaponData(0).m_bUseRapidFireCrits;
 		return ret || this->GetClientClass()->m_ClassID == static_cast<int>(ETFClassID::CTFMinigun);
 	}
+	__inline bool IsEnergyWeapon()
+	{
+		return GetVFunc<bool(__thiscall*)(void*)>(this, 432)(this);
+	}
+	__inline bool HasPrimaryAmmoForShot()
+	{
+		if (IsEnergyWeapon())
+			return m_flEnergy() > 0.0f;
 
+		int nClip1 = m_iClip1();
 
+		if (nClip1 == -1)
+		{
+			if (auto pOwner = I::ClientEntityList->GetClientEntityFromHandle(m_hOwnerEntity()))
+			{
+				int nAmmoCount = pOwner->GetAmmoCount(m_iPrimaryAmmoType());
 
+				if (m_iItemDefinitionIndex() == Engi_m_TheWidowmaker)
+					return nAmmoCount > 29;
+
+				return nAmmoCount > 0;
+			}
+		}
+
+		return nClip1 > 0;
+	}
+	__inline int& m_iWeaponMode()
+	{
+		static int offset = 716;
+		return *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + offset);
+	}
+	__inline int& m_iCurrentSeed()
+	{
+		return *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + 0xB5C);
+	}
+	__inline void GetProjectileFireSetup(CBaseEntity* pPlayer, Vec3 vOffset, Vec3* vSrc, Vec3* vForward, bool bHitTeam = true, float flEndDist = 2000.f)
+	{
+		S::CBaseCombatWeapon_GetProjectileFireSetup.As<void(__thiscall*)(CBaseEntity*, CBaseEntity*, Vec3, Vec3*, Vec3*, bool, float)>()(this, pPlayer, vOffset, vSrc, vForward, bHitTeam, flEndDist);
+	}
+	__inline void GetSpreadAngles(Vec3& vOut)
+	{
+		S::CBaseCombatWeapon_GetSpreadAngles.As<void(__thiscall*)(decltype(this), Vec3&)>()(this, vOut);
+	}
+	__inline Vec3 GetSpreadAngles()
+	{
+		Vec3 vOut; GetSpreadAngles(vOut); return vOut;
+	}
+	__inline void UpdateAllViewmodelAddons()
+	{
+		return S::CTFWeaponBase_UpdateAllViewmodelAddons.As<void(__thiscall*)(void*)>()(this);
+	}
+	__inline float ApplyFireDelay(float flDelay)
+	{
+		return GetVFunc<float(__thiscall*)(void*, float)>(this, 407)(this, flDelay);
+	}
 	__inline bool WillCrit()
 	{
 		return this->GetSlot() == SLOT_MELEE ? this->CalcIsAttackCriticalHelperMelee() : this->CalcIsAttackCriticalHelper();
 	}
-
 	__inline bool CalcIsAttackCritical()
 	{
 		using FN = bool(__thiscall*)(void*);
@@ -332,71 +312,138 @@ public: //Everything else, lol
 
 		return fnCalcIsAttackCritical(this);
 	}
-
 	__inline bool CalcIsAttackCriticalHelper()
 	{
-		using FN = bool(__thiscall*)(CBaseCombatWeapon*);
-		static FN fnCalcIsAttackCriticalHelper = S::CBaseCombatWeapon_CalcIsAttackCriticalHelper.As<FN>();
-		return fnCalcIsAttackCriticalHelper(this);
+		return S::CBaseCombatWeapon_CalcIsAttackCriticalHelper.As<bool(__thiscall*)(CBaseCombatWeapon*)>()(this);
 	}
-
 	__inline bool CalcIsAttackCriticalHelperMelee()
 	{
-		using FN = bool(__thiscall*)(CBaseCombatWeapon*);
-		static FN fnCalcIsAttackCriticalHelper = S::CBaseCombatWeapon_CalcIsAttackCriticalHelperMelee.As<FN>();
-		return fnCalcIsAttackCriticalHelper(this);
+		return S::CBaseCombatWeapon_CalcIsAttackCriticalHelperMelee.As<bool(__thiscall*)(CBaseCombatWeapon*)>()(this);
 	}
-
 	__inline bool CalcIsAttackCriticalHelperNoCrits(CBaseEntity* pWeapon)
 	{
 		typedef bool (*fn_t)(CBaseEntity*);
 		return GetVFunc<fn_t>(pWeapon, 464, 0)(pWeapon);
 	}
+	/*__inline bool WillCrit() {
+		static auto dwCalcIsAttackCritical = g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 18 56 57 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 14 89 75 EC");
+		return reinterpret_cast<bool(__thiscall*)(decltype(this))>(dwCalcIsAttackCritical);
+	}*/
 
-	//__inline bool CanFireCriticalShot(CBaseEntity* pWeapon)		// this does not fucking work no matter what i do and i have no idea why :DDD
-	//{
-	//	typedef bool (*fn_t)(CBaseEntity*, bool, CBaseEntity*);
-	//	return GetVFunc<fn_t>(this, 492)(pWeapon, false, nullptr);
-	//}
-
-	__inline Vec3 GetSpreadAngles()
+	/*__inline bool CalcIsAttackCritical() {
+		typedef bool(__thiscall* OriginalFn)(CBaseCombatWeapon*);
+		static DWORD dwFunc = g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 18 56 57 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B F0 83 C4 14 89 75 EC");
+		return ((OriginalFn)dwFunc)(this);
+	}*/
+	__inline void SetObservedCritChance(float crit_chance)
 	{
-		Vec3 vOut; GetSpreadAngles(vOut); return vOut;
+		static auto nOffset = GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
+		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset) = crit_chance;
 	}
-
+	__inline CBaseEntity* GetAppropriateWorldOrViewModel()
+	{
+		return S::CTFWeaponBase_GetAppropriateWorldOrViewModel.As<CBaseEntity*(__thiscall*)(void*)>()(this);
+	}
+	__inline float GetWeaponSpread()
+	{
+		return S::CBaseCombatWeapon_GetWeaponSpread.As<float(__thiscall*)(decltype(this))>()(this);
+	}
+	__inline bool DoSwingTrace(CGameTrace& Trace)
+	{
+		return GetVFunc<int(__thiscall*)(CGameTrace&)>(this, 454)(Trace);
+	}
+	__inline bool DoSwingTraceInternal(CGameTrace& Trace)
+	{
+		return S::CTFWeaponBaseMelee_DoSwingTraceInternal.As<bool(__thiscall*)(decltype(this), CGameTrace&, bool, void*)>()(this, Trace, false, nullptr);
+	}
 	__inline int GetMinigunState()
 	{
 		return *reinterpret_cast<int*>(this + 0xC48);
 	}
 
-	__inline bool IsReadyToFire()
+	NETVAR(m_bReadyToBackstab, bool, "CTFKnife", "m_bReadyToBackstab")
+	NETVAR(m_bKnifeExists, bool, "CTFKnife", "m_bKnifeExists")
+	NETVAR(m_flKnifeRegenerateDuration, float, "CTFKnife", "m_flKnifeRegenerateDuration")
+	NETVAR(m_flKnifeMeltTimestamp, float, "CTFKnife", "m_flKnifeMeltTimestamp")
+
+	NETVAR(m_iWeaponState, int, "CTFMinigun", "m_iWeaponState")
+	NETVAR(m_bCritShot, bool, "CTFMinigun", "m_bCritShot")
+
+	NETVAR(m_hHealingTarget, int /*EHANDLE*/, "CWeaponMedigun", "m_hHealingTarget")
+	NETVAR(m_bHealing, bool, "CWeaponMedigun", "m_bHealing")
+	NETVAR(m_bAttacking, bool, "CWeaponMedigun", "m_bAttacking")
+	NETVAR(m_bChargeRelease, bool, "CWeaponMedigun", "m_bChargeRelease")
+	NETVAR(m_bHolstered, bool, "CWeaponMedigun", "m_bHolstered")
+	NETVAR(m_nChargeResistType, int, "CWeaponMedigun", "m_nChargeResistType")
+	NETVAR(m_hLastHealingTarget, int /*EHANDLE*/, "CWeaponMedigun", "m_hLastHealingTarget")
+	NETVAR(m_flChargeLevel, float, "CWeaponMedigun", "m_flChargeLevel")
+	
+	int GetMedigunType();
+	MedigunChargeTypes GetChargeType();
+	__inline MedigunChargeTypes GetResistType()
 	{
-		static float lastFire = 0, nextAttack = 0;
-
-		if (lastFire != GetLastFireTime())
-		{
-			lastFire = GetLastFireTime();
-			nextAttack = GetNextPrimaryAttack();
-		}
-
-		if (GetClip1() == 0)
-			return false;
-		return (nextAttack <= (TICKS_TO_TIME(I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer())->m_nTickBase())));
+		int nCurrentActiveResist = (GetChargeType() - MEDIGUN_CHARGE_BULLET_RESIST);
+		nCurrentActiveResist = nCurrentActiveResist % MEDIGUN_NUM_RESISTS;
+		return MedigunChargeTypes(nCurrentActiveResist);
+	}
+	__inline CBaseEntity* GetHealingTarget()
+	{
+		return I::ClientEntityList->GetClientEntityFromHandle(GetHealingTargetHandle());
+	}
+	__inline int GetHealingTargetHandle()
+	{
+		return *reinterpret_cast<int*>(this + 0xC48);
 	}
 
-	__inline bool IsFlipped()
+	NETVAR(m_flChargeBeginTime, float, "CTFPipebombLauncher", "m_flChargeBeginTime")
+	NETVAR(m_iPipebombCount, int, "CTFPipebombLauncher", "m_iPipebombCount")
+
+	NETVAR(m_flChargedDamage, float, "CTFSniperRifle", "m_flChargedDamage")
+
+	NETVAR(m_flDetonateTime, float, "CTFGrenadeLauncher", "m_flDetonateTime")
+	NETVAR(m_iCurrentTube, int, "CTFGrenadeLauncher", "m_iCurrentTube")
+	NETVAR(m_iGoalTube, int, "CTFGrenadeLauncher", "m_iGoalTube")
+
+	NETVAR(m_bCharging, bool, "CTFSniperRifleClassic", "m_bCharging")
+
+	NETVAR(m_iItemDefinitionIndex, int, "CEconEntity", "m_iItemDefinitionIndex")
+	NETVAR(m_Item, void*, "CEconEntity", "m_Item")
+
+	__inline CAttributeList* GetAttributeList()
 	{
-		static auto cl_flipviewmodels = I::Cvar->FindVar("cl_flipviewmodels");
-		return cl_flipviewmodels->GetBool();
+		static int nOffset = GetNetVar("CEconEntity", "m_AttributeList");
+		return reinterpret_cast<CAttributeList*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 
-	__inline float GetFireRate()
+	__inline void SetItemDefIndex(const int nIndex)
 	{
-		typedef float(__thiscall* FN)(PVOID);
-		return GetVFunc<FN>(this, 359)(this);
+		static auto nOffset = GetNetVar("CEconEntity", "m_iItemDefinitionIndex");
+		*reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + nOffset) = nIndex;
 	}
+	__inline bool GetLocalizedBaseItemName(wchar_t(&szItemName)[128])
+	{
+		static auto fnGetLocalizedBaseItemName = S::GetLocalizedBaseItemName.As<bool(__cdecl*)(wchar_t(&)[128], const void*, const void*)>();
+		static auto fnGLocalizationProvider = S::GLocalizationProvider.As<void* (__cdecl*)()>();
+		static auto fnGetStaticData = S::C_EconItemView_GetStaticData.As<void* (__thiscall*)(void*)>();
 
-	CHudTexture* GetWeaponIcon();
+		void* pItem = m_Item();
+		const void* pItemStaticData = fnGetStaticData(pItem);
+
+		return fnGetLocalizedBaseItemName(szItemName, fnGLocalizationProvider(), pItemStaticData);
+	}
+	__inline const char* GetName()
+	{
+		return GetVFunc<const char* (__thiscall*)(void*)>(this, 333)(this);
+	}
+	__inline int LookupAttachment(const char* pAttachmentName)
+	{
+		const auto pRend = Renderable();
+		return GetVFunc<int(__thiscall*)(void*, const char*)>(pRend, 35)(pRend, pAttachmentName);
+	}
+	__inline bool GetAttachment(int number, Vec3& origin)
+	{
+		return GetVFunc<bool(__thiscall*)(void*, int, Vec3&)>(this, 71)(this, number, origin);
+	}
 };
 
 class CTFWeaponInvis : public CBaseCombatWeapon

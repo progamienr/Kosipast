@@ -27,11 +27,11 @@ bool CCritHack::AreRandomCritsEnabled()
 
 bool CCritHack::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 {
-	if (pWeapon->GetItemDefIndex() == Soldier_m_TheBeggarsBazooka)
+	if (pWeapon->m_iItemDefinitionIndex() == Soldier_m_TheBeggarsBazooka)
 	{
 		static bool bLoading = false, bFiring = false;
 
-		if (pWeapon->GetClip1() == 0)
+		if (pWeapon->m_iClip1() == 0)
 			bLoading = false,
 			bFiring = false;
 		else if (!bFiring)
@@ -56,7 +56,7 @@ bool CCritHack::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 		{
 			static bool bCharging = false;
 
-			if (pWeapon->GetChargeBeginTime() > 0.0f)
+			if (pWeapon->m_flChargeBeginTime() > 0.0f)
 				bCharging = true;
 
 			if (!(pCmd->buttons & IN_ATTACK) && bCharging)
@@ -387,7 +387,7 @@ bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 void CCritHack::ResetWeapon(CBaseCombatWeapon* pWeapon)
 {
 	const auto slot = pWeapon->GetSlot();
-	const auto index = pWeapon->GetItemDefIndex();
+	const auto index = pWeapon->m_iItemDefinitionIndex();
 	if (Storage[slot].DefIndex == index)
 		return;
 

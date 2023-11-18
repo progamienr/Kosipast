@@ -92,6 +92,8 @@ public:
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> mRecords;
 	std::unordered_map<int, std::pair<int, matrix3x4[128]>> noInterpBones;
 	std::unordered_map<int, Vec3> noInterpEyeAngles;
+
+	bool bSettingUpBones = false;
 };
 
 ADD_FEATURE(CBacktrack, Backtrack)

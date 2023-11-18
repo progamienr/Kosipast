@@ -12,13 +12,9 @@ int CBaseCombatWeapon::GetBulletAmount()
 	auto v8 = *(DWORD*)(this + 2852) << 6;
 	int bulletspershot = *(DWORD*)(v8 + v7 + 1788);
 	if (bulletspershot >= 1)
-	{
 		Utils::ATTRIB_HOOK_FLOAT(bulletspershot, "mult_bullets_per_shot", this);
-	}
 	else
-	{
 		bulletspershot = 1;
-	}
 	return bulletspershot;
 }
 
@@ -44,20 +40,16 @@ bool CBaseCombatWeapon::IsStreamingWeapon()
 	return false;
 }
 
-/*
-
-TODO: 
-
+/* TODO:
 if ( pItem->GetStaticData()->GetIconClassname() )
 {
 	killer_weapon_name = pItem->GetStaticData()->GetIconClassname();
 }
-
 */
 
 CHudTexture* CBaseCombatWeapon::GetWeaponIcon() // wow this is stupid
 {
-	switch (GetItemDefIndex())
+	switch (m_iItemDefinitionIndex())
 	{
 		case 13:
 		case 200:
@@ -624,4 +616,21 @@ CHudTexture* CBaseCombatWeapon::GetWeaponIcon() // wow this is stupid
 			static CHudTexture* pTexture = g_Draw.GetIcon("d_skull");
 			return pTexture;
 	}
+}
+
+int CBaseCombatWeapon::GetMedigunType()
+{
+	int iMode = 0;
+	iMode = static_cast<int>(Utils::ATTRIB_HOOK_FLOAT(static_cast<float>(iMode), "set_weapon_mode", this));
+	return iMode;
+}
+MedigunChargeTypes CBaseCombatWeapon::GetChargeType()
+{
+	int iTmp = MEDIGUN_CHARGE_INVULN;
+	iTmp = static_cast<int>(Utils::ATTRIB_HOOK_FLOAT(static_cast<float>(iTmp), "set_charge_type", this));
+
+	if (GetMedigunType() == MEDIGUN_RESIST)
+		iTmp += m_nChargeResistType();
+
+	return MedigunChargeTypes(iTmp);
 }

@@ -458,7 +458,7 @@ void CVisuals::DrawBoxes()
 	{
 		if (Box.m_flTime < I::GlobalVars->curtime) continue;
 
-		RenderBox(Box.m_vecPos, Box.m_vecMins, Box.m_vecMaxs, Box.m_vecOrientation, Box.m_colorEdge, Box.m_colorFace);
+		RenderBox(Box.m_vecPos, Box.m_vecMins, Box.m_vecMaxs, Box.m_vecOrientation, Box.m_colorEdge, Box.m_colorFace, true);
 	}
 }
 
@@ -597,11 +597,6 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 				
 				I::EngineClient->ClientCmd_Unrestricted("thirdperson");
 			}
-
-			// Thirdperson angles
-			Vec3 vAngles = { F::AntiAim.vRealAngles.x, F::AntiAim.vRealAngles.y, 0 };
-			I::Prediction->SetLocalViewAngles(vAngles);
-			//I::Prediction->SetLocalViewAngles(G::ViewAngles); // it's probably better to keep track of the predicted yaw manually
 
 			// Thirdperson offset
 			I::ThirdPersonManager->SetDesiredCameraOffset(Vec3{}); //would've used this but right & up offsets get reversed on trace
@@ -832,7 +827,7 @@ void ApplySkyboxModulation(const Color_t& clr)
 
 void CVisuals::ModulateWorld()
 {
-	const bool bScreenshot = I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value;
+	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 	const bool bWorldModulation = Vars::Visuals::World::WorldModulation.Value && !bScreenshot;
 	const bool bSkyModulation = Vars::Visuals::World::SkyModulation.Value && !bScreenshot;
 

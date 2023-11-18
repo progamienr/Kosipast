@@ -186,7 +186,7 @@ bool IsPipe(CBaseCombatWeapon* pWeapon)
 
 float PrimeTime(CBaseCombatWeapon* pWeapon)
 {
-	switch (pWeapon->GetItemDefIndex())
+	switch (pWeapon->m_iItemDefinitionIndex())
 	{
 	case Demoman_s_StickybombLauncher:
 	case Demoman_s_StickybombLauncherR:
@@ -216,7 +216,7 @@ float SolveProjectileSpeed(ProjectileInfo projInfo, CBaseCombatWeapon* pWeapon, 
 	const float flTime = flDist / (cos(flPitch) * flVelocity);
 
 	float flDrag = 1.f;
-	switch (pWeapon->GetItemDefIndex())
+	switch (pWeapon->m_iItemDefinitionIndex())
 	{
 	case Demoman_m_GrenadeLauncher:
 	case Demoman_m_GrenadeLauncherR:
@@ -247,7 +247,7 @@ int CAimbotProjectile::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBase
 	bool bHeadshot = target.m_TargetType == ETargetType::PLAYER && pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW;
 	if (Vars::Aimbot::Global::BAimLethal.Value && bHeadshot)
 	{
-		float charge = I::GlobalVars->curtime - pWeapon->GetChargeBeginTime();
+		float charge = I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime();
 		float damage = Math::RemapValClamped(charge, 0.f, 1.f, 50.f, 120.f);
 		if (pLocal->IsMiniCritBoosted())
 			damage *= 1.36f;
@@ -516,7 +516,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				vAngles.x = angle.x;
 			}
 
-			if (TestAngle(pLocal, pWeapon, target, vOriginalPos, vTargetPos, vAngles, i - TIME_TO_TICKS(flLatency + phyOff)))
+			if (TestAngle(pLocal, pWeapon, target, vOriginalPos, vTargetPos, vAngles + G::PunchAngles, i - TIME_TO_TICKS(flLatency + phyOff)))
 			{
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
@@ -687,17 +687,17 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 			if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
 			{
-				if (pWeapon->GetClip1() > 0)
+				if (pWeapon->m_iClip1() > 0)
 					pCmd->buttons &= ~IN_ATTACK;
 			}
 			else
 			{
 				if ((nWeaponID == TF_WEAPON_COMPOUND_BOW || nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER)
-					&& pWeapon->GetChargeBeginTime() > 0.0f)
+					&& pWeapon->m_flChargeBeginTime() > 0.0f)
 				{
 					pCmd->buttons &= ~IN_ATTACK;
 				}
-				else if (nWeaponID == TF_WEAPON_CANNON && pWeapon->GetDetonateTime() > 0.0f)
+				else if (nWeaponID == TF_WEAPON_CANNON && pWeapon->m_flDetonateTime() > 0.0f)
 				{
 					const Vec3 vEyePos = pLocal->GetShootPos();
 					const float bestCharge = vEyePos.DistTo(target.m_vPos) / 1454.0f;
@@ -714,7 +714,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 						if (target.m_pEntity->m_iHealth() > 50) // check if we even need to double donk to kill first
 						{
-							if (pWeapon->GetDetonateTime() - I::GlobalVars->curtime <= bestCharge)
+							if (pWeapon->m_flDetonateTime() - I::GlobalVars->curtime <= bestCharge)
 								pCmd->buttons &= ~IN_ATTACK;
 						}
 						else
@@ -751,7 +751,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const bool bEarly = RunMain(pLocal, pWeapon, pCmd);
 	const bool bHeld = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 
-	const float charge = pWeapon->GetChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() : 0.f;
+	const float charge = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 
 	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && amount > Vars::Aimbot::Projectile::AutoReleaseAt.Value;

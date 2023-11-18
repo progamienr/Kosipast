@@ -33,7 +33,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 	// Players
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
 	{
-		const bool bDisciplinary = Vars::Aimbot::Melee::WhipTeam.Value && pWeapon->GetItemDefIndex() == Soldier_t_TheDisciplinaryAction;
+		const bool bDisciplinary = Vars::Aimbot::Melee::WhipTeam.Value && pWeapon->m_iItemDefinitionIndex() == Soldier_t_TheDisciplinaryAction;
 
 		for (const auto& pTarget : g_EntityCache.GetGroup(bDisciplinary ? EGroupType::PLAYERS_ALL : EGroupType::PLAYERS_ENEMIES))
 		{
@@ -200,7 +200,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 		? std::max(iSwingTicks - Vars::CL_Move::DoubleTap::TickLimit.Value, 0)
 		: std::max(iSwingTicks, iDoubletapTicks);
 
-	if ((Vars::Aimbot::Melee::SwingPrediction.Value || iDoubletapTicks) && pWeapon->GetSmackTime() < 0.f && iMax)
+	if ((Vars::Aimbot::Melee::SwingPrediction.Value || iDoubletapTicks) && pWeapon->m_flSmackTime() < 0.f && iMax)
 	{
 		PlayerStorage localStorage;
 		std::unordered_map<CBaseEntity*, PlayerStorage> targetStorage;
@@ -219,7 +219,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 				if (pLocal->IsCharging() && iMax - i <= GetSwingTime(pWeapon)) // demo charge fix for swing pred
 				{
 					localStorage.m_MoveData.m_flMaxSpeed = pLocal->TeamFortress_CalculateMaxSpeed(true);
-					//localStorage.m_MoveData.m_flClientMaxSpeed = localStorage.m_MoveData.m_flMaxSpeed;
+					localStorage.m_MoveData.m_flClientMaxSpeed = localStorage.m_MoveData.m_flMaxSpeed;
 				}
 				F::MoveSim.RunTick(localStorage);
 			}
@@ -294,7 +294,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->m_iClass() == CLASS_SNIPER)
 	{
 		auto pWeapon = pTarget->GetWeaponFromSlot(SLOT_SECONDARY);
-		if (pWeapon && pWeapon->GetItemDefIndex() == Sniper_s_TheRazorback)
+		if (pWeapon && pWeapon->m_iItemDefinitionIndex() == Sniper_s_TheRazorback)
 			return false;
 	}
 
@@ -429,7 +429,7 @@ bool CAimbotMelee::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		return pCmd->buttons & IN_ATTACK;
 
-	return TIME_TO_TICKS(pWeapon->GetSmackTime()) == I::GlobalVars->tickcount - 1; // seems to work most (?) of the time
+	return TIME_TO_TICKS(pWeapon->m_flSmackTime()) == I::GlobalVars->tickcount - 1; // seems to work most (?) of the time
 }
 
 // assume angle calculated outside with other overload
@@ -483,9 +483,9 @@ Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 
 void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (lockedTarget.m_pEntity && pWeapon->GetSmackTime() < 0.f)
+	if (lockedTarget.m_pEntity && pWeapon->m_flSmackTime() < 0.f)
 		lockedTarget.m_pEntity = nullptr;
-	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::WeaponCanAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->GetSmackTime() < 0.f)
+	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::WeaponCanAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->m_flSmackTime() < 0.f)
 		return;
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
@@ -515,7 +515,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
 			G::AimPos = target.m_vPos;
 
-		if (Vars::Aimbot::Global::AutoShoot.Value && pWeapon->GetSmackTime() < 0.f)
+		if (Vars::Aimbot::Global::AutoShoot.Value && pWeapon->m_flSmackTime() < 0.f)
 		{
 			if (bShouldSwing)
 				pCmd->buttons |= IN_ATTACK;
@@ -527,11 +527,11 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (G::DoubleTap && pCmd->buttons & IN_ATTACK && pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
 		{
 			flSmackTime = TICKS_TO_TIME(I::GlobalVars->tickcount + 13 - (Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0));
-			pWeapon->GetSmackTime() = flSmackTime;
+			pWeapon->m_flSmackTime() = flSmackTime;
 		}
-		else if (pWeapon->GetSmackTime() > 0.f && flSmackTime > 0.f)
-			pWeapon->GetSmackTime() = flSmackTime;
-		else if (pWeapon->GetSmackTime() < 0.f)
+		else if (pWeapon->m_flSmackTime() > 0.f && flSmackTime > 0.f)
+			pWeapon->m_flSmackTime() = flSmackTime;
+		else if (pWeapon->m_flSmackTime() < 0.f)
 			flSmackTime = -1.f;
 
 		const bool bAttacking = IsAttacking(pCmd, pWeapon);

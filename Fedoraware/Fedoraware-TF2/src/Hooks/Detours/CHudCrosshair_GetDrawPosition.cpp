@@ -3,7 +3,7 @@
 MAKE_HOOK(CHudCrosshair_GetDrawPosition, S::CHudCrosshair_GetDrawPosition(), void, __cdecl,
 	float* pX, float* pY, bool* pbBehindCamera, Vec3 angleCrosshairOffset)
 {
-	if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value)
+	if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(pX, pY, pbBehindCamera, angleCrosshairOffset);
 
 	bool bSet = false;

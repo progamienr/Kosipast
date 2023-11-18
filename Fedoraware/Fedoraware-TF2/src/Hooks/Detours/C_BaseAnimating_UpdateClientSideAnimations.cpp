@@ -3,13 +3,12 @@
 MAKE_HOOK(CBaseAnimating_UpdateClientSideAnimation, S::CBaseAnimating_UpdateClientSideAnimation(), void, __fastcall,
 	void* ecx, void* edx)
 {
-	//return Hook.Original<FN>()(ecx, edx);
+	if (!G::UpdatingAnims && Vars::Misc::DisableInterpolation.Value)
+		return;
 
-	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(ecx);
-	if (!pEntity || Vars::Misc::DisableInterpolation.Value)
-		return Hook.Original<FN>()(ecx, edx);
+	auto pEntity = reinterpret_cast<CBaseEntity*>(ecx);
+	if (!pEntity || pEntity->m_flSimulationTime() == pEntity->m_flOldSimulationTime() || pEntity == g_EntityCache.GetLocal())
+		return;
 
-	const int iDelta = std::clamp(TIME_TO_TICKS(pEntity->m_flSimulationTime() - pEntity->m_flOldSimulationTime()), 0, 22);
-	for (int i = 0; i < iDelta; i++)
-		Hook.Original<FN>()(ecx, edx);
+	Hook.Original<FN>()(ecx, edx);
 }

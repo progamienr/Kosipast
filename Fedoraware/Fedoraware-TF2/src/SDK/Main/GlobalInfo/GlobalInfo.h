@@ -80,7 +80,7 @@ namespace G
 	inline int ChokeAmount = 0; // How many ticks have been choked
 	inline int ChokeGoal = 0; // How many ticks should be choked
 	inline int AnticipatedChoke = 0; // what the choke is expected to be (backtrack)
-	inline int TickBase = 0; // for utils
+	inline bool UpdatingAnims = false;
 
 	/* Aimbot */
 	inline bool IsAttacking = false;
@@ -92,6 +92,10 @@ namespace G
 	/* Angles */
 	inline Vec3 ViewAngles = {};
 	inline Vec3 PunchAngles = {};
+
+	/* Thirdperson Antiaim */
+	inline bool Choking = false;
+	inline std::vector<Vec3> ChokedAngles;
 
 	/* Bullets */
 	inline std::vector<DrawBullet> BulletsStorage;

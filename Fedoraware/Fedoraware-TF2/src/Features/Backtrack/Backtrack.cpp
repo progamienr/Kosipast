@@ -112,12 +112,9 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	if (!iNetChan)
 		return false;
 	/*
-	if (I::GlobalVars->tickcount == G::TickBase)
-	{
-		const auto tb = I::GlobalVars->tickcount;
-		const auto tc = iTickCount;
-		Utils::ConLog("diff", tfm::format("%i (%i, %i)", tb - tc, tb, tc).c_str(), { 100, 100, 255, 255 });
-	}
+	const auto tb = I::GlobalVars->tickcount;
+	const auto tc = iTickCount;
+	Utils::ConLog("diff", tfm::format("%i (%i, %i)", tb - tc, tb, tc).c_str(), { 100, 100, 255, 255 });
 	*/
 
 	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
@@ -259,7 +256,10 @@ void CBacktrack::StoreNolerp()
 			return;
 
 		// bones are more of a placeholder as i haven't gotten them to work correctly yet
+		bSettingUpBones = true;
 		noInterpBones[pEntity->GetIndex()].first = pEntity->SetupBones(noInterpBones[pEntity->GetIndex()].second, 128, BONE_USED_BY_ANYTHING, pEntity->m_flSimulationTime());
+		bSettingUpBones = false;
+
 		noInterpEyeAngles[pEntity->GetIndex()] = pEntity->GetEyeAngles();
 	}
 }

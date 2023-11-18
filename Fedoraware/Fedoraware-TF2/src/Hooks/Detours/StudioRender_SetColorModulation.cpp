@@ -9,7 +9,7 @@ MAKE_HOOK(StudioRender_SetColorModulation, Utils::GetVFuncPtr(I::StudioRender, 2
 		Color::TOFLOAT(Vars::Colors::StaticPropModulation.Value.b)
 	};
 
-	const bool bScreenshot = I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value;
+	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 	const bool bShouldUseCustomBlend = Vars::Visuals::World::PropModulation.Value && G::DrawingStaticProps && !bScreenshot;
 	Hook.Original<FN>()(ecx, edx, bShouldUseCustomBlend ? flCustomBlend : pColor);
 }

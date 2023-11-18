@@ -4,7 +4,7 @@
 #include <boost/algorithm/string/split.hpp> // Include for boost::split
 #include "../../Features/Menu/MaterialEditor/MaterialEditor.h"
 #include "../../Features/Commands/Commands.h"
-#include "../../Features/Visuals/Chams/DMEChams.h"
+#include "../../Features/Visuals/Materials/Materials.h"
 
 class split_q
 {
@@ -46,9 +46,7 @@ MAKE_HOOK(EngineClient_ClientCmd_Unrestricted, Utils::GetVFuncPtr(I::EngineClien
 	}
 
 	if (cmdString == "disconnect")
-	{
-		F::DMEChams.DeleteMaterials();	//	schizoid
-	}
+		F::Materials.RemoveMaterials();
 
 	Hook.Original<FN>()(ecx, edx, cmdString.c_str());
 }

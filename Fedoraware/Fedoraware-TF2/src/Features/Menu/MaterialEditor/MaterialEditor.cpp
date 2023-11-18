@@ -1,68 +1,16 @@
 #include "MaterialEditor.h"
 
-#include <filesystem>
-#include <fstream>
-
 #include <ImGui/imgui_impl_win32.h>
 #include <ImGui/imgui_stdlib.h>
+
 #include "../ConfigManager/ConfigManager.h"
-#include "../../Visuals/Chams/DMEChams.h"
-
-const std::string DEFAULT_MATERIAL = "\"VertexLitGeneric\"\n{\n}";
-
-std::string CMaterialEditor::GetMaterialPath(const std::string& matFileName)
-{
-	std::string matPath = MaterialFolder + "\\" + matFileName;
-	return matPath;
-}
-
-IMaterial* CMaterialEditor::GetByName(const std::string& name)
-{
-	return MaterialMap[name].Material;
-}
-
-/* Reloads all material files and creates the corresponding material */
-void CMaterialEditor::LoadMaterials()
-{
-	MaterialMap.clear();
-
-	// Load material files
-	for (const auto& entry : std::filesystem::directory_iterator(MaterialFolder))
-	{
-		// Ignore all non-Material files
-		if (!entry.is_regular_file()) { continue; }
-		if (entry.path().extension() != std::string(".vmt")) { continue; }
-
-		// Get the material name
-		const std::string matPath = entry.path().filename().string();
-		std::string matName = matPath;
-		matName.erase(matName.end() - 4, matName.end());
-
-		// Create Material
-		std::ifstream inStream(entry.path());
-		if (inStream.good())
-		{
-			const std::string str((std::istreambuf_iterator(inStream)), std::istreambuf_iterator<char>());
-			const auto kv = new KeyValues(matName.c_str());
-
-			g_KeyValUtils.LoadFromBuffer(kv, matName.c_str(), str.c_str());
-			IMaterial* newMaterial = F::DMEChams.CreateNRef(std::string("m_pmat" + matName).c_str(), kv);
-			MaterialMap[matName] = { matPath, newMaterial };
-		}
-	}
-}
-
-/* Writes the given material to it's file */
-void CMaterialEditor::WriteMaterial(const CustomMaterial& material, const std::string& content)
-{
-	std::ofstream outStream(GetMaterialPath(material.FileName));
-	outStream << content;
-	outStream.close();
-}
+#include "../../Visuals/Materials/Materials.h"
 
 void CMaterialEditor::MainWindow()
 {
-	if (!IsOpen) { return; }
+	if (!IsOpen)
+		return;
+
 	using namespace ImGui;
 
 	SetNextWindowSize(ImVec2(400, 380), ImGuiCond_Once);
@@ -70,38 +18,20 @@ void CMaterialEditor::MainWindow()
 	{
 		// Toolbar
 		{
-			if (Button("Refresh"))
-			{
-				LoadMaterials();
-			}
-
-			SameLine();
 			if (Button("Edit"))
 			{
-				if (std::filesystem::exists(GetMaterialPath(CurrentMaterial.FileName)))
-				{
-					std::ifstream inStream(GetMaterialPath(CurrentMaterial.FileName));
-					if (inStream.good())
-					{
-						const std::string str((std::istreambuf_iterator(inStream)), std::istreambuf_iterator<char>());
-						TextEditor.SetText(str);
-						EditorOpen = true;
-					}
-				}
+				TextEditor.SetText(F::Materials.GetVMT(CurrentMaterial));
+				TextEditor.SetReadOnly(LockedMaterial);
+				EditorOpen = true;
 			}
 
 			SameLine();
-			if (Button("Remove") && !GetMaterialPath(CurrentMaterial.FileName).empty())
-			{
-				std::filesystem::remove(GetMaterialPath(CurrentMaterial.FileName));
-				LoadMaterials();
-			}
+			if (Button("Remove"))
+				F::Materials.RemoveMaterial(CurrentMaterial);
 
 			SameLine();
 			if (Button("Open Folder"))
-			{
 				ShellExecuteA(nullptr, "open", MaterialFolder.c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
-			}
 		}
 
 		PushItemWidth(GetWindowSize().x - 2 * GetStyle().WindowPadding.x);
@@ -109,36 +39,19 @@ void CMaterialEditor::MainWindow()
 		// New material input
 		static std::string newName;
 		if (InputTextWithHint("###MaterialName", "New Material name", &newName, ImGuiInputTextFlags_EnterReturnsTrue))
-		{
-			if (!std::filesystem::exists(GetMaterialPath(newName + ".vmt")))
-			{
-				// Create a new CustomMaterial and add it to our map
-				const auto kv = new KeyValues(newName.c_str());
-				g_KeyValUtils.LoadFromBuffer(kv, newName.c_str(), DEFAULT_MATERIAL.c_str());
-				IMaterial* defMaterial = F::DMEChams.CreateNRef(std::string("m_pmat" + newName).c_str(), kv);
-
-				const CustomMaterial newMaterial = { newName + ".vmt", defMaterial };
-
-				WriteMaterial(newMaterial, DEFAULT_MATERIAL);
-				MaterialMap[newName] = newMaterial;
-				LoadMaterials();
-
-				newName.clear();
-			}
-		}
+			F::Materials.AddMaterial(newName);
 
 		// Material list
 		if (BeginChild("ListChild###Materials"))
 		{
 			if (BeginListBox("###MaterialList", { GetWindowWidth(), GetWindowHeight() }))
 			{
-				for (auto const& [name, mat] : MaterialMap)
+				for (auto const& mat : F::Materials.m_ChamMaterials)
 				{
-					if (name.empty()) { continue; }
-
-					if (Selectable(name.c_str(), CurrentMaterial.FileName == mat.FileName))
+					if (Selectable(mat.sName.c_str(), CurrentMaterial == mat.sName))
 					{
-						CurrentMaterial = mat;
+						CurrentMaterial = mat.sName;
+						LockedMaterial = mat.bLocked;
 						EditorOpen = false;
 					}
 				}
@@ -155,20 +68,22 @@ void CMaterialEditor::MainWindow()
 
 void CMaterialEditor::EditorWindow()
 {
-	if (!EditorOpen || !IsOpen) { return; }
+	if (!EditorOpen || !IsOpen)
+		return;
+
 	using namespace ImGui;
 
 	SetNextWindowSize(ImVec2(450, 400), ImGuiCond_Once);
 	if (Begin("Material Editor", &EditorOpen, ImGuiWindowFlags_NoCollapse))
 	{
 		// Toolbar
+		if (!LockedMaterial)
 		{
 			if (Button("Save"))
 			{
 				auto text = TextEditor.GetText();
 				text.erase(text.end() - 1, text.end()); // get rid of random newline
-				WriteMaterial(CurrentMaterial, text);
-				LoadMaterials();
+				F::Materials.EditMaterial(CurrentMaterial, text);
 			}
 
 			SameLine();
@@ -176,18 +91,22 @@ void CMaterialEditor::EditorWindow()
 			{
 				auto text = TextEditor.GetText();
 				text.erase(text.end() - 1, text.end()); // get rid of random newline
-				LoadMaterials();
+				F::Materials.EditMaterial(CurrentMaterial, text);
 				EditorOpen = false;
 			}
 
 			SameLine();
 			if (Button("Cancel"))
-			{
-				LoadMaterials();
 				EditorOpen = false;
-			}
 
-			Text("Editing: %s", CurrentMaterial.FileName.c_str());
+			Text("Editing: %s", CurrentMaterial.c_str());
+		}
+		else
+		{
+			if (Button("Close"))
+				EditorOpen = false;
+
+			Text("Showing: %s", CurrentMaterial.c_str());
 		}
 
 		// Text editor
@@ -204,10 +123,4 @@ void CMaterialEditor::Render()
 	MainWindow();
 	EditorWindow();
 	ImGui::PopStyleVar(2);
-}
-
-void CMaterialEditor::Init()
-{
-	MaterialFolder = g_CFG.GetConfigPath() + "\\Materials";
-	LoadMaterials();
 }

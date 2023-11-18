@@ -50,7 +50,6 @@
     <ClCompile Include="src\Features\Simulation\ProjectileSimulation\ProjectileSimulation.cpp" />
     <ClCompile Include="src\Features\TickHandler\TickHandler.cpp" />
     <ClCompile Include="src\Features\Visuals\Chams\Chams.cpp" />
-    <ClCompile Include="src\Features\Visuals\Chams\DMEChams.cpp" />
     <ClCompile Include="src\Features\Visuals\ESP\ESP.cpp" />
     <ClCompile Include="src\Features\Visuals\FakeAngleManager\FakeAng.cpp" />
     <ClCompile Include="src\Features\Visuals\Glow\Glow.cpp" />
@@ -123,7 +122,6 @@
     <ClCompile Include="src\Hooks\Detours\ISteamNetworkingUtils_GetDirectPingToPOP.cpp" />
     <ClCompile Include="src\Hooks\Detours\KeyValues_SetInt.cpp" />
     <ClCompile Include="src\Hooks\Detours\ModelRender_DrawModelExecute.cpp" />
-    <ClCompile Include="src\Hooks\Detours\ModelRender_ForcedMaterialOverride.cpp" />
     <ClCompile Include="src\Hooks\Detours\NetChannel_SendDatagram.cpp" />
     <ClCompile Include="src\Hooks\Detours\NotificationQueue_Add.cpp" />
     <ClCompile Include="src\Hooks\Detours\Panel_PaintTraverse.cpp" />
@@ -162,6 +160,12 @@
     <ClCompile Include="src\Features\NetVarHooks\NetVarHooks.cpp" />
     <ClCompile Include="src\Features\Logs\Logs.cpp" />
     <ClCompile Include="src\Hooks\Detours\GetClientInterpAmount.cpp" />
+    <ClCompile Include="src\Hooks\Detours\C_BaseEntity_ResetLatched.cpp" />
+    <ClCompile Include="src\Features\NetworkFix\NetworkFix.cpp" />
+    <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_SetupBones.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CPrediction_RunCommand.cpp" />
+    <ClCompile Include="src\Features\Visuals\Materials\Materials.cpp" />
+    <ClCompile Include="src\Hooks\Detours\ModelRender_ForcedMaterialOverride.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />
@@ -268,7 +272,6 @@
     <ClInclude Include="src\Features\TickHandler\TickHandler.h" />
     <ClInclude Include="src\Features\Vars.h" />
     <ClInclude Include="src\Features\Visuals\Chams\Chams.h" />
-    <ClInclude Include="src\Features\Visuals\Chams\DMEChams.h" />
     <ClInclude Include="src\Features\Visuals\ESP\ESP.h" />
     <ClInclude Include="src\Features\Visuals\FakeAngleManager\FakeAng.h" />
     <ClInclude Include="src\Features\Visuals\Glow\Glow.h" />
@@ -373,6 +376,8 @@
     <ClInclude Include="src\Utils\VFunc\VFunc.h" />
     <ClInclude Include="src\Features\NetVarHooks\NetVarHooks.h" />
     <ClInclude Include="src\Features\Logs\Logs.h" />
+    <ClInclude Include="src\Features\NetworkFix\NetworkFix.h" />
+    <ClInclude Include="src\Features\Visuals\Materials\Materials.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

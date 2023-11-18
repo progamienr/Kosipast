@@ -26,7 +26,6 @@ namespace S
 
 	MAKE_SIGNATURE(CBaseEntity_InCond, CLIENT_DLL, "55 8B EC 83 EC ? 56 57 8B 7D ? 8B F1 83 FF ? 7D", 0x0);
 	MAKE_SIGNATURE(TeamFortress_CalculateMaxSpeed, CLIENT_DLL, "55 8B EC 83 EC ? 83 3D ? ? ? ? ? 56 8B F1 75", 0x0);
-	MAKE_SIGNATURE(CTFPlayer_UpdateClientSideAnimation, CLIENT_DLL, "55 8B EC 83 EC 0C 56 57 8B F1 E8 ? ? ? ? 8B F8 85 FF 74 10 8B 17 8B CF 8B 92 ? ? ? ? FF D2", 0x0);
 	MAKE_SIGNATURE(CTFPlayer_UpdateWearables, CLIENT_DLL, "56 8B F1 E8 ? ? ? ? 8B 06 8B CE 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 FF 90 ? ? ? ? 50 E8 ? ? ? ? 83 C4 14", 0x0);
 	MAKE_SIGNATURE(CTFPlayer_ThirdPersonSwitch, CLIENT_DLL, "E8 ? ? ? ? 8A 87 ? ? ? ? 88 87 ? ? ? ?", 0x0);
 
@@ -91,7 +90,6 @@ public:
 class CBaseEntity
 {
 public: //Netvars & conditions
-	M_DYNVARGET(NextAttack, float, this, "DT_BaseCombatCharacter", "bcc_localdata", "m_flNextAttack")
 	M_DYNVARGET(Thrower, void*, this, "DT_BaseGrenade", "m_hThrower")
 	M_DYNVARGET(DamageRadius, float, this, "DT_BaseGrenade", "m_DmgRadius")
 	M_DYNVARGET(TargetPlayer, int, this, "DT_CHalloweenGiftPickup", "m_hTargetPlayer")
@@ -122,8 +120,8 @@ public: //Netvars & conditions
 	NETVAR(m_CollisionGroup, int, "CBaseEntity", "m_CollisionGroup")
 	NETVAR(m_flElasticity, float, "CBaseEntity", "m_flElasticity")
 	NETVAR(m_flShadowCastDistance, float, "CBaseEntity", "m_flShadowCastDistance")
-	NETVAR(m_hOwnerEntity, int /*handle*/, "CBaseEntity", "m_hOwnerEntity")
-	NETVAR(m_hEffectEntity, int /*handle*/, "CBaseEntity", "m_hEffectEntity")
+	NETVAR(m_hOwnerEntity, int /*EHANDLE*/, "CBaseEntity", "m_hOwnerEntity")
+	NETVAR(m_hEffectEntity, int /*EHANDLE*/, "CBaseEntity", "m_hEffectEntity")
 	NETVAR(moveparent, int, "CBaseEntity", "moveparent")
 	NETVAR(m_iParentAttachment, int, "CBaseEntity", "m_iParentAttachment")
 	NETVAR(m_Collision, void*, "CBaseEntity", "m_Collision")
@@ -149,8 +147,8 @@ public: //Netvars & conditions
 	NETVAR(m_nModelIndexOverrides, void*, "CBaseEntity", "m_nModelIndexOverrides")
 	NETVAR(movetype, int, "CBaseEntity", "movetype")
 
-	M_VIRTUALGET(AbsOrigin, const Vec3&, this, Vec3& (__thiscall*)(void*), 0x9)
-	M_VIRTUALGET(AbsAngles, const Vec3&, this, Vec3& (__thiscall*)(void*), 0xa)
+	M_VIRTUALGET(AbsOrigin, Vec3&, this, Vec3& (__thiscall*)(void*), 0x9)
+	M_VIRTUALGET(AbsAngles, Vec3&, this, Vec3& (__thiscall*)(void*), 0xa)
 	__inline void SetVecOrigin(const Vec3& vOrigin)
 	{
 		DYNVAR_SET(Vec3, this, vOrigin, "DT_BaseEntity", "m_vecOrigin");
@@ -247,8 +245,7 @@ public: //Netvars & conditions
 	}
 	__inline CBaseEntity* GetMoveParent()
 	{
-		static int offset = GetNetVar("CBaseEntity", "moveparent") - 4;
-		return reinterpret_cast<CBaseEntity*>(reinterpret_cast<uintptr_t>(this) + offset);
+		return I::ClientEntityList->GetClientEntity(*reinterpret_cast<int*>(this + 0x1B8) & 0xFFF);
 	}
 	__inline CBaseEntity* FirstMoveChild()
 	{
@@ -395,8 +392,8 @@ public: //Netvars & conditions
 	NETVAR(m_fOnTarget, int, "CBasePlayer", "m_fOnTarget")
 	NETVAR(m_nTickBase, int, "CBasePlayer", "m_nTickBase")
 	NETVAR(m_nNextThinkTick, int, "CBasePlayer", "m_nNextThinkTick")
-	NETVAR(m_hLastWeapon, int /*handle*/, "CBasePlayer", "m_hLastWeapon")
-	NETVAR(m_hGroundEntity, int /*handle*/, "CBasePlayer", "m_hGroundEntity")
+	NETVAR(m_hLastWeapon, int /*EHANDLE*/, "CBasePlayer", "m_hLastWeapon")
+	NETVAR(m_hGroundEntity, int /*EHANDLE*/, "CBasePlayer", "m_hGroundEntity")
 	NETVAR(m_vecVelocity, Vec3, "CBasePlayer", "m_vecVelocity[0]")
 	NETVAR(m_vecBaseVelocity, Vec3, "CBasePlayer", "m_vecBaseVelocity")
 	NETVAR(m_hConstraintEntity, CUserCmd* /*int handle*/, "CBasePlayer", "m_hConstraintEntity")
@@ -416,9 +413,9 @@ public: //Netvars & conditions
 	NETVAR(m_iFOVStart, int, "CBasePlayer", "m_iFOVStart")
 	NETVAR(m_flFOVTime, float, "CBasePlayer", "m_flFOVTime")
 	NETVAR(m_iDefaultFOV, int, "CBasePlayer", "m_iDefaultFOV")
-	NETVAR(m_hZoomOwner, int /*handle*/, "CBasePlayer", "m_hZoomOwner")
-	NETVAR(m_hVehicle, int /*handle*/, "CBasePlayer", "m_hVehicle")
-	NETVAR(m_hUseEntity, int /*handle*/, "CBasePlayer", "m_hUseEntity")
+	NETVAR(m_hZoomOwner, int /*EHANDLE*/, "CBasePlayer", "m_hZoomOwner")
+	NETVAR(m_hVehicle, int /*EHANDLE*/, "CBasePlayer", "m_hVehicle")
+	NETVAR(m_hUseEntity, int /*EHANDLE*/, "CBasePlayer", "m_hUseEntity")
 	NETVAR(m_iHealth, int, "CBasePlayer", "m_iHealth")
 	NETVAR(m_lifeState, byte, "CBasePlayer", "m_lifeState")
 	NETVAR(m_iBonusProgress, int, "CBasePlayer", "m_iBonusProgress")
@@ -426,8 +423,8 @@ public: //Netvars & conditions
 	NETVAR(m_flMaxspeed, float, "CBasePlayer", "m_flMaxspeed")
 	NETVAR(m_fFlags, int, "CBasePlayer", "m_fFlags")
 	NETVAR(m_iObserverMode, int, "CBasePlayer", "m_iObserverMode")
-	NETVAR(m_hObserverTarget, int /*handle*/, "CBasePlayer", "m_hObserverTarget")
-	NETVAR(m_hViewModel, int /*handle*/, "CBasePlayer", "m_hViewModel[0]")
+	NETVAR(m_hObserverTarget, int /*EHANDLE*/, "CBasePlayer", "m_hObserverTarget")
+	NETVAR(m_hViewModel, int /*EHANDLE*/, "CBasePlayer", "m_hViewModel[0]")
 	NETVAR(m_szLastPlaceName, const char*, "CBasePlayer", "m_szLastPlaceName")
 
 	__inline bool IsAlive()
@@ -475,11 +472,6 @@ public: //Netvars & conditions
 	{
 		return *reinterpret_cast<char*>(reinterpret_cast<DWORD>(this) + 0x12AC);
 	}
-	__inline CBaseCombatWeapon* GetActiveWeapon()
-	{
-		DYNVAR(pHandle, int, "DT_BaseCombatCharacter", "m_hActiveWeapon");
-		return reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(pHandle.GetValue(this)));
-	}
 	__inline int GetAmmoCount(int iAmmoType)
 	{
 		return S::CBasePlayer_GetAmmoCount.As<int(__thiscall*)(CBaseEntity*, int)>()(this, iAmmoType);
@@ -491,17 +483,29 @@ public: //Netvars & conditions
 		return flVel / iDivide;
 	}
 	//Virtuals from networkable
-	__inline IClientNetworkable* Networkable() { return reinterpret_cast<IClientNetworkable*>((reinterpret_cast<uintptr_t>(this) + 0x8)); }
+	__inline IClientNetworkable* Networkable()
+	{
+		return reinterpret_cast<IClientNetworkable*>((reinterpret_cast<uintptr_t>(this) + 0x8));
+	}
 	M_VIRTUALGET(ClientClass, CClientClass*, Networkable(), CClientClass* (__thiscall*)(void*), 2)
 	M_VIRTUALGET(Dormant, bool, Networkable(), bool(__thiscall*)(void*), 8)
 	M_VIRTUALGET(Index, int, Networkable(), int(__thiscall*)(void*), 9)
+
+	NETVAR(m_flNextAttack, float, "CBaseCombatCharacter", "m_flNextAttack")
+	NETVAR(m_hActiveWeapon, int /*EHANDLE*/, "CBaseCombatCharacter", "m_hActiveWeapon")
+	NETVAR(m_hMyWeapons, int /*EHANDLE*/, "CBaseCombatCharacter", "m_hMyWeapons")
+	NETVAR(m_bGlowEnabled, bool, "CBaseCombatCharacter", "m_bGlowEnabled")
+	__inline CBaseCombatWeapon* GetActiveWeapon()
+	{
+		return reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(m_hActiveWeapon()));
+	}
 
 	NETVAR(m_bSaveMeParity, bool, "CTFPlayer", "m_bSaveMeParity")
 	NETVAR(m_bIsMiniBoss, bool, "CTFPlayer", "m_bIsMiniBoss")
 	NETVAR(m_bIsABot, bool, "CTFPlayer", "m_bIsABot")
 	NETVAR(m_nBotSkill, int, "CTFPlayer", "m_nBotSkill")
 	NETVAR(m_nTFWaterLevel, byte, "CTFPlayer", "m_nWaterLevel")
-	NETVAR(m_hRagdoll, int /*handle*/, "CTFPlayer", "m_hRagdoll")
+	NETVAR(m_hRagdoll, int /*EHANDLE*/, "CTFPlayer", "m_hRagdoll")
 	NETVAR(m_PlayerClass, void*, "CTFPlayer", "m_PlayerClass")
 	NETVAR(m_iClass, int, "CTFPlayer", "m_iClass")
 	NETVAR(m_iszClassIcon, const char*, "CTFPlayer", "m_iszClassIcon")
@@ -526,7 +530,7 @@ public: //Netvars & conditions
 	NETVAR(m_flMovementStunTime, float, "CTFPlayer", "m_flMovementStunTime")
 	NETVAR(m_iMovementStunAmount, int, "CTFPlayer", "m_iMovementStunAmount")
 	NETVAR(m_iMovementStunParity, int, "CTFPlayer", "m_iMovementStunParity")
-	NETVAR(m_hStunner, int /*handle*/, "CTFPlayer", "m_hStunner")
+	NETVAR(m_hStunner, int /*EHANDLE*/, "CTFPlayer", "m_hStunner")
 	NETVAR(m_iStunFlags, int, "CTFPlayer", "m_iStunFlags")
 	NETVAR(m_nArenaNumChanges, int, "CTFPlayer", "m_nArenaNumChanges")
 	NETVAR(m_bArenaFirstBloodBoost, bool, "CTFPlayer", "m_bArenaFirstBloodBoost")
@@ -539,7 +543,7 @@ public: //Netvars & conditions
 	NETVAR(m_iDecapitations, int, "CTFPlayer", "m_iDecapitations")
 	NETVAR(m_iRevengeCrits, int, "CTFPlayer", "m_iRevengeCrits")
 	NETVAR(m_iDisguiseBody, int, "CTFPlayer", "m_iDisguiseBody")
-	NETVAR(m_hCarriedObject, int /*handle*/, "CTFPlayer", "m_hCarriedObject")
+	NETVAR(m_hCarriedObject, int /*EHANDLE*/, "CTFPlayer", "m_hCarriedObject")
 	NETVAR(m_bCarryingObject, bool, "CTFPlayer", "m_bCarryingObject")
 	NETVAR(m_flNextNoiseMakerTime, float, "CTFPlayer", "m_flNextNoiseMakerTime")
 	NETVAR(m_iSpawnRoomTouchCount, int, "CTFPlayer", "m_iSpawnRoomTouchCount")
@@ -557,7 +561,7 @@ public: //Netvars & conditions
 	NETVAR(m_iDisguiseTargetIndex, int, "CTFPlayer", "m_iDisguiseTargetIndex")
 	NETVAR(m_iDisguiseHealth, int, "CTFPlayer", "m_iDisguiseHealth")
 	NETVAR(m_bFeignDeathReady, bool, "CTFPlayer", "m_bFeignDeathReady")
-	NETVAR(m_hDisguiseWeapon, int /*handle*/, "CTFPlayer", "m_hDisguiseWeapon")
+	NETVAR(m_hDisguiseWeapon, int /*EHANDLE*/, "CTFPlayer", "m_hDisguiseWeapon")
 	NETVAR(m_nTeamTeleporterUsed, int, "CTFPlayer", "m_nTeamTeleporterUsed")
 	NETVAR(m_flCloakMeter, float, "CTFPlayer", "m_flCloakMeter")
 	NETVAR(m_flSpyTranqBuffDuration, float, "CTFPlayer", "m_flSpyTranqBuffDuration")
@@ -610,16 +614,16 @@ public: //Netvars & conditions
 	NETVAR(m_flRuneCharge, float, "CTFPlayer", "m_flRuneCharge")
 	NETVAR(m_bHasPasstimeBall, bool, "CTFPlayer", "m_bHasPasstimeBall")
 	NETVAR(m_bIsTargetedForPasstimePass, bool, "CTFPlayer", "m_bIsTargetedForPasstimePass")
-	NETVAR(m_hPasstimePassTarget, int /*handle*/, "CTFPlayer", "m_hPasstimePassTarget")
+	NETVAR(m_hPasstimePassTarget, int /*EHANDLE*/, "CTFPlayer", "m_hPasstimePassTarget")
 	NETVAR(m_askForBallTime, float, "CTFPlayer", "m_askForBallTime")
 	NETVAR(m_bKingRuneBuffActive, bool, "CTFPlayer", "m_bKingRuneBuffActive")
 	NETVAR(m_nPlayerCondEx4, int, "CTFPlayer", "m_nPlayerCondEx4")
 	NETVAR(m_flHolsterAnimTime, float, "CTFPlayer", "m_flHolsterAnimTime")
-	NETVAR(m_hSwitchTo, int /*handle*/, "CTFPlayer", "m_hSwitchTo")
-	NETVAR(m_hItem, int /*handle*/, "CTFPlayer", "m_hItem")
+	NETVAR(m_hSwitchTo, int /*EHANDLE*/, "CTFPlayer", "m_hSwitchTo")
+	NETVAR(m_hItem, int /*EHANDLE*/, "CTFPlayer", "m_hItem")
 	NETVAR(m_bIsCoaching, bool, "CTFPlayer", "m_bIsCoaching")
-	NETVAR(m_hCoach, int /*handle*/, "CTFPlayer", "m_hCoach")
-	NETVAR(m_hStudent, int /*handle*/, "CTFPlayer", "m_hStudent")
+	NETVAR(m_hCoach, int /*EHANDLE*/, "CTFPlayer", "m_hCoach")
+	NETVAR(m_hStudent, int /*EHANDLE*/, "CTFPlayer", "m_hStudent")
 	NETVAR(m_nCurrency, int, "CTFPlayer", "m_nCurrency")
 	NETVAR(m_nExperienceLevel, int, "CTFPlayer", "m_nExperienceLevel")
 	NETVAR(m_nExperienceLevelProgress, int, "CTFPlayer", "m_nExperienceLevelProgress")
@@ -630,7 +634,7 @@ public: //Netvars & conditions
 	NETVAR(m_angEyeAnglesY, float, "CTFPlayer", "m_angEyeAngles[1]")
 	NETVAR(m_bAllowMoveDuringTaunt, bool, "CTFPlayer", "m_bAllowMoveDuringTaunt")
 	NETVAR(m_bIsReadyToHighFive, bool, "CTFPlayer", "m_bIsReadyToHighFive")
-	NETVAR(m_hHighFivePartner, int /*handle*/, "CTFPlayer", "m_hHighFivePartner")
+	NETVAR(m_hHighFivePartner, int /*EHANDLE*/, "CTFPlayer", "m_hHighFivePartner")
 	NETVAR(m_nForceTauntCam, int, "CTFPlayer", "m_nForceTauntCam")
 	NETVAR(m_flTauntYaw, float, "CTFPlayer", "m_flTauntYaw")
 	NETVAR_OFF(m_flPrevTauntYaw, float, "CTFPlayer", "m_flTauntYaw", 4)
@@ -644,7 +648,7 @@ public: //Netvars & conditions
 	NETVAR(m_iSpawnCounter, int, "CTFPlayer", "m_iSpawnCounter")
 	NETVAR(m_bArenaSpectator, bool, "CTFPlayer", "m_bArenaSpectator")
 	NETVAR(m_AttributeManager, void*, "CTFPlayer", "m_AttributeManager")
-	NETVAR(m_hOuter, int /*handle*/, "CTFPlayer", "m_hOuter")
+	NETVAR(m_hOuter, int /*EHANDLE*/, "CTFPlayer", "m_hOuter")
 	NETVAR(m_ProviderType, int, "CTFPlayer", "m_ProviderType")
 	NETVAR(m_iReapplyProvisionParity, int, "CTFPlayer", "m_iReapplyProvisionParity")
 	NETVAR(m_flHeadScale, float, "CTFPlayer", "m_flHeadScale")
@@ -654,13 +658,13 @@ public: //Netvars & conditions
 	NETVAR(m_bUsingVRHeadset, bool, "CTFPlayer", "m_bUsingVRHeadset")
 	NETVAR(m_bForcedSkin, bool, "CTFPlayer", "m_bForcedSkin")
 	NETVAR(m_nForcedSkin, int, "CTFPlayer", "m_nForcedSkin")
-	NETVAR(m_bGlowEnabled, bool, "CTFPlayer", "m_bGlowEnabled")
+	NETVAR(m_bTFGlowEnabled, bool, "CTFPlayer", "m_bGlowEnabled")
 	NETVAR(m_nActiveWpnClip, int, "CTFPlayer", "m_nActiveWpnClip")
 	NETVAR(m_flKartNextAvailableBoost, float, "CTFPlayer", "m_flKartNextAvailableBoost")
 	NETVAR(m_iKartHealth, int, "CTFPlayer", "m_iKartHealth")
 	NETVAR(m_iKartState, int, "CTFPlayer", "m_iKartState")
-	NETVAR(m_hGrapplingHookTarget, int /*handle*/, "CTFPlayer", "m_hGrapplingHookTarget")
-	NETVAR(m_hSecondaryLastWeapon, int /*handle*/, "CTFPlayer", "m_hSecondaryLastWeapon")
+	NETVAR(m_hGrapplingHookTarget, int /*EHANDLE*/, "CTFPlayer", "m_hGrapplingHookTarget")
+	NETVAR(m_hSecondaryLastWeapon, int /*EHANDLE*/, "CTFPlayer", "m_hSecondaryLastWeapon")
 	NETVAR(m_bUsingActionSlot, bool, "CTFPlayer", "m_bUsingActionSlot")
 	NETVAR(m_flInspectTime, float, "CTFPlayer", "m_flInspectTime")
 	NETVAR(m_flHelpmeButtonPressTime, float, "CTFPlayer", "m_flHelpmeButtonPressTime")
@@ -933,7 +937,7 @@ public: //Netvars & conditions
 	}
 	__inline void UpdateClientSideAnimation()
 	{
-		S::CTFPlayer_UpdateClientSideAnimation.As<void(__thiscall*)(void*)>()(this);
+		S::CBaseAnimating_UpdateClientSideAnimation.As<void(__thiscall*)(void*)>()(this);
 	}
 	__inline float GetCritMult()
 	{
@@ -988,8 +992,8 @@ public: //Netvars & conditions
 	NETVAR(m_nNewSequenceParity, int, "CBaseAnimating", "m_nNewSequenceParity")
 	NETVAR(m_nResetEventsParity, int, "CBaseAnimating", "m_nResetEventsParity")
 	NETVAR(m_nMuzzleFlashParity, int, "CBaseAnimating", "m_nMuzzleFlashParity")
-	NETVAR(m_hLightingOrigin, int /*handle*/, "CBaseAnimating", "m_hLightingOrigin")
-	NETVAR(m_hLightingOriginRelative, int /*handle*/, "CBaseAnimating", "m_hLightingOriginRelative")
+	NETVAR(m_hLightingOrigin, int /*EHANDLE*/, "CBaseAnimating", "m_hLightingOrigin")
+	NETVAR(m_hLightingOriginRelative, int /*EHANDLE*/, "CBaseAnimating", "m_hLightingOriginRelative")
 	NETVAR(m_flCycle, float, "CBaseAnimating", "m_flCycle")
 	NETVAR(m_fadeMinDist, float, "CBaseAnimating", "m_fadeMinDist")
 	NETVAR(m_fadeMaxDist, float, "CBaseAnimating", "m_fadeMaxDist")
@@ -1187,20 +1191,25 @@ public: //Netvars & conditions
 	M_VIRTUALGET(RenderAngles, const Vec3&, Renderable(), const Vec3& (__thiscall*)(void*), 2)
 	M_VIRTUALGET(Model, model_t*, Renderable(), model_t* (__thiscall*)(void*), 9)
 	M_VIRTUALGET(RgflCoordinateFrame, matrix3x4&, Renderable(), matrix3x4& (__thiscall*)(void*), 34)
-	__inline void GetRenderBounds(Vec3& vMins, Vec3& vMaxs)
+	__inline bool ShouldDraw()
 	{
 		const auto pRend = Renderable();
-		GetVFunc<void(__thiscall*)(void*, Vec3&, Vec3&)>(pRend, 20)(pRend, vMins, vMaxs);
+		return GetVFunc<bool(__thiscall*)(void*)>(pRend, 3)(pRend);
+	}
+	__inline int DrawModel(int nFlags)
+	{
+		const auto pRend = Renderable();
+		return GetVFunc<int(__thiscall*)(void*, int)>(pRend, 10)(pRend, nFlags);
 	}
 	__inline bool SetupBones(matrix3x4* pOut, int nMax, int nMask, float flTime)
 	{
 		const auto pRend = Renderable();
 		return GetVFunc<bool(__thiscall*)(void*, matrix3x4*, int, int, float)>(pRend, 16)(pRend, pOut, nMax, nMask, flTime);
 	}
-	__inline int DrawModel(int nFlags)
+	__inline void GetRenderBounds(Vec3& vMins, Vec3& vMaxs)
 	{
 		const auto pRend = Renderable();
-		return GetVFunc<int(__thiscall*)(void*, int)>(pRend, 10)(pRend, nFlags);
+		GetVFunc<void(__thiscall*)(void*, Vec3&, Vec3&)>(pRend, 20)(pRend, vMins, vMaxs);
 	}
 	__inline void SetRenderAngles(const Vec3& vAngles)
 	{

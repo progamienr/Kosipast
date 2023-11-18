@@ -58,23 +58,14 @@ struct Gradient_t
 	Color_t EndColor = { 0, 0, 0, 255 };
 };
 
-// TODO: Move this shit to a file that isn't this
 struct Chams_t
 {
-	bool	ShowObstructed = false;
-	int		DrawMaterial = 0;	// 1/shaded, 2/shiny, 3/flat, 4/wfshaded, 5/wfshiny, 6/wfflat, 7/fresnel, 8/brick 9/custom
-	int		OverlayType = 0;
-	bool	ChamsActive = true;	// start all chams as active because I don't trust this cheat.
-	bool	Rainbow = false;
-	bool	OverlayPulse = false;
-	bool	OverlayRainbow = false;
-	float	OverlayIntensity = 1;
-	Color_t FresnelBase = { 0,0,0,255 };
+	bool			ChamsActive = false;
+	bool			IgnoreZ = false;
+	std::string		Material = "Original";
+	std::string		OverlayMaterial = "None";
 	Color_t Color = { 255, 255, 255, 255 };
-	Color_t BluColor = { 255, 255, 255, 255 }; //fuck the british
-	Color_t RedColor = { 255, 255, 255, 255 };
 	Color_t OverlayColor = { 255, 255, 255, 255 };
-	std::string CustomMaterial = "None";
 };
 
 struct DragBox_t

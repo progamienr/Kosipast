@@ -3,491 +3,338 @@
 #include "../../Vars.h"
 #include "../../Color.h"
 
-#include "../Chams/Chams.h"
-#include "../Chams/DMEChams.h"
-#include "../Visuals.h"
+#include "../Materials/Materials.h"
 
-void CGlowEffect::DrawModel(CBaseEntity* pEntity, int nFlags, bool bIsDrawingModels)
+void CGlow::Init()
 {
-	m_bRendering = true;
+	m_pRtFullFrame = I::MaterialSystem->FindTexture("_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET);
+	m_pRtFullFrame->IncrementReferenceCount();
 
-	if (!bIsDrawingModels)
-		m_bDrawingGlow = true;
+	m_pRenderBuffer1 = I::MaterialSystem->CreateNamedRenderTargetTextureEx(
+		"glow_buffer_1",
+		m_pRtFullFrame->GetActualWidth(),
+		m_pRtFullFrame->GetActualHeight(),
+		RT_SIZE_LITERAL,
+		IMAGE_FORMAT_RGB888,
+		MATERIAL_RT_DEPTH_SHARED,
+		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_EIGHTBITALPHA,
+		CREATERENDERTARGETFLAGS_HDR
+	);
+	m_pRenderBuffer1->IncrementReferenceCount();
 
-	pEntity->DrawModel(nFlags);
-
-	if (bIsDrawingModels)
-		m_DrawnEntities[pEntity] = true;
-
-	if (!bIsDrawingModels)
-		m_bDrawingGlow = false;
-
-	m_bRendering = false;
+	m_pRenderBuffer2 = I::MaterialSystem->CreateNamedRenderTargetTextureEx(
+		"glow_buffer_2",
+		m_pRtFullFrame->GetActualWidth(),
+		m_pRtFullFrame->GetActualHeight(),
+		RT_SIZE_LITERAL,
+		IMAGE_FORMAT_RGB888,
+		MATERIAL_RT_DEPTH_SHARED,
+		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_EIGHTBITALPHA,
+		CREATERENDERTARGETFLAGS_HDR
+	);
+	m_pRenderBuffer2->IncrementReferenceCount();
 }
 
-void CGlowEffect::SetScale(int nScale, bool bReset = false)
+
+
+void CGlow::SetScale(int nScale, bool bReset = false)
 {
+	auto m_pMatBlurY = F::Materials.GetMaterial("BlurY");
+
 	static IMaterialVar* pVar = nullptr;
 	static bool bFound = false;
 
 	if (bReset) { pVar = nullptr; bFound = false; return; }
 
 	if (!bFound && m_pMatBlurY)
-	{
 		pVar = m_pMatBlurY->FindVar("$bloomamount", &bFound);
-	}
 	else if (pVar)
-	{
-		//pVar->SetIntValue(nScale);
 		pVar->SetFloatValue(float(nScale) / 2.f);
-	}
 }
 
-void CGlowEffect::Init()
+void CGlow::DrawModel(CBaseEntity* pEntity, bool bModel, Color_t cColor)
 {
-	CreateMaterials();
-	//m_pMatGlowColor = I::MaterialSystem->Find("dev/glow_color", TEXTURE_GROUP_OTHER);
-	m_pRtFullFrame = I::MaterialSystem->FindTexture("_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET);
-	m_pRtQuarterSize1 = I::MaterialSystem->FindTexture("_rt_SmallFB1", TEXTURE_GROUP_RENDER_TARGET);
+	if (!pEntity->ShouldDraw())
+		return;
 
-	F::DMEChams.v_MatListGlobal.push_back(m_pMatGlowColor);
-
-	//m_pMatGlowColor->IncrementReferenceCount();
-	m_pRtFullFrame->IncrementReferenceCount();
-	m_pRtQuarterSize1->IncrementReferenceCount();
-
-	m_pRenderBuffer1 = I::MaterialSystem->CreateNamedRenderTargetTextureEx(
-		"glow_buffer_1", m_pRtFullFrame->GetActualWidth(), m_pRtFullFrame->GetActualHeight(),
-		RT_SIZE_LITERAL, IMAGE_FORMAT_RGB888, MATERIAL_RT_DEPTH_SHARED,
-		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_EIGHTBITALPHA, CREATERENDERTARGETFLAGS_HDR);
-	m_pRenderBuffer1->IncrementReferenceCount();
-	m_pRenderBuffer2 = I::MaterialSystem->CreateNamedRenderTargetTextureEx(
-		"glow_buffer_2", m_pRtFullFrame->GetActualWidth(), m_pRtFullFrame->GetActualHeight(),
-		RT_SIZE_LITERAL, IMAGE_FORMAT_RGB888, MATERIAL_RT_DEPTH_SHARED,
-		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_EIGHTBITALPHA, CREATERENDERTARGETFLAGS_HDR);
-	m_pRenderBuffer2->IncrementReferenceCount();
-
-	static KeyValues* m_pMatBlurXkv = new KeyValues("BlurFilterX");
-	static KeyValues* m_pMatBlurXwfkv = new KeyValues("BlurFilterX");
-	static KeyValues* m_pMatBlurYkv = new KeyValues("BlurFilterY");
-	static KeyValues* m_pMatBlurYwfkv = new KeyValues("BlurFilterY");
-	static KeyValues* m_pMatHaloAddToScreenkv = new KeyValues("UnlitGeneric");
-
-	m_pMatBlurXkv->SetString("$basetexture", "glow_buffer_1");
-	m_pMatBlurXwfkv->SetString("$basetexture", "glow_buffer_1");
-	m_pMatBlurXwfkv->SetString("$wireframe", "1");
-	
-	m_pMatBlurYkv->SetString("$basetexture", "glow_buffer_2");
-	m_pMatBlurYwfkv->SetString("$basetexture", "glow_buffer_2");
-	m_pMatBlurYwfkv->SetString("$wireframe", "1");
-
-
-	m_pMatHaloAddToScreenkv->SetString("$basetexture", "glow_buffer_1");
-	m_pMatHaloAddToScreenkv->SetString("$additive", "1");
-
-	m_pMatBlurX = F::DMEChams.CreateNRef("m_pMatBlurX", m_pMatBlurXkv, false);
-	m_pMatBlurXwf = F::DMEChams.CreateNRef("m_pMatBlurXwf", m_pMatBlurXwfkv, false);
-	m_pMatBlurY = F::DMEChams.CreateNRef("m_pMatBlurY", m_pMatBlurYkv, false);
-	m_pMatBlurYwf = F::DMEChams.CreateNRef("m_pMatBlurYwf", m_pMatBlurYwfkv, false);
-	m_pMatHaloAddToScreen = F::DMEChams.CreateNRef("m_pMatHaloAddToScreen", m_pMatHaloAddToScreenkv, false);
-}
-
-void CGlowEffect::CreateMaterials(){
-	DeleteMaterials();
-	m_pMatGlowColor = I::MaterialSystem->Find("dev/glow_color", TEXTURE_GROUP_OTHER);
-	m_pMatGlowColor->IncrementReferenceCount();
-	KeyValues* m_pMatBlurXkv = new KeyValues("BlurFilterX");
-	KeyValues* m_pMatBlurXwfkv = new KeyValues("BlurFilterX");
-	KeyValues* m_pMatBlurYkv = new KeyValues("BlurFilterY");
-	KeyValues* m_pMatBlurYwfkv = new KeyValues("BlurFilterY");
-	KeyValues* m_pMatHaloAddToScreenkv = new KeyValues("UnlitGeneric");
-
-	m_pMatBlurXkv->SetString("$basetexture", "glow_buffer_1");
-	m_pMatBlurXwfkv->SetString("$basetexture", "glow_buffer_1");
-	m_pMatBlurXwfkv->SetString("$wireframe", "1");
-	
-	m_pMatBlurYkv->SetString("$basetexture", "glow_buffer_2");
-	m_pMatBlurYwfkv->SetString("$basetexture", "glow_buffer_2");
-	m_pMatBlurYwfkv->SetString("$wireframe", "1");
-
-
-	m_pMatHaloAddToScreenkv->SetString("$basetexture", "glow_buffer_1");
-	m_pMatHaloAddToScreenkv->SetString("$additive", "1");
-
-	m_pMatBlurX = F::DMEChams.CreateNRef("m_pMatBlurX", m_pMatBlurXkv, false);
-	m_pMatBlurXwf = F::DMEChams.CreateNRef("m_pMatBlurXwf", m_pMatBlurXwfkv, false);
-	m_pMatBlurY = F::DMEChams.CreateNRef("m_pMatBlurY", m_pMatBlurYkv, false);
-	m_pMatBlurYwf = F::DMEChams.CreateNRef("m_pMatBlurYwf", m_pMatBlurYwfkv, false);
-	m_pMatHaloAddToScreen = F::DMEChams.CreateNRef("m_pMatHaloAddToScreen", m_pMatHaloAddToScreenkv, false);
-
-	SetScale(1.f, true);
-}
-
-void CGlowEffect::DeleteMaterials(){
-	std::vector<IMaterial*> scanMats = {
-		m_pMatGlowColor,
-		m_pMatBlurXwf,
-		m_pMatBlurX,
-		m_pMatBlurYwf,
-		m_pMatBlurY,
-		m_pMatHaloAddToScreen,
-	};
-
-	for (IMaterial* material : scanMats){
-		if (!material){ continue; }
-		material->DecrementReferenceCount();
-		material->DeleteIfUnreferenced();
-		material = nullptr;
+	m_bRendering = true;
+	if (bModel)
+	{
+		m_vecGlowEntities.push_back({ pEntity, cColor });
+		I::RenderView->SetBlend(0.f);
 	}
+	//else
+	//	m_bDrawingGlow = true;
+
+	const float flOldInvisibility = pEntity->IsPlayer() ? pEntity->m_flInvisibility() : -1.0f;
+	if (flOldInvisibility > 0.99f)
+		pEntity->m_flInvisibility() = 0.f;
+
+	pEntity->DrawModel(bModel ? STUDIO_RENDER : (STUDIO_RENDER | STUDIO_NOSHADOWS));
+
+	if (flOldInvisibility > 0.99f)
+		pEntity->m_flInvisibility() = flOldInvisibility;
+
+	m_bRendering = false;
+	if (bModel)
+		I::RenderView->SetBlend(1.f);
+	//else
+	//	m_bDrawingGlow = false;
 }
 
-void CGlowEffect::Render()
+void CGlow::Render()
 {
 	if (!m_vecGlowEntities.empty())
 		m_vecGlowEntities.clear();
 
-	if (!m_DrawnEntities.empty())
-		m_DrawnEntities.clear();
-
 	if (!Vars::Glow::Main::Active.Value)
-	{
 		return;
-	}
-	
-	if (const auto& pLocal = g_EntityCache.GetLocal())
+
+	const int w = g_ScreenSize.w, h = g_ScreenSize.h;
+	if (I::EngineVGui->IsGameUIVisible() || w < 1 || h < 1 || w > 4096 || h > 2160)
+		return;
+
+	IMatRenderContext* pRenderContext = I::MaterialSystem->GetRenderContext();
+	if (!pRenderContext)
+		return;
+
+	const auto& pLocal = g_EntityCache.GetLocal();
+	if (!pLocal)
+		return;
+
+	auto m_pMatGlowColor = F::Materials.GetMaterial("GlowColor");
+	auto m_pMatBlurX = F::Materials.GetMaterial("BlurX");
+	auto m_pMatBlurY = F::Materials.GetMaterial("BlurY");
+	auto m_pMatHaloAddToScreen = F::Materials.GetMaterial("HaloAddToScreen");
+	if (!m_pMatGlowColor || !m_pMatBlurX || !m_pMatBlurY || !m_pMatHaloAddToScreen)
+		return F::Materials.ReloadMaterials();
+
+
+
+	SetScale(Vars::Glow::Main::Scale.Value);
+
+	ShaderStencilState_t StencilStateDisable = {};
+	StencilStateDisable.m_bEnable = false;
+
+	float flOriginalColor[3] = {};
+	I::RenderView->GetColorModulation(flOriginalColor);
+	float flOriginalBlend = I::RenderView->GetBlend();
+
 	{
-		int w = g_ScreenSize.w;
-		int h = g_ScreenSize.h;
+		ShaderStencilState_t StencilState = {};
+		StencilState.m_bEnable = true;
+		StencilState.m_nReferenceValue = 1;
+		StencilState.m_CompareFunc = STENCILCOMPARISONFUNCTION_ALWAYS;
+		StencilState.m_PassOp = STENCILOPERATION_REPLACE;
+		StencilState.m_FailOp = STENCILOPERATION_KEEP;
+		StencilState.m_ZFailOp = STENCILOPERATION_REPLACE;
+		StencilState.SetStencilState(pRenderContext);
+	}
 
-		if (/*!Vars::Glow::Main::Active.m_Var ||*/ w < 1 || h < 1 || w > 4096 || h > 2160)
-			return;
+	I::RenderView->SetColorModulation(1.0f, 1.0f, 1.0f);
+	I::RenderView->SetBlend(1.0f);
 
-		if (I::EngineVGui->IsGameUIVisible())
-			return;
 
-		IMatRenderContext* pRenderContext = I::MaterialSystem->GetRenderContext();
 
-		if (!pRenderContext)
-			return;
-
-		SetScale(Vars::Glow::Main::Scale.Value);
-
-		ShaderStencilState_t StencilStateDisable = {};
-		StencilStateDisable.m_bEnable = false;
-
-		float flOriginalColor[3] = {};
-		I::RenderView->GetColorModulation(flOriginalColor);
-		float flOriginalBlend = I::RenderView->GetBlend();
-
-		if (!F::Chams.m_bHasSetStencil)
+	if (Vars::Glow::Players::Active.Value)
+	{
+		for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 		{
-			ShaderStencilState_t StencilState = {};
-			StencilState.m_bEnable = true;
-			StencilState.m_nReferenceValue = 1;
-			StencilState.m_CompareFunc = STENCILCOMPARISONFUNCTION_ALWAYS;
-			StencilState.m_PassOp = STENCILOPERATION_KEEP;
-			StencilState.m_FailOp = STENCILOPERATION_KEEP;
-			StencilState.m_ZFailOp = STENCILOPERATION_KEEP;
-			StencilState.SetStencilState(pRenderContext);
-		}
+			if (!pPlayer->IsAlive() || pPlayer->IsAGhost() || pPlayer->GetDormant())
+				continue;
 
-		I::RenderView->SetColorModulation(1.0f, 1.0f, 1.0f);
-		I::RenderView->SetBlend(1.0f);
-
-
-
-		if (Vars::Glow::Players::Active.Value)
-		{
-			for (const auto& Player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+			bool bIsLocal = pPlayer->GetIndex() == I::EngineClient->GetLocalPlayer();
+			if (!bIsLocal)
 			{
-				if (Player->GetDormant())
-					continue;
-
-				if (!Player->IsAlive() || Player->IsAGhost())
-					continue;
-
-				bool bIsLocal = Player->GetIndex() == I::EngineClient->GetLocalPlayer();
-
-				if (!bIsLocal)
+				switch (Vars::Glow::Players::IgnoreTeammates.Value)
 				{
-					switch (Vars::Glow::Players::IgnoreTeammates.Value)
-					{
-					case 0: break;
-					case 1:
-						{
-							if (Player->m_iTeamNum() == pLocal->m_iTeamNum()) { continue; }
-							break;
-						}
-					case 2:
-						{
-							if (Player->m_iTeamNum() == pLocal->m_iTeamNum() && !g_EntityCache.IsFriend(Player->GetIndex())) { continue; }
-							break;
-						}
-					}
-				}
-
-				else
-				{
-					if (!Vars::Glow::Players::ShowLocal.Value)
+				case 0: break;
+				case 1:
+					if (pPlayer->m_iTeamNum() == pLocal->m_iTeamNum())
 						continue;
-				}
-
-				if (!Utils::IsOnScreen(pLocal, Player))
-					continue;
-
-				Color_t DrawColor = {};
-
-				if (Vars::Glow::Players::Color.Value == 0)
-				{
-					if (Vars::Glow::Players::LocalRainbow.Value)
-					{
-						if (bIsLocal)
-						{
-							DrawColor = Utils::Rainbow();
-						}
-						else
-						{
-							DrawColor = GetEntityDrawColor(Player, Vars::ESP::Main::EnableTeamEnemyColors.Value);
-						}
-					}
-					else
-					{
-						DrawColor = GetEntityDrawColor(Player, Vars::ESP::Main::EnableTeamEnemyColors.Value);
-					}
-				}
-				else
-				{
-					DrawColor = GetHealthColor(Player->m_iHealth(), Player->GetMaxHealth());
-				}
-
-				m_vecGlowEntities.push_back({Player, DrawColor, Vars::Glow::Players::Alpha.Value});
-
-				if (!F::Chams.HasDrawn(Player))
-					DrawModel(Player, STUDIO_RENDER, true);
-
-				if (Vars::Glow::Players::Wearables.Value && !Player->IsUbered())
-				{
-					CBaseEntity* pAttachment = Player->FirstMoveChild();
-
-					for (int n = 0; n < 32; n++)
-					{
-						if (!pAttachment)
-							continue;
-
-						if (pAttachment->IsWearable())
-						{
-							m_vecGlowEntities.push_back({pAttachment, DrawColor, Vars::Glow::Players::Alpha.Value});
-
-							if (!F::Chams.HasDrawn(pAttachment))
-								DrawModel(pAttachment, STUDIO_RENDER, true);
-						}
-
-						pAttachment = pAttachment->NextMovePeer();
-					}
-				}
-
-				if (Vars::Glow::Players::Weapons.Value && !Player->IsUbered())
-				{
-					if (const auto& pWeapon = Player->GetActiveWeapon())
-					{
-						m_vecGlowEntities.push_back({pWeapon, DrawColor, Vars::Glow::Players::Alpha.Value});
-
-						if (!F::Chams.HasDrawn(pWeapon))
-							DrawModel(pWeapon, STUDIO_RENDER, true);
-					}
-				}
-			}
-		}
-
-		if (Vars::Glow::Buildings::Active.Value)
-		{
-			for (const auto& Building : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL))
-			{
-				const auto& pBuilding = reinterpret_cast<CBaseObject*>(Building);
-				if (!Building->IsAlive())
-					continue;
-
-				if (Vars::Glow::Buildings::IgnoreTeammates.Value && Building->m_iTeamNum() == pLocal->m_iTeamNum())
-					continue;
-
-				if (!Utils::IsOnScreen(pLocal, Building))
-					continue;
-
-				Color_t DrawColor = {};
-
-				switch (Vars::Glow::Buildings::Color.Value) {
-				case 0: {
-					DrawColor = GetEntityDrawColor(Building, Vars::ESP::Main::EnableTeamEnemyColors.Value);
+					break;
+				case 2:
+					if (pPlayer->m_iTeamNum() == pLocal->m_iTeamNum() && !g_EntityCache.IsFriend(pPlayer->GetIndex()))
+						continue;
 					break;
 				}
-				case 1: {
-					DrawColor = GetHealthColor(pBuilding->GetHealth(), pBuilding->GetMaxHealth());
+			}
+			else if (!Vars::Glow::Players::ShowLocal.Value)
+				continue;
+
+			if (!Utils::IsOnScreen(pLocal, pPlayer))
+				continue;
+
+			Color_t DrawColor = DrawColor = GetEntityDrawColor(pPlayer, Vars::ESP::Main::EnableTeamEnemyColors.Value);
+
+			DrawModel(pPlayer, true, DrawColor);
+			
+			CBaseEntity* pAttachment = pPlayer->FirstMoveChild();
+			for (int n = 0; n < 32; n++)
+			{
+				if (!pAttachment)
 					break;
-				}
-				}
+					
+				if (pAttachment->IsWearable())
+					DrawModel(pAttachment, true, DrawColor);
 
-				m_vecGlowEntities.push_back({Building, DrawColor, Vars::Glow::Buildings::Alpha.Value});
+				pAttachment = pAttachment->NextMovePeer();
+			}
+			
+			if (const auto& pWeapon = pPlayer->GetActiveWeapon())
+				DrawModel(pWeapon, true, DrawColor);
+		}
+	}
 
-				if (!F::Chams.HasDrawn(Building))
-					DrawModel(Building, STUDIO_RENDER, true);
+	if (Vars::Glow::Buildings::Active.Value)
+	{
+		for (const auto& Building : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL))
+		{
+			const auto& pBuilding = reinterpret_cast<CBaseObject*>(Building);
+			if (!Building->IsAlive())
+				continue;
+
+			if (Vars::Glow::Buildings::IgnoreTeammates.Value && Building->m_iTeamNum() == pLocal->m_iTeamNum())
+				continue;
+
+			if (!Utils::IsOnScreen(pLocal, Building))
+				continue;
+
+			Color_t DrawColor = GetEntityDrawColor(Building, Vars::ESP::Main::EnableTeamEnemyColors.Value);
+
+			DrawModel(Building, true, DrawColor);
+		}
+	}
+
+	if (Vars::Glow::World::Active.Value)
+	{
+		if (Vars::Glow::World::Health.Value)
+		{
+			for (const auto& Health : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
+			{
+				if (!Utils::IsOnScreen(pLocal, Health))
+					continue;
+
+				DrawModel(Health, true, Vars::Colors::Health.Value);
 			}
 		}
 
-		if (Vars::Glow::World::Active.Value)
+		if (Vars::Glow::World::Ammo.Value)
 		{
-			if (Vars::Glow::World::Health.Value)
+			for (const auto& Ammo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
 			{
-				for (const auto& Health : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
-				{
-					if (!Utils::IsOnScreen(pLocal, Health))
-						continue;
+				if (!Utils::IsOnScreen(pLocal, Ammo))
+					continue;
 
-					m_vecGlowEntities.push_back({Health, Vars::Colors::Health.Value, Vars::Glow::World::Alpha.Value});
-
-					if (!F::Chams.HasDrawn(Health))
-						DrawModel(Health, STUDIO_RENDER, true);
-				}
+				DrawModel(Ammo, true, Vars::Colors::Ammo.Value);
 			}
+		}
 
-			if (Vars::Glow::World::Ammo.Value)
+		if (Vars::Glow::World::Projectiles.Value)
+		{
+			for (const auto& Projectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 			{
-				for (const auto& Ammo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
-				{
-					if (!Utils::IsOnScreen(pLocal, Ammo))
-						continue;
+				if (*reinterpret_cast<byte*>(Projectile + 0x7C) & EF_NODRAW)
+					continue;
 
-					m_vecGlowEntities.push_back({Ammo, Vars::Colors::Ammo.Value, Vars::Glow::World::Alpha.Value});
+				int nTeam = Projectile->m_iTeamNum();
 
-					if (!F::Chams.HasDrawn(Ammo))
-						DrawModel(Ammo, STUDIO_RENDER, true);
-				}
+				if (Vars::Glow::World::Projectiles.Value == 2 && nTeam == pLocal->m_iTeamNum())
+					continue;
+
+				if (!Utils::IsOnScreen(pLocal, Projectile))
+					continue;
+
+				DrawModel(Projectile, true, GetTeamColor(nTeam, Vars::ESP::Main::EnableTeamEnemyColors.Value));
 			}
+		}
 
-			if (Vars::Glow::World::Projectiles.Value)
+		if (Vars::Glow::World::NPCs.Value)
+		{
+			for (const auto& NPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 			{
-				for (const auto& Projectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
-				{
-					if (*reinterpret_cast<byte*>(Projectile + 0x7C) & EF_NODRAW)
-						continue;
+				if (!Utils::IsOnScreen(pLocal, NPC))
+					continue;
 
-					int nTeam = Projectile->m_iTeamNum();
-
-					if (Vars::Glow::World::Projectiles.Value == 2 && nTeam == pLocal->m_iTeamNum())
-						continue;
-
-					if (!Utils::IsOnScreen(pLocal, Projectile))
-						continue;
-
-					m_vecGlowEntities.push_back({
-						Projectile, GetTeamColor(nTeam, Vars::ESP::Main::EnableTeamEnemyColors.Value),
-						Vars::Glow::World::Alpha.Value
-					});
-
-					if (!F::Chams.HasDrawn(Projectile))
-						DrawModel(Projectile, STUDIO_RENDER, true);
-				}
+				DrawModel(NPC, true, GetEntityDrawColor(NPC, false));
 			}
+		}
 
-			if (Vars::Glow::World::NPCs.Value)
+		if (Vars::Glow::World::Bombs.Value)
+		{
+			for (const auto& Bomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
 			{
-				for (const auto& NPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
-				{
-					if (!Utils::IsOnScreen(pLocal, NPC))
-						continue;
+				if (!Utils::IsOnScreen(pLocal, Bomb))
+					continue;
 
-					m_vecGlowEntities.push_back({ NPC, GetEntityDrawColor(NPC, false), Vars::Glow::World::Alpha.Value});
-
-					if (!F::Chams.HasDrawn(NPC))
-						DrawModel(NPC, STUDIO_RENDER, true);
-				}
+				DrawModel(Bomb, true, Vars::Colors::Bomb.Value);
 			}
+		}
 
-			if (Vars::Glow::World::Bombs.Value)
+		if (Vars::Glow::World::Spellbook.Value)
+		{
+			for (const auto& Book : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
 			{
-				for (const auto& Bomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
-				{
-					if (!Utils::IsOnScreen(pLocal, Bomb))
-						continue;
+				if (!Utils::IsOnScreen(pLocal, Book))
+					continue;
 
-					m_vecGlowEntities.push_back({ Bomb, GetEntityDrawColor(Bomb, false), Vars::Glow::World::Alpha.Value });
-
-					if (!F::Chams.HasDrawn(Bomb))
-						DrawModel(Bomb, STUDIO_RENDER, true);
-				}
+				DrawModel(Book, true, Vars::Colors::Spellbook.Value);
 			}
+		}
 
-			if (Vars::Glow::World::Spellbook.Value)
+		if (Vars::Glow::World::Gargoyle.Value)
+		{
+			for (const auto& Gargy : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
 			{
-				for (const auto& Book : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
-				{
-					if (!Utils::IsOnScreen(pLocal, Book))
-						continue;
+				if (!Utils::IsOnScreen(pLocal, Gargy))
+					continue;
 
-					m_vecGlowEntities.push_back({ Book, Vars::Colors::Spellbook.Value, Vars::Glow::World::Alpha.Value });
-
-					if (!F::Chams.HasDrawn(Book))
-						DrawModel(Book, STUDIO_RENDER, true);
-				}
+				DrawModel(Gargy, true, Vars::Colors::Gargoyle.Value);
 			}
+		}
+	}
 
-			if (Vars::Glow::World::Gargoyle.Value)
-			{
-				for (const auto& Gargy : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
-				{
-					if (!Utils::IsOnScreen(pLocal, Gargy))
-						continue;
+	StencilStateDisable.SetStencilState(pRenderContext);
 
-					m_vecGlowEntities.push_back({ Gargy, Vars::Colors::Gargoyle.Value, Vars::Glow::World::Alpha.Value });
 
-					if (!F::Chams.HasDrawn(Gargy))
-						DrawModel(Gargy, STUDIO_RENDER, true);
-				}
-			}
+
+	if (m_vecGlowEntities.empty())
+		return;
+
+	I::ModelRender->ForcedMaterialOverride(m_pMatGlowColor);
+
+	pRenderContext->PushRenderTargetAndViewport();
+	{
+		pRenderContext->SetRenderTarget(m_pRenderBuffer1);
+		pRenderContext->Viewport(0, 0, w, h);
+		pRenderContext->ClearColor4ub(0, 0, 0, 0);
+		pRenderContext->ClearBuffers(true, false, false);
+
+		for (const auto& GlowEntity : m_vecGlowEntities)
+		{
+			I::RenderView->SetColorModulation( Color::TOFLOAT(GlowEntity.m_Color.r), Color::TOFLOAT(GlowEntity.m_Color.g), Color::TOFLOAT(GlowEntity.m_Color.b) );
+			I::RenderView->SetBlend(Color::TOFLOAT(GlowEntity.m_Color.a));
+			DrawModel(GlowEntity.m_pEntity);
 		}
 
 		StencilStateDisable.SetStencilState(pRenderContext);
+	}
+	pRenderContext->PopRenderTargetAndViewport();
 
-		if (m_vecGlowEntities.empty() && F::Visuals.m_SightLines.empty())
-			return;
-
-		I::ModelRender->ForcedMaterialOverride(m_pMatGlowColor);
-
+	if (Vars::Glow::Main::Type.Value == 0)
+	{
 		pRenderContext->PushRenderTargetAndViewport();
 		{
-			pRenderContext->SetRenderTarget(m_pRenderBuffer1);
 			pRenderContext->Viewport(0, 0, w, h);
-			pRenderContext->ClearColor4ub(0, 0, 0, 0);
-			pRenderContext->ClearBuffers(true, false, false);
-
-			for (const auto& GlowEntity : m_vecGlowEntities)
-			{
-				I::RenderView->SetColorModulation(Color::TOFLOAT(GlowEntity.m_Color.r),
-				                                            Color::TOFLOAT(GlowEntity.m_Color.g),
-				                                            Color::TOFLOAT(GlowEntity.m_Color.b));
-				I::RenderView->SetBlend(Color::TOFLOAT(GlowEntity.m_Color.a));
-				DrawModel(GlowEntity.m_pEntity, STUDIO_RENDER | STUDIO_NOSHADOWS, false);
-			}
-
-			StencilStateDisable.SetStencilState(pRenderContext);
+			pRenderContext->SetRenderTarget(m_pRenderBuffer2);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatBlurX, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->SetRenderTarget(m_pRenderBuffer1);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatBlurY, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
 		}
 		pRenderContext->PopRenderTargetAndViewport();
+	}
 
-		if (Vars::Glow::Main::Type.Value == 0) {
-			pRenderContext->PushRenderTargetAndViewport();
-			{
-				pRenderContext->Viewport(0, 0, w, h);
-
-				pRenderContext->SetRenderTarget(m_pRenderBuffer2);
-				pRenderContext->DrawScreenSpaceRectangle(m_pMatBlurX, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-				//pRenderContext->DrawScreenSpaceRectangle(m_pMatBlurX, 0, 0, w, h, 0.0f, 0.0f, w, h, w, h);
-
-				pRenderContext->SetRenderTarget(m_pRenderBuffer1);
-				pRenderContext->DrawScreenSpaceRectangle(m_pMatBlurY, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-				//pRenderContext->DrawScreenSpaceRectangle(m_pMatBlurY, 0, 0, w, h, 0.0f, 0.0f, w, h, w, h);
-			}
-			pRenderContext->PopRenderTargetAndViewport();
-		}
-
+	{
 		ShaderStencilState_t StencilState = {};
 		StencilState.m_bEnable = true;
 		StencilState.m_nWriteMask = 0x0;
@@ -498,36 +345,33 @@ void CGlowEffect::Render()
 		StencilState.m_FailOp = STENCILOPERATION_KEEP;
 		StencilState.m_ZFailOp = STENCILOPERATION_KEEP;
 		StencilState.SetStencilState(pRenderContext);
-
-		int nViewportX, nViewportY, nViewportWidth, nViewportHeight;
-		pRenderContext->GetViewport( nViewportX, nViewportY, nViewportWidth, nViewportHeight );
-
-		switch (Vars::Glow::Main::Type.Value){
-		case 0:{
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			break;
-		}
-		case 1: {
-			int side = int(float(Vars::Glow::Main::Scale.Value) / 2 + 0.5f);
-			int corner = int(float(Vars::Glow::Main::Scale.Value) / 2);
-			if (corner)
-			{
-				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -corner, -corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, corner, corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, corner, -corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-				pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -corner, corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			}
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -side, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, -side, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, side, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, side, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
-			break;
-		}
-		}
-		StencilStateDisable.SetStencilState(pRenderContext);
-
-		I::ModelRender->ForcedMaterialOverride(nullptr);
-		I::RenderView->SetColorModulation(flOriginalColor);
-		I::RenderView->SetBlend(flOriginalBlend);
 	}
+
+	switch (Vars::Glow::Main::Type.Value)
+	{
+	case 0:
+		pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		break;
+	case 1: {
+		int side = int(float(Vars::Glow::Main::Scale.Value) / 2 + 0.5f);
+		int corner = int(float(Vars::Glow::Main::Scale.Value) / 2);
+		if (corner)
+		{
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -corner, -corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, corner, corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, corner, -corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+			pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -corner, corner, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		}
+		pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, -side, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, -side, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, 0, side, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		pRenderContext->DrawScreenSpaceRectangle(m_pMatHaloAddToScreen, side, 0, w, h, 0.0f, 0.0f, w - 1, h - 1, w, h);
+		break;
+	}
+	}
+	StencilStateDisable.SetStencilState(pRenderContext);
+
+	I::ModelRender->ForcedMaterialOverride(nullptr);
+	I::RenderView->SetColorModulation(flOriginalColor);
+	I::RenderView->SetBlend(flOriginalBlend);
 }

@@ -1,20 +1,16 @@
 #include "../Hooks.h"
 
 #include "../../SDK/Includes/icons.h"
-#include "../../Features/Visuals/PlayerArrows/PlayerArrows.h"
 #include "../../Features/Visuals/ESP/ESP.h"
-#include "../../Features/Misc/Misc.h"
-#include "../../Features/Misc/Notifications/Notifications.h"
 #include "../../Features/Visuals/Visuals.h"
+#include "../../Features/Visuals/PlayerArrows/PlayerArrows.h"
 #include "../../Features/CritHack/CritHack.h"
-#include "../../Features/Menu/Menu.h"
 #include "../../Features/Menu/SpectatorList/SpectatorList.h"
 #include "../../Features/Visuals/Radar/Radar.h"
+#include "../../Features/Menu/Menu.h"
+#include "../../Features/Misc/Notifications/Notifications.h"
 #include "../../Features/AutoQueue/AutoQueue.h"
-#include "../../Features/Visuals/Chams/DMEChams.h"
-#include "../../Features/Menu/MaterialEditor/MaterialEditor.h"
 #include "../../Features/Menu/Playerlist/Playerlist.h"
-#include "../../Features/TickHandler/TickHandler.h"
 
 namespace S
 {

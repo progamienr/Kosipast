@@ -55,7 +55,7 @@ void CNoSpread::Run(CUserCmd* pCmd)
 	case TF_WEAPON_COMPOUND_BOW:
 	{
 		//ShouldRun huntsman
-		if (pWeapon->GetChargeBeginTime() > 0.f && I::GlobalVars->curtime - pWeapon->GetChargeBeginTime() <= 5.0f)
+		if (pWeapon->m_flChargeBeginTime() > 0.f && I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() <= 5.0f)
 			return;
 
 		float flRand = (float)Utils::RandomInt(0, 0x7fff) / 0x7fff;

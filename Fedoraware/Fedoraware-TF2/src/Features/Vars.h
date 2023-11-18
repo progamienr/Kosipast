@@ -107,16 +107,7 @@ namespace Vars
 		CVar(NWindowSub, 0, NOSAVE) // debug
 		CVar(OWindowSub, 0, NOSAVE) // debug
 
-		SUBNAMESPACE_BEGIN(BtChams)
-			CVar(Enabled, false, VISUAL)
-			CVar(LastOnly, false, VISUAL)
-			CVar(EnemyOnly, false, VISUAL)
-			CVar(IgnoreZ, false, VISUAL)
-			CVar(Material, 1, VISUAL)
-			CVar(Custom, std::string("None"), VISUAL)
-			CVar(Overlay, 1, VISUAL)
-			CVar(BacktrackColor, Color_t(255, 255, 255, 255), VISUAL)
-		SUBNAMESPACE_END(BtChams)
+		CVar(LastOnly, false, VISUAL)
 	NAMESPACE_END(Backtrack)
 
 	NAMESPACE_BEGIN(Aimbot)
@@ -305,37 +296,31 @@ namespace Vars
 		CVar(Active, false, VISUAL)
 
 		SUBNAMESPACE_BEGIN(Players)
-			CVar(Active, false, VISUAL)
-			CVar(Wearables, false, VISUAL)
-			CVar(Weapons, false, VISUAL)
 			CVar(EnemyOnly, true, VISUAL)
 
-			// {ignorez, material, overlay type (0 = off), active}
 			CVar(Local, Chams_t(), VISUAL)
 			CVar(FakeAng, Chams_t(), VISUAL)
 			CVar(Friend, Chams_t(), VISUAL)
 			CVar(Enemy, Chams_t(), VISUAL)
 			CVar(Team, Chams_t(), VISUAL)
 			CVar(Target, Chams_t(), VISUAL)
+			CVar(Backtrack, Chams_t(), VISUAL)
+			CVar(Weapon, Chams_t(), VISUAL)
+			CVar(Hands, Chams_t(), VISUAL)
 			CVar(Ragdoll, Chams_t(), VISUAL)
 		SUBNAMESPACE_END(Players)
 
 		SUBNAMESPACE_BEGIN(Buildings)
+			CVar(EnemyOnly, true, VISUAL)
+
 			CVar(Local, Chams_t(), VISUAL)
 			CVar(Friend, Chams_t(), VISUAL)
 			CVar(Enemy, Chams_t(), VISUAL)
 			CVar(Team, Chams_t(), VISUAL)
 			CVar(Target, Chams_t(), VISUAL)
-
-			CVar(Active, false, VISUAL)
-			CVar(Material, 3, VISUAL) //0 - None, 1 - Shaded, 2 - Shiny, 3 - Flat
-			CVar(IgnoreZ, false, VISUAL)
-			CVar(EnemyOnly, true, VISUAL)
 		SUBNAMESPACE_END(Buildings)
 
 		SUBNAMESPACE_BEGIN(World)
-			CVar(Active, false, VISUAL)
-			CVar(Projectilez, 2, VISUAL)
 			CVar(Health, Chams_t(), VISUAL)
 			CVar(Ammo, Chams_t(), VISUAL)
 
@@ -345,27 +330,6 @@ namespace Vars
 				CVar(Projectiles, Chams_t())
 			SUBNAMESPACE_END(Projectiles)
 		SUBNAMESPACE_END(World)
-
-		SUBNAMESPACE_BEGIN(DME)
-			CVar(Hands, Chams_t(1, 0, 0, true), VISUAL)
-			CVar(Weapon, Chams_t(1, 0, 0, true), VISUAL)
-
-			CVar(HandsGlowOverlay, 0, VISUAL) // 0 - Off,  1 - Fresnel Glow, 2 - Wireframe Glow
-			CVar(HandsProxySkin, 0, VISUAL)
-			CVar(HandsGlowAmount, 1, VISUAL)
-			CVar(HandsProxyWF, false, VISUAL)
-			CVar(HandsRainbow, false, VISUAL)
-			CVar(HandsOverlayRainbow, false, VISUAL)
-			CVar(HandsOverlayPulse, false, VISUAL)
-
-			CVar(WeaponGlowOverlay, 0, VISUAL) // 0 - Off,  1 - Fresnel Glow, 2 - Wireframe Glow
-			CVar(WeaponsProxySkin, 0, VISUAL)
-			CVar(WeaponGlowAmount, 1, VISUAL)
-			CVar(WeaponsProxyWF, false, VISUAL)
-			CVar(WeaponRainbow, false, VISUAL)
-			CVar(WeaponOverlayRainbow, false, VISUAL)
-			CVar(WeaponOverlayPulse, false, VISUAL)
-		SUBNAMESPACE_END(DME)
 	NAMESPACE_END(Chams)
 
 	NAMESPACE_BEGIN(Glow)
@@ -378,19 +342,12 @@ namespace Vars
 		SUBNAMESPACE_BEGIN(Players)
 			CVar(Active, false, VISUAL)
 			CVar(ShowLocal, false, VISUAL)
-			CVar(LocalRainbow, false, VISUAL)
 			CVar(IgnoreTeammates, 2, VISUAL) //0 - OFF, 1 - All, 2 - Keep Friends
-			CVar(Wearables, false, VISUAL)
-			CVar(Weapons, false, VISUAL)
-			CVar(Alpha, 1.0f, VISUAL)
-			CVar(Color, 0, VISUAL) //0 - Team, 1 - Health
 		SUBNAMESPACE_END(Players)
 
 		SUBNAMESPACE_BEGIN(Buildings)
 			CVar(Active, false, VISUAL)
 			CVar(IgnoreTeammates, false, VISUAL)
-			CVar(Alpha, 1.0f, VISUAL)
-			CVar(Color, 0, VISUAL) //0 - Team, 1 - Health
 		SUBNAMESPACE_END(Buildings)
 
 		SUBNAMESPACE_BEGIN(World)
@@ -402,7 +359,6 @@ namespace Vars
 			CVar(Spellbook, false, VISUAL)
 			CVar(Gargoyle, false, VISUAL)
 			CVar(Projectiles, 1, VISUAL) //0 - Off, 1 - All, 2 - Enemy Only
-			CVar(Alpha, 1.0f, VISUAL)
 		SUBNAMESPACE_END(World)
 	NAMESPACE_END(GLOW)
 
@@ -412,7 +368,6 @@ namespace Vars
 			CVar(BackAlpha, 128, VISUAL)
 			CVar(LineAlpha, 255, VISUAL)
 			CVar(Range, 1500, VISUAL)
-			CVar(NoTitleGradient, false, VISUAL)
 		SUBNAMESPACE_END(Main)
 
 		SUBNAMESPACE_BEGIN(Players)
@@ -672,6 +627,10 @@ namespace Vars
 		CVar(EquipRegionUnlock, false)
 		CVar(ConvarName, std::string())
 		CVar(ConvarValue, std::string())
+
+		CVar(NetworkFix, false)
+		CVar(PredictionErrorJitterFix, false)
+		CVar(SetupBonesOptimization, false)
 
 		CVar(RegionChanger, false)
 		CVar(RegionsAllowed, 0)
