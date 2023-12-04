@@ -55,7 +55,7 @@ void POPID_ToString(SteamNetworkingPOPID popID, char* out)
 MAKE_HOOK(ISteamNetworkingUtils_GetDirectPingToPOP, Utils::GetVFuncPtr(g_SteamInterfaces.NetworkingUtils, 9), int, __fastcall,
 	void* ecx, void* edx, SteamNetworkingPOPID popID)
 {
-	if (!Vars::Misc::RegionChanger.Value)
+	if (!Vars::Misc::ForceRegions.Value)
 	{
 		return Hook.Original<FN>()(ecx, edx, popID);
 	}
@@ -66,7 +66,7 @@ MAKE_HOOK(ISteamNetworkingUtils_GetDirectPingToPOP, Utils::GetVFuncPtr(g_SteamIn
 	const auto pos = DATA_CENTER_HASH.find(popIDName);
 	if (pos != DATA_CENTER_HASH.end())
 	{
-		const bool isAllowed = Vars::Misc::RegionsAllowed.Value & pos->second;
+		const bool isAllowed = Vars::Misc::ForceRegions.Value & pos->second;
 		return isAllowed ? 1 : 999999;
 	}
 

@@ -60,25 +60,26 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	return true;
 }
 
-void CAimbot::Run(CUserCmd* pCmd)
+bool CAimbot::Run(CUserCmd* pCmd)
 {
 	G::CurrentTargetIdx = 0;
 	G::AimPos = Vec3();
 
 	if (F::Misc.bMovementStopped || F::Misc.bFastAccel)
-		return;
+		return false;
 
 	const auto pLocal = g_EntityCache.GetLocal();
 	const auto pWeapon = g_EntityCache.GetWeapon();
 	if (!pLocal || !pWeapon)
-		return;
+		return false;
 
 	if (!ShouldRun(pLocal, pWeapon))
-		return;
+		return false;
 
 	if (SandvichAimbot::bIsSandvich = SandvichAimbot::IsSandvich())
 		G::CurWeaponType = EWeaponType::PROJECTILE;
 
+	const bool bAttacking = G::IsAttacking;
 	switch (G::CurWeaponType)
 	{
 		case EWeaponType::HITSCAN:
@@ -88,4 +89,7 @@ void CAimbot::Run(CUserCmd* pCmd)
 		case EWeaponType::MELEE:
 			F::AimbotMelee.Run(pLocal, pWeapon, pCmd); break;
 	}
+	if (!bAttacking && G::IsAttacking)
+		return true;
+	return false;
 }

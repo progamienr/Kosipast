@@ -22,7 +22,7 @@ public:
 	void DrawTickbaseBars();
 	void DrawOnScreenConditions(CBaseEntity* pLocal);
 	void DrawOnScreenPing(CBaseEntity* pLocal);
-	void ProjectileTrace();
+	void ProjectileTrace(const bool bQuick = true);
 	void DrawAntiAim(CBaseEntity* pLocal);
 	void DrawDebugInfo(CBaseEntity* pLocal);
 

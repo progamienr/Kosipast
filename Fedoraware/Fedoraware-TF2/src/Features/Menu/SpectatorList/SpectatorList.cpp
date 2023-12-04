@@ -74,7 +74,7 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 
 void CSpectatorList::Run()
 {
-	if (!Vars::Visuals::SpectatorList.Value)
+	if (!(Vars::Menu::Indicators.Value & (1 << 2)))
 	{
 		RespawnCache.clear();
 		return;
@@ -84,9 +84,9 @@ void CSpectatorList::Run()
 	{
 		if (!pLocal->IsAlive() || !GetSpectators(pLocal)) { return; }
 
-		int x = Vars::Visuals::SpectatorPos.Value.x;
+		int x = Vars::Menu::SpectatorsDisplay.Value.x;
 		int iconOffset = 0;
-		int y = Vars::Visuals::SpectatorPos.Value.y + 8;
+		int y = Vars::Menu::SpectatorsDisplay.Value.y + 8;
 
 		EStringAlign align = ALIGN_CENTERHORIZONTAL;
 		if (x <= 100)
@@ -106,14 +106,16 @@ void CSpectatorList::Run()
 			x += 50;
 		}
 
-		if (!Vars::Visuals::SpectatorAvatars.Value) iconOffset = 0;
+		//if (!Vars::Menu::SpectatorAvatars.Value)
+			iconOffset = 0;
 
-		g_Draw.String(g_Draw.GetFont(FONT_MENU), x, y, Vars::Menu::Theme::Accent.Value, align, L"Spectating You:");
+		g_Draw.String(g_Draw.GetFont(FONT_INDICATORS), x, y, Vars::Menu::Theme::Accent.Value, align, L"Spectating You:");
 
 		for (const auto& Spectator : Spectators)
 		{
-			y += g_Draw.GetFont(FONT_MENU).nTall;
+			y += g_Draw.GetFont(FONT_INDICATORS).nTall;
 
+			/*
 			if (Vars::Visuals::SpectatorAvatars.Value)
 			{
 				int w, h;
@@ -133,6 +135,7 @@ void CSpectatorList::Run()
 				// center - half the width of the string
 				y += 6;
 			}
+			*/
 
 			Color_t color = { 255, 255, 255, 255 };
 			if (Spectator.Mode == std::wstring{L"1st"})
@@ -141,7 +144,7 @@ void CSpectatorList::Run()
 				color = { 255, 100, 100, 255 };
 			if (Spectator.IsFriend)
 				color = { 200, 255, 200, 255 };
-			g_Draw.String(g_Draw.GetFont(FONT_MENU), x + iconOffset, y, color, align,
+			g_Draw.String(g_Draw.GetFont(FONT_INDICATORS), x + iconOffset, y, color, align,
 				L"%ls - %ls (respawn %ds)", Spectator.Name.data(), Spectator.Mode.data(), Spectator.RespawnIn);
 		}
 	}

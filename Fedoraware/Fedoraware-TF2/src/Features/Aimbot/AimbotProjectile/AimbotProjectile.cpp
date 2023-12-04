@@ -245,7 +245,7 @@ float SolveProjectileSpeed(ProjectileInfo projInfo, CBaseCombatWeapon* pWeapon, 
 int CAimbotProjectile::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Target_t& target)
 {
 	bool bHeadshot = target.m_TargetType == ETargetType::PLAYER && pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW;
-	if (Vars::Aimbot::Global::BAimLethal.Value && bHeadshot)
+	if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 5) && bHeadshot) // lazy use of hitscan modifier
 	{
 		float charge = I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime();
 		float damage = Math::RemapValClamped(charge, 0.f, 1.f, 50.f, 120.f);
@@ -318,7 +318,7 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 		CGameTrace trace = {};
 		CTraceFilterProjectile filter = {};
 		filter.pSkip = pLocal;
-		Utils::TraceHull(Old, New, projInfo.m_hull * -1.f, projInfo.m_hull, MASK_SOLID, &filter, &trace);
+		Utils::TraceHull(Old, New, projInfo.m_hull * -1, projInfo.m_hull, MASK_SOLID, &filter, &trace);
 
 		if (trace.DidHit())
 		{
@@ -754,7 +754,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const float charge = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
 	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
 
-	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && amount > Vars::Aimbot::Projectile::AutoReleaseAt.Value;
+	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && amount > Vars::Aimbot::Projectile::AutoReleaseAt.Value / 100.f;
 	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
 	// add user toggle to control whether to cancel or not

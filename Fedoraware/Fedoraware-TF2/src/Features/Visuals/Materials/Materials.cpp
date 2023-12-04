@@ -316,7 +316,7 @@ void CMaterials::RemoveMaterial(std::string sName)
 	if (!std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
 		return;
 
-	for (auto mat = m_ChamMaterials.begin(); mat != m_ChamMaterials.end();)
+	for (auto mat = m_ChamMaterials.begin(); mat != m_ChamMaterials.end(); mat++)
 	{
 		if (sName != mat->sName)
 			continue;

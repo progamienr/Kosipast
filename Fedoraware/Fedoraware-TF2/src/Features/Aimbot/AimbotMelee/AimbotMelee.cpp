@@ -196,7 +196,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 
 	// swing prediction / auto warp
 	const int iSwingTicks = GetSwingTime(pWeapon);
-	int iMax = (iDoubletapTicks && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid())
+	int iMax = (iDoubletapTicks && Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid())
 		? std::max(iSwingTicks - Vars::CL_Move::DoubleTap::TickLimit.Value, 0)
 		: std::max(iSwingTicks, iDoubletapTicks);
 
@@ -497,7 +497,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		return;
 
 	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
-	const bool bShouldSwing = iDoubletapTicks <= (GetSwingTime(pWeapon) ? 14 : 0) || Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid();
+	const bool bShouldSwing = iDoubletapTicks <= (GetSwingTime(pWeapon) ? 14 : 0) || Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid();
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;
@@ -526,7 +526,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		static float flSmackTime = -1.f;
 		if (G::DoubleTap && pCmd->buttons & IN_ATTACK && pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
 		{
-			flSmackTime = TICKS_TO_TIME(I::GlobalVars->tickcount + 13 - (Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid() ? 1 : 0));
+			flSmackTime = TICKS_TO_TIME(I::GlobalVars->tickcount + 13 - (Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid() ? 1 : 0));
 			pWeapon->m_flSmackTime() = flSmackTime;
 		}
 		else if (pWeapon->m_flSmackTime() > 0.f && flSmackTime > 0.f)
@@ -547,7 +547,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			if (Vars::Visuals::BulletTracer.Value)
 			{
 				F::Visuals.ClearBulletLines();
-				G::BulletsStorage.push_back({ {vEyePos, target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value });
+				G::BulletsStorage.push_back({ {vEyePos, target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value, true });
 			}
 			if (Vars::Aimbot::Global::ShowHitboxes.Value)
 				F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);

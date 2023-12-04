@@ -69,7 +69,7 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 	I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL;
 
-	if (F::Ticks.GetTicks(pLocal) && Vars::CL_Move::DoubleTap::AntiWarp.Value && pLocal->OnSolid()) // assume we won't move
+	if (F::Ticks.GetTicks(pLocal) && Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid()) // assume we won't move
 		return; // fix for melee antiwarp more than anything
 
 	Simulate(pCmd);

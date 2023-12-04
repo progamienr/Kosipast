@@ -5,7 +5,7 @@
 
 void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Triggerbot::Blast::Active.Value || !G::WeaponCanSecondaryAttack)
+	if (!Vars::Auto::Airblast::Active.Value || !G::WeaponCanSecondaryAttack)
 		return;
 
 	id = pWeapon->GetWeaponID();
@@ -51,7 +51,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 			Utils::TraceHull(pProjectile->GetAbsOrigin(), vPredicted, pProjectile->m_vecMins(), pProjectile->m_vecMaxs() * -1.f, MASK_SHOT_HULL, &traceFilter, &trace);
 			if (trace.flFraction < 0.98f && !trace.entity) { continue; }
 
-			if (Vars::Triggerbot::Blast::Rage.Value) //possibly implement proj aimbot somehow ?
+			if (Vars::Auto::Airblast::Rage.Value) //possibly implement proj aimbot somehow ?
 			{
 				{ //see if it is possible to reflect with existing viewangles
 					Vec3 vForward = {};
@@ -84,7 +84,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 					}
 				}
 			}
-			if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPredicted) <= Vars::Triggerbot::Blast::Fov.Value)
+			if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPredicted) <= Vars::Auto::Airblast::Fov.Value)
 			{
 				Vec3 vForward = {};
 				Math::AngleVectors(pCmd->viewangles, &vForward);
@@ -101,14 +101,14 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 			}
 		}
 
-		if (Vars::Triggerbot::Blast::ExtinguishPlayers.Value)
+		if (Vars::Auto::Airblast::ExtinguishPlayers.Value)
 		{
 			for (const auto& pBurningPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
 			{
 				if (!pBurningPlayer->IsOnFire() || !pBurningPlayer->IsAlive() || pBurningPlayer->IsAGhost())
 					continue;
 
-				if (Vars::Triggerbot::Blast::Rage.Value)
+				if (Vars::Auto::Airblast::Rage.Value)
 				{
 					Vec3 pAngle = Math::CalcAngle(vEyePos, pBurningPlayer->m_vecOrigin());
 					Vec3 vForward = {};
@@ -125,7 +125,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 						break;
 					}
 				}
-				if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, pBurningPlayer->m_vecOrigin()) <= Vars::Triggerbot::Blast::Fov.Value)
+				if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, pBurningPlayer->m_vecOrigin()) <= Vars::Auto::Airblast::Fov.Value)
 				{
 					Vec3 vForward = {};
 					Math::AngleVectors(pCmd->viewangles, &vForward);
@@ -145,7 +145,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 
 		if (bShouldBlast)
 		{
-			if (Vars::Triggerbot::Blast::Rage.Value || Vars::Triggerbot::Blast::Fov.Value == 0 && Vars::Triggerbot::Blast::Silent.Value)
+			if (Vars::Auto::Airblast::Rage.Value || Vars::Auto::Airblast::Fov.Value == 0 && Vars::Auto::Airblast::Silent.Value)
 				G::SilentTime = true;
 
 			G::IsAttacking = true;

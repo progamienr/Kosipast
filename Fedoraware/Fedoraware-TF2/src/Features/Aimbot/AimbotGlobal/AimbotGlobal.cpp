@@ -172,18 +172,18 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 		if (!pTarget || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
 			continue;
 
-		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & (PLAYER) && pTarget->IsPlayer();
-		const bool isSentry = Vars::Aimbot::Global::AimAt.Value & (SENTRY) && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
-		const bool isDispenser = Vars::Aimbot::Global::AimAt.Value & (DISPENSER) && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
-		const bool isTeleporter = Vars::Aimbot::Global::AimAt.Value & (TELEPORTER) && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
-		const bool isNPC = Vars::Aimbot::Global::AimAt.Value & (NPC) && pTarget->IsNPC();
+		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & PLAYER && pTarget->IsPlayer();
+		const bool isSentry = Vars::Aimbot::Global::AimAt.Value & SENTRY && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
+		const bool isDispenser = Vars::Aimbot::Global::AimAt.Value & DISPENSER && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
+		const bool isTeleporter = Vars::Aimbot::Global::AimAt.Value & TELEPORTER && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
+		const bool isNPC = Vars::Aimbot::Global::AimAt.Value & NPC && pTarget->IsNPC();
 
 		if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC)
 		{
 			if (isPlayer && F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
-			if (!Utils::VisPosMask(pBomb, pTarget, pBomb->m_vecOrigin(), pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+			if (!Utils::VisPosMask(pBomb, pTarget, pBomb->m_vecOrigin(), isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
 				continue;
 
 			return true;

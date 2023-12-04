@@ -122,10 +122,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	}
 	case TF_WEAPON_FLAMETHROWER:
 	{
-		if (bQuick)
-			return false;
-		// used only in aimbot
-		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 40.f, bFlipped ? -5.f : 5.f /*doesn't flip*/, 0.f}, pos, ang, true, false);
+		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 40.f, bFlipped ? -5.f : 5.f /*doesn't flip*/, 0.f}, pos, ang, true, bQuick);
 		out = { TF_PROJECTILE_FLAME_ROCKET, pos, ang, { 12.f, 12.f, 12.f }, 1000.f, 0.f, true, 0.33f };
 		return true;
 	}

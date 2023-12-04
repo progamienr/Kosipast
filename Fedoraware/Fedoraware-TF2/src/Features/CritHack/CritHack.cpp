@@ -1,4 +1,5 @@
 #include "CritHack.h"
+#include "../TickHandler/TickHandler.h"
 
 #define TF_DAMAGE_CRIT_MULTIPLIER		3.0f
 #define TF_DAMAGE_CRIT_CHANCE			0.02f
@@ -25,92 +26,15 @@ bool CCritHack::AreRandomCritsEnabled()
 	return true;
 }
 
-bool CCritHack::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
-{
-	if (pWeapon->m_iItemDefinitionIndex() == Soldier_m_TheBeggarsBazooka)
-	{
-		static bool bLoading = false, bFiring = false;
-
-		if (pWeapon->m_iClip1() == 0)
-			bLoading = false,
-			bFiring = false;
-		else if (!bFiring)
-			bLoading = true;
-
-		if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::WeaponCanAttack)
-		{
-			bFiring = true;
-			bLoading = false;
-			return true;
-		}
-	}
-	else
-	{
-		const int id = pWeapon->GetWeaponID();
-		switch (id) {
-		case TF_WEAPON_COMPOUND_BOW:
-		case TF_WEAPON_PIPEBOMBLAUNCHER:
-		case TF_WEAPON_STICKY_BALL_LAUNCHER:
-		case TF_WEAPON_GRENADE_STICKY_BALL:
-		case TF_WEAPON_CANNON:
-		{
-			static bool bCharging = false;
-
-			if (pWeapon->m_flChargeBeginTime() > 0.0f)
-				bCharging = true;
-
-			if (!(pCmd->buttons & IN_ATTACK) && bCharging)
-			{
-				bCharging = false;
-				return true;
-			}
-			break;
-		}
-		case TF_WEAPON_JAR:
-		case TF_WEAPON_JAR_MILK:
-		case TF_WEAPON_JAR_GAS:
-		case TF_WEAPON_GRENADE_JAR_GAS:
-		case TF_WEAPON_CLEAVER:
-		{
-			static float flThrowTime = 0.0f;
-
-			if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack && !flThrowTime)
-				flThrowTime = I::GlobalVars->curtime + I::GlobalVars->interval_per_tick;
-
-			if (flThrowTime && I::GlobalVars->curtime >= flThrowTime)
-			{
-				flThrowTime = 0.0f;
-				return true;
-			}
-			break;
-		}
-		case TF_WEAPON_MINIGUN:
-		{
-			if (pWeapon->GetMinigunState() == AC_STATE_FIRING && (pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
-				return true;
-			break;
-		}
-		default:
-		{
-			if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
-				return true;
-			break;
-		}
-		}
-	}
-
-	return false;
-}
 
 
-
-void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops)
+void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const bool bAttacking, int n)
 {
 	static int prev_weapon = 0;
 	static int previousCrit = 0;
 	static int starting_num = pCmd->command_number;
 
-	if (/*Utils::*/IsAttacking(pCmd, pWeapon) && G::WeaponCanAttack/* || pCmd->buttons & IN_ATTACK*/)
+	if (bAttacking && G::WeaponCanAttack/* || pCmd->buttons & IN_ATTACK*/)
 		return;
 
 	if (prev_weapon != pWeapon->GetIndex())
@@ -123,7 +47,7 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops
 
 	//ProtectData = true;
 	//const int seed_backup = MD5_PseudoRandom(pCmd->command_number) & 0x7FFFFFFF;
-	for (int i = 0; i < loops; i++)
+	for (int i = 0; i < n; i++)
 	{
 		if (ForceCmds.size() >= 15)
 			break;
@@ -133,7 +57,7 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops
 		if (IsCritCommand(cmd_num))
 			ForceCmds.push_back(cmd_num);
 	}
-	for (int i = 0; i < loops; i++)
+	for (int i = 0; i < n; i++)
 	{
 		if (SkipCmds.size() >= 15)
 			break;
@@ -143,7 +67,7 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops
 		if (IsCritCommand(cmd_num, false))
 			SkipCmds.push_back(cmd_num);
 	}
-	starting_num += loops;
+	starting_num += n;
 	//ProtectData = false;
 	*reinterpret_cast<int*>(reinterpret_cast<DWORD>(pWeapon) + 0xA5C) = 0;
 	//*I::RandomSeed = seed_backup;
@@ -332,7 +256,7 @@ void CCritHack::GetDamageTilUnban(CBaseEntity* pLocal)
 
 	const auto divCritDamage = CritDamage / TF_DAMAGE_CRIT_MULTIPLIER;
 
-	DamageTilUnban = divCritDamage / CritChance + 2 * divCritDamage - AllDamage; // might be 10x or 100x more than necessary ?
+	DamageTilUnban = divCritDamage / CritChance + 2 * divCritDamage - AllDamage;
 }
 
 void CCritHack::FixHeavyRevBug(CUserCmd* pCmd)
@@ -435,10 +359,16 @@ void CCritHack::Run(CUserCmd* pCmd)
 
 	const auto& pLocal = g_EntityCache.GetLocal();
 	const auto& pWeapon = g_EntityCache.GetWeapon();
-	const auto& resource = g_EntityCache.GetPR();
-
-	if (!pLocal || !pWeapon || !resource)
+	if (!pLocal || !pWeapon)
 		return;
+
+	bool bAttacking = Utils::IsAttacking(pCmd, pWeapon);
+	if (G::CurWeaponType == EWeaponType::MELEE)
+	{
+		bAttacking = G::WeaponCanAttack && pCmd->buttons & IN_ATTACK;
+		if (pWeapon->GetWeaponID() == TF_WEAPON_FISTS)
+			bAttacking = G::WeaponCanAttack && pCmd->buttons & IN_ATTACK2;
+	}
 
 	if (Storage[pWeapon->GetSlot()].StreamWait <= I::GlobalVars->tickcount - 1)
 		Storage[pWeapon->GetSlot()].StreamWait = -1;
@@ -455,7 +385,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 
 	CanFireCriticalShotHandler(pLocal, pWeapon);
 	GetDamageTilUnban(pLocal);
-	Fill(pWeapon, pCmd, 15);
+	Fill(pWeapon, pCmd, bAttacking, 15);
 
 	const int closestCrit = LastGoodCritTick(pCmd);
 	const int closestSkip = LastGoodSkipTick(pCmd);
@@ -463,10 +393,9 @@ void CCritHack::Run(CUserCmd* pCmd)
 	bool pressed = F::KeyHandler.Down(Vars::CritHack::CritKey.Value);
 	if (!pressed && Vars::CritHack::AlwaysMelee.Value && pWeapon->GetSlot() == SLOT_MELEE)
 		pressed = true;
-	if (IsAttacking(pCmd, pWeapon) && !pWeapon->IsInReload()) //	is it valid & should we even use it
+	if (bAttacking && !pWeapon->IsInReload()) // is it valid & should we even use it
 	{
 		//ProtectData = true;
-		Storage[pWeapon->GetSlot()].ShotsCrits.first += 1;
 
 		if (IsEnabled())
 		{
@@ -476,19 +405,13 @@ void CCritHack::Run(CUserCmd* pCmd)
 				pCmd->command_number = closestSkip;
 		}
 
-		if (bRapidFire)
-		{
-			if (bStreamEnd)
-			{
-				Storage[pWeapon->GetSlot()].ShotsCrits.second += 1;
-				goto out;
-			}
-			if (bStreamWait)
-				goto out;
-		}
-
 		if (bRapidFire && !bStreamWait)
 			Storage[pWeapon->GetSlot()].StreamWait = I::GlobalVars->tickcount + 1 / I::GlobalVars->interval_per_tick;
+
+		if (bRapidFire && (bStreamEnd || bStreamWait))
+			goto out;
+
+		Storage[pWeapon->GetSlot()].ShotsCrits.first += 1;
 
 		if (IsCritCommand(pCmd->command_number))
 		{
@@ -529,25 +452,21 @@ bool CCritHack::CalcIsAttackCriticalHandler(CBaseEntity* pLocal, CBaseCombatWeap
 
 	{
 		static int s_nPreviousTickcount = 0;
-
 		if (s_nPreviousTickcount == I::GlobalVars->tickcount)
 			return false;
-
 		s_nPreviousTickcount = I::GlobalVars->tickcount;
 	}
 
+	if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN ||
+		pWeapon->GetWeaponID() == TF_WEAPON_FLAMETHROWER)
 	{
-		if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN ||
-			pWeapon->GetWeaponID() == TF_WEAPON_FLAMETHROWER)
-		{
-			auto nPreviousAmmoCount = pLocal->GetAmmoCount(pWeapon->m_iPrimaryAmmoType());
-			static auto nNewAmmoCount = nPreviousAmmoCount;
+		auto nPreviousAmmoCount = pLocal->GetAmmoCount(pWeapon->m_iPrimaryAmmoType());
+		static auto nNewAmmoCount = nPreviousAmmoCount;
 
-			const auto bHasFiredBullet = nNewAmmoCount != nPreviousAmmoCount;
+		const auto bHasFiredBullet = nNewAmmoCount != nPreviousAmmoCount;
 
-			if (!bHasFiredBullet)
-				return false;
-		}
+		if (!bHasFiredBullet)
+			return false;
 	}
 
 	return true;
@@ -609,7 +528,8 @@ void CCritHack::Event(CGameEvent* pEvent, FNV1A_t uNameHash)
 
 void CCritHack::Draw()
 {
-	if (!Vars::CritHack::Active.Value || !Vars::CritHack::Indicators.Value) { return; }
+	if (!Vars::CritHack::Active.Value || !(Vars::Menu::Indicators.Value & (1 << 1)))
+		return;
 	if (!IsEnabled() || !G::CurrentUserCmd)
 		return;
 
@@ -621,8 +541,8 @@ void CCritHack::Draw()
 	if (!pWeapon)
 		return;
 
-	int x = Vars::CritHack::IndicatorPos.Value.x;
-	int y = Vars::CritHack::IndicatorPos.Value.y + 8; // + Vars::Fonts::FONT_INDICATORS::nTall.Value
+	int x = Vars::Menu::CritsDisplay.Value.x;
+	int y = Vars::Menu::CritsDisplay.Value.y + 8; // + Vars::Fonts::FONT_INDICATORS::nTall.Value
 
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
@@ -651,7 +571,7 @@ void CCritHack::Draw()
 				g_Draw.String(fFont, x, y, { 100, 255, 255, 255 }, align, "Crit Boosted");
 			else if (bRapidFire && Storage[slot].StreamEnd > 0)
 			{
-				const float time = TICKS_TO_TIME(Storage[slot].StreamEnd - I::GlobalVars->tickcount);
+				const float time = std::max(TICKS_TO_TIME(Storage[slot].StreamEnd - pLocal->m_nTickBase()), 0.f);
 				g_Draw.String(fFont, x, y, { 100, 255, 255, 255 }, align, std::format("Streaming crits {:.1f}s", time).c_str());
 			}
 			else if (!CritBanned)
@@ -660,7 +580,7 @@ void CCritHack::Draw()
 				{
 					if (bRapidFire && Storage[slot].StreamWait > 0)
 					{
-						const float time = TICKS_TO_TIME(Storage[slot].StreamWait - I::GlobalVars->tickcount);
+						const float time = std::max((TICKS_TO_TIME(Storage[slot].StreamWait - pLocal->m_nTickBase())), 0.f);
 						g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, std::format("Wait {:.1f}s", time).c_str());
 					}
 					else

@@ -28,19 +28,19 @@ int BulletDangerValue(CBaseEntity* pPatient)
 
 		switch (player->m_iClass())
 		{
-			case 1: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 0)) continue;
+			case 1: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 0)) continue;
 				  break; //	scout
-			case 2: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 7)) continue;
+			case 2: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 7)) continue;
 				  break; //	sniper
-			case 3: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 1)) continue;
+			case 3: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 1)) continue;
 				  break; //	soldier
-			case 6: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 4)) continue;
+			case 6: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 4)) continue;
 				  break; //	heavy
-			case 7: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 2)) continue;
+			case 7: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 2)) continue;
 				  break; //	pyro
-			case 8: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 8)) continue;
+			case 8: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 8)) continue;
 				  break; //	spy
-			case 9: if (!(Vars::Triggerbot::Uber::ReactClasses.Value & 1 << 5)) continue;
+			case 9: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 5)) continue;
 				  break; //	engineer
 			default: { continue; }
 		}
@@ -65,9 +65,9 @@ int BulletDangerValue(CBaseEntity* pPatient)
 		const Vec3 vAngleTo = Math::CalcAngle(player->GetEyePosition(), pPatient->GetWorldSpaceCenter());
 		const float flFOVTo = Math::CalcFov(player->GetEyeAngles(), vAngleTo);
 
-		if (G::PlayerPriority[player->GetIndex()].Mode != 4 && Vars::Triggerbot::Uber::ReactFOV.Value)
+		if (G::PlayerPriority[player->GetIndex()].Mode != 4 && Vars::Auto::Uber::ReactFOV.Value)
 		{
-			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Triggerbot::Uber::ReactFOV.Value))
+			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Auto::Uber::ReactFOV.Value))
 				continue; // account for choking :D
 		}
 
@@ -286,11 +286,11 @@ int OptimalResistance(CBaseEntity* pPatient, bool* pShouldPop)
 	if (pShouldPop)
 	{
 		int charges = ChargeCount();
-		if (bulletDanger > 1 && Vars::Triggerbot::Uber::BulletRes.Value)
+		if (bulletDanger > 1 && Vars::Auto::Uber::AutoVaccinator.Value & (1 << 0))
 			*pShouldPop = true;
-		if (fireDanger > 1 && Vars::Triggerbot::Uber::FireRes.Value)
+		if (blastDanger > 1 && Vars::Auto::Uber::AutoVaccinator.Value & (1 << 1))
 			*pShouldPop = true;
-		if (blastDanger > 1 && Vars::Triggerbot::Uber::BlastRes.Value)
+		if (fireDanger > 1 && Vars::Auto::Uber::AutoVaccinator.Value & (1 << 2))
 			*pShouldPop = true;
 	}
 
@@ -358,7 +358,7 @@ void DoResistSwitching(CUserCmd* pCmd)
 
 void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Triggerbot::Uber::Active.Value || //Not enabled, return
+	if (!Vars::Auto::Uber::Active.Value || //Not enabled, return
 		pWeapon->GetWeaponID() != TF_WEAPON_MEDIGUN || //Not medigun, return
 		G::CurItemDefIndex == Medic_s_TheKritzkrieg || //Kritzkrieg,  return
 		ChargeCount() < 1) //Not charged
@@ -367,12 +367,12 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	}
 
 	//Check local status, if enabled. Don't pop if local already is not vulnerable
-	if (Vars::Triggerbot::Uber::PopLocal.Value && !pLocal->IsInvulnerable())
+	if (Vars::Auto::Uber::PopLocal.Value && !pLocal->IsInvulnerable())
 	{
 		m_flHealth = static_cast<float>(pLocal->m_iHealth());
 		m_flMaxHealth = static_cast<float>(pLocal->GetMaxHealth());
 
-		if (Vars::Triggerbot::Uber::AutoVacc.Value && G::CurItemDefIndex == Medic_s_TheVaccinator)
+		if (Vars::Auto::Uber::AutoVaccinator.Value && G::CurItemDefIndex == Medic_s_TheVaccinator)
 		{
 			// Auto vaccinator
 			bool shouldPop = false;
@@ -389,7 +389,7 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		else
 		{
 			// Default medigun
-			if (((m_flHealth / m_flMaxHealth) * 100.0f) <= Vars::Triggerbot::Uber::HealthLeft.Value)
+			if (((m_flHealth / m_flMaxHealth) * 100.0f) <= Vars::Auto::Uber::HealthLeft.Value)
 			{
 				pCmd->buttons |= IN_ATTACK2; //We under the wanted health percentage, pop
 				return; //Popped, no point checking our target's status
@@ -405,14 +405,14 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			return;
 
 		//Dont waste if not a friend, fuck off scrub
-		if (Vars::Triggerbot::Uber::OnlyFriends.Value && !g_EntityCache.IsFriend(pTarget->GetIndex()))
+		if (Vars::Auto::Uber::OnlyFriends.Value && !g_EntityCache.IsFriend(pTarget->GetIndex()))
 			return;
 
 		//Check target's status
 		m_flHealth = static_cast<float>(pTarget->m_iHealth());
 		m_flMaxHealth = static_cast<float>(pTarget->GetMaxHealth());
 
-		if (Vars::Triggerbot::Uber::VoiceCommand.Value)
+		if (Vars::Auto::Uber::VoiceCommand.Value)
 		{
 			const int iTargetIndex = pTarget->GetIndex();
 			for (const auto& iEntity : G::MedicCallers)
@@ -427,7 +427,7 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		G::MedicCallers.clear();
 
 
-		if (Vars::Triggerbot::Uber::AutoVacc.Value && G::CurItemDefIndex == Medic_s_TheVaccinator)
+		if (Vars::Auto::Uber::AutoVaccinator.Value && G::CurItemDefIndex == Medic_s_TheVaccinator)
 		{
 			// Auto vaccinator
 			bool shouldPop = false;
@@ -443,7 +443,7 @@ void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		else
 		{
 			// Default mediguns
-			if (((m_flHealth / m_flMaxHealth) * 100.0f) <= Vars::Triggerbot::Uber::HealthLeft.Value)
+			if (((m_flHealth / m_flMaxHealth) * 100.0f) <= Vars::Auto::Uber::HealthLeft.Value)
 				pCmd->buttons |= IN_ATTACK2; //Target under wanted health percentage, pop
 		}
 	}

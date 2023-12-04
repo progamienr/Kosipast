@@ -4,7 +4,7 @@ std::vector<std::wstring> LCESP::GetPlayerConditions(CBaseEntity* pEntity) const
 {
 	std::vector<std::wstring> szCond{};
 
-	if (Vars::Visuals::DrawOnScreenConditions.Value)
+	if (Vars::Menu::Indicators.Value & (1 << 4))
 	{
 		if (pEntity->InCond(TF_COND_CRITBOOSTED))
 			szCond.emplace_back(L"KRITS");

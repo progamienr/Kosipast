@@ -74,19 +74,34 @@ namespace Vars
 	NAMESPACE_BEGIN(Menu)
 		CVar(CheatName, std::string("Fedoraware"), VISUAL)
 		CVar(CheatPrefix, std::string("[FeD]"), VISUAL)
-		CVar(ShowPlayerlist, false)
-		CVar(ShowKeybinds, false)
 		CVar(MenuKey, 0)
 
-		SUBNAMESPACE_BEGIN(Theme)
+		CVar(ShowKeybinds, false, VISUAL)
+		CVar(ShowKBChanges, false, VISUAL)
+
+		CVar(Indicators, 0b00000, VISUAL)
+		//CVar(SpectatorAvatars, false, VISUAL)
+
+		CVar(TicksDisplay, DragBox_t())
+		CVar(CritsDisplay, DragBox_t())
+		CVar(SpectatorsDisplay, DragBox_t())
+		CVar(PingDisplay, DragBox_t())
+		CVar(ConditionsDisplay, DragBox_t())
+
+		SUBNAMESPACE_BEGIN(Theme) // possibly reduce the amount of theme vars
 			CVar(Accent, Color_t(255, 101, 101, 255), VISUAL)
+			CVar(AccentLight, Color_t(255, 111, 111, 255), VISUAL)
+			CVar(Background, Color_t(45, 46, 53, 200), VISUAL)
+			CVar(Foreground, Color_t(24, 26, 30, 200), VISUAL)
+			CVar(Foremost, Color_t(56, 60, 64, 200), VISUAL)
+			CVar(ForemostLight, Color_t(62, 66, 70, 200), VISUAL)
+			CVar(Inactive, Color_t(150, 150, 150, 255), VISUAL)
+			CVar(Active, Color_t(255, 255, 255, 255), VISUAL)
 		SUBNAMESPACE_END(Theme)
 	NAMESPACE_END(Menu)
 	
 	NAMESPACE_BEGIN(CritHack)
 		CVar(Active, false)
-		CVar(Indicators, false, VISUAL)
-		CVar(IndicatorPos, DragBox_t(), VISUAL)
 		CVar(AvoidRandom, false)
 		CVar(AlwaysMelee, false)
 		CVar(CritKey, VK_SHIFT)
@@ -119,8 +134,7 @@ namespace Vars
 			CVar(IgnoreOptions, 0b0000000) //disguised, fakelagging players, vaccinator, taunting, friends, deadringer,cloaked, invul
 			CVar(TickTolerance, 7)
 			CVar(MaxTargets, 2)
-			CVar(IgnoreCloakPercentage, 100) // if player cloak percent > ignore threshold, ignore them 
-			CVar(BAimLethal, false) // This is in global cause i remmebered hunterman exists
+			CVar(IgnoreCloakPercentage, 100) // if player cloak percent > ignore threshold, ignore them
 			CVar(ShowHitboxes, false, VISUAL)
 		SUBNAMESPACE_END(Global)
 
@@ -132,14 +146,8 @@ namespace Vars
 			CVar(AimMethod, 2) //0 - Normal,	1 - Smooth, 2 - Silent
 			CVar(Hitboxes, 0b00111) // {legs, arms, body, pelvis, head}
 			CVar(PointScale, 0.f)
-			CVar(TapFire, 0) //0 - Off, 1 - Distance, 2 - Always
+			CVar(Modifiers, 0)
 			CVar(TapFireDist, 1000.f)
-			CVar(ScanBuildings, false)
-			CVar(WaitForHeadshot, false)
-			CVar(WaitForCharge, false)
-			CVar(ScopedOnly, false)
-			CVar(AutoScope, false)
-			CVar(ExtinguishTeam, false)
 		SUBNAMESPACE_END(HITSCAN)
 
 		SUBNAMESPACE_BEGIN(Projectile)
@@ -154,10 +162,7 @@ namespace Vars
 			CVar(AutoRelease, false)
 			CVar(AutoReleaseAt, 0.6f)
 			CVar(ChargeLooseCannon, false)
-			CVar(StrafePredictionGround, false)
-			CVar(StrafePredictionAir, false)
-			CVar(StrafePredictionMaxDistance, 1000)
-			CVar(StrafePredictionMinDifference, 10)
+			CVar(StrafePrediction, 3)
 			CVar(StrafePredictionHitchance, 0.f)
 			CVar(iSamples, 10, NOSAVE) // debug
 			CVar(VerticalShift, 5.f, NOSAVE) // debug
@@ -182,10 +187,10 @@ namespace Vars
 		SUBNAMESPACE_END(Melee)
 	NAMESPACE_END(AIMBOT)
 
-	NAMESPACE_BEGIN(Triggerbot)
+	NAMESPACE_BEGIN(Auto)
 		SUBNAMESPACE_BEGIN(Global)
 			CVar(Active, false)
-			CVar(TriggerKey, VK_XBUTTON2)
+			CVar(AutoKey, VK_XBUTTON2)
 			CVar(IgnoreOptions, 0b00000) //disguised, fakelagging players, taunting, friends, cloaked, invul
 		SUBNAMESPACE_END(Global)
 
@@ -197,7 +202,7 @@ namespace Vars
 			CVar(RadiusScale, 0.9f)
 		SUBNAMESPACE_END(Detonate)
 
-		SUBNAMESPACE_BEGIN(Blast)
+		SUBNAMESPACE_BEGIN(Airblast)
 			CVar(Active, false)
 			CVar(Rage, false)
 			CVar(Silent, false)
@@ -210,19 +215,18 @@ namespace Vars
 			CVar(Active, false)
 			CVar(OnlyFriends, false)
 			CVar(PopLocal, false)
-			CVar(AutoVacc, false)
+			CVar(AutoVaccinator, 0b111)
 			CVar(HealthLeft, 35.0f)
 			CVar(VoiceCommand, false)
 			CVar(ReactFOV, 25)
-			CVar(BulletRes, true)
-			CVar(BlastRes, true)
-			CVar(FireRes, true)
 			CVar(ReactClasses, 0b000000000)	//	this is intuitive
 		SUBNAMESPACE_END(Uber)
 
-		SUBNAMESPACE_BEGIN(Jump) // more auto than trigger idc
+		SUBNAMESPACE_BEGIN(Jump)
 			CVar(JumpKey, 0x0)
 			CVar(CTapKey, 0x0)
+			CVar(TimingOffset, -1, NOSAVE) // debug; -1 for more consistency
+			CVar(ApplyAbove, 0, NOSAVE) // debug
 		SUBNAMESPACE_END(Jump)
 	NAMESPACE_END(Triggerbot)
 
@@ -253,15 +257,7 @@ namespace Vars
 			CVar(Box, false, VISUAL)
 			CVar(Bones, false, VISUAL)
 			CVar(PriorityText, false, VISUAL)
-			
-			SUBNAMESPACE_BEGIN(Conditions)
-				CVar(Buffs, true, VISUAL)
-				CVar(Debuffs, true, VISUAL)
-				CVar(Other, false, VISUAL)
-				CVar(LagComp, false, VISUAL)
-				CVar(Ping, true, VISUAL)
-				CVar(KD, false, VISUAL)
-			SUBNAMESPACE_END(Conditions)
+			CVar(Conditions, 0b010011, VISUAL)
 
 			CVar(Alpha, 1.0f, VISUAL)
 		SUBNAMESPACE_END(Players)
@@ -404,10 +400,6 @@ namespace Vars
 		CVar(CleanScreenshots, true, VISUAL)
 		CVar(RemoveDisguises, false, VISUAL)
 		CVar(RemoveTaunts, false, VISUAL)
-		CVar(DrawOnScreenConditions, false, VISUAL)
-		CVar(DrawOnScreenPing, false, VISUAL)
-		CVar(OnScreenConditions, DragBox_t(), VISUAL)
-		CVar(OnScreenPing, DragBox_t(), VISUAL)
 		CVar(FieldOfView, 90, VISUAL)
 		CVar(ZoomFieldOfView, 30, VISUAL)
 		CVar(RemoveScope, false, VISUAL)
@@ -425,9 +417,6 @@ namespace Vars
 		CVar(CrosshairAimPos, false, VISUAL)
 		CVar(ChatInfoText, false, VISUAL)
 		CVar(ChatInfoChat, false, VISUAL)
-		CVar(SpectatorList, false, VISUAL)
-		CVar(SpectatorAvatars, false, VISUAL)
-		CVar(SpectatorPos, DragBox_t(), VISUAL);
 
 		SUBNAMESPACE_BEGIN(ThirdPerson)
 			CVar(Active, false, VISUAL)
@@ -439,15 +428,10 @@ namespace Vars
 		SUBNAMESPACE_END(ThirdPerson)
 
 		SUBNAMESPACE_BEGIN(World)
-			CVar(WorldModulation, false, VISUAL)
-			CVar(SkyModulation, false, VISUAL)
-			CVar(PropModulation, false, VISUAL)
-			CVar(ParticleModulation, false, VISUAL)
+			CVar(Modulations, 0b0000, VISUAL)
 			CVar(PropWireframe, false, VISUAL)
 			CVar(OverrideTextures, false, VISUAL)
-			CVar(SkyboxChanger, false, VISUAL)
-			CVar(SkyboxNum, 0, VISUAL)
-			CVar(SkyboxName, std::string("mr_04"), VISUAL)
+			CVar(SkyboxChanger, std::string("Off"), VISUAL)
 		SUBNAMESPACE_END(World)
 		
 		CVar(AimbotViewmodel, false, VISUAL)
@@ -464,6 +448,7 @@ namespace Vars
 		CVar(SeperatorSpacing, 6, VISUAL)
 		CVar(SwingLines, false, VISUAL)
 		CVar(ProjectileTrajectory, false, VISUAL)
+		CVar(TrajectoryOnShot, false, VISUAL)
 		CVar(PTOverwrite, false, NOSAVE) // debug
 		CVar(PTType, 0, NOSAVE) // debug
 		CVar(PTOffX, 23.5f, NOSAVE) // debug
@@ -490,10 +475,8 @@ namespace Vars
 		CVar(DoPostProcessing, false, VISUAL)
 
 		SUBNAMESPACE_BEGIN(Tracers)
-			CVar(ParticleTracer, 0, VISUAL)
-			CVar(ParticleTracerCrits, 0, VISUAL)
-			CVar(ParticleName, std::string("merasmus_zap_beam01"), VISUAL)
-			CVar(ParticleNameCrits, std::string("merasmus_zap_beam01"), VISUAL)
+			CVar(ParticleTracer, std::string("Off"), VISUAL)
+			CVar(ParticleTracerCrits, std::string("Off"), VISUAL)
 		SUBNAMESPACE_END(Tracers)
 
 		SUBNAMESPACE_BEGIN(Beans)
@@ -527,20 +510,15 @@ namespace Vars
 
 		CVar(NoStaticPropFade, false, VISUAL)
 
-		SUBNAMESPACE_BEGIN(RagdollEffects)
+		SUBNAMESPACE_BEGIN(Ragdolls)
 			CVar(NoGib, false, VISUAL)
 			CVar(EnemyOnly, false, VISUAL)
-			CVar(Burning, false, VISUAL)
-			CVar(Electrocuted, false, VISUAL)
-			CVar(BecomeAsh, false, VISUAL)
-			CVar(Dissolve, false, VISUAL)
-			CVar(RagdollType, 0, VISUAL)
+			CVar(Effects, 0, VISUAL)
+			CVar(Type, 0, VISUAL)
 
-			CVar(SeparateVectors, false, VISUAL)
-			CVar(RagdollForce, 1.f, VISUAL)
-			CVar(RagdollForceForwards, 1.f, VISUAL)
-			CVar(RagdollForceSides, 1.f, VISUAL)
-			CVar(RagdollForceUp, 1.f, VISUAL)
+			CVar(Force, 1.f, VISUAL)
+			CVar(ForceHorizontal, 1.f, VISUAL)
+			CVar(ForceVertical, 1.f, VISUAL)
 		SUBNAMESPACE_END(RagdollEffects)
 	NAMESPACE_END(Visuals)
 
@@ -557,17 +535,7 @@ namespace Vars
 			CVar(RechargeKey, 0x48)
 			CVar(TeleportKey, 0x52)
 
-			CVar(WaitReady, false)
-			CVar(AntiWarp, false)
-			CVar(NotInAir, true)
-			CVar(AutoRetain, true)
-			CVar(AutoRecharge, false)
-			CVar(RechargeWhileDead, false)
-			CVar(SafeTick, false)
-			CVar(SafeTickAirOverride, false)
-
-			CVar(Indicator, false, VISUAL)
-			CVar(Position, DragBox_t(), VISUAL)
+			CVar(Options, 0b00101)
 		SUBNAMESPACE_END(DoubleTap)
 
 		CVar(SpeedEnabled, false)
@@ -584,9 +552,7 @@ namespace Vars
 			CVar(Max, 1)
 			CVar(Value, 1)
 
-			CVar(WhileMoving, false)
-			CVar(WhileUnducking, false)
-			CVar(WhileGrounded, false)
+			CVar(Options, 0)
 
 			CVar(UnchokeOnAttack, false)
 			CVar(RetainBlastJump, false)
@@ -614,8 +580,10 @@ namespace Vars
 		CVar(NoPush, false)
 		CVar(CrouchSpeed, false)
 
+		CVar(AntiBackstab, false)
 		CVar(AntiAFK, false)
-		CVar(TauntSlide, false)
+		CVar(TauntControl, false)
+		CVar(KartControl, false)
 		CVar(AutoAcceptItemDrops, false)
 
 		CVar(SoundBlock, 0)
@@ -632,11 +600,10 @@ namespace Vars
 		CVar(PredictionErrorJitterFix, false)
 		CVar(SetupBonesOptimization, false)
 
-		CVar(RegionChanger, false)
-		CVar(RegionsAllowed, 0)
+		CVar(ForceRegions, 0)
 		CVar(FreezeQueue, false)
 		CVar(AutoCasualQueue, 0)
-		CVar(ChatFlags, false)
+		CVar(ChatTags, false)
 
 		CVar(DisableInterpolation, false)
 		CVar(ScoreboardPlayerlist, false)
@@ -663,9 +630,8 @@ namespace Vars
 			CVar(EnableRPC, false)
 			CVar(MatchGroup, 0) // 0 - Special Event; 1 - MvM Mann Up; 2 - Competitive; 3 - Casual; 4 - MvM Boot Camp;
 			CVar(OverrideMenu, false) // Override matchgroup when in main menu
-			CVar(MapText, 1) // 0 - Fedoraware; 1 - CUM.clab; 2 - Meowhook.club; 3 - rathook.cc; 4 - NNitro.tf; 5 - custom;
+			CVar(MapText, std::string("Fedoraware")) // 0 - Fedoraware; 1 - CUM.clab; 2 - Meowhook.club; 3 - rathook.cc; 4 - NNitro.tf; 5 - custom;
 			CVar(GroupSize, 1337)
-			CVar(CustomText, std::string("M-FeD is gay"))
 		SUBNAMESPACE_END(Steam)
 	NAMESPACE_END(Misc)
 
@@ -687,8 +653,6 @@ namespace Vars
 
 			CVar(SpinSpeed, 15.f)
 			CVar(AntiOverlap, false)
-			CVar(AntiBackstab, false)
-			CVar(LegJitter, false) // frick u fourteen
 			CVar(InvalidShootPitch, false) // i dont know what to name this its TRASH
 		SUBNAMESPACE_END(AntiAim)
 
@@ -727,8 +691,6 @@ namespace Vars
 		CVar(StaticPropModulation, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(ParticleModulation, Color_t(255, 255, 255, 255), VISUAL)
 
-		CVar(DtOutline, Color_t(30, 30, 30, 180), VISUAL)
-
 		CVar(BulletTracer, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(PredictionColor, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(ProjectileColor, Color_t(255, 100, 100, 255), VISUAL)
@@ -745,33 +707,12 @@ namespace Vars
 			CVar(nFlags, 512, VISUAL)
 		SUBNAMESPACE_END(FONT_ESP)
 
-		SUBNAMESPACE_BEGIN(FONT_ESP_NAME)
+		SUBNAMESPACE_BEGIN(FONT_NAME)
 			CVar(szName, std::string("Small Fonts"), VISUAL)
 			CVar(nTall, 12, VISUAL)
 			CVar(nWeight, 0, VISUAL)
 			CVar(nFlags, 512, VISUAL)
-		SUBNAMESPACE_END(FONT_ESP_NAME)
-
-		SUBNAMESPACE_BEGIN(FONT_ESP_COND)
-			CVar(szName, std::string("Small Fonts"), VISUAL)
-			CVar(nTall, 12, VISUAL)
-			CVar(nWeight, 0, VISUAL)
-			CVar(nFlags, 512, VISUAL)
-		SUBNAMESPACE_END(FONT_ESP_COND)
-
-		SUBNAMESPACE_BEGIN(FONT_ESP_PICKUPS)
-			CVar(szName, std::string("Small Fonts"), VISUAL)
-			CVar(nTall, 12, VISUAL)
-			CVar(nWeight, 0, VISUAL)
-			CVar(nFlags, 512, VISUAL)
-		SUBNAMESPACE_END(FONT_ESP_PICKUPS)
-
-		SUBNAMESPACE_BEGIN(FONT_MENU)
-			CVar(szName, std::string("ProggyClean"), VISUAL)
-			CVar(nTall, 13, VISUAL)
-			CVar(nWeight, -1, VISUAL)
-			CVar(nFlags, 512, VISUAL)
-		SUBNAMESPACE_END(FONT_MENU)
+		SUBNAMESPACE_END(FONT_NAME)
 
 		SUBNAMESPACE_BEGIN(FONT_INDICATORS)
 			CVar(szName, std::string("ProggyClean"), VISUAL)

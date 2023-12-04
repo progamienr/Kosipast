@@ -34,7 +34,6 @@
     <ClCompile Include="src\Features\Commands\Commands.cpp" />
     <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
     <ClCompile Include="src\Features\Menu\ConfigManager\ConfigManager.cpp" />
-    <ClCompile Include="src\Features\Menu\MaterialEditor\MaterialEditor.cpp" />
     <ClCompile Include="src\Features\Menu\Menu.cpp" />
     <ClCompile Include="src\Features\Menu\Playerlist\Playerlist.cpp" />
     <ClCompile Include="src\Features\Menu\SpectatorList\SpectatorList.cpp" />
@@ -254,8 +253,6 @@
     <ClInclude Include="src\Features\Menu\Components.hpp" />
     <ClInclude Include="src\Features\Menu\ConfigManager\ConfigManager.h" />
     <ClInclude Include="src\Features\Menu\Fonts\IconsMaterialDesign.h" />
-    <ClInclude Include="src\Features\Menu\Fonts\MaterialFontData.h" />
-    <ClInclude Include="src\Features\Menu\MaterialEditor\MaterialEditor.h" />
     <ClInclude Include="src\Features\Menu\Menu.h" />
     <ClInclude Include="src\Features\Menu\Playerlist\Playerlist.h" />
     <ClInclude Include="src\Features\Menu\SpectatorList\SpectatorList.h" />
@@ -378,6 +375,10 @@
     <ClInclude Include="src\Features\Logs\Logs.h" />
     <ClInclude Include="src\Features\NetworkFix\NetworkFix.h" />
     <ClInclude Include="src\Features\Visuals\Materials\Materials.h" />
+    <ClInclude Include="src\Features\Menu\Fonts\RobotoMedium.h" />
+    <ClInclude Include="src\Features\Menu\Fonts\RobotoBold.h" />
+    <ClInclude Include="src\Features\Menu\Fonts\RobotoBlack.h" />
+    <ClInclude Include="src\Features\Menu\Fonts\MaterialIcons.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

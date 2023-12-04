@@ -3,13 +3,13 @@
 
 class CAutoJump
 {
-	Vec3 vLastPos = {};
+	void ManageAngle(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Vec3& viewAngles);
+
 	bool bLastGrounded = false;
 
-	int iJumpFrame = -1;
-
-	bool bFire = false;
-	bool bCTap = false;
+	int iFrame = -1;
+	bool bFull = false;
+	int iDelay = 0;
 
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);

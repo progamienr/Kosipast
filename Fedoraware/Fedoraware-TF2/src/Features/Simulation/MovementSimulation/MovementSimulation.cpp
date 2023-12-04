@@ -123,7 +123,7 @@ void CMovementSimulation::FillVelocities()
 		return;
 	}
 
-	if (Vars::Aimbot::Projectile::StrafePredictionGround.Value || Vars::Aimbot::Projectile::StrafePredictionAir.Value)
+	if (Vars::Aimbot::Projectile::StrafePrediction.Value)
 	{
 		auto FillVelocity = [](CBaseEntity* pEntity, std::map<int, std::deque<VelocityData>>& m_Velocities, Vec3 vVelocity)
 		{
@@ -268,7 +268,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			flCompareYaw = flRecordYaw;
 		}
 
-		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value)
+		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100.f)
 		{
 			Utils::ConLog("MovementSimulation", "Hitchance", { 125, 255, 83, 255 }, Vars::Debug::Logging.Value);
 
@@ -369,12 +369,12 @@ float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int
 
 void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
 {
-	if (playerStorage.m_pPlayer->OnSolid() ? !Vars::Aimbot::Projectile::StrafePredictionGround.Value : !Vars::Aimbot::Projectile::StrafePredictionAir.Value)
+	if (playerStorage.m_pPlayer->OnSolid() ? !(Vars::Aimbot::Projectile::StrafePrediction.Value & (1 << 1)) : !(Vars::Aimbot::Projectile::StrafePrediction.Value & (1 << 0)))
 		return;
 
 	float flAverageYaw = GetAverageYaw(playerStorage, Vars::Aimbot::Projectile::iSamples.Value);
 
-	if (fabsf(flAverageYaw) < Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value)
+	if (fabsf(flAverageYaw) < 1.f)
 	{
 		flAverageYaw = 0.f;
 		return;

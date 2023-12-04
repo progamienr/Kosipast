@@ -19,8 +19,8 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 			G::PunchAngles = pLocal->GetPunchAngles(); // use in aimbot 
 			if (Vars::Visuals::RemovePunch.Value)
 				pLocal->ClearPunchAngle(); // visual no-recoil
+			F::Resolver.FrameStageNotify(pLocal);
 		}
-		F::Resolver.FrameStageNotify();
 		F::Visuals.SkyboxChanger();
 
 		break;
@@ -38,7 +38,7 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		g_EntityCache.Fill();
 		for (auto pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 		{
-			if (!pEntity && pEntity != g_EntityCache.GetLocal())
+			if (!pEntity || pEntity == g_EntityCache.GetLocal() || pEntity->IsTaunting())
 				continue; // local player managed in CPrediction_RunCommand
 
 			if (auto nDifference = std::clamp(TIME_TO_TICKS(pEntity->m_flSimulationTime() - pEntity->m_flOldSimulationTime()), 0, 22))

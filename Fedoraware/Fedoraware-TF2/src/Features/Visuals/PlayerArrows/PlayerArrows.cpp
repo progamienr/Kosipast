@@ -3,7 +3,7 @@
 
 bool CPlayerArrows::ShouldRun(CBaseEntity* pLocal)
 {
-	if (!Vars::Visuals::Arrows::Active.Value || I::EngineVGui->IsGameUIVisible())
+	if (!Vars::Visuals::Arrows::Active.Value)
 		return false;
 
 	if (!pLocal->IsAlive() || pLocal->IsStunned())

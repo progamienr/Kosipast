@@ -689,7 +689,7 @@ public: //Netvars & conditions
 	M_CONDGET(Slowed, m_nPlayerCond(), TFCond_Slowed)
 	M_CONDGET(MegaHealed, m_nPlayerCond(), TFCond_MegaHeal)
 	M_CONDGET(AGhost, m_nPlayerCondEx2(), TFCondEx2_HalloweenGhostMode)
-	M_CONDGET(InBumperKart, m_nPlayerCondEx2(), TFCondEx_InKart)
+	M_CONDGET(InBumperKart, m_nPlayerCondEx2(), TFCondEx2_InKart)
 	M_CONDGET(PhlogUbered, m_nPlayerCondEx(), TFCondEx_PhlogUber)
 	M_CONDGET(BlastImmune, m_nPlayerCondEx2(), TFCondEx2_BlastImmune)
 	M_CONDGET(BulletImmune, m_nPlayerCondEx2(), TFCondEx2_BulletImmune)
@@ -733,6 +733,29 @@ public: //Netvars & conditions
 		Vec3 vWorldSpaceCenter = GetAbsOrigin();
 		vWorldSpaceCenter.z += (vMin.z + vMax.z) / 2.0f;
 		return vWorldSpaceCenter;
+	}
+	__inline Vec3 GetViewOffset() // in the case it isn't networked properly
+	{
+		const Vec3 vOffset = m_vecViewOffset();
+		if (vOffset.z)
+			return vOffset;
+
+		if (IsDucking())
+			return { 0.f, 0.f, 45.f };
+
+		switch (m_iClass())
+		{
+		case ETFClass::CLASS_SCOUT: return { 0.f, 0.f, 65.f };
+		case ETFClass::CLASS_SOLDIER: return { 0.f, 0.f, 68.f };
+		case ETFClass::CLASS_PYRO: return { 0.f, 0.f, 68.f };
+		case ETFClass::CLASS_DEMOMAN: return { 0.f, 0.f, 68.f };
+		case ETFClass::CLASS_HEAVY: return { 0.f, 0.f, 75.f };
+		case ETFClass::CLASS_ENGINEER: return { 0.f, 0.f, 68.f };
+		case ETFClass::CLASS_MEDIC: return { 0.f, 0.f, 75.f };
+		case ETFClass::CLASS_SNIPER: return { 0.f, 0.f, 75.f };
+		case ETFClass::CLASS_SPY: return { 0.f, 0.f, 75.f };
+		default: return { 0.f, 0.f, 68.f };
+		}
 	}
 	// credits: KGB
 	__inline bool InCond(const ETFCond eCond)
@@ -874,13 +897,13 @@ public: //Netvars & conditions
 		switch (m_iClass())
 		{
 		case ETFClass::CLASS_SCOUT: return 400.0f;
-		case ETFClass::CLASS_DEMOMAN: return 280.0f;
-		case ETFClass::CLASS_ENGINEER: return 300.0f;
-		case ETFClass::CLASS_HEAVY: return 230.0f; // 110 when spinning minigun
-		case ETFClass::CLASS_MEDIC: return 320.0f;
-		case ETFClass::CLASS_PYRO: return 300.0f;
-		case ETFClass::CLASS_SNIPER: return 300.0f;
 		case ETFClass::CLASS_SOLDIER: return 240.0f;
+		case ETFClass::CLASS_PYRO: return 300.0f;
+		case ETFClass::CLASS_DEMOMAN: return 280.0f;
+		case ETFClass::CLASS_HEAVY: return 230.0f; // 110 when spinning minigun
+		case ETFClass::CLASS_ENGINEER: return 300.0f;
+		case ETFClass::CLASS_MEDIC: return 320.0f;
+		case ETFClass::CLASS_SNIPER: return 300.0f;
 		case ETFClass::CLASS_SPY: return 320.0f;
 		default: return 1.0f;
 		}

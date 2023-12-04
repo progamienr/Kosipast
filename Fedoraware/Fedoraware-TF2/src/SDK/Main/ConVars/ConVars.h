@@ -18,7 +18,8 @@ public:
 	ConVar* glow_outline_effect_enable = nullptr;
 	ConVar* r_drawspecificstaticprop = nullptr;
 	ConVar* sv_namechange_cooldown_seconds = nullptr;
-	ConVar* afkTimer = nullptr;
+	ConVar* mp_idlemaxtime = nullptr;
+	ConVar* mp_idledealmethod = nullptr;
 	ConVar* sv_maxusrcmdprocessticks = nullptr;
 	ConVar* sv_maxusrcmdprocessticks_holdaim = nullptr;
 

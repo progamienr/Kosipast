@@ -250,9 +250,9 @@ bool CDMEChams::Render(const DrawModelState_t& pState, const ModelRenderInfo_t& 
 
 	if (drawType == 3)
 	{	// don't interfere with ragdolls
-		if (Vars::Visuals::RagdollEffects::RagdollType.Value)
+		if (Vars::Visuals::Ragdolls::Type.Value)
 		{
-			if (Vars::Visuals::RagdollEffects::EnemyOnly.Value && pEntity && pLocal && pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
+			if (Vars::Visuals::Ragdolls::EnemyOnly.Value && pEntity && pLocal && pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
 				return false;
 			else
 				return false;

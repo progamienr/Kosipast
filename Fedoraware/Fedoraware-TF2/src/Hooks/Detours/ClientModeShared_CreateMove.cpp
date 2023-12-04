@@ -14,6 +14,7 @@
 #include "../../Features/CritHack/CritHack.h"
 #include "../../Features/NoSpread/NoSpread.h"
 #include "../../Features/Resolver/Resolver.h"
+#include "../../Features/Visuals/Visuals.h"
 
 void AttackingUpdate(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
@@ -86,7 +87,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 				G::WeaponCanAttack = true;
 
 			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN &&
-				(pWeapon->GetMinigunState() == AC_STATE_IDLE || pWeapon->GetMinigunState() == AC_STATE_STARTFIRING))
+				pWeapon->GetMinigunState() != AC_STATE_FIRING && pWeapon->GetMinigunState() != AC_STATE_SPINNING)
 			{
 				G::WeaponCanAttack = false;
 			}
@@ -123,9 +124,11 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	F::Backtrack.Run(pCmd);
 	F::EnginePrediction.Start(pCmd);
 	{
-		F::Aimbot.Run(pCmd);
+		const bool bAimRan = F::Aimbot.Run(pCmd);
 		F::Auto.Run(pCmd);
 		F::PacketManip.CreateMove(pCmd, pSendPacket);
+		if (!bAimRan && G::WeaponCanAttack && G::IsAttacking)
+			F::Visuals.ProjectileTrace(false);
 	}
 	F::EnginePrediction.End(pCmd);
 	F::Ticks.MovePost(pCmd);
@@ -151,15 +154,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	}
 	else
 		AttackingUpdate(pLocal, pWeapon);
-
-	// do this at the end just in case aimbot / triggerbot fired.
-	if (pCmd->buttons & IN_ATTACK && (Vars::CL_Move::DoubleTap::SafeTick.Value || Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value && pLocal && !pLocal->OnSolid()))
-	{
-		if (G::NextSafeTick > I::GlobalVars->tickcount && G::DoubleTap && G::ShiftedTicks)
-			pCmd->buttons &= ~IN_ATTACK;
-		else
-			G::NextSafeTick = I::GlobalVars->tickcount + g_ConVars.sv_maxusrcmdprocessticks_holdaim->GetInt() + 1;
-	}
 	
 	G::ViewAngles = pCmd->viewangles;
 	G::LastUserCmd = pCmd;
@@ -169,6 +163,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 	F::EnginePrediction.Simulate(pCmd);
 
-	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView || !F::Misc.TauntControl(pCmd));
+	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView);
 	return bShouldSkip ? false : Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 }

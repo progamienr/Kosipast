@@ -47,7 +47,7 @@ MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pCh
 	 *	@https://www.unknowncheats.me/forum/team-fortress-2-a/488217-chat-flags-titles.html
 		i swear its not pasted i just used this as inspiration, credits myzarfin.
 	*/
-	if (iPlayerIndex && Vars::Misc::ChatFlags.Value)
+	if (iPlayerIndex && Vars::Misc::ChatTags.Value)
 	{
 		ChatFlags_t chatFlag;
 		bool flagSet = false;

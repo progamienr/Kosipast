@@ -30,12 +30,14 @@ struct DrawBullet {
 	std::pair<Vec3, Vec3> m_line;
 	float m_flTime;
 	Color_t m_color;
+	bool m_bZBuffer = false;
 };
 
 struct DrawLine {
 	std::deque<std::pair<Vec3, Vec3>> m_line;
 	float m_flTime;
 	Color_t m_color;
+	bool m_bZBuffer = false;
 };
 
 struct DrawBox {
@@ -47,13 +49,13 @@ struct DrawBox {
 	float m_flTime;
 	Color_t m_colorEdge;
 	Color_t m_colorFace;
+	bool m_bZBuffer = false;
 };
 
 namespace G
 {
 	inline int CurrentTargetIdx = 0; // Index of the current aimbot target
 	inline int CurItemDefIndex = 0; // DefIndex of the current weapon
-	inline int NextSafeTick = 0;	//	I::GlobalVars->tickcount + sv_maxusrcmdprocessticks_holdaim + 1 (when attacking)
 	inline float LerpTime = 0.f;	//	current lerp time
 	inline bool WeaponCanHeadShot = false; // Can the current weapon headshot?
 	inline bool WeaponCanAttack = false; // Can the current weapon attack?
@@ -112,6 +114,7 @@ namespace G
 	inline CUserCmd* CurrentUserCmd{nullptr}; // Unreliable! Only use this if you really have to.
 	inline CUserCmd* LastUserCmd{nullptr};
 	inline int Buttons = 0;
+	inline bool AnimateKart = false;
 	
 	inline EWeaponType CurWeaponType = {};
 	inline std::unordered_map<int, DormantData> DormantPlayerESP; // <Index, DormantData>

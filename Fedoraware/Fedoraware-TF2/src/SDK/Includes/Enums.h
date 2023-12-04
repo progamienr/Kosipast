@@ -789,7 +789,6 @@ enum ETFConds
 	TFCondEx_DisguisedRemoved		= (1 << 15), // 47
 	TFCondEx_MarkedForDeathSilent	= (1 << 16), // 48
 	TFCondEx_DisguisedAsDispenser	= (1 << 17), // 49
-	TFCondEx_InKart					= (1 << 18), // 50
 	TFCondEx_UberchargedHidden		= (1 << 19), // 51
 	TFCondEx_UberchargedCanteen		= (1 << 20), // 52
 	TFCondEx_HalloweenBombHead		= (1 << 21), // 53
@@ -818,6 +817,7 @@ enum ETFConds
 	TFCondEx2_HalloweenGhostMode	= (1 << 13), // 77
 	TFCondEx2_Parachute				= (1 << 16), // 80
 	TFCondEx2_BlastJumping			= (1 << 17), // 81
+	TFCondEx2_InKart				= (1 << 18), // 82
 	TFCondEx2_StrengthRune			= (1 << 26), // 90
 	TFCondEx2_HasteRune				= (1 << 27), // 91
 	TFCondEx2_RegenRune				= (1 << 28), // 92

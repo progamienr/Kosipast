@@ -647,7 +647,7 @@ namespace Utils
 			}
 			case TF_WEAPON_MINIGUN:
 			{
-				if (pWeapon->GetMinigunState() != AC_STATE_IDLE && pWeapon->GetMinigunState() != AC_STATE_STARTFIRING &&
+				if ((pWeapon->GetMinigunState() == AC_STATE_FIRING || pWeapon->GetMinigunState() == AC_STATE_SPINNING) &&
 					pCmd->buttons & IN_ATTACK && G::WeaponCanAttack)
 				{
 					return true;

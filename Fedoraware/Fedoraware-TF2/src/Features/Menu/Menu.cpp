@@ -10,8 +10,11 @@
 #include <ImGui/imgui_stdlib.h>
 
 #include "Fonts/IconsMaterialDesign.h"
+#include "Fonts/RobotoMedium.h"
+#include "Fonts/RobotoBold.h"
+#include "Fonts/RobotoBlack.h"
+
 #include "Playerlist/Playerlist.h"
-#include "MaterialEditor/MaterialEditor.h"
 
 #include "Components.hpp"
 #include "ConfigManager/ConfigManager.h"
@@ -28,8 +31,8 @@ constexpr auto SIZE_FULL_WIDTH = ImVec2(-1, 20);
 /* The main menu */
 void CMenu::DrawMenu()
 {
-	ImGui::SetNextWindowSize(ImVec2(700, 700), ImGuiCond_FirstUseEver);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 700, 500 });
+	ImGui::SetNextWindowSize(ImVec2(750, 550), ImGuiCond_FirstUseEver);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 750, 550 });
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
 
 	if (ImGui::Begin("MainWindow", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar))
@@ -38,62 +41,49 @@ void CMenu::DrawMenu()
 		const auto windowSize = ImGui::GetWindowSize();
 		const auto windowPos = ImGui::GetWindowPos();
 
-		ImGui::Dummy({ 0, 2 });
-
 		// Title Text
+		if (Vars::Menu::CheatName.Value != "")
 		{
-			ImGui::PushFont(TitleFont);
+			ImGui::Dummy({ 0, 2 });
+			ImGui::PushFont(FontLarge);
 			const auto titleWidth = ImGui::CalcTextSize(Vars::Menu::CheatName.Value.c_str()).x;
-			drawList->AddText(TitleFont, TitleFont->FontSize, { windowPos.x + (windowSize.x / 2) - (titleWidth / 2), windowPos.y }, Accent, Vars::Menu::CheatName.Value.c_str());
+			drawList->AddText(FontLarge, FontLarge->FontSize, { windowPos.x + (windowSize.x / 2) - (titleWidth / 2), windowPos.y }, Accent, Vars::Menu::CheatName.Value.c_str());
 			ImGui::PopFont();
 		}
 
-		// Icons
+		// Main tabs
+		ImGui::FTabs({ "AIMBOT", "VISUALS", "MISC", "LOGS", "SETTINGS" }, &CurrentTab, TabSize, { 0, (Vars::Menu::CheatName.Value != "") * TitleHeight + SubTabSize.y }, true, {ICON_MD_GROUP, ICON_MD_IMAGE, ICON_MD_PUBLIC, ICON_MD_MENU_BOOK, ICON_MD_SETTINGS});
+		
+		// Sub tabs
+		switch (CurrentTab)
 		{
-			float currentX = windowSize.x;
-
-			// Playerlist Icon
-			ImGui::SetCursorPos({ currentX -= 25, 0 });
-			if (ImGui::IconButton(ICON_MD_PEOPLE))
-				Vars::Menu::ShowPlayerlist.Value = !Vars::Menu::ShowPlayerlist.Value;
-			ImGui::HelpMarker("Playerlist");
-
-			// Material Editor Icon
-			ImGui::SetCursorPos({ currentX -= 25, 0 });
-			if (ImGui::IconButton(ICON_MD_BRUSH))
-				F::MaterialEditor.IsOpen = !F::MaterialEditor.IsOpen;
-			ImGui::HelpMarker("Material Editor");
+		case 0: ImGui::FTabs({ "GENERAL", "HVH", "AUTOMATION" }, &CurrentAimbotTab, SubTabSize, { TabSize.x, (Vars::Menu::CheatName.Value != "") * TitleHeight }); break;
+		case 1: ImGui::FTabs({ "ESP", "CHAMS", "GLOW", "MISC##", "RADAR", "MENU" }, &CurrentVisualsTab, SubTabSize, { TabSize.x, (Vars::Menu::CheatName.Value != "") * TitleHeight }); break;
+		case 2: ImGui::FTabs({ "MISC##" }, nullptr, SubTabSize, { TabSize.x, (Vars::Menu::CheatName.Value != "") * TitleHeight }); break;
+		case 3: ImGui::FTabs({ "LOGS##", "SETTINGS##" }, &CurrentLogsTab, SubTabSize, { TabSize.x, (Vars::Menu::CheatName.Value != "") * TitleHeight }); break;
+		case 4: ImGui::FTabs({ "CONFIG", "CONDITIONS", "PLAYERLIST", "MATERIALS" }, &CurrentConfigTab, SubTabSize, { TabSize.x, (Vars::Menu::CheatName.Value != "") * TitleHeight }); break;
 		}
 
-		// Tabbar
-		ImGui::SetCursorPos({ 0, TitleHeight });
-		ImGui::PushStyleColor(ImGuiCol_ChildBg, BackgroundLight.Value);
-		if (ImGui::BeginChild("Tabbar", { windowSize.x + 5, TabHeight + SubTabHeight }, false, ImGuiWindowFlags_NoScrollWithMouse))
-			DrawTabbar();
-		ImGui::EndChild();
-		ImGui::PopStyleColor();
-
 		// Main content
-		ImGui::SetCursorPos({ 0, TitleHeight + TabHeight + SubTabHeight });
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.f, 10.f });
-		ImGui::PushStyleColor(ImGuiCol_ChildBg, BackgroundDark.Value);
-		if (ImGui::BeginChild("Content", { windowSize.x, windowSize.y - (TitleHeight + TabHeight + SubTabHeight) }, false, ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoScrollbar))
+		ImGui::SetCursorPos({ TabSize.x, (Vars::Menu::CheatName.Value != "") * TitleHeight + SubTabSize.y });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.f, 8.f });
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImColor(0, 0, 0, 0).Value);
+		if (ImGui::BeginChild("Content", { windowSize.x - TabSize.x, windowSize.y - (Vars::Menu::CheatName.Value != "") * TitleHeight - SubTabSize.y }, false, ImGuiWindowFlags_AlwaysUseWindowPadding))
 		{
-			ImGui::PushFont(Verdana);
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 3.f, 2.f });
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, Foreground.Value);
+			ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 3.f);
 
 			switch (CurrentTab)
 			{
-				case MenuTab::Aimbot: { MenuAimbot(); break; }
-				case MenuTab::Trigger: { MenuTrigger(); break; }
-				case MenuTab::Visuals: { MenuVisuals(); break; }
-				case MenuTab::HvH: { MenuHvH(); break; }
-				case MenuTab::Misc: { MenuMisc(); break; }
-				case MenuTab::Settings: { MenuSettings(); break; }
+			case 0: MenuAimbot(); break;
+			case 1: MenuVisuals(); break;
+			case 2: MenuMisc(); break;
+			case 3: MenuLogs(); break;
+			case 4: MenuSettings(); break;
 			}
 
 			ImGui::PopStyleVar();
-			ImGui::PopFont();
+			ImGui::PopStyleColor();
 		}
 		ImGui::EndChild();
 		ImGui::PopStyleColor();
@@ -106,264 +96,310 @@ void CMenu::DrawMenu()
 	ImGui::PopStyleVar(2);
 }
 
-void CMenu::DrawTabbar()
-{
-	ImGui::PushFont(SectionFont);
-	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 0, 0 });
-	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.f);
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 });
-
-	if (ImGui::BeginTable("TabbarTable", 6))
-	{
-		ImGui::PushStyleColor(ImGuiCol_Button, BackgroundLight.Value);
-		ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
-
-		if (ImGui::TabButton("Aimbot", CurrentTab == MenuTab::Aimbot))
-			CurrentTab = MenuTab::Aimbot;
-		if (ImGui::TabButton("Triggerbot", CurrentTab == MenuTab::Trigger))
-			CurrentTab = MenuTab::Trigger;
-		if (ImGui::TabButton("Visuals", CurrentTab == MenuTab::Visuals))
-			CurrentTab = MenuTab::Visuals;
-		if (ImGui::TabButton("HvH", CurrentTab == MenuTab::HvH))
-			CurrentTab = MenuTab::HvH;
-		if (ImGui::TabButton("Misc", CurrentTab == MenuTab::Misc))
-			CurrentTab = MenuTab::Misc;
-		if (ImGui::TabButton("Settings", CurrentTab == MenuTab::Settings))
-			CurrentTab = MenuTab::Settings;
-
-		ImGui::PopStyleColor(2);
-		ImGui::EndTable();
-	}
-
-	ImGui::SetCursorPosY(TabHeight);
-	if (CurrentTab == MenuTab::Visuals)
-	{
-		SubTabHeight = 30.f;
-
-		if (ImGui::BeginTable("SubbarTable", 6))
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, BackgroundLight.Value);
-			ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
-
-			if (ImGui::TabButton("ESP", CurrentVisualsTab == VisualsTab::ESP))
-				CurrentVisualsTab = VisualsTab::ESP;
-			if (ImGui::TabButton("Chams", CurrentVisualsTab == VisualsTab::Chams))
-				CurrentVisualsTab = VisualsTab::Chams;
-			if (ImGui::TabButton("Glow", CurrentVisualsTab == VisualsTab::Glow))
-				CurrentVisualsTab = VisualsTab::Glow;
-			if (ImGui::TabButton("Misc", CurrentVisualsTab == VisualsTab::Misc))
-				CurrentVisualsTab = VisualsTab::Misc;
-			if (ImGui::TabButton("Radar", CurrentVisualsTab == VisualsTab::Radar))
-				CurrentVisualsTab = VisualsTab::Radar;
-			if (ImGui::TabButton("Fonts", CurrentVisualsTab == VisualsTab::Font))
-				CurrentVisualsTab = VisualsTab::Font;
-
-			ImGui::PopStyleColor(2);
-			ImGui::EndTable();
-		}
-	}
-	else
-	{
-		SubTabHeight = 0.f;
-	}
-
-	ImGui::PopStyleVar(3);
-	ImGui::PopFont();
-}
-
 #pragma region Tabs
 /* Tab: Aimbot */
 void CMenu::MenuAimbot()
 {
 	using namespace ImGui;
 
-	if (BeginTable("AimbotTable", 3))
+	switch (CurrentAimbotTab)
 	{
-		/* Column 1 */
-		if (TableColumnChild("AimbotCol1"))
+	// General
+	case 0:
+		if (BeginTable("AimbotTable", 2))
 		{
-			SectionTitle("Global");
-			WToggle("Aimbot", &Vars::Aimbot::Global::Active.Value);
-			ColorPickerL("Target", Vars::Colors::Target.Value);
-			InputKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value);
-			ColorPickerL("Aimbot FOV circle", Vars::Colors::FOVCircle.Value);
-			WToggle("Autoshoot###AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value);
-			MultiFlags({ "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 },
-				&Vars::Aimbot::Global::AimAt.Value, "Aimbot targets###AimbotTargets");
-			ColorPickerL("Invulnerable color", Vars::Colors::Invulnerable.Value);
-			MultiFlags({ "Invulnerable", "Cloaked", "Dead Ringer", "Friends", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7 },
-				&Vars::Aimbot::Global::IgnoreOptions.Value, "Ignored targets###AimbotIgnoredTargets");
-			if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 1))
-				WSlider("Cloak Percentage Threshold", &Vars::Aimbot::Global::IgnoreCloakPercentage.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WSlider("Max Targets###AimbotMax", &Vars::Aimbot::Global::MaxTargets.Value, 1, 6, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-			if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 6))
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Global"))
 			{
-				WSlider("Tick Tolerance###AimbotUnsimulatedTolerance", &Vars::Aimbot::Global::TickTolerance.Value, 0, 21, "%d", ImGuiSliderFlags_AlwaysClamp);
-			}
-
-			SectionTitle("Crits");
-			WToggle("Crit hack", &Vars::CritHack::Active.Value);
-			MultiCombo({ "Indicator", "Avoid Random", "Always Melee" }, { &Vars::CritHack::Indicators.Value, &Vars::CritHack::AvoidRandom.Value, &Vars::CritHack::AlwaysMelee.Value }, "Misc###CrithackMiscOptions");
-			InputKeybind("Crit key", Vars::CritHack::CritKey.Value);
-
-			SectionTitle("Backtrack");
-			WToggle("Active", &Vars::Backtrack::Enabled.Value);
-			WCombo("Backtrack Method###HitscanBacktrackMethod", &Vars::Backtrack::Method.Value, { "All", "Last", "Prefer OnShot" });
-			WSlider("Fake Latency###BTLatency", &Vars::Backtrack::Latency.Value, 0, g_ConVars.sv_maxunlag->GetFloat() * 1000 - 200, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WSlider("Fake Interp###BTInterp", &Vars::Backtrack::Interp.Value, 0, g_ConVars.sv_maxunlag->GetFloat() * 1000 - 200, "%d", ImGuiSliderFlags_AlwaysClamp); HelpMarker("Will not change latency but only able to modify on spawn");
-			WSlider("Window###BTWindow", &Vars::Backtrack::Window.Value, 1, 200, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WToggle("Unchoke prediction", &Vars::Backtrack::UnchokePrediction.Value);
-			WToggle("Allow forward tracking", &Vars::Backtrack::AllowForward.Value);
+				FColorPicker("Target", &Vars::Colors::Target.Value);
+				FToggle("Aimbot", &Vars::Aimbot::Global::Active.Value);
+				FColorPicker("Aimbot FOV circle", &Vars::Colors::FOVCircle.Value);
+				FKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value);
+				FToggle("Autoshoot## AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value);
+				FColorPicker("Invulnerable color", &Vars::Colors::Invulnerable.Value);
+				FDropdown("Aimbot targets## AimbotTargets", &Vars::Aimbot::Global::AimAt.Value, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Ignored targets## AimbotIgnoredTargets", &Vars::Aimbot::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Dead Ringer", "Friends", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
+				if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 1))
+					FSlider("Ignore cloak", &Vars::Aimbot::Global::IgnoreCloakPercentage.Value, 0, 100, 10, "%d%%", FSlider_Clamp);
+				FSlider("Max targets## AimbotMax", &Vars::Aimbot::Global::MaxTargets.Value, 1, 6, 1, "%d", FSlider_Clamp);
+				if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 6))
+					FSlider("Tick tolerance## AimbotUnsimulatedTolerance", &Vars::Aimbot::Global::TickTolerance.Value, 0, 21, 1, "%d", FSlider_Clamp);
+			} EndSection();
+			if (Section("Crits"))
+			{
+				FToggle("Crit hack", &Vars::CritHack::Active.Value);
+				FToggle("Avoid random", &Vars::CritHack::AvoidRandom.Value);
+				FToggle("Always melee", &Vars::CritHack::AlwaysMelee.Value, FToggle_Middle);
+				FKeybind("Crit key", Vars::CritHack::CritKey.Value);
+			} EndSection();
+			if (Section("Backtrack"))
+			{
+				FToggle("Active", &Vars::Backtrack::Enabled.Value);
+				FDropdown("Backtrack method## HitscanBacktrackMethod", &Vars::Backtrack::Method.Value, { "All", "Last", "Prefer OnShot" });
+				FSlider("Fake latency## BTLatency", &Vars::Backtrack::Latency.Value, 0, g_ConVars.sv_maxunlag->GetFloat() * 1000 - 200, 5, "%d", FSlider_Clamp);
+				FSlider("Fake interp## BTInterp", &Vars::Backtrack::Interp.Value, 0, g_ConVars.sv_maxunlag->GetFloat() * 1000 - 200, 5, "%d", FSlider_Clamp);
+				FSlider("Window## BTWindow", &Vars::Backtrack::Window.Value, 1, 200, 5, "%d", FSlider_Clamp); // might switch to range slider
+				FToggle("Unchoke prediction", &Vars::Backtrack::UnchokePrediction.Value);
+				FToggle("Allow forward tracking", &Vars::Backtrack::AllowForward.Value, FToggle_Middle);
+			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
-				SectionTitle("debug");
-				WSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3);
-				WSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3);
-				WSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1);
-				WSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1);
-				WSlider("new window sub", &Vars::Backtrack::NWindowSub.Value, 0, 200);
-				WSlider("old window sub", &Vars::Backtrack::OWindowSub.Value, 0, 200);
+				if (Section("debug## backtrack"))
+				{
+					FSlider("passthrough offset", &Vars::Backtrack::PassthroughOffset.Value, -3, 3);
+					FSlider("tickset offset", &Vars::Backtrack::TicksetOffset.Value, -3, 3);
+					FSlider("choke pass mod", &Vars::Backtrack::ChokePassMod.Value, -1, 1);
+					FSlider("choke set mod", &Vars::Backtrack::ChokeSetMod.Value, -1, 1);
+					FSlider("new window sub", &Vars::Backtrack::NWindowSub.Value, 0, 200, 5);
+					FSlider("old window sub", &Vars::Backtrack::OWindowSub.Value, 0, 200, 5);
+				} EndSection();
 			}
-		} EndChild();
 
-		/* Column 2 */
-		if (TableColumnChild("AimbotCol2"))
-		{
-			SectionTitle("Hitscan");
-			WToggle("Active ###HitscanAimbotActive", &Vars::Aimbot::Hitscan::Active.Value);
-			WSlider("Aim FOV ###HitscanFOV", &Vars::Aimbot::Hitscan::AimFOV.Value, 0.f, 180.f, "%1.f", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Sort method###HitscanSortMethod", &Vars::Aimbot::Hitscan::SortMethod.Value, { "FOV", "Distance" });
-			WCombo("Aim method###HitscanAimMethod", &Vars::Aimbot::Hitscan::AimMethod.Value, { "Plain", "Smooth", "Silent" });
-			if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
-				WSlider("Smooth factor###HitscanSmoothing", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Tapfire###HitscanTapfire", &Vars::Aimbot::Hitscan::TapFire.Value, { "Off", "Distance", "Always" });
-			if (Vars::Aimbot::Hitscan::TapFire.Value == 1)
-				WSlider("Tap Fire Distance###HitscanTapfireDistance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, "%.0f", ImGuiSliderFlags_AlwaysClamp);
-			MultiFlags({ "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, &Vars::Aimbot::Hitscan::Hitboxes.Value, "Hitboxes###AimbotHitboxScanning");
-			// 1<<1 and 1<<2 are swapped because the enum for hitboxes is weird.
-			WSlider("Point Scale###HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 1.f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-			WToggle("Wait for headshot", &Vars::Aimbot::Hitscan::WaitForHeadshot.Value);
-			WToggle("Wait for charge", &Vars::Aimbot::Hitscan::WaitForCharge.Value);
-			WToggle("Scoped only", &Vars::Aimbot::Hitscan::ScopedOnly.Value);
-			WToggle("Auto scope", &Vars::Aimbot::Hitscan::AutoScope.Value);
-			WToggle("Bodyaim if lethal", &Vars::Aimbot::Global::BAimLethal.Value);
-			WToggle("Extinguish team", &Vars::Aimbot::Hitscan::ExtinguishTeam.Value);
-
-			SectionTitle("Melee");
-			WToggle("Active ###MeleeAimbotActive", &Vars::Aimbot::Melee::Active.Value);
-			WSlider("Aim FOV ###MeleeFOV", &Vars::Aimbot::Melee::AimFOV.Value, 0.f, 180.f, "%1.f", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Aim method###MeleeAimMethod", &Vars::Aimbot::Melee::AimMethod.Value, { "Plain", "Smooth", "Silent" });
-			if (Vars::Aimbot::Melee::AimMethod.Value == 1)
-				WSlider("Smooth factor###MeleeSmoothing", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WToggle("Auto backstab", &Vars::Aimbot::Melee::AutoBackstab.Value);
-			WToggle("Ignore razorback", &Vars::Aimbot::Melee::IgnoreRazorback.Value);
-			WToggle("Swing prediction", &Vars::Aimbot::Melee::SwingPrediction.Value);
-			WToggle("Whip teammates", &Vars::Aimbot::Melee::WhipTeam.Value);
+			/* Column 2 */ // reduce this column some
+			TableNextColumn();
+			if (Section("Hitscan"))
+			{
+				FToggle("Active## HitscanAimbotActive", &Vars::Aimbot::Hitscan::Active.Value);
+				FSlider("Aim FOV## HitscanFOV", &Vars::Aimbot::Hitscan::AimFOV.Value, 1.f, 180.f, 1.f, "%.0f", FSlider_Clamp);
+				FDropdown("Sort method## HitscanSortMethod", &Vars::Aimbot::Hitscan::SortMethod.Value, { "FOV", "Distance" }, {}, FDropdown_Left);
+				FDropdown("Aim method## HitscanAimMethod", &Vars::Aimbot::Hitscan::AimMethod.Value, { "Plain", "Smooth", "Silent" }, {}, FDropdown_Right);
+				if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
+					FSlider("Smooth factor## HitscanSmoothing", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
+				FDropdown("Hitboxes## AimbotHitboxScanning", &Vars::Aimbot::Hitscan::Hitboxes.Value, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi);
+				FSlider("Point scale## HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp);
+				FDropdown("Modifiers", &Vars::Aimbot::Hitscan::Modifiers.Value, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi);
+				if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 0))
+					FSlider("Tapfire distance## HitscanTapfireDistance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, 1.f, "%.0f", FSlider_Clamp);
+			} EndSection();
+			if (Section("Projectile"))
+			{
+				FToggle("Active", &Vars::Aimbot::Projectile::Active.Value);
+				FSlider("Aim FOV", &Vars::Aimbot::Projectile::AimFOV.Value, 1.f, 180.f, 1.f, "%1.f", FSlider_Clamp);
+				FDropdown("Sort method## ProjectileSortMethod", &Vars::Aimbot::Projectile::SortMethod.Value, { "FOV", "Distance" }, {}, FDropdown_Left);
+				FDropdown("Aim method## ProjectileAimMethod", &Vars::Aimbot::Projectile::AimMethod.Value, { "Plain", "Smooth", "Silent" }, {}, FDropdown_Right);
+				if (Vars::Aimbot::Projectile::AimMethod.Value == 1)
+					FSlider("Smooth factor## ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
+				FSlider("Max simulation time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, 0.1f, "%.1fs");
+				FToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
+				FToggle("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value, FToggle_Middle);
+				if (Vars::Aimbot::Projectile::AutoRelease.Value)
+					FSlider("Auto release at", &Vars::Aimbot::Projectile::AutoReleaseAt.Value, 0.f, 100.f, 1.f, "%.0f%%");
+				FDropdown("Predict", &Vars::Aimbot::Projectile::StrafePrediction.Value, { "Air strafing", "Ground strafing" }, {}, FDropdown_Multi);
+				FSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp);
+				FToggle("Splash prediction", &Vars::Aimbot::Projectile::SplashPrediction.Value);
+				FToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value, FToggle_Middle);
+			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
-				SectionTitle("debug");
-				WSlider("swing ticks", &Vars::Aimbot::Melee::SwingTicks.Value, 10, 14);
+				if (Section("debug## projectile"))
+				{
+					FSlider("samples", &Vars::Aimbot::Projectile::iSamples.Value, 3, 66);
+					FSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, 0.5f, "%.1f");
+					FSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, 0.1f, "%.1f");
+					FSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, 0.1f, "%.1f");
+					FDropdown("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top", "lerp to top" });
+					if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1 || Vars::Aimbot::Projectile::HuntermanMode.Value == 2)
+						FSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, 0.5f, "%.1f");
+					if (Vars::Aimbot::Projectile::HuntermanMode.Value == 4)
+						FSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, 1.f, "%.0f%%");
+				} EndSection();
 			}
-		} EndChild();
-
-		/* Column 3 */
-		if (TableColumnChild("AimbotCol3"))
-		{
-			SectionTitle("Projectile");
-			WToggle("Active", &Vars::Aimbot::Projectile::Active.Value);
-			WSlider("Aim FOV", &Vars::Aimbot::Projectile::AimFOV.Value, 0.f, 180.f, "%1.f", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Sort method###ProjectileSortMethod", &Vars::Aimbot::Projectile::SortMethod.Value, { "FOV", "Distance" });
-			WCombo("Aim method###ProjectileAimMethod", &Vars::Aimbot::Projectile::AimMethod.Value, { "Plain", "Smooth", "Silent" });
-			if (Vars::Aimbot::Projectile::AimMethod.Value == 1)
-				WSlider("Smooth factor###ProjectileSmoothing", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WSlider("Prediction Time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, "%.1f");
-			WToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
-			WToggle("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value);
-			if (Vars::Aimbot::Projectile::AutoRelease.Value)
-				WSlider("Auto release at", &Vars::Aimbot::Projectile::AutoReleaseAt.Value, 0.f, 1.f, "%.2f");
-
+			if (Section("Melee"))
+			{
+				FToggle("Active## MeleeAimbotActive", &Vars::Aimbot::Melee::Active.Value);
+				FSlider("Aim FOV## MeleeFOV", &Vars::Aimbot::Melee::AimFOV.Value, 1.f, 180.f, 1.f, "%1.f", FSlider_Clamp);
+				FDropdown("Aim method## MeleeAimMethod", &Vars::Aimbot::Melee::AimMethod.Value, { "Plain", "Smooth", "Silent" });
+				if (Vars::Aimbot::Melee::AimMethod.Value == 1)
+					FSlider("Smooth factor## MeleeSmoothing", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
+				FToggle("Auto backstab", &Vars::Aimbot::Melee::AutoBackstab.Value);
+				FToggle("Ignore razorback", &Vars::Aimbot::Melee::IgnoreRazorback.Value, FToggle_Middle);
+				FToggle("Swing prediction", &Vars::Aimbot::Melee::SwingPrediction.Value);
+				FToggle("Whip teammates", &Vars::Aimbot::Melee::WhipTeam.Value, FToggle_Middle);
+			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
-				SectionTitle("debug");
-				WSlider("samples", &Vars::Aimbot::Projectile::iSamples.Value, 3, 66);
-				WSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, "%.1f");
-				WSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, "%.1f");
-				WSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, "%.1f");
-				WCombo("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top", "lerp to top" });
-				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1 || Vars::Aimbot::Projectile::HuntermanMode.Value == 2)
-					WSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, "%.1f");
-				if (Vars::Aimbot::Projectile::HuntermanMode.Value == 4)
-					WSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, "%.0f%%");
+				if (Section("debug## melee"))
+					FSlider("swing ticks", &Vars::Aimbot::Melee::SwingTicks.Value, 10, 14);
+				EndSection();
 			}
 
-			SectionTitle("Preferences");
-			WToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value);
-			WToggle("Splash Prediction", &Vars::Aimbot::Projectile::SplashPrediction.Value);
-
-			SectionTitle("Strafe Prediction");
-			MultiCombo({ "Air", "Ground" }, { &Vars::Aimbot::Projectile::StrafePredictionAir.Value, &Vars::Aimbot::Projectile::StrafePredictionGround.Value }, "Strafe Prediction");
-			WSlider("Minimum deviation", &Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value, 0, 180);
-			WSlider("Maximum distance", &Vars::Aimbot::Projectile::StrafePredictionMaxDistance.Value, 100.f, 10000.f);
-			WSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0.f, 1.f);
-		} EndChild();
-
-		/* End */
-		EndTable();
-	}
-}
-
-/* Tab: Trigger */
-void CMenu::MenuTrigger()
-{
-	using namespace ImGui;
-	if (BeginTable("TriggerTable", 2))
-	{
-		/* Column 1 */
-		if (TableColumnChild("TriggerCol1"))
+			EndTable();
+		}
+		break;
+	// HvH
+	case 1:
+		if (BeginTable("HvHTable", 2))
 		{
-			SectionTitle("Global");
-			WToggle("Active###TriggerMain", &Vars::Triggerbot::Global::Active.Value);
-			InputKeybind("Trigger key", Vars::Triggerbot::Global::TriggerKey.Value);
-			MultiFlags({ "Invulnerable", "Cloaked", "Friends", "Taunting", "Unsimulated Players", "Disguised" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 }, &Vars::Triggerbot::Global::IgnoreOptions.Value, "Ignored targets###TriggerbotIgnoredTargets");
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Doubletap"))
+			{
+				const int iVar = g_ConVars.sv_maxusrcmdprocessticks->GetInt();
+				const int iTicks = iVar ? iVar : 24;
 
-			SectionTitle("Autouber");
-			WToggle("Active###TriggerUber", &Vars::Triggerbot::Uber::Active.Value);
-			WToggle("Only uber friends", &Vars::Triggerbot::Uber::OnlyFriends.Value);
-			WToggle("Preserve self", &Vars::Triggerbot::Uber::PopLocal.Value);
-			WToggle("Vaccinator resistances", &Vars::Triggerbot::Uber::AutoVacc.Value);
-			if (Vars::Triggerbot::Uber::AutoVacc.Value)
-				MultiCombo({ "Bullet", "Blast", "Fire" }, { &Vars::Triggerbot::Uber::BulletRes.Value, &Vars::Triggerbot::Uber::BlastRes.Value, &Vars::Triggerbot::Uber::FireRes.Value }, "Allowed Resistances");
-			MultiFlags({ "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, &Vars::Triggerbot::Uber::ReactClasses.Value, "Hitscan React Classes###TriggerbotAutoVaccClasses");
-			WSlider("Health left###TriggerUberHealthLeft", &Vars::Triggerbot::Uber::HealthLeft.Value, 1.f, 99.f, "%.0f%%", 1.0f);
-			WSlider("Reaction FOV###TriggerUberReactFoV", &Vars::Triggerbot::Uber::ReactFOV.Value, 0, 90, "%d", 1);
-			WToggle("Activate charge trigger", &Vars::Triggerbot::Uber::VoiceCommand.Value);
+				FToggle("Enabled## DoubleTapEnabled", &Vars::CL_Move::DoubleTap::Enabled.Value);
+				FSlider("Tick limit", &Vars::CL_Move::DoubleTap::TickLimit.Value, 1, iTicks, 1, "%d", FSlider_Clamp);
+				FSlider("Warp rate", &Vars::CL_Move::DoubleTap::WarpRate.Value, 1, iTicks, 1, "%d", FSlider_Clamp);
+				FSlider("Passive recharge", &Vars::CL_Move::DoubleTap::PassiveRecharge.Value, 0, iTicks, 1, "%d", FSlider_Clamp);
+				FDropdown("Mode## DTmode", &Vars::CL_Move::DoubleTap::Mode.Value, { "Always", "Hold", "Toggle" });
+				if (Vars::CL_Move::DoubleTap::Mode.Value != 0)
+					FKeybind("Doubletap key", Vars::CL_Move::DoubleTap::DoubletapKey.Value);
+				FKeybind("Recharge key", Vars::CL_Move::DoubleTap::RechargeKey.Value);
+				FKeybind("Teleport key", Vars::CL_Move::DoubleTap::TeleportKey.Value);
+				FDropdown("Options", &Vars::CL_Move::DoubleTap::Options.Value, { "Anti-warp", "Avoid airborne", "Auto retain", "Auto Recharge", "Recharge While Dead" }, {}, FDropdown_Multi);
+			} EndSection();
+			if (Section("Fakelag"))
+			{
+				FToggle("Enabled## FakelagEnabled", &Vars::CL_Move::FakeLag::Enabled.Value);
+				FDropdown("Mode## FLmode", &Vars::CL_Move::FakeLag::Mode.Value, { "Always", "Hold", "Toggle" });
+				if (Vars::CL_Move::FakeLag::Mode.Value != 0)
+					FKeybind("Fakelag key", Vars::CL_Move::FakeLag::Key.Value);
+				FDropdown("Type## FLtype", &Vars::CL_Move::FakeLag::Type.Value, { "Plain", "Random", "Adaptive" });
 
-			SectionTitle("Auto Jump");
-			InputKeybind("Auto rocket jump", Vars::Triggerbot::Jump::JumpKey.Value);
-			InputKeybind("Auto CTap", Vars::Triggerbot::Jump::CTapKey.Value);
-		} EndChild();
+				switch (Vars::CL_Move::FakeLag::Type.Value)
+				{
+				case 0: FSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, 22, 1, "%d", FSlider_Clamp); break;
+				case 1: FSlider("Random value", &Vars::CL_Move::FakeLag::Min.Value, &Vars::CL_Move::FakeLag::Max.Value, 1, 22, 1, "%d - %d", FSlider_Clamp);
+				}
+				FDropdown("Options", &Vars::CL_Move::FakeLag::Options.Value, { "While Moving", "While Unducking", "While Airborne" }, {}, FDropdown_Multi);
+				FToggle("Unchoke on attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value);
+				FToggle("Retain blastjump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value, FToggle_Middle);
+			} EndSection();
 
-		/* Column 2 */
-		if (TableColumnChild("TriggerCol2"))
+			if (Section("Speedhack"))
+			{
+				FToggle("Speedhack", &Vars::CL_Move::SpeedEnabled.Value);
+				if (Vars::CL_Move::SpeedEnabled.Value)
+					FSlider("SpeedHack factor", &Vars::CL_Move::SpeedFactor.Value, 1, 50, 1);
+			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Anti Aim"))
+			{
+				FToggle("Active", &Vars::AntiHack::AntiAim::Active.Value);
+				FKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value);
+				FDropdown("Real pitch", &Vars::AntiHack::AntiAim::PitchReal.Value, { "None", "Up", "Down", "Zero" }, {}, FDropdown_Left);
+				FDropdown("Fake pitch", &Vars::AntiHack::AntiAim::PitchFake.Value, { "None", "Up", "Down" }, {}, FDropdown_Right);
+				FDropdown("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }, {}, FDropdown_Left);
+				FDropdown("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }, {}, FDropdown_Right);
+				if (Vars::AntiHack::AntiAim::YawFake.Value == 5 || Vars::AntiHack::AntiAim::YawReal.Value == 5)
+					FSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, 1.f, "%.0f", 0);
+				FDropdown("Real offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }, {}, FDropdown_Left);
+				FDropdown("Fake offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }, {}, FDropdown_Right);
+				if (Vars::AntiHack::AntiAim::RealYawMode.Value != 1)
+					FSlider("Real offset## RealYawOffset", &Vars::AntiHack::AntiAim::RealYawOffset.Value, -180.f, 180.f, 5.f, "%.0f", FSlider_Left);
+				if (Vars::AntiHack::AntiAim::FakeYawMode.Value != 1)
+					FSlider("Fake offset## FakeYawOffset", &Vars::AntiHack::AntiAim::FakeYawOffset.Value, -180.f, 180.f, 5.f, "%.0f", FSlider_Right);
+				FToggle("Anti-overlap", &Vars::AntiHack::AntiAim::AntiOverlap.Value);
+				FToggle("Hide pitch on shot", &Vars::AntiHack::AntiAim::InvalidShootPitch.Value, FToggle_Middle);
+			} EndSection();
+			if (Section("Auto Peek"))
+			{
+				FKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey.Value);
+				FSlider("Max distance", &Vars::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, 10.f); // probably get rid of this, doesn't work well
+				FToggle("Free move", &Vars::CL_Move::AutoPeekFree.Value);
+			} EndSection();
+			if (Section("Cheater Detection"))
+			{
+				FToggle("Enabled## CheaterDetectionEnabled", &Vars::Misc::CheaterDetection::Enabled.Value);
+				if (Vars::Misc::CheaterDetection::Enabled.Value)
+				{
+					FDropdown("Detection methods## CheaterDetectionMethods", &Vars::Misc::CheaterDetection::Methods.Value, { "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" }, {}, FDropdown_Multi);
+					FDropdown("Ignore conditions## CheaterDetectionIgnoreMethods", &Vars::Misc::CheaterDetection::Protections.Value, { "Double Scans", "Lagging Client", "Timing Out" }, {}, FDropdown_Multi);
+					FSlider("Suspicion gate", &Vars::Misc::CheaterDetection::SuspicionGate.Value, 5, 50, 1);
+					if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 1))
+						FSlider("Analytical high score mult", &Vars::Misc::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, 0.1f, "%.1f");
+					if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 3 | 1 << 2))
+						FSlider("Packet manipulation gate", &Vars::Misc::CheaterDetection::PacketManipGate.Value, 1, 22, 1);
+					if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 4))
+					{
+						FSlider("BHop sensitivity", &Vars::Misc::CheaterDetection::BHopMaxDelay.Value, 1, 5, 1);
+						FSlider("BHop minimum detections", &Vars::Misc::CheaterDetection::BHopDetectionsRequired.Value, 2, 15, 1);
+					}
+					if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 5))
+					{
+						FSlider("Minimum aim-flick", &Vars::Misc::CheaterDetection::MinimumFlickDistance.Value, 5.f, 30.f, 0.1f, "%.1f");
+						FSlider("Maximum post flick noise", &Vars::Misc::CheaterDetection::MaximumNoise.Value, 5.f, 15.f, 0.1f, "%.1f");
+					}
+					if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 7))
+					{
+						FSlider("Maximum scaled aimbot FOV", &Vars::Misc::CheaterDetection::MaxScaledAimbotFoV.Value, 5.f, 30.f, 0.1f, "%.1f");
+						FSlider("Minimum aimbot FOV", &Vars::Misc::CheaterDetection::MinimumAimbotFoV.Value, 5.f, 30.f, 0.1f, "%.1f");
+					}
+				}
+			} EndSection();
+			if (Section("Resolver"))
+			{
+				FToggle("Enabled## ResolverEnabled", &Vars::AntiHack::Resolver::Resolver.Value);
+				if (Vars::AntiHack::Resolver::Resolver.Value)
+					FToggle("Ignore in-air", &Vars::AntiHack::Resolver::IgnoreAirborne.Value, FToggle_Middle);
+			} EndSection();
+
+			EndTable();
+		}
+		break;
+	// Trigger
+	case 2:
+		if (BeginTable("TriggerTable", 2))
 		{
-			SectionTitle("Auto Detonate");
-			WToggle("Active###TriggerDet", &Vars::Triggerbot::Detonate::Active.Value);
-			MultiFlags({ "Players", "Sentries", "Dispensers", "Teleporters", "NPCs", "Bombs", "Stickies" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 }, &Vars::Triggerbot::Detonate::DetonateTargets.Value, "Targets###TriggerbotDetonateTargets");
-			WToggle("Explode stickies###TriggerSticky", &Vars::Triggerbot::Detonate::Stickies.Value);
-			WToggle("Detonate flares###TriggerFlares", &Vars::Triggerbot::Detonate::Flares.Value);
-			WSlider("Detonation radius###TriggerDetRadius", &Vars::Triggerbot::Detonate::RadiusScale.Value, 0.f, 1.f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Global"))
+			{
+				FToggle("Active## TriggerMain", &Vars::Auto::Global::Active.Value);
+				FKeybind("Trigger key", Vars::Auto::Global::AutoKey.Value);
+				FDropdown("Ignored targets## IgnoredTargets", &Vars::Auto::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Friends", "Taunting", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi);
+			} EndSection();
+			if (Section("Autouber"))
+			{
+				FToggle("Active## TriggerUber", &Vars::Auto::Uber::Active.Value);
+				FToggle("Only uber friends", &Vars::Auto::Uber::OnlyFriends.Value);
+				FToggle("Preserve self", &Vars::Auto::Uber::PopLocal.Value);
+				FDropdown("Auto vaccinator", &Vars::Auto::Uber::AutoVaccinator.Value, { "Bullet", "Blast", "Fire" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Bullet react classes## AutoVaccClasses", &Vars::Auto::Uber::ReactClasses.Value, { "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, FDropdown_Multi | FDropdown_Right);
+				FSlider("Health left## TriggerUberHealthLeft", &Vars::Auto::Uber::HealthLeft.Value, 1.f, 99.f, 1.f, "%.0f%%", 1.0f);
+				FSlider("Reaction FOV## TriggerUberReactFoV", &Vars::Auto::Uber::ReactFOV.Value, 0, 90, 1, "%d", 1);
+				FToggle("Activate charge trigger", &Vars::Auto::Uber::VoiceCommand.Value);
+			} EndSection();
+			if (Section("Auto Jump"))
+			{
+				FKeybind("Auto rocket jump", Vars::Auto::Jump::JumpKey.Value);
+				FKeybind("Auto CTap", Vars::Auto::Jump::CTapKey.Value);
+			} EndSection();
+			if (Vars::Debug::Info.Value)
+			{
+				if (Section("debug"))
+				{
+					FSlider("timing offset", &Vars::Auto::Jump::TimingOffset.Value, -1, 1);
+					FSlider("apply timing offset above", &Vars::Auto::Jump::ApplyAbove.Value, 0, 8);
+				}
+				EndSection();
+			}
 
-			SectionTitle("Autoblast");
-			WToggle("Active###TriggreAirblast", &Vars::Triggerbot::Blast::Active.Value);
-			WToggle("Rage airblast###TriggerAirRage", &Vars::Triggerbot::Blast::Rage.Value);
-			WToggle("Silent###triggerblastsilent", &Vars::Triggerbot::Blast::Silent.Value);
-			WToggle("Extinguish Players###TriggerExtinguishPlayers", &Vars::Triggerbot::Blast::ExtinguishPlayers.Value);
-			WToggle("Disable on Attack###TriggerDisableOnAttack", &Vars::Triggerbot::Blast::DisableOnAttack.Value);
-			WSlider("FOV####AirBlastFov", &Vars::Triggerbot::Blast::Fov.Value, 0.f, 90.f, "%d", ImGuiSliderFlags_AlwaysClamp);
-		} EndChild();
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Auto Detonate"))
+			{
+				FToggle("Active## TriggerDet", &Vars::Auto::Detonate::Active.Value);
+				FDropdown("Targets## TriggerbotDetonateTargets", &Vars::Auto::Detonate::DetonateTargets.Value, { "Players", "Sentries", "Dispensers", "Teleporters", "NPCs", "Bombs", "Stickies" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 }, FDropdown_Multi);
+				FToggle("Stickies## TriggerSticky", &Vars::Auto::Detonate::Stickies.Value);
+				FToggle("Flares## TriggerFlares", &Vars::Auto::Detonate::Flares.Value, FToggle_Middle);
+				FSlider("Detonation radius## TriggerDetRadius", &Vars::Auto::Detonate::RadiusScale.Value, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Clamp);
+			} EndSection();
+			if (Section("Autoblast"))
+			{
+				FToggle("Active## TriggreAirblast", &Vars::Auto::Airblast::Active.Value);
+				FToggle("Rage## TriggerAirRage", &Vars::Auto::Airblast::Rage.Value);
+				FToggle("Silent## triggerblastsilent", &Vars::Auto::Airblast::Silent.Value);
+				FToggle("Extinguish players## TriggerExtinguishPlayers", &Vars::Auto::Airblast::ExtinguishPlayers.Value);
+				FToggle("Disable on attack## TriggerDisableOnAttack", &Vars::Auto::Airblast::DisableOnAttack.Value);
+				FSlider("FOV## AirBlastFov", &Vars::Auto::Airblast::Fov.Value, 0, 90, 1, "%d", FSlider_Clamp);
+			} EndSection();
 
-		EndTable();
+			EndTable();
+		}
 	}
 }
 
@@ -374,726 +410,516 @@ void CMenu::MenuVisuals()
 
 	switch (CurrentVisualsTab)
 	{
-	// Visuals: ESP
-		case VisualsTab::ESP:
+	// ESP
+	case 0:
+		if (BeginTable("VisualsESPTable", 2))
 		{
-			if (BeginTable("VisualsESPTable", 2))
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("ESP"))
 			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsESPCol1"))
+				FToggle("Active## EnableESP", &Vars::ESP::Main::Active.Value);
+				if (Vars::ESP::Main::EnableTeamEnemyColors.Value)
 				{
-					SectionTitle("ESP");
-					WToggle("Active###EnableESP", &Vars::ESP::Main::Active.Value);
-					WToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value);
-					if (Vars::ESP::Main::EnableTeamEnemyColors.Value)
-					{
-						ColorPickerL("Enemy color", Vars::Colors::Enemy.Value);
-						ColorPickerL("Team color", Vars::Colors::Team.Value, 1);
-					}
-					else
-					{
-						ColorPickerL("RED Team color", Vars::Colors::TeamRed.Value);
-						ColorPickerL("BLU Team color", Vars::Colors::TeamBlu.Value, 1);
-					}
-					WToggle("Dormant sound ESP", &Vars::ESP::Main::DormantSoundESP.Value);
-					if (Vars::ESP::Main::DormantSoundESP.Value)
-						WSlider("Dormant Decay Time###GlobalDormantDecayTime", &Vars::ESP::Main::DormantTime.Value, 0.015f, 5.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
-
-					SectionTitle("Player");
-					WToggle("Active###PlayerESP", &Vars::ESP::Players::Active.Value);
-					WToggle("Ignore local###SelfESP", &Vars::ESP::Players::IgnoreLocal.Value); ColorPickerL("Local color", Vars::Colors::Local.Value);
-					WToggle("Ignore team###IgnoreTeamESPp", &Vars::ESP::Players::IgnoreTeam.Value); ColorPickerL("Friend color", Vars::Colors::Friend.Value);
-					WToggle("Ignore cloaked###IgnoreCloakESPp", &Vars::ESP::Players::IgnoreCloaked.Value); ColorPickerL("Cloaked color", Vars::Colors::Cloak.Value);
-					WToggle("Name###PlayerNameESP", &Vars::ESP::Players::Name.Value);
-					WToggle("Health bar###PlayerHealthBar", &Vars::ESP::Players::HealthBar.Value);
-					ColorPickerL("Health Bar Top", Vars::Colors::HealthBar.Value.StartColor, 1);
-					ColorPickerL("Health Bar Bottom", Vars::Colors::HealthBar.Value.EndColor);
-					WToggle("Health text###PlayerHealthText", &Vars::ESP::Players::HealthText.Value);
-					ColorPickerL("Overheal color", Vars::Colors::Overheal.Value);
-					WToggle("Uber bar###PlayerUberBar", &Vars::ESP::Players::UberBar.Value);
-					ColorPickerL("Uber Bar", Vars::Colors::UberBar.Value);
-					WToggle("Uber text###PlayerUberText", &Vars::ESP::Players::UberText.Value);
-					WToggle("Class icon###PlayerClassIcon", &Vars::ESP::Players::ClassIcon.Value);
-					WToggle("Class text###PlayerClassText", &Vars::ESP::Players::ClassText.Value);
-					WToggle("Weapon icon", &Vars::ESP::Players::WeaponIcon.Value);
-					WToggle("Weapon text", &Vars::ESP::Players::WeaponText.Value);
-					ColorPickerL("Weapon color", Vars::Colors::Weapon.Value);
-					WToggle("Distance", &Vars::ESP::Players::Distance.Value);
-					WToggle("Box###PlayerBoxESP", &Vars::ESP::Players::Box.Value);
-					WToggle("Skeleton###PlayerBones", &Vars::ESP::Players::Bones.Value);
-					WToggle("Priority Text", &Vars::ESP::Players::PriorityText.Value);
-					MultiCombo({ "Buffs", "Debuffs", "Other Conditions", "Lag Compensation", "KD", "Ping" },
-						{ &Vars::ESP::Players::Conditions::Buffs.Value, &Vars::ESP::Players::Conditions::Debuffs.Value, &Vars::ESP::Players::Conditions::Other.Value, 
-						  &Vars::ESP::Players::Conditions::LagComp.Value, &Vars::ESP::Players::Conditions::KD.Value, &Vars::ESP::Players::Conditions::Ping.Value },
-						  "Condition List" );
-					WSlider("ESP alpha###PlayerESPAlpha", &Vars::ESP::Players::Alpha.Value, 0.01f, 1.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-				} EndChild();
-
-				/* Column 2 */
-				if (TableColumnChild("VisualsESPCol2"))
+					FColorPicker("Enemy color", &Vars::Colors::Enemy.Value);
+					FColorPicker("Team color", &Vars::Colors::Team.Value, 1);
+				}
+				else
 				{
-					SectionTitle("Building");
-					WToggle("Active###BuildingESP", &Vars::ESP::Buildings::Active.Value);
-					WToggle("Ignore team buildings###BuildingESPIgnoreTeammates", &Vars::ESP::Buildings::IgnoreTeam.Value);
-					WToggle("Name###BuildingNameESP", &Vars::ESP::Buildings::Name.Value);
-					WToggle("Health bar###Buildinghelathbar", &Vars::ESP::Buildings::HealthBar.Value);
-					WToggle("Health text###buildinghealth", &Vars::ESP::Buildings::HealthText.Value);
-					WToggle("Distance", &Vars::ESP::Buildings::Distance.Value);
-					WToggle("Box###PBuildingBoxESP", &Vars::ESP::Buildings::Box.Value);
-					WToggle("Owner###Buildingowner", &Vars::ESP::Buildings::Owner.Value);
-					WToggle("Level###Buildinglevel", &Vars::ESP::Buildings::Level.Value);
-					WToggle("Condition###Buildingconditions", &Vars::ESP::Buildings::Condition.Value);
-					WSlider("ESP alpha###BuildingESPAlpha", &Vars::ESP::Buildings::Alpha.Value, 0.01f, 1.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+					FColorPicker("RED Team color", &Vars::Colors::TeamRed.Value);
+					FColorPicker("BLU Team color", &Vars::Colors::TeamBlu.Value, 1);
+				}
+				FToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value);
+				FToggle("Dormant sound ESP", &Vars::ESP::Main::DormantSoundESP.Value);
+				if (Vars::ESP::Main::DormantSoundESP.Value)
+					FSlider("Dormant Decay Time## GlobalDormantDecayTime", &Vars::ESP::Main::DormantTime.Value, 0.015f, 5.0f, 0.1f, "%.1f", ImGuiSliderFlags_Logarithmic);
+			} EndSection();
+			if (Section("Player"))
+			{
+				FToggle("Active## PlayerESP", &Vars::ESP::Players::Active.Value);
+				FColorPicker("Local color", &Vars::Colors::Local.Value, 1); FColorPicker("Friend color", &Vars::Colors::Friend.Value);
+				FToggle("Ignore local## SelfESP", &Vars::ESP::Players::IgnoreLocal.Value);
+				FToggle("Ignore team## IgnoreTeamESP", &Vars::ESP::Players::IgnoreTeam.Value, FToggle_Middle);
+				FColorPicker("Cloaked color", &Vars::Colors::Cloak.Value);
+				FToggle("Ignore cloaked## IgnoreCloakESP", &Vars::ESP::Players::IgnoreCloaked.Value);
+				FToggle("Name## PlayerNameESP", &Vars::ESP::Players::Name.Value);
+				FColorPicker("Health Bar Top", &Vars::Colors::HealthBar.Value.StartColor, 2); FColorPicker("Health Bar Bottom", &Vars::Colors::HealthBar.Value.EndColor, 1); FColorPicker("Overheal color", &Vars::Colors::Overheal.Value);
+				FToggle("Health bar## PlayerHealthBar", &Vars::ESP::Players::HealthBar.Value);
+				FToggle("Health text## PlayerHealthText", &Vars::ESP::Players::HealthText.Value, FToggle_Middle);
+				FColorPicker("Uber Bar", &Vars::Colors::UberBar.Value);
+				FToggle("Uber bar## PlayerUberBar", &Vars::ESP::Players::UberBar.Value);
+				FToggle("Uber text## PlayerUberText", &Vars::ESP::Players::UberText.Value, FToggle_Middle);
+				FToggle("Class icon## PlayerClassIcon", &Vars::ESP::Players::ClassIcon.Value);
+				FToggle("Class text## PlayerClassText", &Vars::ESP::Players::ClassText.Value, FToggle_Middle);
+				FColorPicker("Weapon color", &Vars::Colors::Weapon.Value);
+				FToggle("Weapon icon", &Vars::ESP::Players::WeaponIcon.Value);
+				FToggle("Weapon text", &Vars::ESP::Players::WeaponText.Value, FToggle_Middle);
+				FToggle("Distance", &Vars::ESP::Players::Distance.Value);
+				FToggle("Box## PlayerBoxESP", &Vars::ESP::Players::Box.Value);
+				FToggle("Skeleton## PlayerBones", &Vars::ESP::Players::Bones.Value, FToggle_Middle);
+				FToggle("Priority Text", &Vars::ESP::Players::PriorityText.Value);
+				FDropdown("Conditions", &Vars::ESP::Players::Conditions.Value, { "Buffs", "Debuffs", "Other Conditions", "Lag Compensation", "KD", "Ping" }, {}, FDropdown_Multi);
+				FSlider("Alpha## PlayerESPAlpha", &Vars::ESP::Players::Alpha.Value, 0.01f, 1.0f, 0.1f, "%.1f", FSlider_Clamp);
+			} EndSection();
 
-					SectionTitle("World");
-					WToggle("Active###WorldESP", &Vars::ESP::World::Active.Value);
-					WToggle("Healthpack###WorldESPHealthpack", &Vars::ESP::World::Health.Value); ColorPickerL("Healthpack color", Vars::Colors::Health.Value);
-					WToggle("Ammopack###WorldESPAmmopack", &Vars::ESP::World::Ammo.Value); ColorPickerL("Ammopack color", Vars::Colors::Ammo.Value);
-					WToggle("NPC###WorldESPNPC", &Vars::ESP::World::NPC.Value); ColorPickerL("NPC color", Vars::Colors::NPC.Value);
-					WToggle("Bombs###WorldESPBomb", &Vars::ESP::World::Bomb.Value); ColorPickerL("Bomb Color", Vars::Colors::Bomb.Value);
-					WToggle("Spellbook###WorldESPSpellbook", &Vars::ESP::World::Spellbook.Value); ColorPickerL("Spellbook Color", Vars::Colors::Spellbook.Value);
-					WToggle("Gargoyle###WorldESPGargoyle", &Vars::ESP::World::Gargoyle.Value); ColorPickerL("Gargoyle Color", Vars::Colors::Gargoyle.Value);
-					WSlider("ESP alpha###WordlESPAlpha", &Vars::ESP::World::Alpha.Value, 0.01f, 1.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
-				} EndChild();
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Building"))
+			{
+				FToggle("Active## BuildingESP", &Vars::ESP::Buildings::Active.Value);
+				FToggle("Ignore team## BuildingESPIgnoreTeammates", &Vars::ESP::Buildings::IgnoreTeam.Value);
+				FToggle("Name## BuildingNameESP", &Vars::ESP::Buildings::Name.Value);
+				FToggle("Health bar## Buildinghelathbar", &Vars::ESP::Buildings::HealthBar.Value);
+				FToggle("Health text## buildinghealth", &Vars::ESP::Buildings::HealthText.Value, FToggle_Middle);
+				FToggle("Distance", &Vars::ESP::Buildings::Distance.Value);
+				FToggle("Box## PBuildingBoxESP", &Vars::ESP::Buildings::Box.Value, FToggle_Middle);
+				FToggle("Owner## Buildingowner", &Vars::ESP::Buildings::Owner.Value);
+				FToggle("Level## Buildinglevel", &Vars::ESP::Buildings::Level.Value, FToggle_Middle);
+				FToggle("Condition## Buildingconditions", &Vars::ESP::Buildings::Condition.Value);
+				FSlider("Alpha## BuildingESPAlpha", &Vars::ESP::Buildings::Alpha.Value, 0.01f, 1.0f, 0.1f, "%.1f", FSlider_Clamp);
+			} EndSection();
+			if (Section("World"))
+			{
+				FToggle("Active## WorldESP", &Vars::ESP::World::Active.Value);
+				FColorPicker("Healthpack color", &Vars::Colors::Health.Value);
+				FToggle("Healthpack## WorldESPHealthpack", &Vars::ESP::World::Health.Value);
+				FColorPicker("Ammopack color", &Vars::Colors::Ammo.Value);
+				FToggle("Ammopack## WorldESPAmmopack", &Vars::ESP::World::Ammo.Value);
+				FColorPicker("NPC color", &Vars::Colors::NPC.Value);
+				FToggle("NPC## WorldESPNPC", &Vars::ESP::World::NPC.Value);
+				FColorPicker("Bomb color", &Vars::Colors::Bomb.Value);
+				FToggle("Bombs## WorldESPBomb", &Vars::ESP::World::Bomb.Value);
+				FColorPicker("Spellbook color", &Vars::Colors::Spellbook.Value);
+				FToggle("Spellbook## WorldESPSpellbook", &Vars::ESP::World::Spellbook.Value);
+				FColorPicker("Gargoyle color", &Vars::Colors::Gargoyle.Value);
+				FToggle("Gargoyle## WorldESPGargoyle", &Vars::ESP::World::Gargoyle.Value);
+				FSlider("Alpha## WorldESPAlpha", &Vars::ESP::World::Alpha.Value, 0.01f, 1.0f, 0.1f, "%.1f", FSlider_Clamp);
+			} EndSection();
 
-				EndTable();
-			}
-			break;
+			EndTable();
 		}
-
-		// Visuals: Chams
-		case VisualsTab::Chams:
+		break;
+	// Chams
+	case 1:
+		if (BeginTable("VisualsChamsTable", 2))
 		{
-			if (BeginTable("VisualsChamsTable", 2))
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Chams"))
+				FToggle("Active## ChamsMasterSwitch", &Vars::Chams::Active.Value);
+			EndSection();
+
+			if (Section("Player"))
 			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsChamsCol1"))
-				{
-					SectionTitle("Chams");
-					WToggle("Active###ChamsMasterSwitch", &Vars::Chams::Active.Value);
-
-					SectionTitle("Player");
-					static std::vector chamOptions{
-						"Local",
-						"FakeAngles",
-						"Friends",
-						"Enemies",
-						"Teammates",
-						"Target",
-						"Backtrack",
-						"Weapon",
-						"Hands",
-						"Ragdoll"
-					};
-					static int currentSelected = 0;
-					Chams_t& currentStruct = ([&]() -> Chams_t&
-						{
-							switch (currentSelected)
-							{
-							case 0: return Vars::Chams::Players::Local.Value;
-							case 1: return Vars::Chams::Players::FakeAng.Value;
-							case 2: return Vars::Chams::Players::Friend.Value;
-							case 3: return Vars::Chams::Players::Enemy.Value;
-							case 4: return Vars::Chams::Players::Team.Value;
-							case 5: return Vars::Chams::Players::Target.Value;
-							case 6: return Vars::Chams::Players::Backtrack.Value;
-							case 7: return Vars::Chams::Players::Weapon.Value;
-							case 8: return Vars::Chams::Players::Hands.Value;
-							case 9: return Vars::Chams::Players::Ragdoll.Value;
-							}
-
-							return Vars::Chams::Players::Local.Value;
-						}());
-
-					WCombo("Config", &currentSelected, chamOptions);
+				static std::vector chamOptions{
+					"Local",
+					"FakeAngles",
+					"Friends",
+					"Enemies",
+					"Teammates",
+					"Target",
+					"Backtrack",
+					"Weapon",
+					"Hands",
+					"Ragdoll"
+				};
+				static int currentSelected = 0;
+				Chams_t& currentStruct = ([&]() -> Chams_t&
 					{
-						if (currentSelected != 7 && currentSelected != 8) // has to be done for some reason, otherwise won't work
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.IgnoreZ }, "Options");
-
-						MaterialCombo("Base Material", &currentStruct.Material, "Original");
-						ColorPickerL("Base Color", currentStruct.Color);
-						MaterialCombo("Overlay Material", &currentStruct.OverlayMaterial);
-						ColorPickerL("Overlay Color", currentStruct.OverlayColor);
-
-						if (currentSelected == 6)
-							WToggle("Only last", &Vars::Backtrack::LastOnly.Value);
-					}
-				} EndChild();
-
-				/* Column 2 */
-				if (TableColumnChild("VisualsChamsCol2"))
-				{
-					{
-						SectionTitle("Building");
-						static std::vector chamOptions{
-							"Local",
-							"Friends",
-							"Enemies",
-							"Teammates",
-							"Target"
-						};
-						static int currentSelected = 0;
-						Chams_t& currentStruct = ([&]() -> Chams_t&
-							{
-								switch (currentSelected)
-								{
-								case 0: return Vars::Chams::Buildings::Local.Value;
-								case 1: return Vars::Chams::Buildings::Friend.Value;
-								case 2: return Vars::Chams::Buildings::Enemy.Value;
-								case 3: return Vars::Chams::Buildings::Team.Value;
-								case 4: return Vars::Chams::Buildings::Target.Value;
-								}
-
-								return Vars::Chams::Buildings::Local.Value;
-							}());
-
-						WCombo("Config###BuildingConfig", &currentSelected, chamOptions);
+						switch (currentSelected)
 						{
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.IgnoreZ }, "Options###BuildingOptions");
-
-							MaterialCombo("Base Material###BuildingBase", &currentStruct.Material, "Original");
-							ColorPickerL("Base Color###BuildingBaseColor", currentStruct.Color);
-							MaterialCombo("Overlay Material###BuildingOverlay", &currentStruct.OverlayMaterial);
-							ColorPickerL("Overlay Color###BuildingOverlayColor", currentStruct.OverlayColor);
+						case 0: return Vars::Chams::Players::Local.Value;
+						case 1: return Vars::Chams::Players::FakeAng.Value;
+						case 2: return Vars::Chams::Players::Friend.Value;
+						case 3: return Vars::Chams::Players::Enemy.Value;
+						case 4: return Vars::Chams::Players::Team.Value;
+						case 5: return Vars::Chams::Players::Target.Value;
+						case 6: return Vars::Chams::Players::Backtrack.Value;
+						case 7: return Vars::Chams::Players::Weapon.Value;
+						case 8: return Vars::Chams::Players::Hands.Value;
+						case 9: return Vars::Chams::Players::Ragdoll.Value;
 						}
-					}
+
+						return Vars::Chams::Players::Local.Value;
+					}());
+
+				FDropdown("Config", &currentSelected, chamOptions);
+				
+				if (currentSelected != 7 && currentSelected != 8) 
+				{
+					// hide for viewmodel stuff
+					// has to be done for some reason, otherwise won't work
+					FToggle("Active", &currentStruct.ChamsActive);
+					FToggle("Obstructed", &currentStruct.IgnoreZ, FToggle_Middle);
+				}
+
+				FMDropdown("Base material", &currentStruct.Material, "Original", FSDropdown_Left, 1);
+				FColorPicker("Base color", &currentStruct.Color, 0, FColorPicker_Dropdown);
+				FMDropdown("Overlay material", &currentStruct.OverlayMaterial, "None", FSDropdown_Right, 1);
+				FColorPicker("Overlay color", &currentStruct.OverlayColor, 0, FColorPicker_Dropdown);
+
+				if (currentSelected == 6)
+					FToggle("Only last", &Vars::Backtrack::LastOnly.Value);
+			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Building"))
+			{
+				static std::vector chamOptions{
+					"Local",
+					"Friends",
+					"Enemies",
+					"Teammates",
+					"Target"
+				};
+				static int currentSelected = 0;
+				Chams_t& currentStruct = ([&]() -> Chams_t&
 					{
-						SectionTitle("World");
-						static std::vector chamOptions{
-							"Healthpacks",
-							"Ammopacks",
-							"Team Projectiles",
-							"Enemy Projectiles",
-						};
-						static int currentSelected = 0;
-						Chams_t& currentStruct = ([&]() -> Chams_t&
-							{
-								switch (currentSelected)
-								{
-								case 0: return Vars::Chams::World::Health.Value;
-								case 1: return Vars::Chams::World::Ammo.Value;
-								case 2: return Vars::Chams::World::Projectiles::Team.Value;
-								case 3: return Vars::Chams::World::Projectiles::Enemy.Value;
-								}
-
-								return Vars::Chams::World::Health.Value;
-							}());
-
-						WCombo("Config###WorldConfig", &currentSelected, chamOptions);
+						switch (currentSelected)
 						{
-							MultiCombo({ "Active", "Obstructed" }, { &currentStruct.ChamsActive, &currentStruct.IgnoreZ }, "Options###WorldOptions");
-
-							MaterialCombo("Base Material###WorldBase", &currentStruct.Material, "Original");
-							ColorPickerL("Base Color###WorldBaseColor", currentStruct.Color);
-							MaterialCombo("Overlay Material###WorldOverlay", &currentStruct.OverlayMaterial);
-							ColorPickerL("Overlay Color###WorldOverlayColor", currentStruct.OverlayColor);
+						case 0: return Vars::Chams::Buildings::Local.Value;
+						case 1: return Vars::Chams::Buildings::Friend.Value;
+						case 2: return Vars::Chams::Buildings::Enemy.Value;
+						case 3: return Vars::Chams::Buildings::Team.Value;
+						case 4: return Vars::Chams::Buildings::Target.Value;
 						}
-					}
-				} EndChild();
 
-				EndTable();
-			}
-			break;
-		}
+						return Vars::Chams::Buildings::Local.Value;
+					}());
 
-		// Visuals: Glow
-		case VisualsTab::Glow:
-		{
-			if (BeginTable("VisualsGlowTable", 2))
+				FDropdown("Config## BuildingConfig", &currentSelected, chamOptions);
+				
+				FToggle("Active## BuildingActive", &currentStruct.ChamsActive);
+				FToggle("Obstructed## BuildingObstructed", &currentStruct.IgnoreZ, FToggle_Middle);
+
+				FMDropdown("Base material## BuildingBase", &currentStruct.Material, "Original", FSDropdown_Left, 1);
+				FColorPicker("Base color## BuildingBaseColor", &currentStruct.Color, 0, FColorPicker_Dropdown);
+				FMDropdown("Overlay material## BuildingOverlay", &currentStruct.OverlayMaterial, "None", FSDropdown_Right, 1);
+				FColorPicker("Overlay color## BuildingOverlayColor", &currentStruct.OverlayColor, 0, FColorPicker_Dropdown);
+			} EndSection();
+			if (Section("World"))
 			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsGlowCol1"))
-				{
-					SectionTitle("Glow");
-					WToggle("Active###GlowActive", &Vars::Glow::Main::Active.Value);
-					WCombo("Glow Type###GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" });
-					WSlider("Glow scale", &Vars::Glow::Main::Scale.Value, 1, 20, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-					SectionTitle("Player");
-					WToggle("Active###PlayerGlow", &Vars::Glow::Players::Active.Value);
-					WToggle("Self glow###SelfGlow", &Vars::Glow::Players::ShowLocal.Value);
-					WCombo("Ignore team###IgnoreTeamGlowp", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" });
-
-					SectionTitle("Building");
-					WToggle("Active###BuildiongGlow", &Vars::Glow::Buildings::Active.Value);
-					WToggle("Ignore team buildings###buildingglowignoreteams", &Vars::Glow::Buildings::IgnoreTeammates.Value);
-				} EndChild();
-
-				/* Column 2 */
-				if (TableColumnChild("VisualsGlowCol2"))
-				{
-					SectionTitle("World");
-					WToggle("Active###WorldGlow", &Vars::Glow::World::Active.Value);
-					WToggle("Healthpacks###worldhealthpackglow", &Vars::Glow::World::Health.Value);
-					WToggle("Ammopacks###worldammopackglow", &Vars::Glow::World::Ammo.Value);
-					WToggle("NPCs###worldnpcs", &Vars::Glow::World::NPCs.Value);
-					WToggle("Bombs###worldbombglow", &Vars::Glow::World::Bombs.Value);
-					WToggle("Spellbook###worldspellbookglow", &Vars::Glow::World::Spellbook.Value);
-					WToggle("Gargoyle###worldgargoyleglow", &Vars::Glow::World::Gargoyle.Value);
-					WCombo("Projectile glow###teamprojectileglow", &Vars::Glow::World::Projectiles.Value, { "Off", "All", "Only enemies" });
-				} EndChild();
-
-				EndTable();
-			}
-			break;
-		}
-
-		// Visuals: Misc
-		case VisualsTab::Misc:
-		{
-			if (BeginTable("VisualsMiscTable", 2))
-			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsMiscCol1"))
-				{
-					SectionTitle("UI");
-					WSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 30, 150, "%d");
-					WSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 30, 150, "%d");
-					MultiCombo({ "Scope", "Disguises", "Taunts", "Interpolation", "View Punch", "MOTD", "Screen Effects", "Angle Forcing", "Ragdolls", "Screen Overlays", "DSP", "Convar Queries" }, { &Vars::Visuals::RemoveScope.Value, &Vars::Visuals::RemoveDisguises.Value, &Vars::Visuals::RemoveTaunts.Value, &Vars::Misc::DisableInterpolation.Value, &Vars::Visuals::RemovePunch.Value, &Vars::Visuals::RemoveMOTD.Value, &Vars::Visuals::RemoveScreenEffects.Value, &Vars::Visuals::PreventForcedAngles.Value, &Vars::Visuals::RemoveRagdolls.Value, &Vars::Visuals::RemoveScreenOverlays.Value, &Vars::Visuals::RemoveDSP.Value, &Vars::Visuals::RemoveConvarQueries.Value}, "Removals");
-					WToggle("Reveal Scoreboard", &Vars::Visuals::RevealScoreboard.Value);
-					WToggle("Scoreboard Colours", &Vars::Visuals::ScoreboardColors.Value);
-					WToggle("Scoreboard Playerlist", &Vars::Misc::ScoreboardPlayerlist.Value);
-					WToggle("Clean Screenshots", &Vars::Visuals::CleanScreenshots.Value);
-					WToggle("On Screen Conditions", &Vars::Visuals::DrawOnScreenConditions.Value);
-					WToggle("On Screen Ping", &Vars::Visuals::DrawOnScreenPing.Value);
-					WToggle("Sniper sightlines", &Vars::Visuals::SniperSightlines.Value);
-					WToggle("Pickup Timers", &Vars::Visuals::PickupTimers.Value);
-					WToggle("Spectator list", &Vars::Visuals::SpectatorList.Value);
-					if (Vars::Visuals::SpectatorList.Value)
-						WToggle("Spectator avatars", &Vars::Visuals::SpectatorAvatars.Value);
-					WToggle("Post processing", &Vars::Visuals::DoPostProcessing.Value);
-					WToggle("No prop fade", &Vars::Visuals::NoStaticPropFade.Value);
-
-					SectionTitle("Viewmodel");
-					WToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
-					WToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value);
-					WSlider("VM Off X", &Vars::Visuals::VMOffsets.Value.x, -45.f, 45.f, "%.0f");
-					WSlider("VM Off Y", &Vars::Visuals::VMOffsets.Value.y, -45.f, 45.f, "%.0f");
-					WSlider("VM Off Z", &Vars::Visuals::VMOffsets.Value.z, -45.f, 45.f, "%.0f");
-					WSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
-					WToggle("Viewmodel sway", &Vars::Visuals::ViewmodelSway.Value);
-					if (Vars::Visuals::ViewmodelSway.Value)
+				static std::vector chamOptions{
+					"Healthpacks",
+					"Ammopacks",
+					"Team Projectiles",
+					"Enemy Projectiles",
+				};
+				static int currentSelected = 0;
+				Chams_t& currentStruct = ([&]() -> Chams_t&
 					{
-						WSlider("Viewmodel Sway Scale", &Vars::Visuals::ViewmodelSwayScale.Value, 0.01, 5, "%.1f");
-						WSlider("Viewmodel Sway Interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01, 1, "%.1f");
-					}
-
-					SectionTitle("Tracers");
-					{
-						WCombo("Bullet trail", &Vars::Visuals::Tracers::ParticleTracer.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP Beam 2", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
-						if (Vars::Visuals::Tracers::ParticleTracer.Value == 9)
-							WInputText("Custom Tracer", &Vars::Visuals::Tracers::ParticleName.Value);
-						WCombo("Crit trail", &Vars::Visuals::Tracers::ParticleTracerCrits.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP Beam 2", "Big Nasty", "Distortion Trail", "Black Ink", "Custom" });
-						if (Vars::Visuals::Tracers::ParticleTracerCrits.Value == 9)
-							WInputText("Custom Crit Tracer", &Vars::Visuals::Tracers::ParticleNameCrits.Value);
-					}
-
-					SectionTitle("Beams");
-					{
-						using namespace Vars::Visuals;
-
-						WToggle("Enable beams", &Beans::Active.Value);
-						WToggle("Rainbow beams", &Beans::Rainbow.Value);
-						ColorPickerL("Beam color", Beans::BeamColor.Value);
-						WToggle("Custom model", &Beans::UseCustomModel.Value);
-						if (Beans::UseCustomModel.Value)
+						switch (currentSelected)
 						{
-							WInputText("Model", &Beans::Model.Value);
+						case 0: return Vars::Chams::World::Health.Value;
+						case 1: return Vars::Chams::World::Ammo.Value;
+						case 2: return Vars::Chams::World::Projectiles::Team.Value;
+						case 3: return Vars::Chams::World::Projectiles::Enemy.Value;
 						}
-						WSlider("Beam lifespan", &Beans::Life.Value, 0.0f, 10.f);
-						WSlider("Beam width", &Beans::Width.Value, 0.0f, 10.f);
-						WSlider("Beam end width", &Beans::EndWidth.Value, 0.0f, 10.f);
-						WSlider("Beam fade length", &Beans::FadeLength.Value, 0.0f, 30.f);
-						WSlider("Beam amplitude", &Beans::Amplitude.Value, 0.0f, 10.f);
-						WSlider("Beam brightness", &Beans::Brightness.Value, 0.0f, 255.f);
-						WSlider("Beam speed", &Beans::Speed.Value, 0.0f, 5.f);
-						WSlider("Segments", &Beans::Segments.Value, 1, 10); //what are good values for this
 
-						// TODO: Reward this ugly code
-						{
-							static std::vector flagNames{ "STARTENTITY", "ENDENTITY","FADEIN","FADEOUT","SINENOISE","SOLID","SHADEIN","SHADEOUT","ONLYNOISEONCE","NOTILE","USE_HITBOXES","STARTVISIBLE","ENDVISIBLE","ISACTIVE","FOREVER","HALOBEAM","REVERSED", };
-							static std::vector flagValues{ 0x00000001, 0x00000002,0x00000004,0x00000008,0x00000010,0x00000020,0x00000040,0x00000080,0x00000100,0x00000200,0x00000400,0x00000800,0x00001000,0x00002000,0x00004000,0x00008000,0x00010000 };
-							MultiFlags(flagNames, flagValues, &Beans::Flags.Value, "Beam Flags###BeamFlags");
-						}
-					}
+						return Vars::Chams::World::Health.Value;
+					}());
 
-					SectionTitle("Ragdolls");
-					WToggle("No Gibs", &Vars::Visuals::RagdollEffects::NoGib.Value);
-					WToggle("Enemy only###RagdollEnemyOnly", &Vars::Visuals::RagdollEffects::EnemyOnly.Value);
-					MultiCombo({ "Burning", "Electrocuted", "Become ash", "Dissolve" }, { &Vars::Visuals::RagdollEffects::Burning.Value, &Vars::Visuals::RagdollEffects::Electrocuted.Value, &Vars::Visuals::RagdollEffects::BecomeAsh.Value, &Vars::Visuals::RagdollEffects::Dissolve.Value }, "Effects###RagdollEffects");
-					WCombo("Ragdoll model", &Vars::Visuals::RagdollEffects::RagdollType.Value, { "None", "Gold", "Ice" });
-					WToggle("Use Separate Vector Forces", &Vars::Visuals::RagdollEffects::SeparateVectors.Value);
-					if (Vars::Visuals::RagdollEffects::SeparateVectors.Value)
-					{
-						WSlider("Ragdoll Force Forwards", &Vars::Visuals::RagdollEffects::RagdollForceForwards.Value, -10.f, 10.f, "%.1f");
-						WSlider("Ragdoll Force Sideways", &Vars::Visuals::RagdollEffects::RagdollForceSides.Value, -10.f, 10.f, "%.1f");
-						WSlider("Ragdoll Force Up", &Vars::Visuals::RagdollEffects::RagdollForceUp.Value, -10.f, 10.f, "%.1f");
-					}
-					else
-						WSlider("Ragdoll Force", &Vars::Visuals::RagdollEffects::RagdollForce.Value, -10.f, 10.f, "%.1f");
-				} EndChild();
+				FDropdown("Config## WorldConfig", &currentSelected, chamOptions);
+				
+				FToggle("Active## WorldActive", &currentStruct.ChamsActive);
+				FToggle("Obstructed## WorldObstructed", &currentStruct.IgnoreZ, FToggle_Middle);
 
-				/* Column 2 */
-				if (TableColumnChild("VisualsMiscCol2"))
-				{
-					SectionTitle("Bullet");
-					WToggle("Bullet tracers", &Vars::Visuals::BulletTracer.Value);
-					ColorPickerL("Bullet tracer color", Vars::Colors::BulletTracer.Value);
+				FMDropdown("Base material## WorldBase", &currentStruct.Material, "Original", FSDropdown_Left, 1);
+				FColorPicker("Base color## WorldBaseColor", &currentStruct.Color, 0, FColorPicker_Dropdown);
+				FMDropdown("Overlay material## WorldOverlay", &currentStruct.OverlayMaterial, "None", FSDropdown_Right, 1);
+				FColorPicker("Overlay color## WorldOverlayColor", &currentStruct.OverlayColor, 0, FColorPicker_Dropdown);
+			} EndSection();
 
-					SectionTitle("Simulation");
-					WToggle("Enabled", &Vars::Visuals::SimLines.Value);
-					ColorPickerL("Prediction Line Color", Vars::Colors::PredictionColor.Value, 1);
-					ColorPickerL("Projectile Line Color", Vars::Colors::ProjectileColor.Value);
-					WToggle("Timed", &Vars::Visuals::TimedLines.Value);
-					WToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
-					if (Vars::Visuals::SimSeperators.Value)
-					{
-						WSlider("Seperator Length", &Vars::Visuals::SeperatorLength.Value, 2, 16, "%d", ImGuiSliderFlags_Logarithmic);
-						WSlider("Seperator Spacing", &Vars::Visuals::SeperatorSpacing.Value, 1, 64, "%d", ImGuiSliderFlags_Logarithmic);
-					}
-					WToggle("Swing Prediction Lines", &Vars::Visuals::SwingLines.Value);
-					WToggle("Projectile Trajectory", &Vars::Visuals::ProjectileTrajectory.Value);
-					ColorPickerL("Clipped Line Color", Vars::Colors::ClippedColor.Value);
-					if (Vars::Debug::Info.Value)
-					{
-						SectionTitle("debug");
-						WToggle("overwrite", &Vars::Visuals::PTOverwrite.Value);
-						WCombo("type", &Vars::Visuals::PTType.Value,
-							{ "none", "bullet", "rocket", "pipebomb", "pipebomb remote", "syringe", "flare", "jar", "arrow", "flame rocket", "jar milk",
-							"healing bolt", "energy ball", "energy ring", "pipebomb practice", "cleaver", "sticky ball", "cannonball", "building repair bolt", "sentry rocket",
-							"festive arrow", "throwable", "spell", "festive jar", "festive healing bolt", "breadmonster jarate", "breadmonster madmilk", "grappling hook", "bread monster", "jar gas",
-							"balloffire" }); // to keep the integer easily associated with the enum, a lot of these aren't even used and are probably only used outside of simulation
-						WSlider("off x", &Vars::Visuals::PTOffX.Value, -25.f, 25.f, "%.1f");
-						WSlider("off y", &Vars::Visuals::PTOffY.Value, -25.f, 25.f, "%.1f");
-						WSlider("off z", &Vars::Visuals::PTOffZ.Value, -25.f, 25.f, "%.1f");
-						WToggle("pipes", &Vars::Visuals::PTPipes.Value);
-						WSlider("hull", &Vars::Visuals::PTHull.Value, 0.f, 10.f, "%.1f");
-						WSlider("speed", &Vars::Visuals::PTSpeed.Value, 0.f, 5000.f, "%.0f");
-						WSlider("gravity", &Vars::Visuals::PTGravity.Value, 0.f, 2.f, "%.1f");
-						WToggle("no spin", &Vars::Visuals::PTNoSpin.Value);
-						WSlider("lifetime", &Vars::Visuals::PTLifeTime.Value, 0.f, 10.f, "%.1f");
-						WSlider("up vel", &Vars::Visuals::PTUpVelocity.Value, 0.f, 1000.f, "%.0f");
-						WSlider("ang vel x", &Vars::Visuals::PTAngVelocityX.Value, -1000.f, 1000.f, "%.0f");
-						WSlider("ang vel y", &Vars::Visuals::PTAngVelocityY.Value, -1000.f, 1000.f, "%.0f");
-						WSlider("ang vel z", &Vars::Visuals::PTAngVelocityZ.Value, -1000.f, 1000.f, "%.0f");
-						WSlider("drag", &Vars::Visuals::PTDrag.Value, 0.f, 2.f, "%.1f");
-						WSlider("drag x", &Vars::Visuals::PTDragBasisX.Value, 0.f, 0.1f, "%.6f");
-						WSlider("drag y", &Vars::Visuals::PTDragBasisY.Value, 0.f, 0.1f, "%.6f");
-						WSlider("drag z", &Vars::Visuals::PTDragBasisZ.Value, 0.f, 0.1f, "%.6f");
-						WSlider("ang drag x", &Vars::Visuals::PTAngDragBasisX.Value, 0.f, 0.1f, "%.6f");
-						WSlider("ang drag y", &Vars::Visuals::PTAngDragBasisY.Value, 0.f, 0.1f, "%.6f");
-						WSlider("ang drag z", &Vars::Visuals::PTAngDragBasisZ.Value, 0.f, 0.1f, "%.6f");
-					}
-
-					SectionTitle("Hitbox");
-					WToggle("Draw Hitboxes", &Vars::Aimbot::Global::ShowHitboxes.Value);
-					ColorPickerL("Hitbox matrix face color", Vars::Colors::HitboxFace.Value);
-					ColorPickerL("Hitbox matrix edge color", Vars::Colors::HitboxEdge.Value, 1);
-
-					SectionTitle("Thirdperson");
-					WToggle("Thirdperson", &Vars::Visuals::ThirdPerson::Active.Value);
-					InputKeybind("Thirdperson key", Vars::Visuals::ThirdPerson::Key.Value);
-					WSlider("Thirdperson distance", &Vars::Visuals::ThirdPerson::Distance.Value, 0.f, 500.f, "%.0f", ImGuiSliderFlags_None);
-					WSlider("Thirdperson right", &Vars::Visuals::ThirdPerson::Right.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
-					WSlider("Thirdperson up", &Vars::Visuals::ThirdPerson::Up.Value, -500.f, 500.f, "%.0f", ImGuiSliderFlags_None);
-					WToggle("Thirdperson crosshair", &Vars::Visuals::ThirdPerson::Crosshair.Value);
-
-					SectionTitle("Out of FOV arrows");
-					WToggle("Active###FOVArrowActive", &Vars::Visuals::Arrows::Active.Value);
-					WSlider("Offset###FOVArrowOffset", &Vars::Visuals::Arrows::Offset.Value, 0, 1000, "%d");
-					WSlider("Max distance", &Vars::Visuals::Arrows::MaxDist.Value, 0.f, 5000.f, "%.0f");
-
-					SectionTitle("World");
-					MultiCombo({ "World", "Sky", "Prop", "Particle" }, { &Vars::Visuals::World::WorldModulation.Value, &Vars::Visuals::World::SkyModulation.Value, &Vars::Visuals::World::PropModulation.Value, &Vars::Visuals::World::ParticleModulation.Value }, "Modulations");
-					if (ColorPickerL("World modulation", Vars::Colors::WorldModulation.Value, 3) ||
-						ColorPickerL("Sky modulation", Vars::Colors::SkyModulation.Value, 2) ||
-						ColorPickerL("Prop modulation", Vars::Colors::StaticPropModulation.Value, 1))
-					{
-						G::ShouldUpdateMaterialCache = true;
-					}
-					ColorPickerL("Particle modulation", Vars::Colors::ParticleModulation.Value);
-					static std::vector skyNames{
-						"Custom",
-						"sky_tf2_04",
-						"sky_upward",
-						"sky_dustbowl_01",
-						"sky_goldrush_01",
-						"sky_granary_01",
-						"sky_well_01",
-						"sky_gravel_01",
-						"sky_badlands_01",
-						"sky_hydro_01",
-						"sky_night_01",
-						"sky_nightfall_01",
-						"sky_trainyard_01",
-						"sky_stormfront_01",
-						"sky_morningsnow_01",
-						"sky_alpinestorm_01",
-						"sky_harvest_01",
-						"sky_harvest_night_01",
-						"sky_halloween",
-						"sky_halloween_night_01",
-						"sky_halloween_night2014_01",
-						"sky_island_01",
-						"sky_rainbow_01"
-					};
-					WToggle("Skybox changer", &Vars::Visuals::World::SkyboxChanger.Value);
-					WCombo("Skybox", &Vars::Visuals::World::SkyboxNum.Value, skyNames);
-					if (Vars::Visuals::World::SkyboxNum.Value == 0)
-					{
-						WInputText("Custom skybox name", &Vars::Visuals::World::SkyboxName.Value);
-					}
-					WToggle("World Textures Override", &Vars::Visuals::World::OverrideTextures.Value); HelpMarker("Turn this off when in-game so you don't drop fps :p");
-					WToggle("Prop Wireframe", &Vars::Visuals::World::PropWireframe.Value);
-				} EndChild();
-
-				EndTable();
-			}
-			break;
+			EndTable();
 		}
-
-		// Visuals: Radar
-		case VisualsTab::Radar:
+		break;
+	// Glow
+	case 2:
+		if (BeginTable("VisualsGlowTable", 2))
 		{
-			if (BeginTable("VisualsRadarTable", 2))
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Glow"))
 			{
-				/* Column 1 */
-				if (TableColumnChild("VisualsRadarCol1"))
-				{
-					SectionTitle("Main");
-					WToggle("Active###RadarActive", &Vars::Radar::Main::Active.Value);
-					WSlider("Range", &Vars::Radar::Main::Range.Value, 50, 3000, "%d");
-					WSlider("Background alpha", &Vars::Radar::Main::BackAlpha.Value, 0, 255, "%d");
-					WSlider("Line alpha", &Vars::Radar::Main::LineAlpha.Value, 0, 255, "%d");
+				FToggle("Active## GlowActive", &Vars::Glow::Main::Active.Value);
+				FDropdown("Type## GlowTypeSelect", &Vars::Glow::Main::Type.Value, { "Blur", "Stencil" });
+				FSlider("Scale", &Vars::Glow::Main::Scale.Value, 1, 10, 1, "%d", FSlider_Clamp);
+			} EndSection();
+			if (Section("Player"))
+			{
+				FToggle("Active## PlayerGlow", &Vars::Glow::Players::Active.Value);
+				FToggle("Self glow## SelfGlow", &Vars::Glow::Players::ShowLocal.Value);
+				FDropdown("Ignore team## IgnoreTeamGlow", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" });
+			} EndSection();
+			if (Section("Building"))
+			{
+				FToggle("Active## BuildiongGlow", &Vars::Glow::Buildings::Active.Value);
+				FToggle("Ignore team## IgnoreTeamBuildingGlow", &Vars::Glow::Buildings::IgnoreTeammates.Value);
+			} EndSection();
 
-					SectionTitle("Player");
-					WToggle("Active###PlayerActive", &Vars::Radar::Players::Active.Value);
-					WCombo("Icon", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" });
-					WCombo("Background", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" });
-					WToggle("Outline", &Vars::Radar::Players::Outline.Value);
-					WCombo("Ignore teammates", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" });
-					WCombo("Ignore cloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" });
-					WToggle("Health bar", &Vars::Radar::Players::Health.Value);
-					WSlider("Icon size", &Vars::Radar::Players::IconSize.Value, 12, 30, "%d");
-					WToggle("Height indicator", &Vars::Radar::Players::Height.Value);
-				} EndChild();
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("World"))
+			{
+				FToggle("Active## WorldGlow", &Vars::Glow::World::Active.Value);
+				FToggle("Healthpacks## WorldHealthpackGlow", &Vars::Glow::World::Health.Value);
+				FToggle("Ammopacks## WorldAmmopackGlow", &Vars::Glow::World::Ammo.Value);
+				FToggle("NPCs## WorldNPCGlow", &Vars::Glow::World::NPCs.Value);
+				FToggle("Bombs## WorldBombGlow", &Vars::Glow::World::Bombs.Value);
+				FToggle("Spellbook## WorldSpellbookGlow", &Vars::Glow::World::Spellbook.Value);
+				FToggle("Gargoyle## WorldGargoyleGlow", &Vars::Glow::World::Gargoyle.Value);
+				FDropdown("Projectiles## ProjectileGlow", &Vars::Glow::World::Projectiles.Value, { "Off", "All", "Only enemies" });
+			} EndSection();
 
-				/* Column 2 */
-				if (TableColumnChild("VisualsRadarCol2"))
-				{
-					SectionTitle("Building");
-					WToggle("Active###BuildingActive", &Vars::Radar::Buildings::Active.Value);
-					WToggle("Outline", &Vars::Radar::Buildings::Outline.Value);
-					WToggle("Ignore team", &Vars::Radar::Buildings::IgnoreTeam.Value);
-					WToggle("Health bar", &Vars::Radar::Buildings::Health.Value);
-					WSlider("Icon size###BuildingIconSize", &Vars::Radar::Buildings::IconSize.Value, 12, 30, "%d");
-
-					SectionTitle("World");
-					WToggle("Active###WorldActive", &Vars::Radar::World::Active.Value);
-					WToggle("Healthpack", &Vars::Radar::World::Health.Value);
-					WToggle("Ammopack", &Vars::Radar::World::Ammo.Value);
-					WSlider("Icon size###WorldIconSize", &Vars::Radar::World::IconSize.Value, 12, 30, "%d");
-				} EndChild();
-
-				EndTable();
-			}
-			break;
+			EndTable();
 		}
-
-		// Visuals: Font
-		case VisualsTab::Font:
+		break;
+	// Misc
+	case 3:
+		if (BeginTable("VisualsMiscTable", 2))
 		{
-			if (BeginTable("VisualsFontTable", 2))
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Removals"))
 			{
-				static std::vector fontFlagNames{ "Italic", "Underline", "Strikeout", "Symbol", "Antialias", "Gaussian", "Rotary", "Dropshadow", "Additive", "Outline", "Custom" };
-				static std::vector fontFlagValues{ 0x001, 0x002, 0x004, 0x008, 0x010, 0x020, 0x040, 0x080, 0x100, 0x200, 0x400 };
-
-				/* Column 1 */
-				if (TableColumnChild("VisualsFontCol1"))
+				FToggle("Scope", &Vars::Visuals::RemoveScope.Value);
+				FToggle("Screen overlays", &Vars::Visuals::RemoveScreenOverlays.Value, FToggle_Middle);
+				FToggle("Interpolation", &Vars::Misc::DisableInterpolation.Value);
+				FToggle("Screen effects", &Vars::Visuals::RemoveScreenEffects.Value, FToggle_Middle);
+				FToggle("View punch", &Vars::Visuals::RemovePunch.Value);
+				FToggle("Angle forcing", &Vars::Visuals::PreventForcedAngles.Value, FToggle_Middle);
+				FToggle("MOTD", &Vars::Visuals::RemoveMOTD.Value);
+				FToggle("Convar queries", &Vars::Visuals::RemoveConvarQueries.Value, FToggle_Middle);
+				FToggle("Disguises", &Vars::Visuals::RemoveDisguises.Value);
+				FToggle("Taunts", &Vars::Visuals::RemoveTaunts.Value, FToggle_Middle);
+				FToggle("Ragdolls", &Vars::Visuals::RemoveRagdolls.Value);
+				FToggle("DSP", &Vars::Visuals::RemoveDSP.Value, FToggle_Middle);
+			} EndSection();
+			if (Section("UI"))
+			{
+				FSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 30, 150, 1);
+				FSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 30, 150, 1);
+				FToggle("Reveal scoreboard", &Vars::Visuals::RevealScoreboard.Value);
+				FToggle("Scoreboard colors", &Vars::Visuals::ScoreboardColors.Value);
+				FToggle("Scoreboard playerlist", &Vars::Misc::ScoreboardPlayerlist.Value, FToggle_Middle);
+				FToggle("Clean screenshots", &Vars::Visuals::CleanScreenshots.Value);
+				FToggle("Sniper sightlines", &Vars::Visuals::SniperSightlines.Value);
+				FToggle("Pickup timers", &Vars::Visuals::PickupTimers.Value, FToggle_Middle);
+				FToggle("Post processing", &Vars::Visuals::DoPostProcessing.Value);
+				FToggle("No prop fade", &Vars::Visuals::NoStaticPropFade.Value, FToggle_Middle);
+			} EndSection();
+			if (Section("Viewmodel"))
+			{
+				FToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
+				FToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value, FToggle_Middle);
+				FSlider("VM Off X", &Vars::Visuals::VMOffsets.Value.x, -45.f, 45.f);
+				FSlider("VM Off Y", &Vars::Visuals::VMOffsets.Value.y, -45.f, 45.f);
+				FSlider("VM Off Z", &Vars::Visuals::VMOffsets.Value.z, -45.f, 45.f);
+				FSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
+				FToggle("Viewmodel sway", &Vars::Visuals::ViewmodelSway.Value);
+				if (Vars::Visuals::ViewmodelSway.Value)
 				{
-					SectionTitle("ESP Font");
-					WInputText("Font name###espfontname", &Vars::Fonts::FONT_ESP::szName.Value);
-					WInputInt("Font height###espfontheight", &Vars::Fonts::FONT_ESP::nTall.Value);
-					WInputInt("Font weight###espfontweight", &Vars::Fonts::FONT_ESP::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP::nFlags.Value, "Font flags###FONT_ESP");
+					FSlider("Sway scale", &Vars::Visuals::ViewmodelSwayScale.Value, 0.01f, 5.f, 0.1f, "%.1f");
+					FSlider("Sway interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01f, 1.f, 0.1f, "%.1f");
+				}
+			} EndSection();
+			if (Section("Tracers"))
+			{
+				FSDropdown("Bullet trail", &Vars::Visuals::Tracers::ParticleTracer.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP Beam 2", "Big Nasty", "Distortion Trail", "Black Ink" }, FSDropdown_Custom | FSDropdown_Left);
+				FSDropdown("Crit trail", &Vars::Visuals::Tracers::ParticleTracerCrits.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP Beam 2", "Big Nasty", "Distortion Trail", "Black Ink" }, FSDropdown_Custom | FSDropdown_Right);
+			} EndSection();
+			if (Section("Ragdolls"))
+			{
+				FToggle("Enemy only## RagdollEnemyOnly", &Vars::Visuals::Ragdolls::EnemyOnly.Value);
+				FToggle("No gibs", &Vars::Visuals::Ragdolls::NoGib.Value, FToggle_Middle);
+				FDropdown("Effects## RagdollEffects", &Vars::Visuals::Ragdolls::Effects.Value, { "Burning", "Electrocuted", "Become ash", "Dissolve" }, {}, FDropdown_Multi);
+				FDropdown("Ragdoll model", &Vars::Visuals::Ragdolls::Type.Value, { "None", "Gold", "Ice" });
+				FSlider("Ragdoll force", &Vars::Visuals::Ragdolls::Force.Value, -10.f, 10.f, 0.5f, "%.1f");
+				FSlider("Horizontal force", &Vars::Visuals::Ragdolls::ForceHorizontal.Value, -10.f, 10.f, 0.5f, "%.1f");
+				FSlider("Vertical force", &Vars::Visuals::Ragdolls::ForceVertical.Value, -10.f, 10.f, 0.5f, "%.1f");
+			} EndSection();
 
-					SectionTitle("Name Font");
-					WInputText("Font name###espfontnamename", &Vars::Fonts::FONT_ESP_NAME::szName.Value);
-					WInputInt("Font height###espfontnameheight", &Vars::Fonts::FONT_ESP_NAME::nTall.Value);
-					WInputInt("Font weight###espfontnameweight", &Vars::Fonts::FONT_ESP_NAME::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_NAME::nFlags.Value, "Font flags###FONT_ESP_NAME");
-
-					SectionTitle("Condition Font");
-					WInputText("Font name###espfontcondname", &Vars::Fonts::FONT_ESP_COND::szName.Value);
-					WInputInt("Font height###espfontcondheight", &Vars::Fonts::FONT_ESP_COND::nTall.Value);
-					WInputInt("Font weight###espfontcondweight", &Vars::Fonts::FONT_ESP_COND::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_COND::nFlags.Value, "Font flags###FONT_ESP_COND");
-
-					if (Button("Apply settings###fontapply"))
-						g_Draw.RemakeFonts();
-				} EndChild();
-
-				/* Column 2 */
-				if (TableColumnChild("VisualsFontCol2"))
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Bullet"))
+			{
+				FColorPicker("Bullet tracer color", &Vars::Colors::BulletTracer.Value);
+				FToggle("Bullet tracers", &Vars::Visuals::BulletTracer.Value);
+			} EndSection();
+			if (Section("Simulation"))
+			{
+				FColorPicker("Prediction line color", &Vars::Colors::PredictionColor.Value, 1); FColorPicker("Projectile line color", &Vars::Colors::ProjectileColor.Value);
+				FToggle("Enabled", &Vars::Visuals::SimLines.Value);
+				FToggle("Timed", &Vars::Visuals::TimedLines.Value, FToggle_Middle);
+				FToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
+				if (Vars::Visuals::SimSeperators.Value)
 				{
-					SectionTitle("Pickup Font");
-					WInputText("Font name###espfontpickupsname", &Vars::Fonts::FONT_ESP_PICKUPS::szName.Value);
-					WInputInt("Font height###espfontpickupsheight", &Vars::Fonts::FONT_ESP_PICKUPS::nTall.Value);
-					WInputInt("Font weight###espfontpickupsweight", &Vars::Fonts::FONT_ESP_PICKUPS::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_ESP_PICKUPS::nFlags.Value, "Font flags###FONT_ESP_PICKUPS");
-
-					SectionTitle("Menu Font");
-					WInputText("Font name###espfontnamenameneby", &Vars::Fonts::FONT_MENU::szName.Value);
-					WInputInt("Font height###espfontnameheightafsdfads", &Vars::Fonts::FONT_MENU::nTall.Value);
-					WInputInt("Font weight###espfontnameweightasfdafsd", &Vars::Fonts::FONT_MENU::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_MENU::nFlags.Value, "Font flags###FONT_MENU");
-
-					SectionTitle("Indicator Font");
-					WInputText("Font name###espfontindicatorname", &Vars::Fonts::FONT_INDICATORS::szName.Value);
-					WInputInt("Font height###espfontindicatorheight", &Vars::Fonts::FONT_INDICATORS::nTall.Value);
-					WInputInt("Font weight###espfontindicatorweight", &Vars::Fonts::FONT_INDICATORS::nWeight.Value);
-					MultiFlags(fontFlagNames, fontFlagValues, &Vars::Fonts::FONT_INDICATORS::nFlags.Value, "Font flags###FONT_INDICATORS");
-				} EndChild();
-
-				EndTable();
+					FSlider("Seperator length", &Vars::Visuals::SeperatorLength.Value, 2, 16, 1, "%d", ImGuiSliderFlags_Logarithmic);
+					FSlider("Seperator spacing", &Vars::Visuals::SeperatorSpacing.Value, 1, 64, 1, "%d", ImGuiSliderFlags_Logarithmic);
+				}
+				FColorPicker("Clipped line color", &Vars::Colors::ClippedColor.Value);
+				FToggle("Projectile trajectory", &Vars::Visuals::ProjectileTrajectory.Value);
+				FToggle("Trajectory on shot", &Vars::Visuals::TrajectoryOnShot.Value, FToggle_Middle);
+				FToggle("Swing prediction lines", &Vars::Visuals::SwingLines.Value);
+			} EndSection();
+			if (Vars::Debug::Info.Value)
+			{
+				if (Section("debug"))
+				{
+					FToggle("overwrite", &Vars::Visuals::PTOverwrite.Value);
+					FDropdown("type", &Vars::Visuals::PTType.Value,
+						{ "none", "bullet", "rocket", "pipebomb", "pipebomb remote", "syringe", "flare", "jar", "arrow", "flame rocket", "jar milk",
+						"healing bolt", "energy ball", "energy ring", "pipebomb practice", "cleaver", "sticky ball", "cannonball", "building repair bolt", "sentry rocket",
+						"festive arrow", "throwable", "spell", "festive jar", "festive healing bolt", "breadmonster jarate", "breadmonster madmilk", "grappling hook", "bread monster", "jar gas",
+						"balloffire" }); // to keep the integer easily associated with the enum, a lot of these aren't even used and are probably only used outside of simulation
+					FSlider("off x", &Vars::Visuals::PTOffX.Value, -25.f, 25.f, 0.1f, "%.1f");
+					FSlider("off y", &Vars::Visuals::PTOffY.Value, -25.f, 25.f, 0.1f, "%.1f");
+					FSlider("off z", &Vars::Visuals::PTOffZ.Value, -25.f, 25.f, 0.1f, "%.1f");
+					FToggle("pipes", &Vars::Visuals::PTPipes.Value);
+					FSlider("hull", &Vars::Visuals::PTHull.Value, 0.f, 10.f, 0.1f, "%.1f");
+					FSlider("speed", &Vars::Visuals::PTSpeed.Value, 0.f, 5000.f);
+					FSlider("gravity", &Vars::Visuals::PTGravity.Value, 0.f, 2.f, 0.1f, "%.1f");
+					FToggle("no spin", &Vars::Visuals::PTNoSpin.Value);
+					FSlider("lifetime", &Vars::Visuals::PTLifeTime.Value, 0.f, 10.f, 0.1f, "%.1f");
+					FSlider("up vel", &Vars::Visuals::PTUpVelocity.Value, 0.f, 1000.f);
+					FSlider("ang vel x", &Vars::Visuals::PTAngVelocityX.Value, -1000.f, 1000.f);
+					FSlider("ang vel y", &Vars::Visuals::PTAngVelocityY.Value, -1000.f, 1000.f);
+					FSlider("ang vel z", &Vars::Visuals::PTAngVelocityZ.Value, -1000.f, 1000.f);
+					FSlider("drag", &Vars::Visuals::PTDrag.Value, 0.f, 2.f, 0.1f, "%.1f");
+					FSlider("drag x", &Vars::Visuals::PTDragBasisX.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("drag y", &Vars::Visuals::PTDragBasisY.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("drag z", &Vars::Visuals::PTDragBasisZ.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("ang drag x", &Vars::Visuals::PTAngDragBasisX.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("ang drag y", &Vars::Visuals::PTAngDragBasisY.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("ang drag z", &Vars::Visuals::PTAngDragBasisZ.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+				} EndSection();
 			}
-			break;
+			if (Section("Hitbox"))
+			{
+				FColorPicker("Edge color", &Vars::Colors::HitboxEdge.Value, 1); FColorPicker("Face color", &Vars::Colors::HitboxFace.Value);
+				FToggle("Draw Hitboxes", &Vars::Aimbot::Global::ShowHitboxes.Value);
+			} EndSection();
+			if (Section("Thirdperson"))
+			{
+				FToggle("Thirdperson", &Vars::Visuals::ThirdPerson::Active.Value);
+				FKeybind("Thirdperson key", Vars::Visuals::ThirdPerson::Key.Value);
+				FSlider("Thirdperson distance", &Vars::Visuals::ThirdPerson::Distance.Value, 0.f, 500.f, 5.f);
+				FSlider("Thirdperson right", &Vars::Visuals::ThirdPerson::Right.Value, -500.f, 500.f, 5.f);
+				FSlider("Thirdperson up", &Vars::Visuals::ThirdPerson::Up.Value, -500.f, 500.f, 5.f);
+				FToggle("Thirdperson crosshair", &Vars::Visuals::ThirdPerson::Crosshair.Value);
+			} EndSection();
+			if (Section("Out of FOV arrows"))
+			{
+				FToggle("Active## FOVArrowActive", &Vars::Visuals::Arrows::Active.Value);
+				FSlider("Offset## FOVArrowOffset", &Vars::Visuals::Arrows::Offset.Value, 0, 1000);
+				FSlider("Max distance", &Vars::Visuals::Arrows::MaxDist.Value, 0.f, 5000.f, 10.f);
+			} EndSection();
+			if (Section("World"))
+			{
+				if (FColorPicker("World modulation", &Vars::Colors::WorldModulation.Value, 3) ||
+					FColorPicker("Sky modulation", &Vars::Colors::SkyModulation.Value, 2) ||
+					FColorPicker("Prop modulation", &Vars::Colors::StaticPropModulation.Value, 1))
+				{
+					G::ShouldUpdateMaterialCache = true;
+				}
+				FColorPicker("Particle modulation", &Vars::Colors::ParticleModulation.Value);
+				FDropdown("Modulations", &Vars::Visuals::World::Modulations.Value, { "World", "Sky", "Prop", "Particle" }, { }, FDropdown_Left | FDropdown_Multi);
+				static std::vector skyNames = {
+					"Off", "sky_tf2_04", "sky_upward", "sky_dustbowl_01", "sky_goldrush_01", "sky_granary_01", "sky_well_01", "sky_gravel_01", "sky_badlands_01",
+					"sky_hydro_01", "sky_night_01", "sky_nightfall_01", "sky_trainyard_01", "sky_stormfront_01", "sky_morningsnow_01","sky_alpinestorm_01",
+					"sky_harvest_01", "sky_harvest_night_01", "sky_halloween", "sky_halloween_night_01", "sky_halloween_night2014_01", "sky_island_01", "sky_rainbow_01"
+				};
+				FSDropdown("Skybox changer", &Vars::Visuals::World::SkyboxChanger.Value, skyNames, FSDropdown_Custom | FSDropdown_Right);
+				FToggle("World textures override", &Vars::Visuals::World::OverrideTextures.Value);
+				FToggle("Prop wireframe", &Vars::Visuals::World::PropWireframe.Value, FToggle_Middle);
+			} EndSection();
+
+			EndTable();
 		}
+		break;
+	// Radar
+	case 4:
+		if (BeginTable("VisualsRadarTable", 2))
+		{
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Main"))
+			{
+				FToggle("Active## RadarActive", &Vars::Radar::Main::Active.Value);
+				FSlider("Range", &Vars::Radar::Main::Range.Value, 50, 3000);
+				FSlider("Background alpha", &Vars::Radar::Main::BackAlpha.Value, 0, 255);
+				FSlider("Line alpha", &Vars::Radar::Main::LineAlpha.Value, 0, 255);
+			} EndSection();
+			if (Section("Player"))
+			{
+				FToggle("Active## PlayerActive", &Vars::Radar::Players::Active.Value);
+				FDropdown("Icon", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" });
+				FDropdown("Background", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" });
+				FToggle("Outline", &Vars::Radar::Players::Outline.Value);
+				FDropdown("Ignore teammates", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" });
+				FDropdown("Ignore cloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" });
+				FToggle("Health bar", &Vars::Radar::Players::Health.Value);
+				FSlider("Icon size", &Vars::Radar::Players::IconSize.Value, 12, 30);
+				FToggle("Height indicator", &Vars::Radar::Players::Height.Value);
+			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Building"))
+			{
+				FToggle("Active## BuildingActive", &Vars::Radar::Buildings::Active.Value);
+				FToggle("Outline", &Vars::Radar::Buildings::Outline.Value);
+				FToggle("Ignore team", &Vars::Radar::Buildings::IgnoreTeam.Value);
+				FToggle("Health bar", &Vars::Radar::Buildings::Health.Value);
+				FSlider("Icon size## BuildingIconSize", &Vars::Radar::Buildings::IconSize.Value, 12, 30);
+			} EndSection();
+			if (Section("World"))
+			{
+				FToggle("Active## WorldActive", &Vars::Radar::World::Active.Value);
+				FToggle("Healthpack", &Vars::Radar::World::Health.Value);
+				FToggle("Ammopack", &Vars::Radar::World::Ammo.Value);
+				FSlider("Icon size## WorldIconSize", &Vars::Radar::World::IconSize.Value, 12, 30);
+			} EndSection();
+
+			EndTable();
+		}
+		break;
+	// Menu
+	case 5:
+		if (BeginTable("MenuTable", 2))
+		{
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("General"))
+			{
+				if (FColorPicker("Accent color", &Vars::Menu::Theme::Accent.Value, 0, FColorPicker_Left))
+					LoadStyle();
+				if (FColorPicker("Foremost color", &Vars::Menu::Theme::Foremost.Value, 0, FColorPicker_Middle | FColorPicker_SameLine))
+					LoadStyle();
+				if (FColorPicker("Background color", &Vars::Menu::Theme::Background.Value, 0, FColorPicker_Left))
+					LoadStyle();
+				if (FColorPicker("Foreground color", &Vars::Menu::Theme::Foreground.Value, 0, FColorPicker_Middle | FColorPicker_SameLine))
+					LoadStyle();
+				if (FColorPicker("Active color", &Vars::Menu::Theme::Active.Value, 0, FColorPicker_Left))
+					LoadStyle();
+				if (FColorPicker("Inactive color", &Vars::Menu::Theme::Inactive.Value, 0, FColorPicker_Middle | FColorPicker_SameLine))
+					LoadStyle();
+
+				FSDropdown("Cheat title", &Vars::Menu::CheatName.Value, {}, FSDropdown_Left);
+				FSDropdown("Chat info prefix", &Vars::Menu::CheatPrefix.Value, {}, FSDropdown_Right);
+				FKeybind("Menu key", Vars::Menu::MenuKey.Value, true);
+			} EndSection();
+			if (Section("Indicators"))
+				FDropdown("Indicators## MenuIndicators", &Vars::Menu::Indicators.Value, { "Ticks", "Crit hack", "Spectators", "Ping", "Conditions" }, {}, FDropdown_Multi);
+			EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+
+			EndTable();
+		break;
 	}
-}
-
-/* Tab: HvH */
-void CMenu::MenuHvH()
-{
-	using namespace ImGui;
-	if (BeginTable("HvHTable", 2))
-	{
-		/* Column 1 */
-		if (TableColumnChild("HvHCol1"))
-		{
-			const int iVar = g_ConVars.sv_maxusrcmdprocessticks->GetInt();
-			const int iTicks = iVar ? iVar : 24;
-
-			/* Section: Tickbase Exploits */
-			SectionTitle("Doubletap");
-			WToggle("Enabled", &Vars::CL_Move::DoubleTap::Enabled.Value);
-			WSlider("Tick limit", &Vars::CL_Move::DoubleTap::TickLimit.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WSlider("Warp rate", &Vars::CL_Move::DoubleTap::WarpRate.Value, 1, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WSlider("Passive recharge", &Vars::CL_Move::DoubleTap::PassiveRecharge.Value, 0, iTicks, "%d", ImGuiSliderFlags_AlwaysClamp);
-			WCombo("Mode###DTmode", &Vars::CL_Move::DoubleTap::Mode.Value, { "Always", "Hold", "Toggle" });
-			if (Vars::CL_Move::DoubleTap::Mode.Value != 0)
-				InputKeybind("Doubletap key", Vars::CL_Move::DoubleTap::DoubletapKey.Value);
-			InputKeybind("Recharge key", Vars::CL_Move::DoubleTap::RechargeKey.Value);
-			InputKeybind("Teleport key", Vars::CL_Move::DoubleTap::TeleportKey.Value);
-			MultiCombo({ "Wait for DT", "Anti-warp", "Avoid airborne", "Auto retain", "Auto Recharge", "Recharge While Dead", "Safe Tick", "Safe Tick Airborne" }, { &Vars::CL_Move::DoubleTap::WaitReady.Value, &Vars::CL_Move::DoubleTap::AntiWarp.Value, &Vars::CL_Move::DoubleTap::NotInAir.Value, &Vars::CL_Move::DoubleTap::AutoRetain.Value, &Vars::CL_Move::DoubleTap::AutoRecharge.Value, &Vars::CL_Move::DoubleTap::RechargeWhileDead.Value, &Vars::CL_Move::DoubleTap::SafeTick.Value, &Vars::CL_Move::DoubleTap::SafeTickAirOverride.Value }, "Options");
-			WToggle("Indicator", &Vars::CL_Move::DoubleTap::Indicator.Value);
-			ColorPickerL("Outline###DoubletapOutline", Vars::Colors::DtOutline.Value);
-
-			SectionTitle("Speed hack");
-			WToggle("Speed hack", &Vars::CL_Move::SpeedEnabled.Value);
-			if (Vars::CL_Move::SpeedEnabled.Value)
-				WSlider("SpeedHack factor", &Vars::CL_Move::SpeedFactor.Value, 1, 66, "%d");
-
-			/* Section: Fakelag */
-			SectionTitle("Fakelag");
-			WToggle("Enable Fakelag", &Vars::CL_Move::FakeLag::Enabled.Value);
-			WCombo("Mode###FLmode", &Vars::CL_Move::FakeLag::Mode.Value, { "Always", "Hold", "Toggle" });
-			if (Vars::CL_Move::FakeLag::Mode.Value != 0)
-				InputKeybind("Fakelag key", Vars::CL_Move::FakeLag::Key.Value);
-			WCombo("Type###FLtype", &Vars::CL_Move::FakeLag::Type.Value, { "Plain", "Random", "Adaptive" });
-
-			switch (Vars::CL_Move::FakeLag::Type.Value)
-			{
-				case 0: WSlider("Fakelag value", &Vars::CL_Move::FakeLag::Value.Value, 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp); break;
-				case 1:
-				{
-					WSlider("Random max###flRandMax", &Vars::CL_Move::FakeLag::Max.Value, Vars::CL_Move::FakeLag::Min.Value + 1, 22, "%d", ImGuiSliderFlags_AlwaysClamp);
-					WSlider("Random min###flRandMin", &Vars::CL_Move::FakeLag::Min.Value, 1, Vars::CL_Move::FakeLag::Max.Value - 1, "%d", ImGuiSliderFlags_AlwaysClamp);
-					break;
-				}
-			}	//	add more here if you add your own fakelag modes :D
-			MultiCombo({ "While Moving", "While Unducking", "While Airborne" }, { &Vars::CL_Move::FakeLag::WhileMoving.Value, &Vars::CL_Move::FakeLag::WhileUnducking.Value, &Vars::CL_Move::FakeLag::WhileGrounded.Value }, "Flags###FakeLagFlags");
-			WToggle("Unchoke On Attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value);
-
-			WToggle("Retain BlastJump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value);
-		} EndChild();
-
-		/* Column 2 */
-		if (TableColumnChild("HvHCol2"))
-		{
-			/* Section: Anti Aim */
-			SectionTitle("Anti Aim");
-			WToggle("Active", &Vars::AntiHack::AntiAim::Active.Value);
-			InputKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value);
-
-			WCombo("Real Pitch", &Vars::AntiHack::AntiAim::PitchReal.Value, { "None", "Up", "Down", "Zero" });
-			WCombo("Fake Pitch", &Vars::AntiHack::AntiAim::PitchFake.Value, { "None", "Up", "Down" });
-			
-			WCombo("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" });
-			WCombo("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" });
-			if (Vars::AntiHack::AntiAim::YawFake.Value == 5 || Vars::AntiHack::AntiAim::YawReal.Value == 5)
-				WSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, "%.0f", 0);
-			
-			WCombo("Real Offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" });
-			if (Vars::AntiHack::AntiAim::RealYawMode.Value != 1)
-				WSlider("Yaw Offset###RealYawOffset", &Vars::AntiHack::AntiAim::RealYawOffset.Value, -180, 180, "%.0f");
-			WCombo("Fake Offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" });
-			if (Vars::AntiHack::AntiAim::FakeYawMode.Value != 1)
-				WSlider("Yaw Offset###FakeYawOffset", &Vars::AntiHack::AntiAim::FakeYawOffset.Value, -180, 180, "%.0f");
-
-			MultiCombo({ "AntiOverlap", "Jitter Legs", "HidePitchOnShot", "Anti-Backstab" }, { &Vars::AntiHack::AntiAim::AntiOverlap.Value, &Vars::AntiHack::AntiAim::LegJitter.Value, &Vars::AntiHack::AntiAim::InvalidShootPitch.Value, &Vars::AntiHack::AntiAim::AntiBackstab.Value }, "Misc.");
-
-			/* Section: Auto Peek */
-			SectionTitle("Auto Peek");
-			InputKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey.Value);
-			WSlider("Max Distance", &Vars::CL_Move::AutoPeekDistance.Value, 50.f, 400.f, "%.0f");
-			WToggle("Free move", &Vars::CL_Move::AutoPeekFree.Value);
-
-			SectionTitle("Cheater Detection");
-			WToggle("Enable Cheater Detection", &Vars::Misc::CheaterDetection::Enabled.Value);
-			if (Vars::Misc::CheaterDetection::Enabled.Value)
-			{
-				MultiFlags({ "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" },
-					{ 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7, 1 << 8 },
-					&Vars::Misc::CheaterDetection::Methods.Value, "Detection Methods###CheaterDetectionMethods");
-				MultiFlags({ "Double Scans", "Lagging Client", "Timing Out" }, { 1 << 0, 1 << 1, 1 << 2 }, &Vars::Misc::CheaterDetection::Protections.Value, "Ignore Conditions###CheaterDetectionIgnoreMethods");
-				WSlider("Suspicion Gate", &Vars::Misc::CheaterDetection::SuspicionGate.Value, 5, 50, "%d");
-
-				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 1))
-				{
-					WSlider("Analytical High Score Mult", &Vars::Misc::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, "%.1f");
-				}
-
-				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 3 | 1 << 2))
-				{
-					WSlider("Packet Manipulation Gate", &Vars::Misc::CheaterDetection::PacketManipGate.Value, 1, 22, "%d");
-				}
-
-				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 4))
-				{
-					WSlider("BHop Sensitivity", &Vars::Misc::CheaterDetection::BHopMaxDelay.Value, 1, 5, "%d");
-					WSlider("BHop Minimum Detections", &Vars::Misc::CheaterDetection::BHopDetectionsRequired.Value, 2, 15, "%d");
-				}
-
-				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 5))
-				{
-					WSlider("Minimum Aim-Flick", &Vars::Misc::CheaterDetection::MinimumFlickDistance.Value, 5.f, 30.f, "%.1f");
-					WSlider("Maximum Post Flick Noise", &Vars::Misc::CheaterDetection::MaximumNoise.Value, 5.f, 15.f, "%.1f");
-				}
-
-				if (Vars::Misc::CheaterDetection::Methods.Value & (1 << 7))
-				{
-					WSlider("Maximum Scaled Aimbot FOV", &Vars::Misc::CheaterDetection::MaxScaledAimbotFoV.Value, 5.f, 30.f, "%.1f");
-					WSlider("Minimum Aimbot FOV", &Vars::Misc::CheaterDetection::MinimumAimbotFoV.Value, 5.f, 30.f, "%.1f");
-				}
-			}
-			SectionTitle("Resolver");
-			WToggle("Enable Resolver", &Vars::AntiHack::Resolver::Resolver.Value);
-			if (Vars::AntiHack::Resolver::Resolver.Value)
-				WToggle("Ignore in-air", &Vars::AntiHack::Resolver::IgnoreAirborne.Value);
-		} EndChild();
-
-		EndTable();
 	}
 }
 
@@ -1101,459 +927,391 @@ void CMenu::MenuHvH()
 void CMenu::MenuMisc()
 {
 	using namespace ImGui;
+
 	if (BeginTable("MiscTable", 2))
 	{
 		/* Column 1 */
-		if (TableColumnChild("MiscCol1"))
+		TableNextColumn();
+		if (Section("Movement"))
 		{
-			SectionTitle("Movement");
-			WToggle("Bunnyhop", &Vars::Misc::AutoJump.Value);
-			WCombo("Autostrafe", &Vars::Misc::AutoStrafe.Value, { "Off", "Legit", "Directional" });
+			FToggle("Bunnyhop", &Vars::Misc::AutoJump.Value);
+			FDropdown("Autostrafe", &Vars::Misc::AutoStrafe.Value, { "Off", "Legit", "Directional" });
 			if (Vars::Misc::AutoStrafe.Value == 2)
 			{
-				WToggle("Only on movement key", &Vars::Misc::DirectionalOnlyOnMove.Value);
-				WToggle("Only on space", &Vars::Misc::DirectionalOnlyOnSpace.Value);
+				FToggle("Only on movement key", &Vars::Misc::DirectionalOnlyOnMove.Value);
+				FToggle("Only on space", &Vars::Misc::DirectionalOnlyOnSpace.Value, FToggle_Middle);
 			}
-			WToggle("Fast stop", &Vars::Misc::FastStop.Value);
-			WToggle("Fast accelerate", &Vars::Misc::FastAccel.Value);
-			WToggle("Fast strafe", &Vars::Misc::FastStrafe.Value);
-			WToggle("No push", &Vars::Misc::NoPush.Value);
-			WToggle("Crouch speed", &Vars::Misc::CrouchSpeed.Value);
-
-			SectionTitle("Exploits");
-			WToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value);
-			WToggle("Pure bypass", &Vars::Misc::BypassPure.Value);
-			WToggle("Ping reducer", &Vars::Misc::PingReducer.Value);
+			FToggle("Fast stop", &Vars::Misc::FastStop.Value);
+			FToggle("Fast accelerate", &Vars::Misc::FastAccel.Value, FToggle_Middle);
+			FToggle("Fast strafe", &Vars::Misc::FastStrafe.Value);
+			FToggle("No push", &Vars::Misc::NoPush.Value, FToggle_Middle);
+			FToggle("Crouch speed", &Vars::Misc::CrouchSpeed.Value);
+		} EndSection();
+		if (Section("Exploits"))
+		{
+			FToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value);
+			FToggle("Pure bypass", &Vars::Misc::BypassPure.Value, FToggle_Middle);
+			FToggle("Ping reducer", &Vars::Misc::PingReducer.Value);
 			if (Vars::Misc::PingReducer.Value)
-				WSlider("cl_cmdrate", &Vars::Misc::PingTarget.Value, 1, 66);
-			WToggle("Equip region unlock", &Vars::Misc::EquipRegionUnlock.Value); HelpMarker("This doesn't let you add the equip regions back once you turn it on.");
-
-			if (Vars::Debug::Info.Value)
+				FSlider("cl_cmdrate", &Vars::Misc::PingTarget.Value, 1, 66, 1, "%d", FSlider_Right);
+			FToggle("Equip region unlock", &Vars::Misc::EquipRegionUnlock.Value);
+		} EndSection();
+		if (Vars::Debug::Info.Value)
+		{
+			if (Section("Convar spoofer"))
 			{
-				SectionTitle("Convar spoofer");
-				WInputText("Convar", &Vars::Misc::ConvarName.Value);
-				WInputText("Value", &Vars::Misc::ConvarValue.Value);
-				if (Button("Send", ImVec2(GetWindowSize().x - 2 * GetStyle().WindowPadding.x, 20)))
+				FSDropdown("Convar", &Vars::Misc::ConvarName.Value, {}, FSDropdown_Left);
+				FSDropdown("Value", &Vars::Misc::ConvarValue.Value, {}, FSDropdown_Right);
+				if (FButton("Send"))
 				{
 					CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-					if (netChannel == nullptr) { return; }
+					if (netChannel)
+					{
+						Utils::ConLog("Convar", std::format("Sent {} as {}", Vars::Misc::ConvarName.Value, Vars::Misc::ConvarValue.Value).c_str(), Vars::Menu::Theme::Accent.Value);
+						NET_SetConVar cmd(Vars::Misc::ConvarName.Value.c_str(), Vars::Misc::ConvarValue.Value.c_str());
+						netChannel->SendNetMsg(cmd);
 
-					Utils::ConLog("Convar", std::format("Sent {} as {}", Vars::Misc::ConvarName.Value, Vars::Misc::ConvarValue.Value).c_str(), Vars::Menu::Theme::Accent.Value);
-					NET_SetConVar cmd(Vars::Misc::ConvarName.Value.c_str(), Vars::Misc::ConvarValue.Value.c_str());
-					netChannel->SendNetMsg(cmd);
-
-					//Vars::Misc::ConvarName = "";
-					//Vars::Misc::ConvarValue = "";
+						//Vars::Misc::ConvarName = "";
+						//Vars::Misc::ConvarValue = "";
+					}
 				}
-			}
-
-			SectionTitle("Game");
-			WToggle("Network fix", &Vars::Misc::NetworkFix.Value);
-			WToggle("Prediction error jitter fix", &Vars::Misc::PredictionErrorJitterFix.Value);
-			WToggle("SetupBones optimization", &Vars::Misc::SetupBonesOptimization.Value);
-		} EndChild();
+			} EndSection();
+		}
+		if (Section("Game"))
+		{
+			FToggle("Network fix", &Vars::Misc::NetworkFix.Value);
+			FToggle("Prediction error jitter fix", &Vars::Misc::PredictionErrorJitterFix.Value);
+			FToggle("SetupBones optimization", &Vars::Misc::SetupBonesOptimization.Value);
+		} EndSection();
 
 		/* Column 2 */
-		if (TableColumnChild("MiscCol2"))
+		TableNextColumn();
+		if (Section("Queueing"))
 		{
-			SectionTitle("Queueing");
-			WToggle("Region selector", &Vars::Misc::RegionChanger.Value);
-			MultiFlags({ "Atlanta", "Chicago", "Los Angeles", "Moses Lake", "Seattle", "Virginia", "Washington", "Amsterdam", "Frankfurt", "London", "Madrid", "Paris", "Stockholm", "Vienna", "Warsaw", "Buenos Aires", "Lima", "Santiago", "Sao Paulo", "Chennai", "Dubai", "Guangzhou", "Hong Kong", "Mumbai", "Seoul", "Shanghai", "Singapore", "Tianjin", "Tokyo", "Sydney", "Johannesburg" },
-				{		  DC_ATL,	 DC_ORD,	DC_LAX,		   DC_EAT,		 DC_SEA,	DC_IAD,		DC_DFW,		  DC_AMS,	   DC_FRA,		DC_LHR,	  DC_MAD,	DC_PAR,	 DC_STO,	  DC_VIE,	DC_WAW,	  DC_EZE,		  DC_LIM, DC_SCL,	  DC_GRU,	   DC_MAA,	  DC_DXB,  DC_CAN,		DC_HKG,		 DC_BOM,   DC_SEO,	DC_SHA,		DC_SGP,		 DC_TSN,	DC_TYO,	 DC_SYD,   DC_JNB },
-				&Vars::Misc::RegionsAllowed.Value,
-				"Regions"
+			FDropdown("Force regions", &Vars::Misc::ForceRegions.Value,
+				{ "Atlanta", "Chicago", "Los Angeles", "Moses Lake", "Seattle", "Virginia", "Washington", "Amsterdam", "Frankfurt", "London", "Madrid", "Paris", "Stockholm", "Vienna", "Warsaw", "Buenos Aires", "Lima", "Santiago", "Sao Paulo", "Chennai", "Dubai", "Guangzhou", "Hong Kong", "Mumbai", "Seoul", "Shanghai", "Singapore", "Tianjin", "Tokyo", "Sydney", "Johannesburg" },
+				{ DC_ATL,	 DC_ORD,	DC_LAX,		   DC_EAT,		 DC_SEA,	DC_IAD,		DC_DFW,		  DC_AMS,	   DC_FRA,		DC_LHR,	  DC_MAD,	DC_PAR,	 DC_STO,	  DC_VIE,	DC_WAW,	  DC_EZE,		  DC_LIM, DC_SCL,	  DC_GRU,	   DC_MAA,	  DC_DXB,  DC_CAN,		DC_HKG,		 DC_BOM,   DC_SEO,	DC_SHA,		DC_SGP,		 DC_TSN,	DC_TYO,	 DC_SYD,   DC_JNB },
+				FDropdown_Multi
 			);
-			WToggle("Freeze queue timer", &Vars::Misc::FreezeQueue.Value);
-			WCombo("Auto casual queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" });
-
-			SectionTitle("Automation");
-			WToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value);
-			WToggle("Taunt slide", &Vars::Misc::TauntSlide.Value);
-			WToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value);
-
-			SectionTitle("Sound");
-			MultiFlags({ "Footsteps", "Noisemaker" }, { 1 << 0, 1 << 1 }, &Vars::Misc::SoundBlock.Value, "Block Sounds###SoundRemovals");
-
-			SectionTitle("Chat");
-			WToggle("Chat Flags", &Vars::Misc::ChatFlags.Value);
-
-			SectionTitle("Steam RPC");
-			WToggle("Steam RPC", &Vars::Misc::Steam::EnableRPC.Value);
-			WCombo("Match group", &Vars::Misc::Steam::MatchGroup.Value, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" });
-			WToggle("Override in menu", &Vars::Misc::Steam::OverrideMenu.Value);
-			WCombo("Map text", &Vars::Misc::Steam::MapText.Value, { "Custom", "Fedoraware", "Figoraware", "Meowhook.club", "Rathook.cc", "Nitro.tf" });
-			if (Vars::Misc::Steam::MapText.Value == 0)
-				WInputText("Custom map text", &Vars::Misc::Steam::CustomText.Value);
-			WInputInt("Group size", &Vars::Misc::Steam::GroupSize.Value);
-		} EndChild();
+			FToggle("Freeze queue", &Vars::Misc::FreezeQueue.Value);
+			FDropdown("Auto queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" });
+		} EndSection();
+		if (Section("Automation"))
+		{
+			FToggle("Anti-backstab", &Vars::Misc::AntiBackstab.Value);
+			FToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value, FToggle_Middle); // i don't think this works
+			FToggle("Taunt control", &Vars::Misc::TauntControl.Value);
+			FToggle("Kart control", &Vars::Misc::KartControl.Value, FToggle_Middle);
+			FToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value);
+		} EndSection();
+		if (Section("Sound"))
+		{
+			FDropdown("Block sounds## SoundRemovals", &Vars::Misc::SoundBlock.Value, { "Footsteps", "Noisemaker" }, {}, FDropdown_Multi);
+		} EndSection();
+		if (Section("Chat"))
+		{
+			FToggle("Chat tags", &Vars::Misc::ChatTags.Value);
+		} EndSection();
+		if (Section("Steam RPC"))
+		{
+			FToggle("Steam RPC", &Vars::Misc::Steam::EnableRPC.Value);
+			FDropdown("Match group", &Vars::Misc::Steam::MatchGroup.Value, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" });
+			FToggle("Override in menu", &Vars::Misc::Steam::OverrideMenu.Value);
+			FSDropdown("Map text", &Vars::Misc::Steam::MapText.Value, { "Fedoraware", "Figoraware", "Meowhook.club", "Rathook.cc", "Nitro.tf" }, FSDropdown_Custom);
+			FSlider("Group size", &Vars::Misc::Steam::GroupSize.Value, 0, 6);
+		} EndSection();
 
 		EndTable();
 	}
 }
 
 /* Tab: Settings */
+void CMenu::MenuLogs()
+{
+	using namespace ImGui;
+
+	switch (CurrentLogsTab)
+	{
+	// Logs
+	case 0:
+		// Eventually put all logs here, regardless of any settings
+		break;
+	// Settings
+	case 1:
+		if (BeginTable("ConfigSettingsTable", 2))
+		{
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Logging"))
+			{	// i will probably allow logto to be changed for each individually
+				FDropdown("Logs", &Vars::Logging::Logs.Value, { "Vote start", "Vote cast", "Class Changes", "Damage" }, {}, FDropdown_Left | FDropdown_Multi);
+				FDropdown("Log to", &Vars::Logging::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Right | FDropdown_Multi);
+				FColorPicker("Notification background", &Vars::Logging::Notification::Background.Value);
+				FColorPicker("Notification outline", &Vars::Logging::Notification::Outline.Value, 1);
+				FColorPicker("Notification color", &Vars::Logging::Notification::Text.Value, 2);
+				FSlider("Notification time", &Vars::Logging::Notification::Lifetime.Value, 0.5f, 3.f, 0.5f, "%.1f");
+			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+
+			EndTable();
+		}
+	}
+}
+
+/* Tab: Config */
 void CMenu::MenuSettings()
 {
 	using namespace ImGui;
-	if (BeginTable("SettingsTable", 2))
+
+	switch (CurrentConfigTab)
 	{
-		/* Column 1 */
-		if (TableColumnChild("SettingsCol1"))
+	// Settings
+	case 0:
+		if (BeginTable("ConfigSettingsTable", 2))
 		{
-			SectionTitle("Settings");
-			if (ColorPicker("Accent", Vars::Menu::Theme::Accent.Value))
-				LoadStyle();
-			SameLine(); Text("Accent");
-			WInputText("Name", &Vars::Menu::CheatName.Value);
-			WInputText("Chat Prefix", &Vars::Menu::CheatPrefix.Value);
-			WToggle("Keybinds", &Vars::Menu::ShowKeybinds.Value);
-			InputKeybind("Menu key", Vars::Menu::MenuKey.Value, true);
-
-			SectionTitle("Configs");
-			if (Button("Open configs folder", SIZE_FULL_WIDTH))
-				ShellExecuteA(NULL, NULL, g_CFG.GetConfigPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
-			if (Button("Open visuals folder", SIZE_FULL_WIDTH))
-				ShellExecuteA(NULL, NULL, g_CFG.GetVisualsPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
-			Dummy({ 0, 5 });
-
-			/* Config Tabs */
-			ImGui::PushFont(SectionFont);
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.f);
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 });
-			if (ImGui::BeginTable("ConfigTable", 2))
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Config"))
 			{
-				ImGui::PushStyleColor(ImGuiCol_Text, TextLight.Value);
+				if (FButton("Configs folder", FButton_Left))
+					ShellExecuteA(NULL, NULL, g_CFG.GetConfigPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
+				if (FButton("Visuals folder", FButton_Right | FButton_SameLine))
+					ShellExecuteA(NULL, NULL, g_CFG.GetVisualsPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
 
-				if (ImGui::TabButton("General", CurrentConfigTab == ConfigTab::General))
-					CurrentConfigTab = ConfigTab::General;
-				if (ImGui::TabButton("Visuals", CurrentConfigTab == ConfigTab::Visuals))
-					CurrentConfigTab = ConfigTab::Visuals;
+				FTabs({ "GENERAL", "VISUALS", }, &CurrentConfigType, { ImGui::GetColumnWidth() / 2 + 2, SubTabSize.y }, { 6, GetCursorPos().y }, false);
 
-				ImGui::PopStyleColor(1);
-				ImGui::EndTable();
-			}
-			ImGui::PopStyleVar(2);
-			ImGui::PopFont();
-
-			static std::string selected;
-			static std::string selectedvis;
-
-			/* Config list*/
-			if (CurrentConfigTab == ConfigTab::General)
-			{
-				// Current config
-				const std::string cfgText = "Loaded: " + g_CFG.GetCurrentConfig();
-				Text(cfgText.c_str());
-
-				// Config name field
-				std::string newConfigName = {};
-				if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
+				switch (CurrentConfigType)
 				{
-					if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + newConfigName))
-						g_CFG.SaveConfig(newConfigName);
-				}
-
-				// Config list
-				for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetConfigPath()))
+				// General
+				case 0:
 				{
-					if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
-						continue;
-
-					std::string configName = entry.path().filename().string();
-					configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
-
-					if (configName == selected)
+					static std::string newName;
+					FSDropdown("Config name", &newName, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
+					if (FButton("Create", FButton_Fit | FButton_SameLine | FButton_Large) && newName.length() > 0)
 					{
-						const ImGuiStyle* style2 = &GetStyle();
-						const ImVec4* colors2 = style2->Colors;
-						ImVec4 buttonColor = colors2[ImGuiCol_Button];
-						buttonColor.w *= .5f;
-						PushStyleColor(ImGuiCol_Button, buttonColor);
+						if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + newName))
+							g_CFG.SaveConfig(newName);
+						newName.clear();
+					}
 
-						// Config name button
-						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-							selected = configName;
-						PopStyleColor();
+					for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetConfigPath()))
+					{
+						if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
+							continue;
 
-						if (BeginTable("ConfigActions", 3))
+						std::string configName = entry.path().filename().string();
+						configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
+
+						const auto current = GetCursorPos().y;
+
+						SetCursorPos({ 14, current + 11 });
+						TextColored(configName == g_CFG.GetCurrentConfig() ? F::Menu.Active.Value : F::Menu.Inactive.Value, configName.c_str());
+
+						int o = 26;
+
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_DELETE))
+							OpenPopup(std::format("Confirmation## DeleteConfig{}", configName).c_str());
+						o += 25;
+
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_SAVE))
 						{
-							// Save config button
-							TableNextColumn();
-							if (Button("Save", SIZE_FULL_WIDTH))
-							{
-								if (configName != g_CFG.GetCurrentConfig())
-									OpenPopup("Save config?");
-								else
-								{
-									g_CFG.SaveConfig(selected);
-									selected.clear();
-								}
-							}
-
-							// Load config button
-							TableNextColumn();
-							if (Button("Load", SIZE_FULL_WIDTH))
-							{
-								g_CFG.LoadConfig(selected);
-								selected.clear();
-								LoadStyle();
-							}
-
-							// Remove config button
-							TableNextColumn();
-							if (Button("Remove", SIZE_FULL_WIDTH))
-								OpenPopup("Remove config?");
-
-							// Dialogs
-							{
-								// Save config dialog
-								if (BeginPopupModal("Save config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-								{
-									Text("Do you really want to override this config?");
-
-									Separator();
-									if (Button("Yes, override!", ImVec2(150, 0)))
-									{
-										g_CFG.SaveConfig(selected);
-										selected.clear();
-										CloseCurrentPopup();
-									}
-
-									SameLine();
-									if (Button("No", ImVec2(120, 0)))
-										CloseCurrentPopup();
-									EndPopup();
-								}
-
-								// Delete config dialog
-								if (BeginPopupModal("Remove config?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-								{
-									Text("Do you really want to delete this config?");
-
-									Separator();
-									if (Button("Yes, remove!", ImVec2(150, 0)))
-									{
-										g_CFG.RemoveConfig(selected);
-										selected.clear();
-										CloseCurrentPopup();
-									}
-									SameLine();
-									if (Button("No", ImVec2(150, 0)))
-										CloseCurrentPopup();
-									EndPopup();
-								}
-							}
-
-							EndTable();
+							if (configName != g_CFG.GetCurrentConfig())
+								OpenPopup(std::format("Confirmation## SaveConfig{}", configName).c_str());
+							else
+								g_CFG.SaveConfig(configName);
 						}
-					}
-					else if (configName == g_CFG.GetCurrentConfig())
-					{
-						PushStyleColor(ImGuiCol_Button, GetStyle().Colors[ImGuiCol_ButtonActive]);
-						std::string buttonText = "> " + configName + " <";
-						if (Button(buttonText.c_str(), SIZE_FULL_WIDTH))
-							selected = configName;
-						PopStyleColor();
-					}
-					else
-					{
-						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-							selected = configName;
-					}
-				}
+						o += 25;
 
-			}
-			else if (CurrentConfigTab == ConfigTab::Visuals)
-			{
-				// Current config
-				const std::string cfgText = "Loaded: " + g_CFG.GetCurrentVisuals();
-				Text(cfgText.c_str());
-
-				// Config name field
-				std::string newConfigName = {};
-
-				if (InputTextWithHint("###configname", "New config name", &newConfigName, ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + newConfigName))
-						g_CFG.SaveVisual(newConfigName);
-				}
-
-				// Visuals list
-				for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetVisualsPath()))
-				{
-					if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
-						continue;
-
-					std::string configName = entry.path().filename().string();
-					configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
-
-					if (configName == selected)
-					{
-						const ImGuiStyle* style2 = &GetStyle();
-						const ImVec4* colors2 = style2->Colors;
-						ImVec4 buttonColor = colors2[ImGuiCol_Button];
-						buttonColor.w *= .5f;
-						PushStyleColor(ImGuiCol_Button, buttonColor);
-
-						// Config name button
-						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-							selected = configName;
-						PopStyleColor();
-
-						// Visuals action buttons
-						if (BeginTable("ConfigActions", 3))
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_DOWNLOAD))
 						{
-							// Visuals config button
-							TableNextColumn();
-							if (Button("Save", SIZE_FULL_WIDTH))
-							{
-								if (configName != g_CFG.GetCurrentVisuals())
-									OpenPopup("Save visuals?");
-								else
-								{
-									g_CFG.SaveVisual(selected);
-									selected.clear();
-								}
-							}
-
-							// Load visuals button
-							TableNextColumn();
-							if (Button("Load", SIZE_FULL_WIDTH))
-							{
-								g_CFG.LoadVisual(selected);
-								selected.clear();
-								LoadStyle();
-							}
-
-							// Remove visual button
-							TableNextColumn();
-							if (Button("Remove", SIZE_FULL_WIDTH))
-								OpenPopup("Remove visuals?");
-
-							// Dialogs
-							{
-								// Save config dialog
-								if (BeginPopupModal("Save visuals?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-								{
-									Text("Do you really want to override this config?");
-
-									Separator();
-									if (Button("Yes, override!", ImVec2(150, 0)))
-									{
-										g_CFG.SaveVisual(selected);
-										selected.clear();
-										CloseCurrentPopup();
-									}
-
-									SameLine();
-									if (Button("No", ImVec2(120, 0)))
-										CloseCurrentPopup();
-									EndPopup();
-								}
-
-								// Delete config dialog
-								if (BeginPopupModal("Remove visuals?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-								{
-									Text("Do you really want to delete this config?");
-
-									Separator();
-									if (Button("Yes, remove!", ImVec2(150, 0)))
-									{
-										g_CFG.RemoveVisual(selected);
-										selected.clear();
-										CloseCurrentPopup();
-									}
-									SameLine();
-									if (Button("No", ImVec2(150, 0)))
-										CloseCurrentPopup();
-									EndPopup();
-								}
-							}
-
-							EndTable();
+							g_CFG.LoadConfig(configName);
+							LoadStyle();
 						}
+
+						// Dialogs
+						{
+							// Save config dialog
+							if (BeginPopupModal(std::format("Confirmation## SaveConfig{}", configName).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+							{
+								Text(std::format("Do you really want to override '{}'?", configName).c_str());
+
+								if (FButton("Yes, override", FButton_Left))
+								{
+									g_CFG.SaveConfig(configName);
+									CloseCurrentPopup();
+								}
+								if (FButton("No", FButton_Right | FButton_SameLine))
+									CloseCurrentPopup();
+
+								EndPopup();
+							}
+
+							// Delete config dialog
+							if (BeginPopupModal(std::format("Confirmation## DeleteConfig{}", configName).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+							{
+								Text(std::format("Do you really want to delete '{}'?", configName).c_str());
+
+								if (FButton("Yes, delete", FButton_Left))
+								{
+									g_CFG.RemoveConfig(configName);
+									CloseCurrentPopup();
+								}
+								if (FButton("No", FButton_Right | FButton_SameLine))
+									CloseCurrentPopup();
+
+								EndPopup();
+							}
+						}
+
+						SetCursorPos({ 6, current }); DebugDummy({ 0, 28 });
 					}
-					else if (configName == g_CFG.GetCurrentVisuals())
+					break;
+				}
+				// Visuals
+				case 1:
+				{
+					static std::string newName;
+					FSDropdown("Config name", &newName, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
+					if (FButton("Create", FButton_Fit | FButton_SameLine | FButton_Large) && newName.length() > 0)
 					{
-						PushStyleColor(ImGuiCol_Button, GetStyle().Colors[ImGuiCol_ButtonActive]);
-						std::string buttonText = "> " + configName + " <";
-						if (Button(buttonText.c_str(), SIZE_FULL_WIDTH))
-							selected = configName;
-						PopStyleColor();
+						if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + newName))
+							g_CFG.SaveVisual(newName);
+						newName.clear();
 					}
-					else
+
+					for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetVisualsPath()))
 					{
-						if (Button(configName.c_str(), SIZE_FULL_WIDTH))
-							selected = configName;
+						if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
+							continue;
+
+						std::string configName = entry.path().filename().string();
+						configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
+
+						const auto current = GetCursorPos().y;
+
+						SetCursorPos({ 14, current + 11 });
+						TextColored(configName == g_CFG.GetCurrentConfig() ? F::Menu.Active.Value : F::Menu.Inactive.Value, configName.c_str());
+
+
+
+						int o = 26;
+
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_DELETE))
+							OpenPopup(std::format("Confirmation## DeleteVisual{}", configName).c_str());
+						o += 25;
+
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_SAVE))
+						{
+							if (configName != g_CFG.GetCurrentVisuals())
+								OpenPopup(std::format("Confirmation## SaveVisual{}", configName).c_str());
+							else
+								g_CFG.SaveVisual(configName);
+						}
+						o += 25;
+
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_DOWNLOAD))
+						{
+							g_CFG.LoadVisual(configName);
+							LoadStyle();
+						}
+
+						// Dialogs
+						{
+							// Save config dialog
+							if (BeginPopupModal(std::format("Confirmation## SaveVisual{}", configName).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+							{
+								Text(std::format("Do you really want to override '{}'?", configName).c_str());
+
+								if (FButton("Yes, override", FButton_Left))
+								{
+									g_CFG.SaveVisual(configName);
+									CloseCurrentPopup();
+								}
+								if (FButton("No", FButton_Right | FButton_SameLine))
+									CloseCurrentPopup();
+
+								EndPopup();
+							}
+
+							// Delete config dialog
+							if (BeginPopupModal(std::format("Confirmation## DeleteVisual{}", configName).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+							{
+								Text(std::format("Do you really want to delete '{}'?", configName).c_str());
+
+								if (FButton("Yes, delete", FButton_Left))
+								{
+									g_CFG.RemoveVisual(configName);
+									CloseCurrentPopup();
+								}
+								if (FButton("No", FButton_Right | FButton_SameLine))
+									CloseCurrentPopup();
+
+								EndPopup();
+							}
+						}
+
+						SetCursorPos({ 6, current }); DebugDummy({ 0, 28 });
 					}
 				}
-			}
-		} EndChild();
+				}
+			} EndSection();
+			SetCursorPosX(GetCursorPosX() + 8);
+			PushStyleColor(ImGuiCol_Text, F::Menu.Inactive.Value);
+			Text("Built @ %s, %s", __DATE__, __TIME__);
+			PopStyleColor();
 
-		/* Column 2 */
-		if (TableColumnChild("SettingsCol2"))
-		{
-			// i will probably create a new tab for this and allow logto to be changed for each individually
-			SectionTitle("Logging");
-			MultiFlags({ "Vote start", "Vote cast", "Class Changes", "Damage" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, &Vars::Logging::Logs.Value, "Logs");
-			MultiFlags({ "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, &Vars::Logging::LogTo.Value, "Log to");
-			ColorPickerL("Notification background", Vars::Logging::Notification::Background.Value);
-			ColorPickerL("Notification outline", Vars::Logging::Notification::Outline.Value, 1);
-			ColorPickerL("Notification color", Vars::Logging::Notification::Text.Value, 2);
-			WSlider("Notification time", &Vars::Logging::Notification::Lifetime.Value, 0.5f, 3.f, "%.1f");
-
-			SectionTitle("Debug");
-			WToggle("Debug info", &Vars::Debug::Info.Value);
-			WToggle("Debug logging", &Vars::Debug::Logging.Value);
-			WToggle("Allow secure servers", I::AllowSecureServers);
-			bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
-			WToggle("Pending Ping Refresh", m_bPendingPingRefresh);
-			WToggle("Show server hitboxes###tpShowServer", &Vars::Debug::ServerHitbox.Value); HelpMarker("localhost servers");
-			WToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value);
-
-			// Particle tester
-			if (CollapsingHeader("Particles"))
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Debug"))
 			{
+				FToggle("Debug info", &Vars::Debug::Info.Value);
+				FToggle("Debug logging", &Vars::Debug::Logging.Value, FToggle_Middle);
+				FToggle("Allow secure servers", I::AllowSecureServers);
+				bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
+				FToggle("Pending ping refresh", m_bPendingPingRefresh, FToggle_Middle);
+				FToggle("Show server hitboxes", &Vars::Debug::ServerHitbox.Value); HelpMarker("localhost servers");
+				FToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value, FToggle_Middle);
 				static std::string particleName = "ping_circle";
-
-				InputText("Particle name", &particleName);
+				FSDropdown("Particle name", &particleName, {}, FSDropdown_Left);
 				const auto& pLocal = g_EntityCache.GetLocal();
-				if (Button("Dispatch") && pLocal)
+				if (FButton("Dispatch", FButton_Right | FButton_SameLine | FButton_Large) && pLocal)
 					Particles::DispatchParticleEffect(particleName.c_str(), pLocal->GetAbsOrigin(), { });
-			}
-
-			SectionTitle("Utilities");
-			if (Button("cl_fullupdate", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("cl_fullupdate");
-			if (Button("Retry", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("retry");
-			if (Button("Console", SIZE_FULL_WIDTH))
-				I::EngineClient->ClientCmd_Unrestricted("showconsole");
-			if (Button("Fix Chams", SIZE_FULL_WIDTH))
+			} EndSection();
+			if (Section("Extra"))
 			{
-				F::Materials.ReloadMaterials();
-			}
+				if (FButton("cl_fullupdate", FButton_Left))
+					I::EngineClient->ClientCmd_Unrestricted("cl_fullupdate");
+				if (FButton("retry", FButton_Right | FButton_SameLine))
+					I::EngineClient->ClientCmd_Unrestricted("retry");
+				if (FButton("Console", FButton_Left))
+					I::EngineClient->ClientCmd_Unrestricted("showconsole");
+				if (FButton("Fix Chams", FButton_Right | FButton_SameLine))
+					F::Materials.ReloadMaterials();
 #ifdef DEBUG
-			if (Button("Dump Classes", SIZE_FULL_WIDTH))
-				F::Misc.DumpClassIDS();
+				if (FButton("Dump Classes", FButton_Left))
+					F::Misc.DumpClassIDS();
 #endif
-			//if (Button("CPrint", SIZE_FULL_WIDTH))
-			//	I::CenterPrint->Print((char*)"niggaz");
-
-			if (!I::EngineClient->IsConnected())
-			{
-				if (Button("Unlock all achievements", SIZE_FULL_WIDTH))
-					OpenPopup("Unlock achievements?");
-				if (Button("Lock all achievements", SIZE_FULL_WIDTH))
-					OpenPopup("Lock achievements?");
-
+				if (!I::EngineClient->IsConnected())
 				{
+					if (FButton("Unlock achievements", FButton_Left))
+						OpenPopup("Unlock achievements?");
+					if (FButton("Lock achievements", FButton_Right | FButton_SameLine))
+						OpenPopup("Lock achievements?");
+
 					if (BeginPopupModal("Unlock achievements?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 					{
 						Text("Do you really want to unlock all achievements?");
 
 						Separator();
-						if (Button("Yes, unlock!", ImVec2(150, 0)))
+						if (Button("Yes, unlock", ImVec2(150, 0)))
 						{
 							F::Misc.UnlockAchievements();
 							CloseCurrentPopup();
@@ -1568,7 +1326,7 @@ void CMenu::MenuSettings()
 						Text("Do you really want to lock all achievements?");
 
 						Separator();
-						if (Button("Yes, lock!", ImVec2(150, 0)))
+						if (Button("Yes, lock", ImVec2(150, 0)))
 						{
 							F::Misc.LockAchievements();
 							CloseCurrentPopup();
@@ -1579,21 +1337,140 @@ void CMenu::MenuSettings()
 						EndPopup();
 					}
 				}
-			}
-			if (Vars::Debug::Info.Value)
-			{
-				if (Button("Reveal bullet lines", SIZE_FULL_WIDTH))
-					F::Visuals.RevealBulletLines();
-				if (Button("Reveal prediction lines", SIZE_FULL_WIDTH))
-					F::Visuals.RevealSimLines();
-				if (Button("Reveal boxes", SIZE_FULL_WIDTH))
-					F::Visuals.RevealBoxes();
-				if (Button("Print Hashes", SIZE_FULL_WIDTH))
-					Hash::PrintHash();
-			}
-		} EndChild();
+				if (Vars::Debug::Info.Value)
+				{
+					if (FButton("Reveal bullet lines", FButton_Left))
+						F::Visuals.RevealBulletLines();
+					if (FButton("Reveal prediction lines", FButton_Right | FButton_SameLine))
+						F::Visuals.RevealSimLines();
+					if (FButton("Reveal boxes", FButton_Left))
+						F::Visuals.RevealBoxes();
+					if (FButton("Print hashes", FButton_Right | FButton_SameLine))
+						Hash::PrintHash();
+				}
+			} EndSection();
 
-		EndTable();
+			EndTable();
+		}
+		break;
+	// Conditions
+	case 1:
+		if (BeginTable("ConfigConditionsTable", 2))
+		{
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Settings"))
+			{
+				FToggle("Show keybind menu", &Vars::Menu::ShowKeybinds.Value);
+				FToggle("Show keybind changes", &Vars::Menu::ShowKBChanges.Value, FToggle_Middle);
+			} EndSection();
+
+			TableNextColumn();
+
+			EndTable();
+		}
+		break;
+	// PlayerList
+	case 2:
+		F::PlayerList.Render();
+		break;
+	// MaterialManager
+	case 3:
+		if (BeginTable("MaterialsTable", 2))
+		{
+			/* Column 1 */
+			TableNextColumn();
+			if (Section("Manager"))
+			{
+				static std::string newName;
+				FSDropdown("Material name", &newName, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
+				if (FButton("Create", FButton_Fit | FButton_SameLine | FButton_Large) && newName.length() > 0)
+				{
+					F::Materials.AddMaterial(newName);
+					newName.clear();
+				}
+
+				if (FButton("Folder", FButton_Fit | FButton_SameLine | FButton_Large))
+					ShellExecuteA(nullptr, "open", MaterialFolder.c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
+
+				for (auto const& mat : F::Materials.m_ChamMaterials)
+				{
+					const auto current = GetCursorPos().y;
+
+					SetCursorPos({ 14, current + 11 });
+					TextColored(mat.bLocked ? F::Menu.Inactive.Value : F::Menu.Active.Value, mat.sName.c_str());
+
+					int o = 26;
+
+					if (!mat.bLocked)
+					{
+						SetCursorPos({ GetWindowSize().x - o, current + 9 });
+						if (IconButton(ICON_MD_DELETE))
+							OpenPopup(std::format("Confirmation## DeleteMat{}", mat.sName).c_str());
+						if (BeginPopupModal(std::format("Confirmation## DeleteMat{}", mat.sName).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+						{
+							Text(std::format("Do you really want to delete '{}'?", mat.sName).c_str());
+
+							if (FButton("Yes", FButton_Left))
+							{
+								F::Materials.RemoveMaterial(mat.sName);
+								CloseCurrentPopup();
+							}
+							if (FButton("No", FButton_Right | FButton_SameLine))
+								CloseCurrentPopup();
+
+							EndPopup();
+						}
+						o += 25;
+					}
+
+					SetCursorPos({ GetWindowSize().x - o, current + 9 });
+					if (IconButton(ICON_MD_EDIT))
+					{
+						CurrentMaterial = mat.sName;
+						LockedMaterial = mat.bLocked;
+
+						TextEditor.SetText(F::Materials.GetVMT(CurrentMaterial));
+						TextEditor.SetReadOnly(LockedMaterial);
+					}
+
+					SetCursorPos({ 6, current }); DebugDummy({ 0, 28 });
+				}
+			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+			if (CurrentMaterial != "")
+			{
+				if (Section("Editor", GetContentRegionMax().y - 18, true))
+				{
+					// Toolbar
+					if (!LockedMaterial)
+					{
+						if (FButton("Save", FButton_Fit))
+						{
+							auto text = TextEditor.GetText();
+							text.erase(text.end() - 1, text.end()); // get rid of random newline
+							F::Materials.EditMaterial(CurrentMaterial, text);
+						}
+						SameLine();
+					}
+					if (FButton("Close", FButton_Fit))
+						CurrentMaterial = "";
+					SameLine(); SetCursorPosY(GetCursorPosY() + 27);
+					PushStyleColor(ImGuiCol_Text, F::Menu.Inactive.Value);
+					FText(LockedMaterial ? std::format("Viewing: {}", CurrentMaterial).c_str() : std::format("Editing: {}", CurrentMaterial).c_str(), FText_Right);
+					PopStyleColor();
+
+					// Text editor
+					Dummy({ 0, 8 });
+					TextEditor.Render("TextEditor");
+				} EndSection();
+			}
+
+			EndTable();
+		}
+		break;
 	}
 }
 #pragma endregion
@@ -1608,14 +1485,15 @@ void CMenu::AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw)
 			ImGui::SetNextWindowPos({ static_cast<float>(info.x), static_cast<float>(info.y) }, ImGuiCond_Always);
 			info.update = false;
 		}
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4());
-		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.f, 1.f, 1.f, 1.f));
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
+		ImGui::PushStyleColor(ImGuiCol_Border, { 1.f, 1.f, 1.f, 1.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 40.f });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
 
-		if (ImGui::Begin(szTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus))
+		if (ImGui::Begin(szTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 		{
-			ImGui::PushFont(VerdanaBold);
+			ImGui::PushFont(FontBlack);
 			auto size = ImGui::CalcTextSize(szTitle);
 			ImGui::SetCursorPos({ (100 - size.x) * 0.5f, (40 - size.y) * 0.5f });
 			ImGui::Text(szTitle);
@@ -1626,13 +1504,10 @@ void CMenu::AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw)
 
 			info.x = static_cast<int>(winPos.x);
 			info.y = static_cast<int>(winPos.y);
-			info.w = static_cast<int>(100.f);
-			info.h = static_cast<int>(40.f);
-			info.c = static_cast<int>(info.x + 50.f);
 
 			ImGui::End();
 		}
-		ImGui::PopStyleVar(2);
+		ImGui::PopStyleVar(3);
 		ImGui::PopStyleColor(2);
 	}
 }
@@ -1649,7 +1524,7 @@ void CMenu::DrawKeybinds()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
 	ImGui::SetNextWindowSize({ 200.f, 0.f });
 
-	if (ImGui::Begin("Keybinds", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize))
+	if (ImGui::Begin("Keybinds", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar))
 	{
 		auto drawOption = [](const char* name, bool active)
 		{
@@ -1668,7 +1543,7 @@ void CMenu::DrawKeybinds()
 		drawOption("Double Tap", isActive(Vars::CL_Move::DoubleTap::Enabled.Value, Vars::CL_Move::DoubleTap::Mode.Value == 1, Vars::CL_Move::DoubleTap::DoubletapKey.Value));
 		drawOption("Anti Aim", Vars::AntiHack::AntiAim::Active.Value);
 		drawOption("Fakelag", isActive(Vars::CL_Move::FakeLag::Enabled.Value, Vars::CL_Move::FakeLag::Mode.Value == 1, Vars::CL_Move::FakeLag::Key.Value));
-		drawOption("Triggerbot", isActive(Vars::Triggerbot::Global::Active.Value, Vars::Triggerbot::Global::TriggerKey.Value, Vars::Triggerbot::Global::TriggerKey.Value));
+		drawOption("Triggerbot", isActive(Vars::Auto::Global::Active.Value, Vars::Auto::Global::AutoKey.Value, Vars::Auto::Global::AutoKey.Value));
 
 		ImGui::End();
 	}
@@ -1679,13 +1554,14 @@ void CMenu::DrawKeybinds()
 
 void CMenu::Render(IDirect3DDevice9* pDevice)
 {
-	if (!ConfigLoaded) { return; }
+	if (!ConfigLoaded)
+		return;
 
 	static std::once_flag initFlag;
 	std::call_once(initFlag, [&]
-				   {
-					   Init(pDevice);
-				   });
+		{
+			Init(pDevice);
+		});
 
 	pDevice->SetRenderState(D3DRS_COLORWRITEENABLE, 0xFFFFFFFF);
 	pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
@@ -1706,7 +1582,7 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	ImGui::PushFont(Verdana);
+	ImGui::PushFont(FontRegular);
 
 	// better looking dt bars
 	F::Visuals.DrawTickbaseBars();
@@ -1718,14 +1594,12 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	if (IsOpen)
 	{
 		DrawMenu();
-		AddDraggable("Doubletap", Vars::CL_Move::DoubleTap::Position.Value, Vars::CL_Move::DoubleTap::Indicator.Value);
-		AddDraggable("Crithack", Vars::CritHack::IndicatorPos.Value, Vars::CritHack::Indicators.Value);
-		AddDraggable("Spectators", Vars::Visuals::SpectatorPos.Value, Vars::Visuals::SpectatorList.Value);
-		AddDraggable("Conditions", Vars::Visuals::OnScreenConditions.Value, Vars::Visuals::DrawOnScreenConditions.Value);
-		AddDraggable("Ping", Vars::Visuals::OnScreenPing.Value, Vars::Visuals::DrawOnScreenPing.Value);
 
-		F::MaterialEditor.Render();
-		F::PlayerList.Render();
+		AddDraggable("Ticks", Vars::Menu::TicksDisplay.Value, Vars::Menu::Indicators.Value & (1 << 0));
+		AddDraggable("Crit hack", Vars::Menu::CritsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 1));
+		AddDraggable("Spectators", Vars::Menu::SpectatorsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 2));
+		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 3));
+		AddDraggable("Ping", Vars::Menu::PingDisplay.Value, Vars::Menu::Indicators.Value & (1 << 4));
 	}
 
 	// End frame and render
@@ -1740,55 +1614,64 @@ void CMenu::LoadStyle()
 {
 	// Style & Colors
 	{
-		ItemWidth = 150.f;
-
-		// https://raais.github.io/ImStudio/
 		Accent = ImGui::ColorToVec(Vars::Menu::Theme::Accent.Value);
-		AccentDark = ImColor(Accent.Value.x * 0.8f, Accent.Value.y * 0.8f, Accent.Value.z * 0.8f, Accent.Value.w);
+		AccentLight = ImColor(Accent.Value.x * 1.1f, Accent.Value.y * 1.1f, Accent.Value.z * 1.1f, Accent.Value.w);
+		Background = ImGui::ColorToVec(Vars::Menu::Theme::Background.Value);
+		Foreground = ImGui::ColorToVec(Vars::Menu::Theme::Foreground.Value);
+		Foremost = ImGui::ColorToVec(Vars::Menu::Theme::Foremost.Value);
+		ForemostLight = ImColor(Foremost.Value.x * 1.1f, Foremost.Value.y * 1.1f, Foremost.Value.z * 1.1f, Foremost.Value.w);
+		Inactive = ImGui::ColorToVec(Vars::Menu::Theme::Inactive.Value);
+		Active = ImGui::ColorToVec(Vars::Menu::Theme::Active.Value);
 
 		auto& style = ImGui::GetStyle();
-		style.WindowTitleAlign = ImVec2(0.5f, 0.5f); // Center window title
-		style.WindowMinSize = ImVec2(100, 100);
-		style.WindowPadding = ImVec2(0, 0);
-		style.WindowBorderSize = 1.f;
-		style.ButtonTextAlign = ImVec2(0.5f, 0.4f); // Center button text
-		style.FrameBorderSize = 0.f;
-		style.FrameRounding = 2.f;
-		style.ChildBorderSize = 1.f;
+		style.ButtonTextAlign = { 0.5f, 0.5f }; // Center button text
+		style.CellPadding = { 4, 0 };
+		style.ChildBorderSize = 0.f;
 		style.ChildRounding = 0.f;
-		style.GrabMinSize = 15.f;
-		style.GrabRounding = 2.f;
-		style.ScrollbarSize = 4.f;
-		style.ScrollbarRounding = 6.f;
-		style.ItemSpacing = ImVec2(8.f, 5.f);
+		style.FrameBorderSize = 0.f;
+		style.FramePadding = { 0, 0 };
+		style.FrameRounding = 3.f;
+		style.GrabMinSize = 1.f;
+		style.GrabRounding = 3.f;
+		style.ItemInnerSpacing = { 0, 0 };
+		style.ItemSpacing = { 8, 8 };
+		style.PopupBorderSize = 0.f;
+		style.PopupRounding = 3.f;
+		style.ScrollbarSize = 9.f;
+		style.ScrollbarRounding = 0.f;
+		style.WindowBorderSize = 0.f;
+		style.WindowMinSize = { 100, 100 };
+		style.WindowPadding = { 0, 0 };
+		style.WindowRounding = 3.f;
+		style.WindowTitleAlign = { 0.5f, 0.5f }; // Center window title
 
 		ImVec4* colors = style.Colors;
-		colors[ImGuiCol_Border] = ImColor(110, 110, 128);
-		colors[ImGuiCol_WindowBg] = Background;
-		colors[ImGuiCol_TitleBg] = BackgroundDark;
-		colors[ImGuiCol_TitleBgActive] = BackgroundLight;
-		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.10f, 0.10f, 0.15f, 0.4f);
-		colors[ImGuiCol_Button] = BackgroundLight;
-		colors[ImGuiCol_ButtonHovered] = ImColor(69, 69, 77);
-		colors[ImGuiCol_ButtonActive] = ImColor(82, 79, 87);
-		colors[ImGuiCol_PopupBg] = BackgroundDark;
-		colors[ImGuiCol_FrameBg] = ImColor(50, 50, 50);
-		colors[ImGuiCol_FrameBgHovered] = ImColor(60, 60, 60);
-		colors[ImGuiCol_FrameBgActive] = ImColor(70, 70, 70);
-		colors[ImGuiCol_CheckMark] = Accent;
-		colors[ImGuiCol_Text] = TextLight;
-
+		colors[ImGuiCol_Button] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_ButtonHovered] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_ButtonActive] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_CheckMark] = { Foreground.Value.x, Foreground.Value.y, Foreground.Value.z, 1.f };
+		colors[ImGuiCol_FrameBg] = Foremost;
+		colors[ImGuiCol_FrameBgHovered] = ForemostLight;
+		colors[ImGuiCol_FrameBgActive] = Foremost;
+		colors[ImGuiCol_Header] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_HeaderHovered] = ForemostLight;
+		colors[ImGuiCol_HeaderActive] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_ModalWindowDimBg] = { Background.Value.x, Background.Value.y, Background.Value.z, 0.4f };
+		colors[ImGuiCol_PopupBg] = ForemostLight;
+		colors[ImGuiCol_ResizeGrip] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_ResizeGripActive] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_ResizeGripHovered] = { 0, 0, 0, 0 };
+		colors[ImGuiCol_ScrollbarBg] = { 0, 0, 0, 0 };
 		colors[ImGuiCol_SliderGrab] = Accent;
-		colors[ImGuiCol_SliderGrabActive] = AccentDark;
-		colors[ImGuiCol_ResizeGrip] = Accent;
-		colors[ImGuiCol_ResizeGripActive] = Accent;
-		colors[ImGuiCol_ResizeGripHovered] = Accent;
-		colors[ImGuiCol_Header] = ImColor(70, 70, 70);
-		colors[ImGuiCol_HeaderActive] = ImColor(40, 40, 40);
-		colors[ImGuiCol_HeaderHovered] = ImColor(60, 60, 60);
+		colors[ImGuiCol_SliderGrabActive] = AccentLight;
+		colors[ImGuiCol_Text] = Active;
+		colors[ImGuiCol_TitleBg] = Background;
+		colors[ImGuiCol_TitleBgActive] = Background;
+		colors[ImGuiCol_WindowBg] = Background;
 	}
 }
 
+// i think this will occasionally fail and only draw half of the menu w/o any input
 void CMenu::Init(IDirect3DDevice9* pDevice)
 {
 	// Initialize ImGui and device
@@ -1800,23 +1683,22 @@ void CMenu::Init(IDirect3DDevice9* pDevice)
 	{
 		const auto& io = ImGui::GetIO();
 
-		auto fontConfig = ImFontConfig();
+		ImFontConfig fontConfig;
 		fontConfig.OversampleH = 2;
-
 		constexpr ImWchar fontRange[]{ 0x0020, 0x00FF, 0x0400, 0x044F, 0 }; // Basic Latin, Latin Supplement and Cyrillic
 
-		VerdanaSmall = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\verdana.ttf)", 12.0f, &fontConfig, fontRange);
-		Verdana = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\verdana.ttf)", 14.0f, &fontConfig, fontRange);
-		VerdanaBold = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\verdanab.ttf)", 14.0f, &fontConfig, fontRange);
+		FontSmall = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 11.f, &fontConfig, fontRange);
+		FontRegular = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 13.f, &fontConfig, fontRange);
+		FontBold = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBold_compressed_data, RobotoBold_compressed_size, 13.f, &fontConfig, fontRange);
+		FontBlack = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBlack_compressed_data, RobotoBlack_compressed_size, 15.f, &fontConfig, fontRange);
+		FontLarge = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 20.f, &fontConfig, fontRange);
 
-		SectionFont = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\verdana.ttf)", 16.0f, &fontConfig, fontRange);
-		TitleFont = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\verdanab.ttf)", 20.0f, &fontConfig, fontRange);
-
-		constexpr ImWchar iconRange[]{ ICON_MIN_MD, ICON_MAX_MD, 0 };
 		ImFontConfig iconConfig;
-		iconConfig.MergeMode = true;
 		iconConfig.PixelSnapH = true;
-		IconFont = io.Fonts->AddFontFromMemoryCompressedTTF(MaterialFont_compressed_data, MaterialFont_compressed_size, 16.f, &iconConfig, iconRange);
+		constexpr ImWchar iconRange[]{ ICON_MIN_MD, ICON_MAX_MD, 0 };
+
+		IconFontRegular = io.Fonts->AddFontFromMemoryCompressedTTF(MaterialIcons_compressed_data, MaterialIcons_compressed_size, 15.f, &iconConfig, iconRange);
+		IconFontLarge = io.Fonts->AddFontFromMemoryCompressedTTF(MaterialIcons_compressed_data, MaterialIcons_compressed_size, 16.f, &iconConfig, iconRange);
 
 		io.Fonts->Build();
 	}

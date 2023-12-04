@@ -104,9 +104,6 @@ void CConfigManager::SaveJson(const char* name, const DragBox_t& val)
 	boost::property_tree::ptree dragBoxTree;
 	dragBoxTree.put("x", val.x);
 	dragBoxTree.put("y", val.y);
-	dragBoxTree.put("w", val.w);
-	dragBoxTree.put("h", val.h);
-	dragBoxTree.put("c", val.c);
 
 	WriteTree.put_child(name, dragBoxTree);
 }
@@ -189,9 +186,6 @@ void CConfigManager::LoadJson(const char* name, DragBox_t& val)
 	{
 		if (auto getValue = getChild->get_optional<int>("x")) { val.x = *getValue; }
 		if (auto getValue = getChild->get_optional<int>("y")) { val.y = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("w")) { val.w = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("h")) { val.h = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("c")) { val.c = *getValue; }
 		val.update = true;
 	}
 }
@@ -203,26 +197,18 @@ CConfigManager::CConfigManager()
 
 	// Create 'FedCfgs' folder (not FedFigs as I want to keep those separate)
 	if (!std::filesystem::exists(ConfigPath))
-	{
 		std::filesystem::create_directory(ConfigPath);
-	}
 
 	if (!std::filesystem::exists(VisualsPath))
-	{
 		std::filesystem::create_directory(VisualsPath);
-	}
 
 	// Create 'Core' folder for Attribute-Changer & Playerlist
 	if (!std::filesystem::exists(ConfigPath + "\\Core"))
-	{
 		std::filesystem::create_directory(ConfigPath + "\\Core");
-	}
 
 	// Create 'Materials' folder for custom materials
 	if (!std::filesystem::exists(ConfigPath + "\\Materials"))
-	{
 		std::filesystem::create_directory(ConfigPath + "\\Materials");
-	}
 }
 
 #define IsType(type) var->m_iType == typeid(type).hash_code()
@@ -254,6 +240,7 @@ bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 		}
 
 		write_json(ConfigPath + "\\" + configName + ConfigExtension, WriteTree);
+		CurrentConfig = configName;
 		if (bNotify)
 			F::Notifications.Add("Config " + configName + " saved");
 	}
@@ -298,7 +285,6 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 			else LoadT(Chams_t)
 			else LoadT(DragBox_t)
 		}
-
 
 		CurrentConfig = configName;
 		if (bNotify)

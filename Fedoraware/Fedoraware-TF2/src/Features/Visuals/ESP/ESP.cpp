@@ -132,7 +132,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 		if (GetDrawBounds(pPlayer, x, y, w, h))
 		{
 			int lOffset = 0, rOffset = 0, bOffset = 2, tOffset = 0;
-			const auto &fFontEsp = g_Draw.GetFont(FONT_ESP), &fFontName = g_Draw.GetFont(FONT_ESP_NAME), &fFontCond = g_Draw.GetFont(FONT_ESP_COND);
+			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_NAME);
 
 			const Color_t drawColor = GetTeamColor(pPlayer->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
 			const int nMaxHealth = pPlayer->GetMaxHealth(), nHealth = pPlayer->m_iHealth(), nClassNum = pPlayer->m_iClass();
@@ -339,22 +339,51 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 			// Player conditions
 			{
+				// Lagcomp cond, idea from nitro
+				if (Vars::ESP::Players::Conditions.Value & (1 << 3) && pPlayer != pLocal)
+				{
+					if (F::Backtrack.mRecords[pPlayer].size() < 3)
+					{
+						g_Draw.String(fFontEsp, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
+						rOffset += fFontEsp.nTall;
+					}
+					/*
+					const float flDelta = pPlayer->m_flSimulationTime() - pPlayer->m_flOldSimulationTime();
+					if (TIME_TO_TICKS(flDelta) != 1)
+					{
+						bool bDisplay = F::Backtrack.mRecords[pPlayer].size() < 3;
+						if (!bDisplay)
+						{
+							const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
+							const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
+							if (vDelta.Length2DSqr() > 4096.f)
+								bDisplay = true;
+						}
+						if (bDisplay)
+						{
+							g_Draw.String(fFontEsp, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
+							rOffset += fFontEsp.nTall;
+						}
+					}
+					*/
+				}
+
 				// Ping warning, idea from nitro
-				if (Vars::ESP::Players::Conditions::Ping.Value && pPlayer != pLocal)
+				if (Vars::ESP::Players::Conditions.Value & (1 << 5) && pPlayer != pLocal)
 				{
 					int ping = cResource->GetPing(pPlayer->GetIndex());
 					if (const INetChannel* netChannel = I::EngineClient->GetNetChannelInfo()) // safety net
 					{
 						if (!netChannel->IsLoopback() && ping != 0 && (ping >= 200 || ping <= 5))
 						{
-							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "%dMS", ping);
-							rOffset += fFontCond.nTall;
+							g_Draw.String(fFontEsp, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "%dMS", ping);
+							rOffset += fFontEsp.nTall;
 						}
 					}
 				}
 
 				// Idea from rijin
-				if (Vars::ESP::Players::Conditions::KD.Value && pPlayer != pLocal)
+				if (Vars::ESP::Players::Conditions.Value & (1 << 4) && pPlayer != pLocal)
 				{
 					const int kills = cResource->GetKills(pPlayer->GetIndex());
 					const int deaths = cResource->GetDeaths(pPlayer->GetIndex());
@@ -363,38 +392,14 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						const int kd = kills / deaths;
 						if (kills >= 12 && kd >= 6) //dont just say they have a high kd because they just joined and got a couple kills
 						{
-							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "HIGH K/D [%d/%d]", kills, deaths);
-							rOffset += fFontCond.nTall;
+							g_Draw.String(fFontEsp, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "HIGH K/D [%d/%d]", kills, deaths);
+							rOffset += fFontEsp.nTall;
 						}
 					}
 					else if (kills >= 12)
 					{
-						g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "HIGH K/D [%d]", kills);
-						rOffset += fFontCond.nTall;
-					}
-				}
-
-				// Lagcomp cond, idea from nitro
-				if (Vars::ESP::Players::Conditions::LagComp.Value && pPlayer != pLocal)
-				{
-					const float flDelta = pPlayer->m_flSimulationTime() - pPlayer->m_flOldSimulationTime();
-					if (TIME_TO_TICKS(flDelta) != 1)
-					{
-						bool bDisplay = F::Backtrack.mRecords[pPlayer].empty();
-						/*
-						if (!bDisplay)
-						{
-							const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
-							const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
-							if (vDelta.Length2DSqr() > 4096.f)
-								bDisplay = true;
-						}
-						*/
-						if (bDisplay)
-						{
-							g_Draw.String(fFontCond, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "LAGCOMP");
-							rOffset += fFontCond.nTall;
-						}
+						g_Draw.String(fFontEsp, x + w + 2, y + rOffset, { 255, 95, 95, 255 }, ALIGN_DEFAULT, "HIGH K/D [%d]", kills);
+						rOffset += fFontEsp.nTall;
 					}
 				}
 
@@ -402,13 +407,13 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				const Color_t teamColors = GetTeamColor(pPlayer->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
 
 				{ //this is here just so i can collapse this entire section to reduce clutter
-					auto drawCond = [&rOffset, &fFontCond](const char* text, Color_t color, int x, int y)
+					auto drawCond = [&rOffset, &fFontEsp](const char* text, Color_t color, int x, int y)
 					{
-						g_Draw.String(fFontCond, x, y + rOffset, color, ALIGN_DEFAULT, text);
-						rOffset += fFontCond.nTall;
+						g_Draw.String(fFontEsp, x, y + rOffset, color, ALIGN_DEFAULT, text);
+						rOffset += fFontEsp.nTall;
 					};
 
-					if (Vars::ESP::Players::Conditions::Buffs.Value)
+					if (Vars::ESP::Players::Conditions.Value & (1 << 0))
 					{
 						if (pPlayer->InCond(TF_COND_CRITBOOSTED))
 							drawCond("KRITS", { 255, 107, 108, 255 }, x + w + 2, y);
@@ -467,7 +472,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 							drawCond("BLASTJUMP", { 254, 202, 87, 255 }, x + w + 2, y);
 					}
 					
-					if (Vars::ESP::Players::Conditions::Debuffs.Value)
+					if (Vars::ESP::Players::Conditions.Value & (1 << 1))
 					{
 						if (pPlayer->InCond(TF_COND_URINE))
 							drawCond("JARATE", { 254, 202, 87, 255 }, x + w + 2, y);
@@ -482,7 +487,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 							drawCond("MILK", { 254, 202, 87, 255 }, x + w + 2, y);
 					}
 					
-					if (Vars::ESP::Players::Conditions::Other.Value)
+					if (Vars::ESP::Players::Conditions.Value & (1 << 2))
 					{
 						if (Vars::Visuals::RemoveTaunts.Value && pPlayer->InCond(TF_COND_TAUNTING)) // i dont really see a need for this condition unless you have this enabled
 							drawCond("TAUNT", { 255, 100, 200, 255 }, x + w + 2, y);
@@ -543,7 +548,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 		if (GetDrawBounds(oBuilding, x, y, w, h))
 		{
 			int lOffset = 0, rOffset = 0, /*bOffset = 0, */tOffset = 0;
-			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_ESP_NAME), & fFontCond = g_Draw.GetFont(FONT_ESP_COND);
+			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_NAME);
 
 			const Color_t drawColor = GetTeamColor(oBuilding->m_iTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
 			const int nMaxHealth = oBuilding->GetMaxHealth(), nHealth = std::min(oBuilding->GetHealth(), nMaxHealth);
@@ -615,8 +620,8 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 					PlayerInfo_t pi;
 					if (I::EngineClient->GetPlayerInfo(pOwner->GetIndex(), &pi))
 					{
-						tOffset += fFontCond.nTall + 2;
-						g_Draw.String(fFontCond, x + w / 2, y - tOffset, { 254, 202, 87, 255 }, ALIGN_CENTERHORIZONTAL, L"Owner: %ls", Utils::ConvertUtf8ToWide(pi.name).data());
+						tOffset += fFontEsp.nTall + 2;
+						g_Draw.String(fFontEsp, x + w / 2, y - tOffset, { 254, 202, 87, 255 }, ALIGN_CENTERHORIZONTAL, L"Owner: %ls", Utils::ConvertUtf8ToWide(pi.name).data());
 					}
 				}
 			}
@@ -668,8 +673,8 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 				{
 					for (auto& condString : condStrings)
 					{
-						g_Draw.String(fFontCond, x + y + 2, y + rOffset, { 254, 202, 87, 255 }, ALIGN_DEFAULT, condString.data());
-						rOffset += fFontCond.nTall;
+						g_Draw.String(fFontEsp, x + y + 2, y + rOffset, { 254, 202, 87, 255 }, ALIGN_DEFAULT, condString.data());
+						rOffset += fFontEsp.nTall;
 					}
 				}
 			}
@@ -684,7 +689,7 @@ void CESP::DrawWorld() const
 		return;
 
 	Vec3 vScreen = {};
-	const auto& fFont = g_Draw.GetFont(FONT_ESP_NAME);
+	const auto& fFont = g_Draw.GetFont(FONT_NAME);
 
 	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
 
@@ -724,7 +729,7 @@ void CESP::DrawWorld() const
 				szName = L"Unknown"; break;
 			}
 
-			const int nTextTopOffset = Vars::Fonts::FONT_ESP_NAME::nTall.Value * (5 / 4);
+			const int nTextTopOffset = Vars::Fonts::FONT_NAME::nTall.Value * (5 / 4);
 			g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::NPC.Value, ALIGN_CENTERHORIZONTAL, szName);
 		}
 	}
@@ -745,7 +750,7 @@ void CESP::DrawWorld() const
 				szName = L"Unknown"; break;
 			}
 
-			const int nTextTopOffset = Vars::Fonts::FONT_ESP_NAME::nTall.Value * (5 / 4);
+			const int nTextTopOffset = Vars::Fonts::FONT_NAME::nTall.Value * (5 / 4);
 			g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Bomb.Value, ALIGN_CENTERHORIZONTAL, szName);
 		}
 	}
@@ -755,7 +760,7 @@ void CESP::DrawWorld() const
 		int x = 0, y = 0, w = 0, h = 0;
 		if (Vars::ESP::World::Spellbook.Value && GetDrawBounds(Book, x, y, w, h))
 		{
-			const int nTextTopOffset = Vars::Fonts::FONT_ESP_NAME::nTall.Value * (5 / 4);
+			const int nTextTopOffset = Vars::Fonts::FONT_NAME::nTall.Value * (5 / 4);
 			g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Spellbook.Value, ALIGN_CENTERHORIZONTAL, L"Spellbook");
 		}
 	}
@@ -765,7 +770,7 @@ void CESP::DrawWorld() const
 		int x = 0, y = 0, w = 0, h = 0;
 		if (Vars::ESP::World::Gargoyle.Value && GetDrawBounds(Gargy, x, y, w, h))
 		{
-			const int nTextTopOffset = Vars::Fonts::FONT_ESP_NAME::nTall.Value * (5 / 4);
+			const int nTextTopOffset = Vars::Fonts::FONT_NAME::nTall.Value * (5 / 4);
 			g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Gargoyle.Value, ALIGN_CENTERHORIZONTAL, L"Gargoyle");
 		}
 	}

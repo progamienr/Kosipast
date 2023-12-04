@@ -14,7 +14,7 @@ MAKE_HOOK(CPrediction_RunCommand, Utils::GetVFuncPtr(I::Prediction, 17), void, _
 
 	// credits: KGB
 	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!G::Recharge && !pCmd->hasbeenpredicted && pPlayer == g_EntityCache.GetLocal())
+	if (!G::Recharge && !pCmd->hasbeenpredicted && pPlayer == g_EntityCache.GetLocal() && !pPlayer->IsInBumperKart())
 	{
 		if (const auto& pAnimState = pPlayer->GetAnimState())
 		{

@@ -20,9 +20,9 @@ void CMisc::RunPre(CUserCmd* pCmd, bool* pSendPacket)
 		AutoStrafe(pCmd, pLocal);
 		AntiBackstab(pLocal, pCmd);
 		AutoPeek(pCmd, pLocal);
+		AntiAFK(pLocal, pCmd);
 	}
 
-	AntiAFK(pCmd);
 	CheatsBypass();
 	PingReducer();
 	DetectChoke();
@@ -33,6 +33,7 @@ void CMisc::RunPost(CUserCmd* pCmd, bool* pSendPacket)
 {
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
+		TauntKartControl(pCmd, pSendPacket);
 		FastStop(pCmd, pLocal);
 		FastAccel(pCmd, pLocal, pSendPacket);
 		FastStrafe(pCmd, pSendPacket);
@@ -273,7 +274,7 @@ void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
 	G::AvoidingBackstab = false;
 	Vec3 vTargetPos;
 
-	if (!pLocal->IsAlive() || pLocal->IsStunned() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !Vars::AntiHack::AntiAim::AntiBackstab.Value)
+	if (!pLocal->IsAlive() || pLocal->IsStunned() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !Vars::Misc::AntiBackstab.Value)
 		return;
 
 	if (G::IsAttacking)
@@ -346,7 +347,8 @@ bool CanAttack(CBaseEntity* pLocal, const Vec3& pPos)
 			//if (Vars::Backtrack::Enabled.Value)
 			//{
 			//	const auto& btRecord = F::Backtrack.GetRecord(target->GetIndex(), BacktrackMode::Last);
-			//	if (btRecord) { targetPos = btRecord->HeadPosition; }
+			//	if (btRecord)
+			//		targetPos = btRecord->HeadPosition;
 			//}
 
 			// Is the player visible?
@@ -434,7 +436,8 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 				I::DebugOverlay->AddLineOverlayAlpha(PeekReturnPos, currentPos, 235, 59, 90, 100, false, 0.04f);
 			}
 
-			if (!targetFound) { isReturning = true; }
+			if (!targetFound)
+				isReturning = true;
 		}
 
 		// We've just attacked. Let's return!
@@ -446,7 +449,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 			if (localPos.DistTo(PeekReturnPos) < 7.f)
 			{
 				// We reached our destination. Recharge DT if wanted
-				if (Vars::CL_Move::DoubleTap::AutoRecharge.Value && isReturning && !G::DoubleTap && !G::ShiftedTicks)
+				if (Vars::CL_Move::DoubleTap::Options.Value & (1 << 3) && isReturning && !G::DoubleTap && !G::ShiftedTicks)
 					G::Recharge = true;
 				isReturning = false;
 				return;
@@ -462,13 +465,19 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AntiAFK(CUserCmd* pCmd)
+void CMisc::AntiAFK(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
-	if (Vars::Misc::AntiAFK.Value && g_ConVars.afkTimer->GetInt() != 0)
+	static Timer afkTimer{};
+	static int lastButtons = 0;
+
+	if (pCmd->buttons != lastButtons || !pLocal->IsAlive())
 	{
-		if (pCmd->command_number % 2)
-			pCmd->buttons |= (1 << 27);
+		afkTimer.Update();
+		lastButtons = pCmd->buttons;
 	}
+	// Trigger 10 seconds before kick
+	else if (Vars::Misc::AntiAFK.Value && g_ConVars.mp_idledealmethod->GetInt() && afkTimer.Check(g_ConVars.mp_idlemaxtime->GetFloat() * 60 * 1000 - 10000))
+		pCmd->buttons |= pCmd->command_number % 2 ? IN_FORWARD : IN_BACK;
 }
 
 void CMisc::CheatsBypass()
@@ -531,7 +540,9 @@ void CMisc::PingReducer()
 void CMisc::DetectChoke()
 {
 	static int iOldTick = I::GlobalVars->tickcount;
-	if (I::GlobalVars->tickcount == iOldTick) { return; }
+	if (I::GlobalVars->tickcount == iOldTick)
+		return;
+
 	iOldTick = I::GlobalVars->tickcount;
 	for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 	{
@@ -570,7 +581,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	if (!pLocal->IsAlive()
 		|| pLocal->IsSwimming()
-		|| (pLocal->IsInBumperKart() && iStopMode != 2)
+		|| pLocal->IsInBumperKart()
 		|| pLocal->IsAGhost()
 		|| pLocal->IsCharging()
 		|| !pLocal->OnSolid())
@@ -624,12 +635,10 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 	if (!bShouldAccel)
 		return;
 
-	static bool flipVar = false;
-	flipVar = !flipVar;
-	if (G::AntiAim || bMovementScuffed || bMovementStopped || !flipVar)
+	if (G::AntiAim || bMovementScuffed || bMovementStopped || pCmd->command_number % 2)
 		return;
 
-	if (!pLocal->IsAlive() || pLocal->IsSwimming() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsCharging() ||
+	if (!pLocal->IsAlive() || pLocal->IsSwimming() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsTaunting() || pLocal->IsCharging() ||
 		G::Recharge || G::Frozen || G::IsAttacking ||
 		pLocal->GetMoveType() == MOVETYPE_NOCLIP || pLocal->GetMoveType() == MOVETYPE_LADDER || pLocal->GetMoveType() == MOVETYPE_OBSERVER)
 		return;
@@ -657,7 +666,8 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 	}
 }
 
-void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket) {
+void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket)
+{
 	if (!Vars::Misc::FastStrafe.Value || bFastAccel)
 		return;
 
@@ -751,7 +761,7 @@ void CMisc::StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
-	if (!Vars::AntiHack::AntiAim::LegJitter.Value || !pLocal->OnSolid() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !pLocal->IsAlive())
+	if (!pLocal->OnSolid() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !pLocal->IsAlive())
 		return;
 
 	if (G::IsAttacking || G::DoubleTap || !F::AntiAim.bSendingReal)
@@ -759,7 +769,7 @@ void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	static bool pos = true;
 	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
-	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && (Vars::AntiHack::AntiAim::LegJitter.Value || F::AntiAim.bSendingReal)) // force leg jitter if we are sending our real.
+	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && (F::AntiAim.bSendingReal)) // force leg jitter if we are sending our real.
 	{
 		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;
 		pos ? pCmd->sidemove = scale : pCmd->sidemove = -scale;
@@ -783,13 +793,12 @@ void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 
 
 
-bool CMisc::TauntControl(CUserCmd* pCmd)
+void CMisc::TauntKartControl(CUserCmd* pCmd, bool* pSendPacket)
 {
-	bool bReturn = true;
-	// Handle Taunt Slide
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
-		if (Vars::Misc::TauntSlide.Value && pLocal->IsTaunting())
+		// Handle Taunt Slide
+		if (Vars::Misc::TauntControl.Value && pLocal->IsTaunting())
 		{
 			if (pCmd->buttons & IN_FORWARD)
 			{
@@ -815,11 +824,50 @@ bool CMisc::TauntControl(CUserCmd* pCmd)
 			Vec3 vAngle = I::EngineClient->GetViewAngles();
 			pCmd->viewangles.y = vAngle.y;
 
-			bReturn = false;
+			G::UpdateView = false;
+		}
+		else if (Vars::Misc::KartControl.Value && pLocal->IsInBumperKart())
+		{
+			const bool bForward = pCmd->buttons & IN_FORWARD;
+			const bool bBack = pCmd->buttons & IN_BACK;
+			const bool bLeft = pCmd->buttons & IN_MOVELEFT;
+			const bool bRight = pCmd->buttons & IN_MOVERIGHT;
+
+			const bool flipVar = pCmd->command_number % 2;
+			if (bForward && (!bLeft && !bRight || !flipVar))
+			{
+				pCmd->forwardmove = 450.f;
+				pCmd->viewangles.x = 0.0f;
+			}
+			else if (bBack && (!bLeft && !bRight || !flipVar))
+			{
+				pCmd->forwardmove = 450.f;
+				pCmd->viewangles.x = 91.0f;
+			}
+			else if (pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT))
+			{
+				if (flipVar)
+				{	// you could just do this if you didn't care about viewangles
+					const Vec3 vecMove(pCmd->forwardmove, pCmd->sidemove, 0.0f);
+					const float flLength = vecMove.Length();
+					Vec3 angMoveReverse;
+					Math::VectorAngles(vecMove * -1.f, angMoveReverse);
+					pCmd->forwardmove = -flLength;
+					pCmd->sidemove = 0.0f;
+					pCmd->viewangles.y = fmodf(pCmd->viewangles.y - angMoveReverse.y, 360.0f);
+					pCmd->viewangles.z = 270.f;
+					*pSendPacket = false;
+				}
+			}
+			else
+				pCmd->viewangles.x = 90.0f;
+				
+			if (G::Buttons & IN_DUCK)
+				pCmd->buttons |= IN_DUCK;
+
+			G::UpdateView = false;
 		}
 	}
-
-	return bReturn;
 }
 
 #ifdef DEBUG
@@ -915,22 +963,14 @@ void CMisc::SteamRPC()
 	"TF_RichPresence_MatchGroup_MannUp"           "MvM Mann Up"
 	"TF_RichPresence_MatchGroup_BootCamp"         "MvM Boot Camp"
 	*/
-	switch (Vars::Misc::Steam::MapText.Value)
-	{
-	case 0: g_SteamInterfaces.Friends->SetRichPresence("currentmap", Vars::Misc::Steam::CustomText.Value.empty() ? "Fedoraware" : Vars::Misc::Steam::CustomText.Value.c_str()); break;
-	case 1: g_SteamInterfaces.Friends->SetRichPresence("currentmap", "Fedoraware"); break;
-	case 2: g_SteamInterfaces.Friends->SetRichPresence("currentmap", "Figoraware"); break;
-	case 3: g_SteamInterfaces.Friends->SetRichPresence("currentmap", "Meowhook.club"); break;
-	case 4: g_SteamInterfaces.Friends->SetRichPresence("currentmap", "Rathook.cc"); break;
-	case 5: g_SteamInterfaces.Friends->SetRichPresence("currentmap", "Nitro.tf"); break;
-	default: g_SteamInterfaces.Friends->SetRichPresence("currentmap", "Fedoraware"); break;
-	}
-
+	g_SteamInterfaces.Friends->SetRichPresence("currentmap", Vars::Misc::Steam::MapText.Value.empty() ? "Fedoraware" : Vars::Misc::Steam::MapText.Value.c_str());
+	
 	g_SteamInterfaces.Friends->SetRichPresence("steam_player_group_size", std::to_string(Vars::Misc::Steam::GroupSize.Value).c_str());
 }
 
 /*
-void CMisc::InstantRespawnMVM() {
+void CMisc::InstantRespawnMVM()
+{
 	if (I::Engine->IsInGame() && I::Engine->GetLocalPlayer() && !g_EntityCache.GetLocal()->IsAlive() && Vars::Misc::MVMRes.m_Var) {
 		auto kv = new KeyValues("MVM_Revive_Response");
 		kv->SetInt("accepted", 1);

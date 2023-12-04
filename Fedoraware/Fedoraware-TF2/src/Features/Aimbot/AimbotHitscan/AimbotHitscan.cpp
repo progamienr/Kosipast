@@ -36,7 +36,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			// Can we extinguish a teammate using the piss rifle?
 			if (hasPissRifle && (pTarget->m_iTeamNum() == pLocal->m_iTeamNum()))
 			{
-				if (!Vars::Aimbot::Hitscan::ExtinguishTeam.Value || !pTarget->IsOnFire())
+				if (!(Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 6)) || !pTarget->IsOnFire())
 					continue;
 			}
 
@@ -239,7 +239,7 @@ int CAimbotHitscan::GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCom
 				bHeadshot = true;
 		}
 
-		if (Vars::Aimbot::Global::BAimLethal.Value && bHeadshot)
+		if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 5) && bHeadshot)
 		{
 			{
 				float flBodyMult = 1.f;
@@ -367,7 +367,7 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 
 			for (auto pair : hitboxes)
 			{
-				const float flScale = Vars::Aimbot::Hitscan::PointScale.Value;
+				const float flScale = Vars::Aimbot::Hitscan::PointScale.Value / 100.f;
 				const Vec3 vMins = pair.first->bbmin, vMinsS = vMins * flScale;
 				const Vec3 vMaxs = pair.first->bbmax, vMaxsS = vMaxs * flScale;
 
@@ -415,7 +415,7 @@ bool CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWe
 		}
 		else
 		{
-			const float flScale = Vars::Aimbot::Hitscan::PointScale.Value;
+			const float flScale = Vars::Aimbot::Hitscan::PointScale.Value / 100.f;
 			const Vec3 vMins = target.m_pEntity->m_vecMins() * flScale;
 			const Vec3 vMaxs = target.m_pEntity->m_vecMaxs() * flScale;
 
@@ -473,7 +473,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 	{
 		const bool bIsScoped = pLocal->IsScoped();
 
-		if (Vars::Aimbot::Hitscan::WaitForHeadshot.Value)
+		if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 1))
 		{
 			if (G::CurItemDefIndex != Sniper_m_TheClassic
 				&& G::CurItemDefIndex != Sniper_m_TheSydneySleeper
@@ -483,7 +483,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			}
 		}
 
-		if (Vars::Aimbot::Hitscan::WaitForCharge.Value && (bIsScoped || G::CurItemDefIndex == Sniper_m_TheClassic))
+		if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 2) && (bIsScoped || G::CurItemDefIndex == Sniper_m_TheClassic))
 		{
 			const int nHealth = target.m_pEntity->m_iHealth();
 			const bool bIsCritBoosted = pLocal->IsCritBoosted();
@@ -535,7 +535,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		break;
 	}
 	case CLASS_SPY:
-		if (Vars::Aimbot::Hitscan::WaitForHeadshot.Value && !pWeapon->AmbassadorCanHeadshot())
+		if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 1) && !pWeapon->AmbassadorCanHeadshot())
 			return false;
 
 		break;
@@ -600,7 +600,7 @@ Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle)
 void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
 	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && G::LastUserCmd->buttons & IN_ATTACK;
-	if (bKeepFiring && !G::WeaponCanAttack && F::AimbotGlobal.IsKeyDown())
+	if (bKeepFiring && !G::WeaponCanAttack && Vars::Aimbot::Global::Active.Value && F::AimbotGlobal.IsKeyDown())
 		pCmd->buttons |= IN_ATTACK;
 
 	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2/* && !G::DoubleTap*/)
@@ -634,13 +634,13 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 	{
 		const bool bScoped = pLocal->IsScoped();
 
-		if (Vars::Aimbot::Hitscan::AutoScope.Value && !bScoped)
+		if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 4) && !bScoped)
 		{
 			pCmd->buttons |= IN_ATTACK2;
 			return;
 		}
 
-		if ((Vars::Aimbot::Hitscan::ScopedOnly.Value || G::CurItemDefIndex == Sniper_m_TheMachina || G::CurItemDefIndex == Sniper_m_ShootingStar) && !bScoped)
+		if ((Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 3) || G::CurItemDefIndex == Sniper_m_TheMachina || G::CurItemDefIndex == Sniper_m_ShootingStar) && !bScoped)
 		{
 			return;
 		}
@@ -690,13 +690,9 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 			}
 			*/
 
-			if (Vars::Aimbot::Hitscan::TapFire.Value && nWeaponID == TF_WEAPON_MINIGUN && !pLocal->IsPrecisionRune())
+			if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 0) && nWeaponID == TF_WEAPON_MINIGUN && !pLocal->IsPrecisionRune())
 			{
-				const bool bDo = Vars::Aimbot::Hitscan::TapFire.Value == 1
-					? pLocal->GetShootPos().DistTo(target.m_vPos) > Vars::Aimbot::Hitscan::TapFireDist.Value
-					: true;
-
-				if (bDo && pWeapon->GetWeaponSpread() != 0.f)
+				if (pLocal->GetShootPos().DistTo(target.m_vPos) > Vars::Aimbot::Hitscan::TapFireDist.Value && pWeapon->GetWeaponSpread() != 0.f)
 				{
 					const float flTimeSinceLastShot = (pLocal->m_nTickBase() * TICK_INTERVAL) - pWeapon->m_flLastFireTime();
 
@@ -725,7 +721,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 				if (Vars::Visuals::BulletTracer.Value)
 				{
 					F::Visuals.ClearBulletLines();
-					G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value });
+					G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value, true });
 				}
 				if (Vars::Aimbot::Global::ShowHitboxes.Value)
 					F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);

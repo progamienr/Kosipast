@@ -91,195 +91,149 @@ void CPlayerList::Run()
 
 void CPlayerList::Render()
 {
-	if (!Vars::Menu::ShowPlayerlist.Value) { return; }
+	const auto winSize = ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
+	auto winPos = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y);
 
-	// Draw the playerlist
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 24));
-	if (ImGui::Begin("Playerlist", &Vars::Menu::ShowPlayerlist.Value, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+	// Check if we are in-game
+	if (!I::EngineClient->IsInGame())
 	{
-		ImGui::PushFont(F::Menu.Verdana);
-		const auto winSize = ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
-		auto winPos = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y);
-		ImGui::Dummy(ImVec2());
-
-		// Check if we are in-game
-		if (!I::EngineClient->IsInGame())
+		ImGui::Dummy({ 0, 50 });
+		static ImVec2 fontSize = ImGui::CalcTextSize("Not ingame");
+		ImGui::SameLine(ImGui::GetWindowSize().x / 2 - fontSize.x + (fontSize.x / 2));
+		ImGui::Text("Not ingame");
+	}
+	else
+	{
+		const int columnCount = Vars::AntiHack::Resolver::Resolver.Value ? 6 : 4;
+		if (ImGui::BeginTable("Playerlist", columnCount,
+			ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable))
 		{
-			ImGui::Dummy(ImVec2(0, 20));
-			static ImVec2 fontSize = ImGui::CalcTextSize("You're not in game, noob!");
-			ImGui::SameLine(
-				ImGui::GetWindowSize().x / 2 -
-				fontSize.x + (fontSize.x / 2)
-			);
-			ImGui::Text("You're not in game, noob!");
-		}
-		else
-		{
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 5, 5 });
-			const int columnCount = Vars::AntiHack::Resolver::Resolver.Value ? 6 : 4;
-			if (ImGui::BeginTable("Playerlist", columnCount,
-				ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable))
+			ImGui::TableSetupColumn("Name");
+			ImGui::TableSetupColumn("Class");
+			ImGui::TableSetupColumn("Health");
+			ImGui::TableSetupColumn("Priority");
+			if (Vars::AntiHack::Resolver::Resolver.Value)
 			{
-				ImGui::TableSetupColumn("Name");
-				ImGui::TableSetupColumn("Class");
-				ImGui::TableSetupColumn("Health");
-				ImGui::TableSetupColumn("Priority");
-				if (Vars::AntiHack::Resolver::Resolver.Value)
+				ImGui::TableSetupColumn("Pitch");
+				ImGui::TableSetupColumn("Yaw");
+			}
+			ImGui::TableHeadersRow();
+
+			std::lock_guard lock(mutex);
+
+			for (const auto& [Team, Player] : PlayerCache)
+			{
+				ImGui::TableNextRow();
+
+				ImGui::PushID(ImGui::GetCurrentTable()->CurrentRow);
+
+				for (int column = 0; column < columnCount; column++)
 				{
-					ImGui::TableSetupColumn("Pitch");
-					ImGui::TableSetupColumn("Yaw");
-				}
-				ImGui::TableHeadersRow();
+					ImGui::TableSetColumnIndex(column);
 
-				std::lock_guard lock(mutex);
+					//// don't show priority or resolver for bots
+					//if (Player.FakePlayer && column > 2)
+					//{
+					//	continue;
+					//}
 
-				for (const auto& [Team, Player] : PlayerCache)
-				{
-					ImGui::TableNextRow();
-
-					ImGui::PushID(ImGui::GetCurrentTable()->CurrentRow);
-
-					for (int column = 0; column < columnCount; column++)
+					switch (column)
 					{
-						ImGui::TableSetColumnIndex(column);
+					case 0:
+						/* Name */
+						ImGui::PushStyleColor(ImGuiCol_Text, ImColor(Player.Color.r, Player.Color.g, Player.Color.b, Player.Alive ? Player.Color.a : 127).Value);
+						ImGui::Text("%s", Player.Name ? Player.Name : "N/A");
+						ImGui::PopStyleColor();
+						break;
+					case 1:
+						/* Class */
+						ImGui::Text("%s", Utils::GetClassByIndex(Player.Class));
+						break;
+					case 2:
+						/* Health */
+						ImGui::Text("%i/%i", Player.Health, Player.MaxHealth);
+						break;
+					case 3:
+						/* Priority */
+						if (ImGui::Selectable(priorityModes[G::PlayerPriority[Player.FriendsID].Mode]))
+							ImGui::OpenPopup("priority_popup");
 
-						//// don't show priority or resolver for bots
-						//if (Player.FakePlayer && column > 2)
-						//{
-						//	continue;
-						//}
-
-						switch (column)
+						if (ImGui::BeginPopup("priority_popup"))
 						{
-							case 0:
+							for (int i = 0; i < IM_ARRAYSIZE(priorityModes); i++)
 							{
-								/* Name */
-								ImGui::PushStyleColor(ImGuiCol_Text, ImColor(Player.Color.r, Player.Color.g, Player.Color.b, Player.Alive ? Player.Color.a : 127).Value);
-								ImGui::Text("%s", Player.Name ? Player.Name : "N/A");
-								ImGui::PopStyleColor();
-								break;
+								if (ImGui::MenuItem(priorityModes[i]))
+								{
+									G::PlayerPriority[Player.FriendsID].Mode = i;
+									ShouldSave = true;
+								}
 							}
 
-							case 1:
-							{
-								/* Class */
-								ImGui::Text("%s", Utils::GetClassByIndex(Player.Class));
-								break;
-							}
-
-							case 2:
-							{
-								/* Health */
-								ImGui::Text("%i/%i", Player.Health, Player.MaxHealth);
-								break;
-							}
-
-							case 3:
-							{
-								/* Priority */
-								if (ImGui::Selectable(priorityModes[G::PlayerPriority[Player.FriendsID].Mode]))
-								{
-									ImGui::OpenPopup("priority_popup");
-								}
-
-								if (ImGui::BeginPopup("priority_popup"))
-								{
-									for (int i = 0; i < IM_ARRAYSIZE(priorityModes); i++)
-									{
-										if (ImGui::MenuItem(priorityModes[i]))
-										{
-											G::PlayerPriority[Player.FriendsID].Mode = i;
-											ShouldSave = true;
-										}
-									}
-
-									ImGui::EndPopup();
-								}
-								break;
-							}
-
-							case 4:
-							{
-								// Pitch resolver
-								if (ImGui::Selectable(resolveListPitch[F::Resolver.mResolverMode[Player.FriendsID].first]))
-								{
-									ImGui::OpenPopup("pitch_popup");
-								}
-
-								if (ImGui::BeginPopup("pitch_popup"))
-								{
-									for (int i = 0; i < IM_ARRAYSIZE(resolveListPitch); i++)
-									{
-										if (ImGui::MenuItem(resolveListPitch[i]))
-										{
-											F::Resolver.mResolverMode[Player.FriendsID].first = i;
-										}
-									}
-
-									ImGui::EndPopup();
-								}
-								break;
-							}
-
-							case 5:
-							{
-								// Yaw resolver
-								ImGui::PushID(1); // in case of m_Yaw = m_Pitch
-								if (ImGui::Selectable(resolveListYaw[F::Resolver.mResolverMode[Player.FriendsID].second]))
-								{
-									ImGui::OpenPopup("yaw_popup");
-								}
-
-								if (ImGui::BeginPopup("yaw_popup"))
-								{
-									for (int i = 0; i < IM_ARRAYSIZE(resolveListYaw); i++)
-									{
-										if (ImGui::MenuItem(resolveListYaw[i]))
-										{
-											F::Resolver.mResolverMode[Player.FriendsID].second = i;
-										}
-									}
-
-									ImGui::EndPopup();
-								}
-								ImGui::PopID();
-
-								break;
-							}
+							ImGui::EndPopup();
 						}
+						break;
+					case 4:
+						// Pitch resolver
+						if (ImGui::Selectable(resolveListPitch[F::Resolver.mResolverMode[Player.FriendsID].first]))
+							ImGui::OpenPopup("pitch_popup");
+
+						if (ImGui::BeginPopup("pitch_popup"))
+						{
+							for (int i = 0; i < IM_ARRAYSIZE(resolveListPitch); i++)
+							{
+								if (ImGui::MenuItem(resolveListPitch[i]))
+								{
+									F::Resolver.mResolverMode[Player.FriendsID].first = i;
+								}
+							}
+
+							ImGui::EndPopup();
+						}
+						break;
+					case 5:
+						// Yaw resolver
+						ImGui::PushID(1); // in case of m_Yaw = m_Pitch
+						if (ImGui::Selectable(resolveListYaw[F::Resolver.mResolverMode[Player.FriendsID].second]))
+							ImGui::OpenPopup("yaw_popup");
+
+						if (ImGui::BeginPopup("yaw_popup"))
+						{
+							for (int i = 0; i < IM_ARRAYSIZE(resolveListYaw); i++)
+							{
+								if (ImGui::MenuItem(resolveListYaw[i]))
+								{
+									F::Resolver.mResolverMode[Player.FriendsID].second = i;
+								}
+							}
+
+							ImGui::EndPopup();
+						}
+						ImGui::PopID();
+
+						break;
 					}
-
-					ImGui::SameLine();
-					ImGui::Selectable("##contextmenu", false, ImGuiSelectableFlags_SpanAllColumns);
-
-					if (!Player.FakePlayer && ImGui::BeginPopupContextItem())
-					{
-						if (ImGui::Selectable("Profile"))
-						{
-							g_SteamInterfaces.Friends->ActivateGameOverlayToUser("steamid", CSteamID(0x0110000100000000ULL + Player.FriendsID));
-						}
-
-						if (ImGui::Selectable("Votekick"))
-						{
-							I::EngineClient->ClientCmd_Unrestricted(std::format("callvote kick {}", Player.UserID).c_str());
-						}
-
-						ImGui::EndPopup();
-					}
-
-					ImGui::PopID();
 				}
 
-				ImGui::EndTable();
+				ImGui::SameLine();
+				ImGui::Selectable("##contextmenu", false, ImGuiSelectableFlags_SpanAllColumns);
+
+				if (!Player.FakePlayer && ImGui::BeginPopupContextItem())
+				{
+					if (ImGui::Selectable("Profile"))
+						g_SteamInterfaces.Friends->ActivateGameOverlayToUser("steamid", CSteamID(0x0110000100000000ULL + Player.FriendsID));
+
+					if (ImGui::Selectable("Votekick"))
+						I::EngineClient->ClientCmd_Unrestricted(std::format("callvote kick {}", Player.UserID).c_str());
+
+					ImGui::EndPopup();
+				}
+
+				ImGui::PopID();
 			}
 
-			ImGui::PopStyleVar();
+			ImGui::EndTable();
 		}
-
-		ImGui::PopFont();
-		ImGui::End();
 	}
-	ImGui::PopStyleVar();
 }
 
 void CPlayerList::Save()

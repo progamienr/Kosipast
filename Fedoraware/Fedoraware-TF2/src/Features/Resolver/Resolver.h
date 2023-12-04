@@ -46,7 +46,7 @@ private:
 	std::pair<int, std::pair<CBaseEntity*, bool>> pWaiting = {0, {nullptr, false}};
 public:
 	void Aimbot(CBaseEntity* pEntity, const bool bHeadshot);
-	void FrameStageNotify();
+	void FrameStageNotify(CBaseEntity* pLocal);
 	void CreateMove();
 	void FXFireBullet(int iIndex, const Vec3 vAngles);
 	void OnPlayerHurt(CGameEvent* pEvent);

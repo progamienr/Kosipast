@@ -72,9 +72,6 @@ struct DragBox_t
 {
 	int x = 100;
 	int y = 100;
-	int w = 80;
-	int h = 30;
-	int c = 140;
 	bool update = true;
 };
 

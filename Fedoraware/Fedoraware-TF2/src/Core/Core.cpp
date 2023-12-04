@@ -76,7 +76,7 @@ void CCore::Unload()
 		cl_wpn_sway_scale->SetValue(0.0f);
 
 	G::UnloadWndProcHook = true;
-	Vars::Visuals::World::SkyboxChanger.Value = false;
+	Vars::Visuals::World::SkyboxChanger.Value = "Off";
 	Vars::Visuals::ThirdPerson::Active.Value = false;
 
 	Sleep(100);

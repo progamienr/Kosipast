@@ -20,7 +20,7 @@ MAKE_HOOK(C_TFRagdoll_CreateTFRagdoll, S::CTFRagdoll_CreateTFRagdoll(), void, __
 
 	if (const auto& pEntity = static_cast<CBaseEntity*>(ecx))
 	{
-		if (Vars::Visuals::RagdollEffects::EnemyOnly.Value)
+		if (Vars::Visuals::Ragdolls::EnemyOnly.Value)
 		{
 			if (const auto& pLocal = g_EntityCache.GetLocal())
 			{
@@ -31,12 +31,17 @@ MAKE_HOOK(C_TFRagdoll_CreateTFRagdoll, S::CTFRagdoll_CreateTFRagdoll(), void, __
 
 		ClearEffects(pEntity);
 
-		Offset(bool*, pEntity, 0xC92) = Vars::Visuals::RagdollEffects::Burning.Value;
-		Offset(bool*, pEntity, 0xC93) = Vars::Visuals::RagdollEffects::Electrocuted.Value;
-		Offset(bool*, pEntity, 0xC99) = Vars::Visuals::RagdollEffects::BecomeAsh.Value;
-		Offset(bool*, pEntity, 0xC95) = Vars::Visuals::RagdollEffects::Dissolve.Value;
-		Offset(bool*, pEntity, 0xCA0) = Vars::Visuals::RagdollEffects::RagdollType.Value == 1;
-		Offset(bool*, pEntity, 0xCA1) = Vars::Visuals::RagdollEffects::RagdollType.Value == 2;
+		Offset(bool*, pEntity, 0xC92) = Vars::Visuals::Ragdolls::Effects.Value & (1 << 0);
+		Offset(bool*, pEntity, 0xC93) = Vars::Visuals::Ragdolls::Effects.Value & (1 << 1);
+		Offset(bool*, pEntity, 0xC99) = Vars::Visuals::Ragdolls::Effects.Value & (1 << 2);
+		Offset(bool*, pEntity, 0xC95) = Vars::Visuals::Ragdolls::Effects.Value & (1 << 3);
+		Offset(bool*, pEntity, 0xCA0) = Vars::Visuals::Ragdolls::Type.Value == 1;
+		Offset(bool*, pEntity, 0xCA1) = Vars::Visuals::Ragdolls::Type.Value == 2;
+
+		pEntity->m_vecForce() *= Vars::Visuals::Ragdolls::Force.Value;
+		pEntity->m_vecForce().x *= Vars::Visuals::Ragdolls::ForceHorizontal.Value;
+		pEntity->m_vecForce().y *= Vars::Visuals::Ragdolls::ForceHorizontal.Value;
+		pEntity->m_vecForce().z *= Vars::Visuals::Ragdolls::ForceVertical.Value;
 	}
 
 	Hook.Original<FN>()(ecx, edx);

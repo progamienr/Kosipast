@@ -62,7 +62,7 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 
 		StartDrawing(I::VGuiSurface);
 		{
-			if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
+			if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot() || I::EngineVGui->IsGameUIVisible())
 				return FinishDrawing(I::VGuiSurface);
 
 			//static int nAvatar = 0;
@@ -103,22 +103,6 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 			//	I::Surface->DrawTexturedRect(100, 300, w, h);
 			//	g_Draw.OutlinedCircle(100 + (w / 2), 300 + (h / 2), w / 2, 300, Utils::Rainbow());
 			//}
-
-			// Main Menu stuff
-			if (I::EngineVGui->IsGameUIVisible())
-			{
-				if (!I::EngineClient->IsInGame())
-				{
-					static time_t curTime = time(nullptr);
-					static tm* curCalTime = localtime(&curTime);
-
-					if (F::Menu.IsOpen)
-					{
-						const auto& menuFont = g_Draw.GetFont(FONT_MENU);
-						g_Draw.String(menuFont, 5, g_ScreenSize.h - 2 - Vars::Fonts::FONT_MENU::nTall.Value, { 200, 200, 200, 255 }, ALIGN_DEFAULT, L"Build of %hs", __DATE__ " " __TIME__);
-					}
-				}
-			}
 
 			F::ESP.Run();
 			F::Visuals.PickupTimers();

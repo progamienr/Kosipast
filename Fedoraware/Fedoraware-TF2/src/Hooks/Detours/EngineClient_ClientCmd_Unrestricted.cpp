@@ -1,8 +1,7 @@
 #include "../Hooks.h"
 
+#include <boost/algorithm/string/split.hpp>
 
-#include <boost/algorithm/string/split.hpp> // Include for boost::split
-#include "../../Features/Menu/MaterialEditor/MaterialEditor.h"
 #include "../../Features/Commands/Commands.h"
 #include "../../Features/Visuals/Materials/Materials.h"
 
@@ -40,9 +39,7 @@ MAKE_HOOK(EngineClient_ClientCmd_Unrestricted, Utils::GetVFuncPtr(I::EngineClien
 		cmdArgs.pop_front();
 
 		if (F::Commands.Run(cmdName, cmdArgs))
-		{
 			return;
-		}
 	}
 
 	if (cmdString == "disconnect")

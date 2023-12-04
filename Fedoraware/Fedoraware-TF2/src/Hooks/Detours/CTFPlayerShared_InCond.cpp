@@ -55,5 +55,8 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 	if (nCond == TF_COND_DISGUISED && Vars::Visuals::RemoveDisguises.Value && g_EntityCache.GetLocal() != GetOuter())
 		return false;
 
+	if (nCond == TF_COND_HALLOWEEN_KART && Vars::Misc::KartControl.Value && !G::AnimateKart && g_EntityCache.GetLocal() == GetOuter())
+		return false;
+
 	return Hook.Original<FN>()(ecx, edx, nCond);
 }

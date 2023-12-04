@@ -28,9 +28,8 @@ class CCritHack
 private:
 	bool IsEnabled();
 	bool AreRandomCritsEnabled();
-	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
 
-	void Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, int loops = 10);
+	void Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const bool bAttacking, int n = 10);
 	int LastGoodCritTick(const CUserCmd* pCmd);
 	int LastGoodSkipTick(const CUserCmd* pCmd);
 

@@ -20,8 +20,6 @@ MAKE_HOOK(ViewRender_LevelInit, Utils::GetVFuncPtr(I::ViewRender, 1), void, __fa
 	F::Ticks.Reset();
 	F::BadActors.OnLoad();
 
-	G::NextSafeTick = 0;
-
 	Hook.Original<FN>()(ecx, edx);
 
 	F::Visuals.ModulateWorld();

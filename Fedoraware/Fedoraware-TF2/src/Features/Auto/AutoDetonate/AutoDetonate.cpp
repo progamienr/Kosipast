@@ -8,7 +8,8 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 	{
 		if (pExplosive->GetPipebombType() == TYPE_STICKY)
 		{
-			if (!pExplosive->GetPipebombPulsed()) { continue; }
+			if (!pExplosive->GetPipebombPulsed())
+				continue;
 		}
 
 		// Iterate through entities in sphere radius
@@ -26,20 +27,20 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 			if (vOrigin.DistTo(vPos) > radius)
 				continue;
 
-			const bool isPlayer = Vars::Triggerbot::Detonate::DetonateTargets.Value & (PLAYER) && pTarget->IsPlayer();
-			const bool isSentry = Vars::Triggerbot::Detonate::DetonateTargets.Value & (SENTRY) && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
-			const bool isDispenser = Vars::Triggerbot::Detonate::DetonateTargets.Value & (DISPENSER) && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
-			const bool isTeleporter = Vars::Triggerbot::Detonate::DetonateTargets.Value & (TELEPORTER) && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
-			const bool isNPC = Vars::Triggerbot::Detonate::DetonateTargets.Value & (NPC) && pTarget->IsNPC();
-			const bool isBomb = Vars::Triggerbot::Detonate::DetonateTargets.Value & (BOMB) && pTarget->IsBomb();
-			const bool isSticky = Vars::Triggerbot::Detonate::DetonateTargets.Value & (STICKY) && pTarget->GetClassID() == ETFClassID::CTFGrenadePipebombProjectile && pTarget->GetPipebombType() == TYPE_STICKY && (G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher || G::CurItemDefIndex == Demoman_s_TheScottishResistance);
+			const bool isPlayer = Vars::Auto::Detonate::DetonateTargets.Value & PLAYER && pTarget->IsPlayer();
+			const bool isSentry = Vars::Auto::Detonate::DetonateTargets.Value & SENTRY && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
+			const bool isDispenser = Vars::Auto::Detonate::DetonateTargets.Value & DISPENSER && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
+			const bool isTeleporter = Vars::Auto::Detonate::DetonateTargets.Value & TELEPORTER && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
+			const bool isNPC = Vars::Auto::Detonate::DetonateTargets.Value & NPC && pTarget->IsNPC();
+			const bool isBomb = Vars::Auto::Detonate::DetonateTargets.Value & BOMB && pTarget->IsBomb();
+			const bool isSticky = Vars::Auto::Detonate::DetonateTargets.Value & STICKY && pTarget->GetClassID() == ETFClassID::CTFGrenadePipebombProjectile && pTarget->GetPipebombType() == TYPE_STICKY && (G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher || G::CurItemDefIndex == Demoman_s_TheScottishResistance);
 
 			if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC || isBomb || isSticky)
 			{
 				if (isPlayer && F::AutoGlobal.ShouldIgnore(pTarget))
 					continue;
 
-				if (!Utils::VisPosMask(pExplosive, pTarget, vOrigin, pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+				if (!Utils::VisPosMask(pExplosive, pTarget, vOrigin, isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
 					continue;
 
 				if (G::CurItemDefIndex == Demoman_s_TheScottishResistance)
@@ -59,7 +60,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 
 void CAutoDetonate::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Triggerbot::Detonate::Active.Value) { return; }
+	if (!Vars::Auto::Detonate::Active.Value) { return; }
 
 	float flStickyRadius = Utils::ATTRIB_HOOK_FLOAT(148.0f, "mult_explosion_radius", pWeapon);
 	for (const auto& pExplosive : g_EntityCache.GetGroup(EGroupType::LOCAL_STICKIES))
@@ -81,15 +82,15 @@ void CAutoDetonate::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 	bool shouldDetonate = false;
 
 	// Check sticky detonation
-	if (Vars::Triggerbot::Detonate::Stickies.Value
-		&& CheckDetonation(pLocal, g_EntityCache.GetGroup(EGroupType::LOCAL_STICKIES), flStickyRadius * Vars::Triggerbot::Detonate::RadiusScale.Value, pCmd))
+	if (Vars::Auto::Detonate::Stickies.Value
+		&& CheckDetonation(pLocal, g_EntityCache.GetGroup(EGroupType::LOCAL_STICKIES), flStickyRadius * Vars::Auto::Detonate::RadiusScale.Value / 100, pCmd))
 	{
 		shouldDetonate = true;
 	}
 
 	// Check flare detonation
-	if (Vars::Triggerbot::Detonate::Flares.Value
-		&& CheckDetonation(pLocal, g_EntityCache.GetGroup(EGroupType::LOCAL_FLARES), 110.0f * Vars::Triggerbot::Detonate::RadiusScale.Value, pCmd))
+	if (Vars::Auto::Detonate::Flares.Value
+		&& CheckDetonation(pLocal, g_EntityCache.GetGroup(EGroupType::LOCAL_FLARES), 110.0f * Vars::Auto::Detonate::RadiusScale.Value / 100, pCmd))
 	{
 		shouldDetonate = true;
 	}

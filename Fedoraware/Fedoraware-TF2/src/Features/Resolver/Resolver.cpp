@@ -161,11 +161,8 @@ void PResolver::Aimbot(CBaseEntity* pEntity, const bool bHeadshot)
 	pWaiting = {I::GlobalVars->tickcount + iDelay, {pEntity, bHeadshot}};
 }
 
-void PResolver::FrameStageNotify()
+void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal)
-		return;
 	if (!ShouldRun())
 		return;
 

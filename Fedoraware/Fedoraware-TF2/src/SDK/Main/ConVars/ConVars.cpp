@@ -16,7 +16,8 @@ void CConVars::Init()
 	glow_outline_effect_enable = I::Cvar->FindVar("glow_outline_effect_enable");
 	r_drawspecificstaticprop = I::Cvar->FindVar("r_drawspecificstaticprop");
 	sv_namechange_cooldown_seconds = I::Cvar->FindVar("sv_namechange_cooldown_seconds");
-	afkTimer = I::Cvar->FindVar("mp_idlemaxtime");
+	mp_idlemaxtime = I::Cvar->FindVar("mp_idlemaxtime");
+	mp_idledealmethod = I::Cvar->FindVar("mp_idledealmethod");
 	sv_maxusrcmdprocessticks = I::Cvar->FindVar("sv_maxusrcmdprocessticks");
 	sv_maxusrcmdprocessticks_holdaim = I::Cvar->FindVar("sv_maxusrcmdprocessticks_holdaim");
 
