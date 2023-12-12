@@ -2,7 +2,7 @@
 #include "../Feature.h"
 #include "../Backtrack/Backtrack.h"
 
-struct PlayerData
+struct PlayerInfo
 {
 	//Data
 	float flJoinTime = 0.f;
@@ -30,7 +30,7 @@ struct PlayerData
 	int iLastDamageEventTick = 0;	// lets not recalculate hitchance for a player multiple times (explosive dmg, weird shell weapon behaviour)
 };
 
-struct ServerData
+struct ServerInfo
 {
 	float flAverageScorePerSecond = 0.f;					//	used to determine if our player is in the top 99% or just average within the server
 	int iMisses = 0;										//	total shots fired
@@ -54,8 +54,8 @@ class CCheaterDetection
 	float flScanningTime = 0.f;
 	float flLastScoreTime = 0.f;
 	float flLastAccuracyTime = 0.f;
-	ServerData server;
-	std::unordered_map<CBaseEntity*, PlayerData> mData;
+	ServerInfo server;
+	std::unordered_map<CBaseEntity*, PlayerInfo> mData;
 	std::unordered_map<CBaseEntity*, bool> mFired;
 
 	// is it safe for the client to be doing this, is the process drunk & unable to make proper judgement, has it been bribed???/?

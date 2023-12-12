@@ -183,7 +183,7 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 			if (isPlayer && F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
-			if (!Utils::VisPosMask(pBomb, pTarget, pBomb->m_vecOrigin(), isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+			if (!Utils::VisPos(pBomb, pTarget, pBomb->m_vecOrigin(), isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
 				continue;
 
 			return true;

@@ -286,7 +286,7 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 			else LoadT(DragBox_t)
 		}
 
-		CurrentConfig = configName;
+		CurrentConfig = configName; CurrentVisuals = "";
 		if (bNotify)
 			F::Notifications.Add("Config " + configName + " loaded");
 	}

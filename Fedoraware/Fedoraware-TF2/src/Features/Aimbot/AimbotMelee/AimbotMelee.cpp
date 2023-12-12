@@ -235,12 +235,12 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 							I::GlobalVars->tickcount + i + 1,
 							false,
 							BoneMatrixes{},
-							targetStorage[target.m_pEntity].m_MoveData.m_vecAbsOrigin
+							targetStorage[target.m_pEntity].m_MoveData.m_vecOrigin
 						});
 				}
 			}
 		}
-		vEyePos = localStorage.m_MoveData.m_vecAbsOrigin + pLocal->m_vecViewOffset();
+		vEyePos = localStorage.m_MoveData.m_vecOrigin + pLocal->m_vecViewOffset();
 
 		if (Vars::Visuals::SwingLines.Value)
 		{
@@ -311,9 +311,9 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 	if (flRange <= 0.0f)
 		return false;
 
+	CGameTrace trace;
 	CTraceFilterHitscan filter;
 	filter.pSkip = pLocal;
-	CGameTrace trace;
 
 	matrix3x4 bones[128];
 	target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime());

@@ -7,16 +7,19 @@
 #include "../AntiHack/CheaterDetection.h"
 #include "../PacketManip/AntiAim/AntiAim.h"
 #include "../TickHandler/TickHandler.h"
+#include "../Simulation/MovementSimulation/MovementSimulation.h"
+#include "../Visuals/Visuals.h"
 
 extern int attackStringW;
 extern int attackStringH;
 
-void CMisc::RunPre(CUserCmd* pCmd, bool* pSendPacket)
+void CMisc::RunPre(CUserCmd* pCmd)
 {
 	bMovementStopped = false; bMovementScuffed = false;
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
 		AutoJump(pCmd, pLocal);
+		AutoJumpbug(pCmd, pLocal);
 		AutoStrafe(pCmd, pLocal);
 		AntiBackstab(pLocal, pCmd);
 		AutoPeek(pCmd, pLocal);
@@ -72,30 +75,85 @@ void CMisc::AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (bCurHop && !bTried)
 	{	//	this is our initial jump
 		bTried = true;
-		bHopping = true; return;
+		bHopping = true;
 	}
 	else if (bCurHop && bTried) 
 	{	//	we tried and failed to bunnyhop, let go of the key and try again the next tick
 		bTried = false;
-		pCmd->buttons &= ~IN_JUMP; return;
+		pCmd->buttons &= ~IN_JUMP;
 	}
 	else if (bHopping && bJumpHeld && (!pLocal->OnSolid() || pLocal->IsDucking()))
 	{	//	 we are not on the ground and the key is in the same hold cycle
 		bTried = false;
-		pCmd->buttons &= ~IN_JUMP; return;
+		pCmd->buttons &= ~IN_JUMP;
 	}
 	else if (bHopping && !bJumpHeld)
 	{	//	we are no longer in the jump key cycle
 		bTried = false;
-		bHopping = false; return;
+		bHopping = false;
 	}
 	else if (!bHopping && bJumpHeld)
 	{	//	we exited the cycle but now we want back in, don't mess with keys for doublejump, enter us back into the cycle for next tick
 		bTried = false;
-		bHopping = true; return;
+		bHopping = true;
+	}
+}
+
+void CMisc::AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal)
+{
+	if (!Vars::Misc::AutoJumpbug.Value
+		|| !pLocal->IsAlive()
+		|| pLocal->IsSwimming()
+		|| pLocal->IsInBumperKart()
+		|| pLocal->IsAGhost())
+	{
+		return;
 	}
 
-	return;
+	if (pLocal->GetMoveType() == MOVETYPE_NOCLIP
+		|| pLocal->GetMoveType() == MOVETYPE_LADDER
+		|| pLocal->GetMoveType() == MOVETYPE_OBSERVER)
+	{
+		return;
+	}
+
+	// don't try if we aren't ducking, on a solid, or won't take fall damage
+	if (!(pCmd->buttons & IN_DUCK)
+		|| pLocal->OnSolid()
+		|| pLocal->m_vecVelocity().z > -650.f)
+	{
+		return;
+	}
+
+	// don't try if we won't be on solid
+	{
+		PlayerStorage localStorage;
+		F::MoveSim.Initialize(pLocal, localStorage, false);
+		F::MoveSim.RunTick(localStorage);
+		const bool bWillSolid = pLocal->OnSolid();
+		F::MoveSim.Restore(localStorage);
+		if (bWillSolid)
+			return;
+	}
+
+	CGameTrace trace;
+	CTraceFilterWorldAndPropsOnly filter;
+	filter.pSkip = pLocal;
+
+	Vec3 origin = pLocal->m_vecOrigin();
+	Utils::TraceHull(origin, origin - Vec3(0, 0, 23), pLocal->m_vecMins(), pLocal->m_vecMaxs(), MASK_SHOT, &filter, &trace);
+
+	// don't try if we aren't in range to unduck
+	if (!trace.DidHit())
+		return;
+
+	// this seems to be the range where this works
+	const float flDist = origin.DistTo(trace.vEndPos);
+	if (20.f < flDist && flDist < 22.f)
+	{
+		pCmd->buttons &= ~IN_DUCK;
+		pCmd->buttons |= IN_JUMP;
+	}
 }
 
 void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)

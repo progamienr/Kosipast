@@ -326,7 +326,7 @@ void CBacktrack::MakeRecords()
 				// we've predicted their next record, and we can probably predict their next lag record but if they are fakelagging it's pointless n shieet
 				// i was going to check if this lag comp would be valid here but it seems almost pointless now, dont do it.
 				// might need to do this for setupbones
-				pEntity->SetAbsOrigin(storage.m_MoveData.m_vecAbsOrigin);
+				pEntity->SetAbsOrigin(storage.m_MoveData.m_vecOrigin);
 				pEntity->SetEyeAngles(storage.m_MoveData.m_vecViewAngles);
 
 				if (noInterpBones[pEntity->GetIndex()].first)
@@ -337,7 +337,7 @@ void CBacktrack::MakeRecords()
 						I::GlobalVars->tickcount + 1,
 						false,
 						*reinterpret_cast<BoneMatrixes*>(&noInterpBones[pEntity->GetIndex()].second),
-						storage.m_MoveData.m_vecAbsOrigin
+						storage.m_MoveData.m_vecOrigin
 					});
 				}
 

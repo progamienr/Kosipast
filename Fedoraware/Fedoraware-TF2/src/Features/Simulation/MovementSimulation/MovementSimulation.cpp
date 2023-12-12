@@ -289,7 +289,7 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	playerStorage.m_MoveData.m_bGameCodeMovedPlayer = false;
 	playerStorage.m_MoveData.m_nPlayerHandle = reinterpret_cast<IHandleEntity*>(playerStorage.m_pPlayer)->GetRefEHandle();
 
-	playerStorage.m_MoveData.m_vecAbsOrigin = playerStorage.m_pPlayer->m_vecOrigin();
+	playerStorage.m_MoveData.m_vecOrigin = playerStorage.m_pPlayer->m_vecOrigin();
 	playerStorage.m_MoveData.m_vecVelocity = playerStorage.m_pPlayer->m_vecVelocity();
 	playerStorage.m_MoveData.m_flMaxSpeed = playerStorage.m_pPlayer->TeamFortress_CalculateMaxSpeed();
 	if (playerStorage.m_PlayerData.m_fFlags & FL_DUCKING)
@@ -393,7 +393,7 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	if (playerStorage.m_bFailed || !playerStorage.m_pPlayer || !playerStorage.m_pPlayer->IsPlayer())
 		return;
 
-	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecAbsOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecAbsOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value)});
+	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value)});
 
 	//make sure frametime and prediction vars are right
 	I::Prediction->m_bInPrediction = true;

@@ -119,7 +119,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	*/
 
 	// Run Features
-	F::Misc.RunPre(pCmd, pSendPacket);
+	F::Misc.RunPre(pCmd);
 	F::BadActors.OnTick();
 	F::Backtrack.Run(pCmd);
 	F::EnginePrediction.Start(pCmd);

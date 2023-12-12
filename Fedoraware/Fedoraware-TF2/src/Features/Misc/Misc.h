@@ -9,6 +9,7 @@
 class CMisc
 {
 	void AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd);
 	void AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal);
@@ -38,7 +39,7 @@ public:
 	void DumpClassIDS();
 #endif
 
-	void RunPre(CUserCmd* pCmd, bool* pSendPacket);
+	void RunPre(CUserCmd* pCmd);
 	void RunPost(CUserCmd* pCmd, bool* pSendPacket);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
 

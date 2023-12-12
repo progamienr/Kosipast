@@ -40,7 +40,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, const std::vector<CBase
 				if (isPlayer && F::AutoGlobal.ShouldIgnore(pTarget))
 					continue;
 
-				if (!Utils::VisPosMask(pExplosive, pTarget, vOrigin, isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+				if (!Utils::VisPos(pExplosive, pTarget, vOrigin, isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
 					continue;
 
 				if (G::CurItemDefIndex == Demoman_s_TheScottishResistance)

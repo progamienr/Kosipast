@@ -26,8 +26,8 @@ public:
 	void DrawAntiAim(CBaseEntity* pLocal);
 	void DrawDebugInfo(CBaseEntity* pLocal);
 
-	void DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity);
-	void DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime);
+	void DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool bClear = true);
+	void DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime, const bool bClear = true);
 	void DrawBulletLines();
 	void DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators = false, bool bZBuffer = false);
 	void DrawSimLines();

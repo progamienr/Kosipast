@@ -288,9 +288,9 @@ void CMenu::MenuAimbot()
 					FSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, 1.f, "%.0f", 0);
 				FDropdown("Real offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }, {}, FDropdown_Left);
 				FDropdown("Fake offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "Offset", "FOV Player", "FOV Player + Offset" }, {}, FDropdown_Right);
-				if (Vars::AntiHack::AntiAim::RealYawMode.Value != 1)
+				//if (Vars::AntiHack::AntiAim::RealYawMode.Value != 1)
 					FSlider("Real offset## RealYawOffset", &Vars::AntiHack::AntiAim::RealYawOffset.Value, -180.f, 180.f, 5.f, "%.0f", FSlider_Left);
-				if (Vars::AntiHack::AntiAim::FakeYawMode.Value != 1)
+				//if (Vars::AntiHack::AntiAim::FakeYawMode.Value != 1)
 					FSlider("Fake offset## FakeYawOffset", &Vars::AntiHack::AntiAim::FakeYawOffset.Value, -180.f, 180.f, 5.f, "%.0f", FSlider_Right);
 				FToggle("Anti-overlap", &Vars::AntiHack::AntiAim::AntiOverlap.Value);
 				FToggle("Hide pitch on shot", &Vars::AntiHack::AntiAim::InvalidShootPitch.Value, FToggle_Middle);
@@ -935,6 +935,7 @@ void CMenu::MenuMisc()
 		if (Section("Movement"))
 		{
 			FToggle("Bunnyhop", &Vars::Misc::AutoJump.Value);
+			FToggle("Auto jumpbug", &Vars::Misc::AutoJumpbug.Value, FToggle_Middle); // this is unreliable without setups, do not depend on it!
 			FDropdown("Autostrafe", &Vars::Misc::AutoStrafe.Value, { "Off", "Legit", "Directional" });
 			if (Vars::Misc::AutoStrafe.Value == 2)
 			{
@@ -1195,7 +1196,7 @@ void CMenu::MenuSettings()
 						const auto current = GetCursorPos().y;
 
 						SetCursorPos({ 14, current + 11 });
-						TextColored(configName == g_CFG.GetCurrentConfig() ? F::Menu.Active.Value : F::Menu.Inactive.Value, configName.c_str());
+						TextColored(configName == g_CFG.GetCurrentVisuals() ? F::Menu.Active.Value : F::Menu.Inactive.Value, configName.c_str());
 
 
 

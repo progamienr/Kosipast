@@ -226,7 +226,7 @@ namespace Vars
 			CVar(JumpKey, 0x0)
 			CVar(CTapKey, 0x0)
 			CVar(TimingOffset, -1, NOSAVE) // debug; -1 for more consistency
-			CVar(ApplyAbove, 0, NOSAVE) // debug
+			CVar(ApplyAbove, 2, NOSAVE) // debug
 		SUBNAMESPACE_END(Jump)
 	NAMESPACE_END(Triggerbot)
 
@@ -571,6 +571,7 @@ namespace Vars
 
 	NAMESPACE_BEGIN(Misc)
 		CVar(AutoJump, false)
+		CVar(AutoJumpbug, false)
 		CVar(AutoStrafe, 0)
 		CVar(DirectionalOnlyOnMove, true)
 		CVar(DirectionalOnlyOnSpace, false)

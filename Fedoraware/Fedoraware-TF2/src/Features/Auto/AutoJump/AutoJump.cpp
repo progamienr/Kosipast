@@ -71,12 +71,23 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 					Utils::Trace(Old, New, MASK_SOLID, &filter, &trace);
 					if (trace.DidHit())
 					{
-						if (trace.vEndPos.DistTo(pLocal->GetShootPos()) < 120.f && Utils::VisPosMask(pLocal, pLocal, trace.vEndPos, pLocal->GetShootPos(), MASK_SOLID))
+						auto VisPos = [](CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to)
+						{
+							CGameTrace trace = {};
+							CTraceFilterProjectile filter = {};
+							filter.pSkip = pSkip;
+							Utils::Trace(from, to, MASK_SOLID, &filter, &trace);
+							if (trace.DidHit())
+								return trace.entity && trace.entity == pEntity;
+							return true;
+						};
+
+						if (trace.vEndPos.DistTo(pLocal->GetShootPos()) < 120.f && VisPos(pLocal, pLocal, trace.vEndPos, pLocal->GetShootPos()))
 						{	// this might be ever so slightly slow due to how jank rockets are, might cause occasional issues
 							iDelay = n + (n > Vars::Auto::Jump::ApplyAbove.Value ? Vars::Auto::Jump::TimingOffset.Value : 0);
 							bWillHit = true;
 
-							Utils::ConLog("Time to hit", std::format("{}", iDelay).c_str(), { 255, 0, 0, 255 }, Vars::Debug::Logging.Value);
+							Utils::ConLog("Auto jump", std::format("Ticks to hit: {}", iDelay).c_str(), { 255, 0, 0, 255 }, Vars::Debug::Logging.Value);
 							if (Vars::Debug::Info.Value && !bReloading)
 							{
 								G::LinesStorage.push_back({ {{ pLocal->GetShootPos(), {} }, { trace.vEndPos, {} }}, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value, true });

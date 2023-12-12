@@ -195,7 +195,7 @@ public:
 	float m_flConstraintRadius;
 	float m_flConstraintWidth;
 	float m_flConstraintSpeedFactor;
-	Vec3 m_vecAbsOrigin;
+	Vec3 m_vecOrigin;
 };
 
 class CEntityGroundContact

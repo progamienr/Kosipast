@@ -5,11 +5,11 @@ bool CCheaterDetection::ShouldScan()
 	const int iProtFlags = Vars::Misc::CheaterDetection::Protections.Value;
 	const int iDetectFlags = Vars::Misc::CheaterDetection::Methods.Value;
 
-	if (I::EngineClient->IsPlayingTimeDemo()) { return false; }
+	if (!Vars::Misc::CheaterDetection::Enabled.Value || !iDetectFlags || I::EngineClient->IsPlayingTimeDemo())
+		return false;
 
-	if (!Vars::Misc::CheaterDetection::Enabled.Value || !iDetectFlags) { return false; }
-
-	if (iLastScanTick == I::GlobalVars->tickcount && iProtFlags & (1 << 2)) { return false; }
+	if (iLastScanTick == I::GlobalVars->tickcount && iProtFlags & (1 << 2))
+		return false;
 
 	if (flLastFrameTime)
 	{
@@ -18,9 +18,7 @@ bool CCheaterDetection::ShouldScan()
 		const int iRealFPS = static_cast<int>(1.0f / flRealFrameTime);
 
 		if (iRealFPS < server.iTickRate && iProtFlags & (1 << 1))
-		{
 			return false;
-		}
 	}
 
 	if (const INetChannel* NetChannel = I::EngineClient->GetNetChannelInfo())
@@ -29,7 +27,8 @@ bool CCheaterDetection::ShouldScan()
 		const float flMaxReceive = I::GlobalVars->interval_per_tick * 2;
 		const bool bIsTimeOut = NetChannel->IsTimingOut();
 		const bool bShouldSkip = (flLastReceive > flMaxReceive) || bIsTimeOut;
-		if (bShouldSkip && iProtFlags & (1 << 0)) { return false; }
+		if (bShouldSkip && iProtFlags & (1 << 0))
+			return false;
 	}
 
 	return true;
@@ -449,7 +448,7 @@ void CCheaterDetection::FindHitchances()
 
 void CCheaterDetection::Reset()
 {
-	server = ServerData{};
+	server = ServerInfo{};
 	mData.clear();
 	mFired.clear();
 	iLastScanTick = 0;

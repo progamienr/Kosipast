@@ -423,18 +423,7 @@ namespace Utils
 		return fnRandomFloat(flMinVal, flMaxVal);
 	}
 
-	__inline bool VisPos(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to)
-	{
-		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
-		filter.pSkip = pSkip;
-		Trace(from, to, (MASK_SHOT | CONTENTS_GRATE), &filter, &trace);
-		if (trace.DidHit())
-			return trace.entity && trace.entity == pEntity;
-		return true;
-	}
-
-	__inline bool VisPosMask(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, unsigned int nMask)
+	__inline bool VisPos(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, unsigned int nMask = MASK_SHOT | CONTENTS_GRATE)
 	{
 		CGameTrace trace = {};
 		CTraceFilterHitscan filter = {};
@@ -450,7 +439,7 @@ namespace Utils
 		CGameTrace trace = {};
 		CTraceFilterHitscan filter = {};
 		filter.pSkip = pSkip;
-		Trace(from, to, (MASK_SHOT | CONTENTS_GRATE), &filter, &trace);
+		Trace(from, to, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 		return (trace.entity && trace.entity == pEntity && trace.hitbox == nHitbox);
 	}
 
@@ -459,7 +448,7 @@ namespace Utils
 		CGameTrace trace = {};
 		CTraceFilterHitscan filter = {};
 		filter.pSkip = pSkip;
-		Trace(from, to, (MASK_SHOT | CONTENTS_GRATE), &filter, &trace);
+		Trace(from, to, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 
 		if (trace.entity && trace.entity == pEntity)
 		{
@@ -475,7 +464,7 @@ namespace Utils
 		CGameTrace trace = {};
 		CTraceFilterHitscan filter = {};
 		filter.pSkip = pSkip;
-		Trace(from, to, (MASK_SHOT | CONTENTS_GRATE), &filter, &trace);
+		Trace(from, to, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 		return (trace.flFraction > 0.99f);
 	}
 

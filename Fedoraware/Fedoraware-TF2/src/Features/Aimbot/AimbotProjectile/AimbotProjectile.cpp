@@ -481,7 +481,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 		if (!storage.m_bFailed)
 		{
 			F::MoveSim.RunTick(storage);
-			vTargetPos = storage.m_MoveData.m_vecAbsOrigin;
+			vTargetPos = storage.m_MoveData.m_vecOrigin;
 		}
 
 		// actually test points
@@ -542,7 +542,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
-				const Vec3 vOriginOffset = target.m_pEntity->m_vecOrigin() - vTargetPos;
+				const Vec3 vOriginOffset = target.m_pEntity->GetAbsOrigin() - vTargetPos;
 
 				const model_t* pModel = target.m_pEntity->GetModel();
 				if (!pModel) return true;

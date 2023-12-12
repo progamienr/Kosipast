@@ -309,24 +309,26 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 		const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
 		g_Draw.String(fFont, xoffset, yoffset += 15, Utils::Rainbow(), ALIGN_DEFAULT, "Fedoraware");
-		// alive
 		{
-			const bool alive = pLocal->IsAlive();
-			Color_t clr = alive ? Color_t{ 153, 232, 0, 255 } : Color_t{ 167, 0, 0, 255 };
-			g_Draw.String(fFont, xoffset, yoffset += 15, clr, ALIGN_DEFAULT, "%s", alive ? "ALIVE" : "DEAD");
+			Vec3 vec = pLocal->m_vecOrigin();
+			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "Origin: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
+		}
+		{
+			Vec3 vec = pLocal->m_vecVelocity();
+			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "Velocity: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
 		}
 
 		auto pCmd = G::LastUserCmd;
 		if (!pCmd)
 			return;
-		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "%.0f, %.0f", pCmd->forwardmove, pCmd->sidemove);
-		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "%i", pCmd->buttons);
+		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
+		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "pCmd buttons: %i", pCmd->buttons);
 	}
 }
 
 
 
-void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity)
+void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool bClear)
 {
 	const model_t* pModel = pEntity->GetModel();
 	if (!pModel) return;
@@ -335,7 +337,8 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity)
 	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(pEntity->m_nHitboxSet());
 	if (!pSet) return;
 
-	G::BoxesStorage.clear();
+	if (bClear)
+		G::BoxesStorage.clear();
 
 	for (int i = 0; i < pSet->numhitboxes; ++i)
 	{
@@ -359,9 +362,10 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity)
 	}
 }
 
-void CVisuals::DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime)
+void CVisuals::DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime, const bool bClear)
 {
-	G::BoxesStorage.clear();
+	if (bClear)
+		G::BoxesStorage.clear();
 
 	G::BoxesStorage.push_back({ vOrigin, pTarget->m_vecMins(), pTarget->m_vecMaxs(), Vec3(), flTime, Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value, true });
 }

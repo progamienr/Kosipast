@@ -50,7 +50,7 @@ void CFakeLag::PreserveBlastJump()
 	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->IsPlayer())
 		return;
 
-	const bool bVar = Vars::CL_Move::FakeLag::RetainBlastJump.Value;
+	const bool bVar = Vars::CL_Move::FakeLag::RetainBlastJump.Value && Vars::Misc::AutoJump.Value; // don't bother if we aren't bhopping
 	//static bool bOldSolid = false;
 	//const bool bPlayerReady = pLocal->OnSolid() || bOldSolid;
 	//bOldSolid = pLocal->OnSolid();
