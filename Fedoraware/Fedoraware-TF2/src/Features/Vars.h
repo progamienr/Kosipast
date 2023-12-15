@@ -448,6 +448,7 @@ namespace Vars
 		CVar(SeperatorSpacing, 6, VISUAL)
 		CVar(SwingLines, false, VISUAL)
 		CVar(ProjectileTrajectory, false, VISUAL)
+		CVar(ProjectileCamera, false, VISUAL)
 		CVar(TrajectoryOnShot, false, VISUAL)
 		CVar(PTOverwrite, false, NOSAVE) // debug
 		CVar(PTType, 0, NOSAVE) // debug

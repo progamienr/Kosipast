@@ -187,6 +187,7 @@
     <ClCompile Include="src\Features\Auto\AutoJump\AutoJump.cpp" />
     <ClCompile Include="src\Features\Auto\AutoUber\AutoUber.cpp" />
     <ClCompile Include="src\Features\Backtrack\Backtrack.cpp" />
+    <ClCompile Include="src\Features\CameraWindow\CameraWindow.cpp" />
     <ClCompile Include="src\Features\Commands\Commands.cpp" />
     <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
     <ClCompile Include="src\Features\Logs\Logs.cpp" />
@@ -403,6 +404,7 @@
     <ClInclude Include="src\Features\Auto\AutoJump\AutoJump.h" />
     <ClInclude Include="src\Features\Auto\AutoUber\AutoUber.h" />
     <ClInclude Include="src\Features\Backtrack\Backtrack.h" />
+    <ClInclude Include="src\Features\CameraWindow\CameraWindow.h" />
     <ClInclude Include="src\Features\Color.h" />
     <ClInclude Include="src\Features\Commands\Commands.h" />
     <ClInclude Include="src\Features\CritHack\CritHack.h" />

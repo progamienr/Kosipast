@@ -275,17 +275,17 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	vecToTarget = pTarget->GetAbsOrigin() - pLocal->m_vecOrigin();
 	vecToTarget.z = 0.0f;
 	float vecDist = vecToTarget.Length();
-	vecToTarget.NormalizeInPlace();
+	vecToTarget.Normalize();
 
 	Vector vecOwnerForward;
 	Math::AngleVectors(eyeAngles, &vecOwnerForward);
 	vecOwnerForward.z = 0.0f;
-	vecOwnerForward.NormalizeInPlace();
+	vecOwnerForward.Normalize();
 
 	Vector vecTargetForward;
 	Math::AngleVectors(F::Backtrack.noInterpEyeAngles[pTarget->GetIndex()], &vecTargetForward);
 	vecTargetForward.z = 0.0f;
-	vecTargetForward.NormalizeInPlace();
+	vecTargetForward.Normalize();
 
 	float flPosVsTargetViewDot = vecToTarget.Dot(vecTargetForward); // Behind?
 	float flPosVsOwnerViewDot = vecToTarget.Dot(vecOwnerForward); // Facing?
@@ -370,11 +370,11 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 		Math::AngleVectors(target.m_vAngleTo, &vecForward);
 		Vec3 vecTraceEnd = vEyePos + (vecForward * flRange);
 
-		Utils::Trace(vEyePos, vecTraceEnd, MASK_SHOT, &filter, &trace);
+		Utils::Trace(vEyePos, vecTraceEnd, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 		bool bReturn = (trace.entity && trace.entity == target.m_pEntity);
 		if (!bReturn)
 		{
-			Utils::TraceHull(vEyePos, vecTraceEnd, vecSwingMins, vecSwingMaxs, MASK_SHOT, &filter, &trace);
+			Utils::TraceHull(vEyePos, vecTraceEnd, vecSwingMins, vecSwingMaxs, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 			bReturn = (trace.entity && trace.entity == target.m_pEntity);
 		}
 		/* does not respect aimbot viewangles, not using for now but seems promising ?

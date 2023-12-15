@@ -8,7 +8,6 @@
 #include "../PacketManip/AntiAim/AntiAim.h"
 #include "../TickHandler/TickHandler.h"
 #include "../Simulation/MovementSimulation/MovementSimulation.h"
-#include "../Visuals/Visuals.h"
 
 extern int attackStringW;
 extern int attackStringH;

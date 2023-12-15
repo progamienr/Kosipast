@@ -355,9 +355,9 @@ public:
 		float fl_length = Length();
 		float fl_length_normal = 1.f / (FLT_EPSILON + fl_length);
 
-		x = x * fl_length_normal;
-		y = y * fl_length_normal;
-		z = z * fl_length_normal;
+		x *= fl_length_normal;
+		y *= fl_length_normal;
+		z *= fl_length_normal;
 
 		return fl_length;
 	}
@@ -397,11 +397,6 @@ public:
 
 		x = (_x * c) - (_y * s);
 		y = (_x * s) + (_y * c);
-	}
-
-	float NormalizeInPlace()
-	{
-		return Normalize();
 	}
 
 	float Length2D(void) const

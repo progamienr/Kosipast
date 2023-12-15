@@ -366,9 +366,11 @@ void CCritHack::Run(CUserCmd* pCmd)
 	if (G::CurWeaponType == EWeaponType::MELEE)
 	{
 		bAttacking = G::WeaponCanAttack && pCmd->buttons & IN_ATTACK;
-		if (pWeapon->GetWeaponID() == TF_WEAPON_FISTS)
+		if (!bAttacking && pWeapon->GetWeaponID() == TF_WEAPON_FISTS)
 			bAttacking = G::WeaponCanAttack && pCmd->buttons & IN_ATTACK2;
 	}
+	if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && !(G::LastUserCmd->buttons & IN_ATTACK)) // silly
+		bAttacking = false;
 
 	if (Storage[pWeapon->GetSlot()].StreamWait <= I::GlobalVars->tickcount - 1)
 		Storage[pWeapon->GetSlot()].StreamWait = -1;
@@ -425,9 +427,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 	}
 	/*
 	else if (IsEnabled() && closest_skip >= 0)
-	{
 		pCmd->command_number = closest_skip;
-	}
 	*/
 
 out:

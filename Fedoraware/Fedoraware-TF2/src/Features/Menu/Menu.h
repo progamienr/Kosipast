@@ -16,8 +16,9 @@ class CMenu
 	void MenuSettings();
 
 	void AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw);
-
 	void DrawKeybinds();
+	void DrawCameraWindow();
+
 	void LoadStyle();
 
 	int CurrentTab = 0;

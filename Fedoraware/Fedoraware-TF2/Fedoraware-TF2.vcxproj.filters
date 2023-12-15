@@ -165,6 +165,7 @@
     <ClCompile Include="src\Hooks\Detours\CPrediction_RunCommand.cpp" />
     <ClCompile Include="src\Features\Visuals\Materials\Materials.cpp" />
     <ClCompile Include="src\Hooks\Detours\ModelRender_ForcedMaterialOverride.cpp" />
+    <ClCompile Include="src\Features\CameraWindow\CameraWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />
@@ -379,6 +380,7 @@
     <ClInclude Include="src\Features\Menu\Fonts\RobotoBold.h" />
     <ClInclude Include="src\Features\Menu\Fonts\RobotoBlack.h" />
     <ClInclude Include="src\Features\Menu\Fonts\MaterialIcons.h" />
+    <ClInclude Include="src\Features\CameraWindow\CameraWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

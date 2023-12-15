@@ -148,7 +148,7 @@ public: //Netvars
 			return false;
 
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return (pLocal->GetTankPressure() >= 100.0f);
+			return pLocal->GetTankPressure() >= 100.0f;
 
 		return CanPrimaryAttack(pLocal);
 	}
@@ -158,7 +158,7 @@ public: //Netvars
 			return false;
 
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return (pLocal->GetTankPressure() >= 100.0f);
+			return pLocal->GetTankPressure() >= 100.0f;
 
 		return CanSecondaryAttack(pLocal);
 	}

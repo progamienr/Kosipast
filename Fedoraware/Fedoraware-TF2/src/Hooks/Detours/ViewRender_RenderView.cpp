@@ -2,6 +2,7 @@
 
 #include "../../Features/Visuals/Materials/Materials.h"
 #include "../../Features/Visuals/Glow/Glow.h"
+#include "../../Features/CameraWindow/CameraWindow.h"
 
 #include <mutex>
 
@@ -13,7 +14,11 @@ MAKE_HOOK(ViewRender_RenderView, Utils::GetVFuncPtr(I::ViewRender, 6), void, __f
 	{
 		F::Materials.ReloadMaterials();
 		F::Glow.Init();
+		F::CameraWindow.Init();
 	});
 
 	Hook.Original<void(__thiscall*)(void*, const CViewSetup&, int, int)>()(ecx, view, nClearFlags, whatToDraw);
+
+	if (!(I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value))
+		F::CameraWindow.RenderView(ecx, view);
 }

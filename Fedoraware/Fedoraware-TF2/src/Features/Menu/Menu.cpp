@@ -18,6 +18,7 @@
 
 #include "Components.hpp"
 #include "ConfigManager/ConfigManager.h"
+#include "../CameraWindow/CameraWindow.h"
 
 #include <mutex>
 
@@ -755,13 +756,14 @@ void CMenu::MenuVisuals()
 				FToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
 				if (Vars::Visuals::SimSeperators.Value)
 				{
-					FSlider("Seperator length", &Vars::Visuals::SeperatorLength.Value, 2, 16, 1, "%d", ImGuiSliderFlags_Logarithmic);
-					FSlider("Seperator spacing", &Vars::Visuals::SeperatorSpacing.Value, 1, 64, 1, "%d", ImGuiSliderFlags_Logarithmic);
+					FSlider("Seperator length", &Vars::Visuals::SeperatorLength.Value, 2, 16, 1, "%d", FSlider_Left);
+					FSlider("Seperator spacing", &Vars::Visuals::SeperatorSpacing.Value, 1, 64, 1, "%d", FSlider_Right);
 				}
 				FColorPicker("Clipped line color", &Vars::Colors::ClippedColor.Value);
 				FToggle("Projectile trajectory", &Vars::Visuals::ProjectileTrajectory.Value);
-				FToggle("Trajectory on shot", &Vars::Visuals::TrajectoryOnShot.Value, FToggle_Middle);
-				FToggle("Swing prediction lines", &Vars::Visuals::SwingLines.Value);
+				FToggle("Projectile camera", &Vars::Visuals::ProjectileCamera.Value, FToggle_Middle);
+				FToggle("Trajectory on shot", &Vars::Visuals::TrajectoryOnShot.Value);
+				FToggle("Swing prediction lines", &Vars::Visuals::SwingLines.Value, FToggle_Middle);
 			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
@@ -1486,12 +1488,12 @@ void CMenu::AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw)
 			ImGui::SetNextWindowPos({ static_cast<float>(info.x), static_cast<float>(info.y) }, ImGuiCond_Always);
 			info.update = false;
 		}
+
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
 		ImGui::PushStyleColor(ImGuiCol_Border, { 1.f, 1.f, 1.f, 1.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 40.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
-
 		if (ImGui::Begin(szTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 		{
 			ImGui::PushFont(FontBlack);
@@ -1553,6 +1555,43 @@ void CMenu::DrawKeybinds()
 	ImGui::PopStyleColor(3);
 }
 
+/* Window for the camera feature */
+void CMenu::DrawCameraWindow()
+{
+	if (Vars::Visuals::ProjectileCamera.Value)
+	{
+		ImGui::SetNextWindowSize({ static_cast<float>(F::CameraWindow.ViewRect.w), static_cast<float>(F::CameraWindow.ViewRect.h) }, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos({ static_cast<float>(F::CameraWindow.ViewRect.x), static_cast<float>(F::CameraWindow.ViewRect.y) }, ImGuiCond_FirstUseEver);
+
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
+		ImGui::PushStyleColor(ImGuiCol_Border, { 1.f, 1.f, 1.f, 1.f });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 40.f });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 100.f });
+		if (ImGui::Begin("Camera", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
+		{
+			const ImVec2 winPos = ImGui::GetWindowPos();
+			const ImVec2 winSize = ImGui::GetWindowSize();
+
+			F::CameraWindow.ViewRect.x = static_cast<int>(winPos.x);
+			F::CameraWindow.ViewRect.y = static_cast<int>(winPos.y);
+			F::CameraWindow.ViewRect.w = static_cast<int>(winSize.x);
+			F::CameraWindow.ViewRect.h = static_cast<int>(winSize.y);
+
+			ImGui::PushFont(FontBlack);
+			auto size = ImGui::CalcTextSize("Camera");
+			ImGui::SetCursorPos({ (winSize.x - size.x) * 0.5f, (winSize.y - size.y) * 0.5f });
+			ImGui::Text("Camera");
+			ImGui::PopFont();
+
+			ImGui::End();
+		}
+		ImGui::PopStyleVar(4);
+		ImGui::PopStyleColor(2);
+	}
+}
+
 void CMenu::Render(IDirect3DDevice9* pDevice)
 {
 	if (!ConfigLoaded)
@@ -1595,6 +1634,8 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	if (IsOpen)
 	{
 		DrawMenu();
+
+		DrawCameraWindow();
 
 		AddDraggable("Ticks", Vars::Menu::TicksDisplay.Value, Vars::Menu::Indicators.Value & (1 << 0));
 		AddDraggable("Crit hack", Vars::Menu::CritsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 1));

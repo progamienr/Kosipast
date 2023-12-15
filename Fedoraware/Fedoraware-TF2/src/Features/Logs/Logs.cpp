@@ -30,9 +30,7 @@ enum VoteLogger
 void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 {
 	if (!I::EngineClient->IsConnected() || !I::EngineClient->IsInGame())
-	{
 		return;
-	}
 
 	if (const auto pLocal = g_EntityCache.GetLocal())
 	{

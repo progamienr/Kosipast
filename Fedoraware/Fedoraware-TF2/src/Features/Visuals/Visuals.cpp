@@ -7,6 +7,7 @@
 #include "../Backtrack/Backtrack.h"
 #include "../PacketManip/AntiAim/AntiAim.h"
 #include "../Simulation/ProjectileSimulation/ProjectileSimulation.h"
+#include "../CameraWindow/CameraWindow.h"
 
 #include <ImGui/imgui_impl_win32.h>
 #include <ImGui/imgui_stdlib.h>
@@ -213,6 +214,8 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 
 void CVisuals::ProjectileTrace(const bool bQuick)
 {
+	F::CameraWindow.ShouldDraw = false;
+
 	if (bQuick ? !Vars::Visuals::ProjectileTrajectory.Value : !Vars::Visuals::TrajectoryOnShot.Value)
 		return;
 
@@ -256,6 +259,17 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 					RenderBox(trace.vEndPos, vSize * -1, vSize, angles, Vars::Colors::ClippedColor.Value, { 0, 0, 0, 0 }, true);
 
 				projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
+
+				if (!I::EngineVGui->IsGameUIVisible() && Vars::Visuals::ProjectileCamera.Value && pLocal->m_vecOrigin().DistTo(trace.vEndPos) > 500.f)
+				{
+					auto vAngles = Math::CalcAngle(Old, trace.vEndPos);
+					Vec3 vForward = {}; Math::AngleVectors(vAngles, &vForward);
+					Utils::Trace(trace.vEndPos, trace.vEndPos - vForward * 500.f, MASK_SOLID, &filter, &trace);
+
+					F::CameraWindow.ShouldDraw = true;
+					F::CameraWindow.CameraOrigin = trace.vEndPos;
+					F::CameraWindow.CameraAngles = vAngles;
+				}
 			}
 			else
 			{

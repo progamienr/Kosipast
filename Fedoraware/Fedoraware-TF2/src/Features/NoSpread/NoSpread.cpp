@@ -45,8 +45,6 @@ void CNoSpread::Run(CUserCmd* pCmd)
 	{
 	case TF_WEAPON_SYRINGEGUN_MEDIC:
 	{
-		Utils::RandomFloat();
-
 		// don't let the _local_ syringes fool you (is there a way to fix or sync them?)
 		pCmd->viewangles.x -= Utils::RandomFloat(-1.5f, 1.5f);
 		pCmd->viewangles.y -= Utils::RandomFloat(-1.5f, 1.5f);
@@ -65,8 +63,6 @@ void CNoSpread::Run(CUserCmd* pCmd)
 		break;
 	}
 	default:
-		Utils::RandomFloat();
-
 		pCmd->viewangles -= pWeapon->GetSpreadAngles() - I::EngineClient->GetViewAngles();
 		break;
 	}

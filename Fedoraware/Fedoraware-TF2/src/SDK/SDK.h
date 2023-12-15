@@ -597,7 +597,8 @@ namespace Utils
 		else
 		{
 			const int id = pWeapon->GetWeaponID();
-			switch (id) {
+			switch (id)
+			{
 			case TF_WEAPON_COMPOUND_BOW:
 			case TF_WEAPON_PIPEBOMBLAUNCHER:
 			case TF_WEAPON_STICKY_BALL_LAUNCHER:
@@ -609,7 +610,8 @@ namespace Utils
 				if (pWeapon->m_flChargeBeginTime() > 0.0f)
 					bCharging = true;
 
-				if (!(pCmd->buttons & IN_ATTACK) && bCharging) {
+				if (!(pCmd->buttons & IN_ATTACK) && bCharging)
+				{
 					bCharging = false;
 					return true;
 				}
@@ -624,11 +626,10 @@ namespace Utils
 				static float flThrowTime = 0.0f;
 
 				if (pCmd->buttons & IN_ATTACK && G::WeaponCanAttack && !flThrowTime)
-				{
 					flThrowTime = I::GlobalVars->curtime + I::GlobalVars->interval_per_tick;
-				}
 
-				if (flThrowTime && I::GlobalVars->curtime >= flThrowTime) {
+				if (flThrowTime && I::GlobalVars->curtime >= flThrowTime)
+				{
 					flThrowTime = 0.0f;
 					return true;
 				}
@@ -652,12 +653,6 @@ namespace Utils
 			}
 		}
 
-		//pssst..
-		//Dragon's Fury has a gauge (seen on the weapon model) maybe it would help for pSilent hmm..
-		/*
-		if (pWeapon->GetWeaponID() == 109) {
-		}*/
-
 		return false;
 	}
 
@@ -665,9 +660,8 @@ namespace Utils
 	{
 		const Vec3 diff = (b - a);
 		if (diff.Length() == 0.0f)
-		{
 			return { 0.0f, 0.0f, 0.0f };
-		}
+
 		const float x = diff.x;
 		const float y = diff.y;
 		const Vec3 vSilent(x, y, 0);
@@ -679,9 +673,7 @@ namespace Utils
 
 		// Only apply upmove in water
 		if (!(I::EngineTrace->GetPointContents(pLocal->GetEyePosition()) & CONTENTS_WATER))
-		{
 			move.z = pCmd->upmove;
-		}
 		return move;
 	}
 
