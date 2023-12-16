@@ -148,7 +148,7 @@ std::optional<TickRecord> CBacktrack::GetLastRecord(CBaseEntity* pEntity)
 	return rReturnRecord;
 }
 
-std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::deque<TickRecord> pRecords, BacktrackMode iMode)
+std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::deque<TickRecord> pRecords, BacktrackMode iMode, CBaseEntity* pLocal)
 {
 	std::deque<TickRecord> validRecords;
 
@@ -199,20 +199,29 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::de
 		break;
 	}
 
-	// sort by distance from fake latency value (rather than newest to oldest)
-	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!iNetChan)
-		return validRecords;
+	// if we have plocal, sort by distance from player,
+	if (pLocal)
+		std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
+			{
+				return pLocal->m_vecOrigin().DistTo(a.vOrigin) < pLocal->m_vecOrigin().DistTo(b.vOrigin);
+			});
+	// otherwise sort by distance from fake latency value
+	else
+	{
+		const auto iNetChan = I::EngineClient->GetNetChannelInfo();
+		if (!iNetChan)
+			return validRecords;
 
-	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
-	const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+		const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
+		const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 
-	std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
-		{
-			float flADelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(a.flSimTime));
-			float flBDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(b.flSimTime));
-			return fabsf(flADelta) < fabsf(flBDelta);
-		});
+		std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
+			{
+				float flADelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(a.flSimTime));
+				float flBDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(b.flSimTime));
+				return fabsf(flADelta) < fabsf(flBDelta);
+			});
+	}
 
 	return validRecords;
 }

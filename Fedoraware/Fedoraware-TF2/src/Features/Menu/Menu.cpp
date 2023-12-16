@@ -1492,8 +1492,8 @@ void CMenu::AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw)
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
 		ImGui::PushStyleColor(ImGuiCol_Border, { 1.f, 1.f, 1.f, 1.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 40.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 40.f });
 		if (ImGui::Begin(szTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 		{
 			ImGui::PushFont(FontBlack);
@@ -1566,7 +1566,6 @@ void CMenu::DrawCameraWindow()
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
 		ImGui::PushStyleColor(ImGuiCol_Border, { 1.f, 1.f, 1.f, 1.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 40.f });
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 100.f });
 		if (ImGui::Begin("Camera", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
@@ -1587,7 +1586,7 @@ void CMenu::DrawCameraWindow()
 
 			ImGui::End();
 		}
-		ImGui::PopStyleVar(4);
+		ImGui::PopStyleVar(3);
 		ImGui::PopStyleColor(2);
 	}
 }

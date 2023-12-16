@@ -75,7 +75,7 @@ public:
 	bool WithinRewind(const TickRecord& record);
 	std::deque<TickRecord>* GetRecords(CBaseEntity* pEntity);
 	std::optional<TickRecord> GetLastRecord(CBaseEntity* pEntity);
-	std::deque<TickRecord> GetValidRecords(CBaseEntity* pEntity, std::deque<TickRecord> pRecords, BacktrackMode iMode = BacktrackMode::ALL);
+	std::deque<TickRecord> GetValidRecords(CBaseEntity* pEntity, std::deque<TickRecord> pRecords, BacktrackMode iMode = BacktrackMode::ALL, CBaseEntity* pLocal = nullptr);
 
 	void Restart();
 	void FrameStageNotify();

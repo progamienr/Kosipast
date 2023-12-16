@@ -356,7 +356,7 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 	const Vec3 vecDiff = { 0, 0, std::min(flTargetPos, flLocalPos) };
 
 	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER
-		? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value)
+		? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value, pLocal)
 		: pRecords;
 	for (auto& pTick : validRecords)
 	{
