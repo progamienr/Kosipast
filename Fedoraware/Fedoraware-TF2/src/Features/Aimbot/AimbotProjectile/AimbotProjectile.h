@@ -43,7 +43,7 @@ class CAimbotProjectile
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 
-	bool bLastTickCancel = false;
+	int bLastTickCancel = 0;
 };
 
 ADD_FEATURE(CAimbotProjectile, AimbotProjectile)

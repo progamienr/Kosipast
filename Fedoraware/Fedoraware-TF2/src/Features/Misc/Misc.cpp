@@ -140,7 +140,7 @@ void CMisc::AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal)
 	filter.pSkip = pLocal;
 
 	Vec3 origin = pLocal->m_vecOrigin();
-	Utils::TraceHull(origin, origin - Vec3(0, 0, 23), pLocal->m_vecMins(), pLocal->m_vecMaxs(), MASK_SHOT, &filter, &trace);
+	Utils::TraceHull(origin, origin - Vec3(0, 0, 23), pLocal->m_vecMins(), pLocal->m_vecMaxs(), MASK_PLAYERSOLID, &filter, &trace);
 
 	// don't try if we aren't in range to unduck
 	if (!trace.DidHit())
@@ -547,13 +547,10 @@ void CMisc::CheatsBypass()
 			sv_cheats->m_Value.m_nValue = 1;
 			cheatset = true;
 		}
-		else
+		else if (cheatset)
 		{
-			if (cheatset)
-			{
-				sv_cheats->m_Value.m_nValue = 0;
-				cheatset = false;
-			}
+			sv_cheats->m_Value.m_nValue = 0;
+			cheatset = false;
 		}
 	}
 }

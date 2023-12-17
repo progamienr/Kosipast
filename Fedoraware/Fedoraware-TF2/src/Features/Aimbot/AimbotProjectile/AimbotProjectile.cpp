@@ -768,8 +768,16 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 			break;
 		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		case TF_WEAPON_CANNON:
-			pCmd->weaponselect = pLocal->GetWeaponFromSlot(SLOT_MELEE)->GetIndex();
-			bLastTickCancel = true;
+			if (auto pWeapon = pLocal->GetWeaponFromSlot(SLOT_MELEE))
+			{
+				pCmd->weaponselect = pWeapon->GetIndex();
+				bLastTickCancel = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
+			}
+			else if (auto pWeapon = pLocal->GetWeaponFromSlot(SLOT_SECONDARY))
+			{
+				pCmd->weaponselect = pWeapon->GetIndex();
+				bLastTickCancel = pLocal->GetWeaponFromSlot(SLOT_PRIMARY)->GetIndex();
+			}
 		}
 	}
 	else if (bAutoRelease && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW &&
