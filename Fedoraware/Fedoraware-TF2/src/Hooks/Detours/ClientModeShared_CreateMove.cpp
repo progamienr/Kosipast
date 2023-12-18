@@ -103,7 +103,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 		if (F::AimbotProjectile.bLastTickCancel)
 		{
-			pCmd->weaponselect = F::AimbotProjectile.bLastTickCancel;
+			I::EngineClient->ClientCmd_Unrestricted(std::format("slot{}", F::AimbotProjectile.bLastTickCancel).c_str());
 			F::AimbotProjectile.bLastTickCancel = 0;
 		}
 	}

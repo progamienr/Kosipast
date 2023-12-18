@@ -574,7 +574,7 @@ namespace Utils
 			auto pLocal = g_EntityCache.GetLocal();
 			float flTime = pLocal ? TICKS_TO_TIME(pLocal->m_nTickBase() + 1) : I::GlobalVars->curtime;
 
-			return fabsf(pWeapon->m_flSmackTime() - flTime) < I::GlobalVars->interval_per_tick/* * 2.0f*/;
+			return fabsf(pWeapon->m_flSmackTime() - flTime) < I::GlobalVars->interval_per_tick * 2.0f;
 		}
 
 		if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
@@ -603,11 +603,24 @@ namespace Utils
 			case TF_WEAPON_PIPEBOMBLAUNCHER:
 			case TF_WEAPON_STICKY_BALL_LAUNCHER:
 			case TF_WEAPON_GRENADE_STICKY_BALL:
-			case TF_WEAPON_CANNON:
 			{
 				static bool bCharging = false;
 
 				if (pWeapon->m_flChargeBeginTime() > 0.0f)
+					bCharging = true;
+
+				if (!(pCmd->buttons & IN_ATTACK) && bCharging)
+				{
+					bCharging = false;
+					return true;
+				}
+				break;
+			}
+			case TF_WEAPON_CANNON:
+			{
+				static bool bCharging = false;
+
+				if (pWeapon->m_flDetonateTime() > 0.0f)
 					bCharging = true;
 
 				if (!(pCmd->buttons & IN_ATTACK) && bCharging)

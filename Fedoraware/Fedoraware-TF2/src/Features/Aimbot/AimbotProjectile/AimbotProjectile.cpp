@@ -400,14 +400,14 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 	return false;
 }
 
-bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
+std::pair<bool, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 6) && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::Global::TickTolerance.Value)
-		return false;
+		return { false, 0.f };
 
 	const INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
 	if (!iNetChan)
-		return false;
+		return { false, 0.f };
 
 	ProjectileInfo projInfo = {};
 
@@ -418,7 +418,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	float flMaxTime = Vars::Aimbot::Projectile::PredictionTime.Value;
 	{
 		if (!F::ProjSim.GetInfo(pLocal, pWeapon, {}, projInfo))
-			return false;
+			return { false, 0.f };
 
 		if (flMaxTime > projInfo.m_lifetime)
 			flMaxTime = projInfo.m_lifetime;
@@ -474,7 +474,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 	PlayerStorage storage;
 	F::MoveSim.Initialize(target.m_pEntity, storage);
 
-	Vec3 vAngleTo;
+	Vec3 vAngleTo; float flTimeTo;
 	int i = 0, iLowestPriority = 3, iEndTick = 0; // time to point valid, end in n ticks
 	for (;i < TIME_TO_TICKS(flMaxTime); i++)
 	{
@@ -520,6 +520,7 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 			{
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
+				flTimeTo = solution.m_flTime + flLatency + latOff;
 			}
 		}
 
@@ -545,19 +546,19 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				const Vec3 vOriginOffset = target.m_pEntity->GetAbsOrigin() - vTargetPos;
 
 				const model_t* pModel = target.m_pEntity->GetModel();
-				if (!pModel) return true;
+				if (!pModel) return { true, flTimeTo };
 				const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
-				if (!pHDR) return true;
+				if (!pHDR) return { true, flTimeTo };
 				const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->m_nHitboxSet());
-				if (!pSet) return true;
+				if (!pSet) return { true, flTimeTo };
 
 				matrix3x4 BoneMatrix[128];
 				if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
-					return true;
+					return { true, flTimeTo };
 
 				const mstudiobbox_t* bbox = pSet->hitbox(HITBOX_HEAD);
 				if (!bbox)
-					return true;
+					return { true, flTimeTo };
 
 				matrix3x4 rotMatrix;
 				Math::AngleMatrix(bbox->angle, rotMatrix);
@@ -574,10 +575,10 @@ bool CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseComba
 				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f), Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value });
 			}
 		}
-		return true;
+		return { true, flTimeTo };
 	}
 
-	return false;
+	return { false, 0.f };
 }
 
 
@@ -675,7 +676,8 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			return false;
 		}
 
-		if (!CanHit(target, pLocal, pWeapon)) continue;
+		const auto result = CanHit(target, pLocal, pWeapon);
+		if (!result.first) continue;
 
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
 		if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
@@ -692,16 +694,10 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			}
 			else
 			{
-				if ((nWeaponID == TF_WEAPON_COMPOUND_BOW || nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER)
-					&& pWeapon->m_flChargeBeginTime() > 0.0f)
-				{
+				if ((nWeaponID == TF_WEAPON_COMPOUND_BOW || nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER) && pWeapon->m_flChargeBeginTime() > 0.f)
 					pCmd->buttons &= ~IN_ATTACK;
-				}
-				else if (nWeaponID == TF_WEAPON_CANNON && pWeapon->m_flDetonateTime() > 0.0f)
+				else if (nWeaponID == TF_WEAPON_CANNON && pWeapon->m_flDetonateTime() > 0.f)
 				{
-					const Vec3 vEyePos = pLocal->GetShootPos();
-					const float bestCharge = vEyePos.DistTo(target.m_vPos) / 1454.0f;
-
 					if (Vars::Aimbot::Projectile::ChargeLooseCannon.Value)
 					{
 						if (target.m_TargetType == ETargetType::SENTRY ||
@@ -712,12 +708,13 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 							pCmd->buttons &= ~IN_ATTACK;
 						}
 
-						if (target.m_pEntity->m_iHealth() > 50) // check if we even need to double donk to kill first
-						{
-							if (pWeapon->m_flDetonateTime() - I::GlobalVars->curtime <= bestCharge)
-								pCmd->buttons &= ~IN_ATTACK;
-						}
-						else
+						if (target.m_pEntity->m_iHealth() <= 50) // check if we even need to double donk to kill first
+							pCmd->buttons &= ~IN_ATTACK;
+
+						float flDetonateTime = pWeapon->m_flDetonateTime();
+						float flDetonateMaxTime = Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon);
+						float flCharge = Math::RemapValClamped(flDetonateTime - I::GlobalVars->curtime, 0.f, flDetonateMaxTime, 0.f, 1.f);
+						if (std::clamp(flCharge - 0.05f, 0.f, 1.f) < result.second)
 							pCmd->buttons &= ~IN_ATTACK;
 					}
 					else
@@ -751,11 +748,14 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const bool bEarly = RunMain(pLocal, pWeapon, pCmd);
 	const bool bHeld = Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown();
 
-	const float charge = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
-	const float amount = Math::RemapValClamped(charge, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f);
+	const float flChargeS = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
+	const float flChargeC = pWeapon->m_flDetonateTime() > 0.f ? pWeapon->m_flDetonateTime() - I::GlobalVars->curtime : 1.f;
+	const float flAmount = pWeapon->GetWeaponID() != TF_WEAPON_CANNON
+		? Math::RemapValClamped(flChargeS, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f)
+		: Math::RemapValClamped(1.f - flChargeC, 0.f, Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
 
-	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && amount > Vars::Aimbot::Projectile::AutoReleaseAt.Value / 100.f;
-	const bool bCancel = amount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
+	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && flAmount > Vars::Aimbot::Projectile::AutoReleaseAt.Value / 100.f;
+	const bool bCancel = flAmount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
 	// add user toggle to control whether to cancel or not
 	if ((bCancel || bEarly && (!(G::Buttons & IN_ATTACK) || bAutoRelease)) && G::LastUserCmd->buttons & IN_ATTACK && bLastTickHeld)
@@ -768,19 +768,12 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 			break;
 		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		case TF_WEAPON_CANNON:
-			if (auto pWeapon = pLocal->GetWeaponFromSlot(SLOT_MELEE))
-			{
-				pCmd->weaponselect = pWeapon->GetIndex();
-				bLastTickCancel = pLocal->GetWeaponFromSlot(SLOT_SECONDARY)->GetIndex();
-			}
-			else if (auto pWeapon = pLocal->GetWeaponFromSlot(SLOT_SECONDARY))
-			{
-				pCmd->weaponselect = pWeapon->GetIndex();
-				bLastTickCancel = pLocal->GetWeaponFromSlot(SLOT_PRIMARY)->GetIndex();
-			}
+			pCmd->buttons |= IN_ATTACK;
+			I::EngineClient->ClientCmd_Unrestricted("slot3");
+			bLastTickCancel = pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER ? 2 : 1;
 		}
 	}
-	else if (bAutoRelease && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW &&
+	else if (bAutoRelease && pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER &&
 		!pWeapon->IsInReload() && !bLastTickReload && G::LastUserCmd->buttons & IN_ATTACK && !bLastTickHeld)
 	{
 		pCmd->buttons &= ~IN_ATTACK;

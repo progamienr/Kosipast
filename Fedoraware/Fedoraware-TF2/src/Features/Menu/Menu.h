@@ -58,11 +58,11 @@ public:
 	// Colors
 	ImColor Accent = { 255, 101, 101 };
 	ImColor AccentLight = { 255, 111, 111 };
-	ImColor Background = { 45, 46, 53, 200 };
-	ImColor Foreground = { 24, 26, 30, 200 };
-	ImColor Foremost = { 56, 60, 64, 200 };
-	ImColor ForemostLight = { 62, 66, 70, 200 };
-	ImColor Inactive = { 200, 200, 200 };
+	ImColor Background = { 23, 23, 23, 250 };
+	ImColor Foreground = { 11, 11, 11, 250 };
+	ImColor Foremost = { 23, 23, 23, 250 };
+	ImColor ForemostLight = { 25, 25, 25, 250 };
+	ImColor Inactive = { 150, 150, 150 };
 	ImColor Active = { 255, 255, 255 };
 
 	// Fonts
