@@ -240,7 +240,7 @@ bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 		}
 
 		write_json(ConfigPath + "\\" + configName + ConfigExtension, WriteTree);
-		CurrentConfig = configName;
+		CurrentConfig = configName; CurrentVisuals = "";
 		if (bNotify)
 			F::Notifications.Add("Config " + configName + " saved");
 	}

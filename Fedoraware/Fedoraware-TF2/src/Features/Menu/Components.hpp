@@ -223,6 +223,8 @@ namespace ImGui
 
 	__inline bool IconButton(const char* icon, bool large = false, ImVec4 color = { 0, 0, 0, -1 })
 	{
+		const auto originalPos = GetCursorPos();
+
 		if (color.w > 0.f)
 			PushStyleColor(ImGuiCol_Text, color);
 		PushFont(large ? F::Menu.IconFontLarge : F::Menu.IconFontRegular);
@@ -233,6 +235,11 @@ namespace ImGui
 		PopFont();
 		if (color.w > 0.f)
 			PopStyleColor();
+
+		// prevent accidental dragging
+		SetCursorPos(originalPos);
+		Button("##", GetItemRectSize());
+
 		return pressed;
 	}
 
@@ -1079,7 +1086,8 @@ namespace ImGui
 		{
 			G::InKeybind = true;
 
-			FButton("...", flags | FButton_NoUpper);
+			//FButton("...", flags | FButton_NoUpper);
+			FButton(std::format("{}: ...", label).c_str(), flags | FButton_NoUpper);
 			const bool bHovered = IsItemHovered();
 
 			if (bHovered && IsMouseClicked(ImGuiMouseButton_Left))
@@ -1110,7 +1118,8 @@ namespace ImGui
 
 			GetCurrentContext()->ActiveIdAllowOverlap = true;
 		}
-		else if (FButton(VK2STR(output).c_str(), flags | FButton_NoUpper) && !bCanceled)
+		//else if (FButton(VK2STR(output).c_str(), flags | FButton_NoUpper) && !bCanceled)
+		else if (FButton(std::format("{}: {}", label, VK2STR(output)).c_str(), flags | FButton_NoUpper) && !bCanceled)
 			SetActiveID(id, GetCurrentWindow());
 
 		if (bCanceled && !IsMouseDown(ImGuiMouseButton_Left) && !IsMouseReleased(ImGuiMouseButton_Left))

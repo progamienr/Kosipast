@@ -1122,7 +1122,7 @@ void CMenu::MenuSettings()
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_SAVE))
 						{
-							if (configName != g_CFG.GetCurrentConfig())
+							if (configName != g_CFG.GetCurrentConfig() || g_CFG.GetCurrentVisuals() != "")
 								OpenPopup(std::format("Confirmation## SaveConfig{}", configName).c_str());
 							else
 								g_CFG.SaveConfig(configName);

@@ -687,7 +687,7 @@ void CVisuals::FillSightlines()
 			const int iEntityIndex = pEnemy->GetIndex();
 			const auto& pWeapon = pEnemy->GetActiveWeapon();
 			if (!pEnemy->IsAlive() || pEnemy->IsAGhost() || pEnemy->GetDormant() ||
-				!pWeapon || pWeapon->GetWeaponID() != TF_WEAPON_SNIPERRIFLE || !pEnemy->InCond(TF_COND_AIMING))
+				!pWeapon || pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || !pEnemy->InCond(TF_COND_AIMING))
 			{
 				m_SightLines[iEntityIndex] = { Vec3(), Vec3(), Color_t(), false };
 				continue;
