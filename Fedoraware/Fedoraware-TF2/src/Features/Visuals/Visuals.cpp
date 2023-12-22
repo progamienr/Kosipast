@@ -686,8 +686,8 @@ void CVisuals::FillSightlines()
 		{
 			const int iEntityIndex = pEnemy->GetIndex();
 			const auto& pWeapon = pEnemy->GetActiveWeapon();
-			if (!pEnemy->IsAlive() || pEnemy->IsAGhost() || pEnemy->GetDormant() ||
-				!pWeapon || pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || !pEnemy->InCond(TF_COND_AIMING))
+			if (!pEnemy->IsAlive() || pEnemy->IsAGhost() || pEnemy->GetDormant() || !pEnemy->InCond(TF_COND_AIMING) ||
+				!pWeapon || pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN)
 			{
 				m_SightLines[iEntityIndex] = { Vec3(), Vec3(), Color_t(), false };
 				continue;
@@ -706,7 +706,8 @@ void CVisuals::FillSightlines()
 
 void CVisuals::PickupTimers()
 {
-	if (!Vars::Visuals::PickupTimers.Value) { return; }
+	if (!Vars::Visuals::PickupTimers.Value)
+		return;
 
 	for (auto pickupData = PickupDatas.begin(); pickupData != PickupDatas.end();)
 	{
@@ -731,9 +732,7 @@ void CVisuals::PickupTimers()
 // Credits go to reestart entirely
 void CVisuals::ManualNetwork(const StartSoundParams_t& params)
 {
-	if (!Vars::ESP::Main::DormantSoundESP.Value)
-		return;
-	if (params.soundsource <= 0)
+	if (!Vars::ESP::Main::DormantSoundESP.Value || params.soundsource <= 0)
 		return;
 
 	Vector vOrigin;
@@ -756,7 +755,8 @@ void CVisuals::OverrideWorldTextures() // This is 100% pasted from spook953
 {
 	static KeyValues* kv = nullptr;
 
-	if (!kv) {
+	if (!kv)
+	{
 		kv = new KeyValues("LightmappedGeneric");
 		kv->SetString("$basetexture", "vgui/white_additive");
 		kv->SetString("$color2", "[0.12 0.12 0.15]");

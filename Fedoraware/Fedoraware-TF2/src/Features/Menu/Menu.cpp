@@ -168,7 +168,7 @@ void CMenu::MenuAimbot()
 				if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
 					FSlider("Smooth factor## HitscanSmoothing", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
 				FDropdown("Hitboxes## AimbotHitboxScanning", &Vars::Aimbot::Hitscan::Hitboxes.Value, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi);
-				FSlider("Point scale## HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp);
+				FSlider("Point scale## HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp); // this seems to occasionally change on it's own and i don't know why
 				FDropdown("Modifiers", &Vars::Aimbot::Hitscan::Modifiers.Value, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi);
 				if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 0))
 					FSlider("Tapfire distance## HitscanTapfireDistance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, 1.f, "%.0f", FSlider_Clamp);
