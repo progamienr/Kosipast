@@ -53,9 +53,9 @@ MAKE_HOOK(C_BasePlayer_CalcViewModelView, S::CBasePlayer_CalcViewModelView(), vo
 	Math::AngleVectors(vEyeAngles, &vForward, &vRight, &vUp);
 
 	Vec3 vNewEyePosition = vEyePosition + 
-		(vRight * Vars::Visuals::VMOffsets.Value.x * (bFlip ? -1 : 1)) + 
-		(vForward * Vars::Visuals::VMOffsets.Value.y) + 
-		(vUp * Vars::Visuals::VMOffsets.Value.z);
+		(vRight * Vars::Visuals::VMOffsetX.Value * (bFlip ? -1 : 1)) + 
+		(vForward * Vars::Visuals::VMOffsetY.Value) + 
+		(vUp * Vars::Visuals::VMOffsetZ.Value);
 
 	vEyeAngles.z += Vars::Visuals::VMRoll.Value * (bFlip ? -1 : 1); //VM Roll
 

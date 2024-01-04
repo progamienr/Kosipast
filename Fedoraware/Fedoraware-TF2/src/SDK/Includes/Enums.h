@@ -565,10 +565,12 @@ enum struct ETFClassID
 	CBaseCombatWeapon = 5,
 };
 
-enum ETFGrenadeProjectileType
+enum
 {
-	TYPE_PIPE,
-	TYPE_STICKY
+	TF_GL_MODE_REGULAR = 0,
+	TF_GL_MODE_REMOTE_DETONATE,
+	TF_GL_MODE_REMOTE_DETONATE_PRACTICE,
+	TF_GL_MODE_CANNONBALL
 };
 
 enum EPlayerControls

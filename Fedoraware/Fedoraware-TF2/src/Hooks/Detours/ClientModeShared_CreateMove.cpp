@@ -33,8 +33,8 @@ void AttackingUpdate(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 21), bool, __fastcall,
 	void* ecx, void* edx, float input_sample_frametime, CUserCmd* pCmd)
 {
-	G::UpdateView = true;
-	G::SilentTime = false;
+	G::PSilentAngles = false;
+	G::SilentAngles = false;
 	G::IsAttacking = false;
 
 	const auto& pLocal = g_EntityCache.GetLocal();
@@ -144,12 +144,15 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	}
 	if (!G::DoubleTap)
 	{
+		if (G::PSilentAngles && G::ShiftedTicks == G::MaxShift)
+			G::PSilentAngles = false, G::SilentAngles = true;
+
 		static bool bWasSet = false;
 
 		INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-		if (G::SilentTime && iNetChan && iNetChan->m_nChokedPackets < 2) // failsafe
+		if (G::PSilentAngles && iNetChan && iNetChan->m_nChokedPackets < 2) // failsafe
 			*pSendPacket = false, bWasSet = true;
-		else if(bWasSet || !iNetChan)
+		else if (bWasSet || !iNetChan)
 			*pSendPacket = true, bWasSet = false;
 	}
 	else
@@ -163,6 +166,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 	F::EnginePrediction.Simulate(pCmd);
 
-	const bool bShouldSkip = (G::SilentTime || G::AntiAim || G::AvoidingBackstab || !G::UpdateView);
+	const bool bShouldSkip = G::PSilentAngles || G::SilentAngles || G::AntiAim || G::AvoidingBackstab;
 	return bShouldSkip ? false : Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 }

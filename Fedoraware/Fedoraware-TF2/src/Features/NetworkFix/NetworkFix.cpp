@@ -4,7 +4,7 @@
 
 void CReadPacketState::Store()
 {
-	//m_flFrameTimeClientState = I::ClientState->m_frameTime;
+	m_flFrameTimeClientState = I::ClientState->m_frameTime;
 	m_flFrameTime = I::GlobalVars->frametime;
 	m_flCurTime = I::GlobalVars->curtime;
 	m_nTickCount = I::GlobalVars->tickcount;
@@ -12,7 +12,7 @@ void CReadPacketState::Store()
 
 void CReadPacketState::Restore()
 {
-	//I::ClientState->m_frameTime = m_flFrameTimeClientState;
+	I::ClientState->m_frameTime = m_flFrameTimeClientState;
 	I::GlobalVars->frametime = m_flFrameTime;
 	I::GlobalVars->curtime = m_flCurTime;
 	I::GlobalVars->tickcount = m_nTickCount;

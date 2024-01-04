@@ -47,7 +47,7 @@ void CFakeLag::PreserveBlastJump()
 	bPreservingBlast = false;
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->IsPlayer())
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->IsPlayer() || G::ShiftedTicks == G::MaxShift)
 		return;
 
 	const bool bVar = Vars::CL_Move::FakeLag::RetainBlastJump.Value && Vars::Misc::AutoJump.Value; // don't bother if we aren't bhopping

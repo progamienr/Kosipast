@@ -86,8 +86,8 @@ namespace G
 
 	/* Aimbot */
 	inline bool IsAttacking = false;
-	inline bool SilentTime = false;
-	inline bool UpdateView = false;
+	inline bool PSilentAngles = false;
+	inline bool SilentAngles = false;
 	inline Vec3 AimPos = {};
 	inline VMatrix WorldToProjection = {};
 

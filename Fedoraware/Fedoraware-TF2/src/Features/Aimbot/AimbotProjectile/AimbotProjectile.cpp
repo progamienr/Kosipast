@@ -400,7 +400,7 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 	return false;
 }
 
-std::pair<bool, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
+std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 6) && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::Global::TickTolerance.Value)
 		return { false, 0.f };
@@ -596,35 +596,34 @@ void CAimbotProjectile::Aim(CUserCmd* pCmd, Vec3& vAngle)
 		Utils::FixMovement(pCmd, vAngle);
 		pCmd->viewangles = vAngle;
 		//if (bFlameThrower)
-		//	G::UpdateView = false;
+		//	G::SilentAngles = true;
 		//else
-			G::SilentTime = true;
+			G::PSilentAngles = true;
 	}
 }
 
-Vec3 CAimbotProjectile::Aim(Vec3 vCurAngle, Vec3 vToAngle)
+Vec3 CAimbotProjectile::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 {
 	Vec3 vReturn = {};
 
 	vToAngle -= G::PunchAngles;
 	Math::ClampAngles(vToAngle);
 
-	switch (Vars::Aimbot::Projectile::AimMethod.Value)
+	switch (iMethod)
 	{
+	case 1: // Smooth
+	{
+		auto shortDist = [](const float flAngleA, const float flAngleB)
+			{
+				const float flDelta = fmodf((flAngleA - flAngleB), 360.f);
+				return fmodf(2 * flDelta, 360.f) - flDelta;
+			};
+		const float t = 1.f - (float)Vars::Aimbot::Projectile::SmoothingAmount.Value / 100.f;
+		vReturn.x = vCurAngle.x - shortDist(vCurAngle.x, vToAngle.x) * t;
+		vReturn.y = vCurAngle.y - shortDist(vCurAngle.y, vToAngle.y) * t;
+		break;
+	}
 	case 0: // Plain
-		vReturn = vToAngle;
-		break;
-
-	case 1: //Smooth
-		if (Vars::Aimbot::Projectile::SmoothingAmount.Value == 0)
-		{ // plain aim at 0 smoothing factor
-			vReturn = vToAngle;
-			break;
-		}
-		//a + (b - a) * t [lerp]
-		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Projectile::SmoothingAmount.Value / 100.f);
-		break;
-
 	case 2: // Silent
 		vReturn = vToAngle;
 		break;

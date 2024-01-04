@@ -503,10 +503,9 @@ namespace Vars
 			CVar(MaxDist, 1000.f, VISUAL)
 		SUBNAMESPACE_END(Arrows)
 
-		CVar(VMOffX, 0, VISUAL)
-		CVar(VMOffY, 0, VISUAL)
-		CVar(VMOffZ, 0, VISUAL)
-		CVar(VMOffsets, Vec3(), VISUAL)
+		CVar(VMOffsetX, 0, VISUAL)
+		CVar(VMOffsetY, 0, VISUAL)
+		CVar(VMOffsetZ, 0, VISUAL)
 		CVar(VMRoll, 0, VISUAL)
 
 		CVar(NoStaticPropFade, false, VISUAL)

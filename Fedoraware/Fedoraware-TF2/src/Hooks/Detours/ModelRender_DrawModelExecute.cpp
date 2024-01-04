@@ -4,7 +4,6 @@
 #include "../../Features/Visuals/Materials/Materials.h"
 #include "../../Features/Visuals/Glow/Glow.h"
 #include "../../Features/Backtrack/Backtrack.h"
-#include "../../Features/Visuals/FakeAngleManager/FakeAng.h"
 
 void DrawBT(void* ecx, void* edx, CBaseEntity* pEntity, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 

@@ -544,7 +544,7 @@ namespace ImGui
 			drawList->AddCircleFilled({ adjPos.x + lowerPos, adjPos.y + mins.y + 1 }, 3.f, accent);
 			drawList->AddCircleFilled({ adjPos.x + upperPos, adjPos.y + mins.y + 1 }, 3.f, accent);
 
-			if (within && !actives[label])
+			if (within && !actives[label] && ImGui::IsWindowHovered())
 			{
 				if (fabsf(mouse.x - (adjPos.x + lowerPos)) < fabsf(mouse.x - (adjPos.x + upperPos)))
 				{
@@ -588,7 +588,7 @@ namespace ImGui
 			AddSteppedRect(adjPos, { mins.x + (maxs.x - mins.x) * percent, mins.y }, maxs, mins, maxs, v_min, v_max, step, washed, muted);
 			drawList->AddCircleFilled({ adjPos.x + mins.x + (maxs.x - mins.x) * percent, adjPos.y + mins.y + 1 }, 3.f, accent);
 
-			if (within && !actives[label])
+			if (within && !actives[label] && ImGui::IsWindowHovered())
 			{
 				if (!IsMouseDown(ImGuiMouseButton_Left))
 					drawList->AddCircleFilled({ adjPos.x + mins.x + (maxs.x - mins.x) * percent, adjPos.y + mins.y + 1 }, 11.f, transparent);

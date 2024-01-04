@@ -302,7 +302,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 		flPosVsTargetViewDot > 0.f && flPosVsOwnerViewDot > 0.5 && flViewAnglesDot > -0.3f);
 }
 
-bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)
+int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)
 {
 	static Vec3 vecSwingMins = { -18.0f, -18.0f, -18.0f };
 	static Vec3 vecSwingMaxs = { 18.0f, 18.0f, 18.0f };
@@ -371,11 +371,11 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 		Vec3 vecTraceEnd = vEyePos + (vecForward * flRange);
 
 		Utils::Trace(vEyePos, vecTraceEnd, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
-		bool bReturn = (trace.entity && trace.entity == target.m_pEntity);
+		bool bReturn = trace.entity && trace.entity == target.m_pEntity;
 		if (!bReturn)
 		{
 			Utils::TraceHull(vEyePos, vecTraceEnd, vecSwingMins, vecSwingMaxs, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
-			bReturn = (trace.entity && trace.entity == target.m_pEntity);
+			bReturn = trace.entity && trace.entity == target.m_pEntity;
 		}
 		/* does not respect aimbot viewangles, not using for now but seems promising ?
 		bool bReturn = false;
@@ -417,6 +417,18 @@ bool CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeap
 
 			return true;
 		}
+		else if (Vars::Aimbot::Melee::AimMethod.Value == 1)
+		{
+			auto vAngle = Math::CalcAngle(vEyePos, target.m_vPos);
+
+			Vec3 vecForward = Vec3();
+			Math::AngleVectors(vAngle, &vecForward);
+			Vec3 vecTraceEnd = vEyePos + (vecForward * flRange);
+
+			Utils::Trace(vEyePos, vecTraceEnd, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
+			if (trace.entity && trace.entity == target.m_pEntity)
+				return 2;
+		}
 	}
 
 	return false;
@@ -444,33 +456,32 @@ void CAimbotMelee::Aim(CUserCmd* pCmd, Vec3& vAngle)
 	{
 		Utils::FixMovement(pCmd, vAngle);
 		pCmd->viewangles = vAngle;
-		G::SilentTime = true;
+		G::PSilentAngles = true;
 	}
 }
 
-Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle)
+Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 {
 	Vec3 vReturn = {};
 
 	vToAngle -= G::PunchAngles;
 	Math::ClampAngles(vToAngle);
 
-	switch (Vars::Aimbot::Melee::AimMethod.Value)
+	switch (iMethod)
 	{
+	case 1: // Smooth
+	{
+		auto shortDist = [](const float flAngleA, const float flAngleB)
+			{
+				const float flDelta = fmodf((flAngleA - flAngleB), 360.f);
+				return fmodf(2 * flDelta, 360.f) - flDelta;
+			};
+		const float t = 1.f - (float)Vars::Aimbot::Melee::SmoothingAmount.Value / 100.f;
+		vReturn.x = vCurAngle.x - shortDist(vCurAngle.x, vToAngle.x) * t;
+		vReturn.y = vCurAngle.y - shortDist(vCurAngle.y, vToAngle.y) * t;
+		break;
+	}
 	case 0: // Plain
-		vReturn = vToAngle;
-		break;
-
-	case 1: //Smooth
-		if (Vars::Aimbot::Melee::SmoothingAmount.Value == 0)
-		{
-			vReturn = vToAngle;
-			break;
-		}
-		//a + (b - a) * t [lerp]
-		vReturn = vCurAngle + (vToAngle - vCurAngle) * (1.f - (float)Vars::Aimbot::Melee::SmoothingAmount.Value / 100.f);
-		break;
-
 	case 2: // Silent
 		vReturn = vToAngle;
 		break;
@@ -506,7 +517,13 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 
 	for (auto& target : targets)
 	{
-		if (!CanHit(target, pLocal, pWeapon, vEyePos, pRecordMap[target.m_pEntity])) continue;
+		const auto iResult = CanHit(target, pLocal, pWeapon, vEyePos, pRecordMap[target.m_pEntity]);
+		if (!iResult) continue;
+		if (iResult == 2)
+		{
+			Aim(pCmd, target.m_vAngleTo);
+			break;
+		}
 
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
 		if (!pRecordMap[target.m_pEntity].empty() && !lockedTarget.m_pEntity)

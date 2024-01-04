@@ -8,7 +8,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 	{
 		float flRadius = (entityGroup == EGroupType::LOCAL_STICKIES ? (pExplosive->GetTouched() ? 150.f : 100.f) : 110.f) * flRadiusScale;
 
-		if (pExplosive->GetPipebombType() == TYPE_STICKY && !pExplosive->GetPipebombPulsed())
+		if (pExplosive->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE || !pExplosive->GetPipebombPulsed())
 			continue;
 
 		const Vec3 vOrigin = pExplosive->GetWorldSpaceCenter();
@@ -16,8 +16,8 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 		// Iterate through entities in sphere radius
 		CBaseEntity* pTarget;
 		for (CEntitySphereQuery sphere(vOrigin, flRadius);
-			 (pTarget = sphere.GetCurrentEntity()) != nullptr;
-			 sphere.NextEntity())
+			(pTarget = sphere.GetCurrentEntity()) != nullptr;
+			sphere.NextEntity())
 		{
 			if (!pTarget || pTarget == pLocal || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
 				continue;
@@ -36,7 +36,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 			const bool isTeleporter = Vars::Auto::Detonate::DetonateTargets.Value & TELEPORTER && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
 			const bool isNPC = Vars::Auto::Detonate::DetonateTargets.Value & NPC && pTarget->IsNPC();
 			const bool isBomb = Vars::Auto::Detonate::DetonateTargets.Value & BOMB && pTarget->IsBomb();
-			const bool isSticky = Vars::Auto::Detonate::DetonateTargets.Value & STICKY && pTarget->GetClassID() == ETFClassID::CTFGrenadePipebombProjectile && pTarget->GetPipebombType() == TYPE_STICKY && (G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher || G::CurItemDefIndex == Demoman_s_TheScottishResistance);
+			const bool isSticky = Vars::Auto::Detonate::DetonateTargets.Value & STICKY && pTarget->GetClassID() == ETFClassID::CTFGrenadePipebombProjectile && pTarget->m_iType() == TF_GL_MODE_REMOTE_DETONATE && (G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher || G::CurItemDefIndex == Demoman_s_TheScottishResistance);
 
 			if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC || isBomb || isSticky)
 			{
@@ -51,7 +51,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 					Vec3 vAngleTo = Math::CalcAngle(pLocal->GetShootPos(), vOrigin);
 					Utils::FixMovement(pCmd, vAngleTo);
 					pCmd->viewangles = vAngleTo;
-					G::SilentTime = true;
+					G::PSilentAngles = true;
 				}
 				return true;
 			}
@@ -63,7 +63,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 
 void CAutoDetonate::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Auto::Detonate::Active.Value || G::CurItemDefIndex == Demoman_s_StickyJumper)
+	if (!Vars::Auto::Detonate::Active.Value)
 		return;
 
 	// Check sticky detonation

@@ -6,7 +6,7 @@ void CAntiAim::FakeShotAngles(CUserCmd* pCmd)
 	if (!Vars::AntiHack::AntiAim::InvalidShootPitch.Value || !G::IsAttacking || G::CurWeaponType != EWeaponType::HITSCAN)
 		return;
 
-	G::UpdateView = false;
+	G::SilentAngles = true;
 	pCmd->viewangles.x = CalculateCustomRealPitch(-pCmd->viewangles.x, false) + 180;
 	pCmd->viewangles.y += 180;
 }
@@ -148,7 +148,7 @@ void CAntiAim::Run(CUserCmd* pCmd, bool* pSendPacket)
 	}
 
 	G::AntiAim = true;
-	G::UpdateView = false;
+	G::SilentAngles = true;
 
 	if (!iNetChan->m_nChokedPackets) // get base yaw on the first choked tick.
 		flBaseYaw = GetBaseYaw(pLocal, pCmd, false);

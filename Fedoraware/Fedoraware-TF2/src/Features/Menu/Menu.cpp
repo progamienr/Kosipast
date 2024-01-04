@@ -168,7 +168,7 @@ void CMenu::MenuAimbot()
 				if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
 					FSlider("Smooth factor## HitscanSmoothing", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
 				FDropdown("Hitboxes## AimbotHitboxScanning", &Vars::Aimbot::Hitscan::Hitboxes.Value, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi);
-				FSlider("Point scale## HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp); // this seems to occasionally change on it's own and i don't know why
+				FSlider("Point scale## HitscanMultipointScale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp);
 				FDropdown("Modifiers", &Vars::Aimbot::Hitscan::Modifiers.Value, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi);
 				if (Vars::Aimbot::Hitscan::Modifiers.Value & (1 << 0))
 					FSlider("Tapfire distance## HitscanTapfireDistance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, 1.f, "%.0f", FSlider_Clamp);
@@ -714,9 +714,9 @@ void CMenu::MenuVisuals()
 			{
 				FToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
 				FToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value, FToggle_Middle);
-				FSlider("VM Off X", &Vars::Visuals::VMOffsets.Value.x, -45.f, 45.f);
-				FSlider("VM Off Y", &Vars::Visuals::VMOffsets.Value.y, -45.f, 45.f);
-				FSlider("VM Off Z", &Vars::Visuals::VMOffsets.Value.z, -45.f, 45.f);
+				FSlider("VM Off X", &Vars::Visuals::VMOffsetX.Value, -45.f, 45.f);
+				FSlider("VM Off Y", &Vars::Visuals::VMOffsetY.Value, -45.f, 45.f);
+				FSlider("VM Off Z", &Vars::Visuals::VMOffsetZ.Value, -45.f, 45.f);
 				FSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
 				FToggle("Viewmodel sway", &Vars::Visuals::ViewmodelSway.Value);
 				if (Vars::Visuals::ViewmodelSway.Value)

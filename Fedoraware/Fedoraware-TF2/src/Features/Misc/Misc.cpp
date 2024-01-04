@@ -715,7 +715,8 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 		pCmd->sidemove = 0.0f;
 		pCmd->viewangles.y = fmodf(pCmd->viewangles.y - angMoveReverse.y, 360.0f);
 		pCmd->viewangles.z = 270.f;
-		G::UpdateView = false; bFastAccel = true;
+		bFastAccel = true;
+		G::SilentAngles = true;
 		*pSendPacket = false;
 	}
 }
@@ -742,7 +743,7 @@ void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket)
 			bChanged = true;
 
 			bMovementScuffed = true;
-			G::UpdateView = false;
+			G::SilentAngles = true;
 			*pSendPacket = false;
 		}
 
@@ -762,7 +763,7 @@ void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket)
 			bChanged = true;
 
 			bMovementScuffed = true;
-			G::UpdateView = false;
+			G::SilentAngles = true;
 			*pSendPacket = false;
 		}
 
@@ -782,7 +783,7 @@ void CMisc::InstaStop(CUserCmd* pCmd, bool* pSendPacket)
 	if (G::ShouldStop)
 		return;
 
-	G::UpdateView = false; bMovementStopped = true; bMovementScuffed = true;
+	G::SilentAngles = true; bMovementStopped = bMovementScuffed = true;
 	if (G::Recharge || G::DoubleTap)
 		return;
 	*pSendPacket = false;
@@ -878,7 +879,7 @@ void CMisc::TauntKartControl(CUserCmd* pCmd, bool* pSendPacket)
 			Vec3 vAngle = I::EngineClient->GetViewAngles();
 			pCmd->viewangles.y = vAngle.y;
 
-			G::UpdateView = false;
+			G::SilentAngles = true;
 		}
 		else if (Vars::Misc::KartControl.Value && pLocal->IsInBumperKart())
 		{
@@ -919,7 +920,7 @@ void CMisc::TauntKartControl(CUserCmd* pCmd, bool* pSendPacket)
 			if (G::Buttons & IN_DUCK)
 				pCmd->buttons |= IN_DUCK;
 
-			G::UpdateView = false;
+			G::SilentAngles = true;
 		}
 	}
 }

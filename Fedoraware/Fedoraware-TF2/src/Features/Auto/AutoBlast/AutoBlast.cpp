@@ -146,7 +146,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 		if (bShouldBlast)
 		{
 			if (Vars::Auto::Airblast::Rage.Value || Vars::Auto::Airblast::Fov.Value == 0 && Vars::Auto::Airblast::Silent.Value)
-				G::SilentTime = true;
+				G::PSilentAngles = true;
 
 			G::IsAttacking = true;
 			pCmd->buttons |= IN_ATTACK2;

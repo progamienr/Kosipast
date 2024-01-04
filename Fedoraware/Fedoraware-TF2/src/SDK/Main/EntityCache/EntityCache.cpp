@@ -128,9 +128,9 @@ void CEntityCache::Fill()
 				{
 					m_vecGroups[EGroupType::WORLD_PROJECTILES].push_back(pEntity);
 
-					if (nClassID == ETFClassID::CTFGrenadePipebombProjectile && (pEntity->GetPipebombType() == TYPE_STICKY || pEntity->GetPipebombPulsed()))
+					if (nClassID == ETFClassID::CTFGrenadePipebombProjectile && (pEntity->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE || pEntity->GetPipebombPulsed()))
 					{
-						CBaseEntity* pThrower = I::ClientEntityList->GetClientEntityFromHandle(reinterpret_cast<int>(pEntity->GetThrower()));
+						CBaseEntity* pThrower = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hThrower());
 						CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity());
 						if (pThrower == m_pLocal || pOwner == m_pLocal)
 							m_vecGroups[EGroupType::LOCAL_STICKIES].push_back(pEntity);

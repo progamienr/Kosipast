@@ -164,7 +164,7 @@ Chams_t GetChamsType(int nIndex, CBaseEntity* pEntity = nullptr)
 	case 9:
 		if (!pEntity)
 			return Chams_t();
-		if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(reinterpret_cast<int>(pEntity->GetThrower())))
+		if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hThrower()))
 			return GetPlayerChams(pOwner);
 		return Chams_t();
 	}

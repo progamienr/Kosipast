@@ -30,7 +30,7 @@ namespace SandvichAimbot
 			Math::ClampAngles(angle);
 			pCmd->viewangles = angle;
 			pCmd->buttons |= IN_ATTACK2;
-			G::UpdateView = false;
+			G::SilentAngles = true;
 		}
 	}
 }

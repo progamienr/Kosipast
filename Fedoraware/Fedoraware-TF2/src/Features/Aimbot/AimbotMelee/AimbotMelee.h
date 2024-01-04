@@ -14,11 +14,11 @@ class CAimbotMelee
 						 std::unordered_map<CBaseEntity*, std::deque<TickRecord>>& pRecordMap,
 						 std::unordered_map<CBaseEntity*, std::deque<std::pair<Vec3, Vec3>>>& simLines);
 	bool CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 eyeAngles);
-	bool CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords);
+	int CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords);
 	
 	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
-	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod = Vars::Aimbot::Melee::AimMethod.Value);
 
 	Target_t lockedTarget;
 	int iDoubletapTicks = 0;

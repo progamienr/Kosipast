@@ -134,7 +134,7 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			pCmd->buttons |= IN_ATTACK;
 			if (bFull)
 			{
-				G::UpdateView = false; // would use G::SilentTime but that would mess with timing
+				G::SilentAngles = true; // would use G::PSilentAngles but that would mess with timing
 				ManageAngle(pWeapon, pCmd, pCmd->viewangles);
 			}
 		}

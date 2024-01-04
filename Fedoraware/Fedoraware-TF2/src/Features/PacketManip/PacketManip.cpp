@@ -30,12 +30,14 @@ void CPacketManip::CreateMove(CUserCmd* pCmd, bool* pSendPacket)
 	if (!WillTimeOut())
 	{
 		// anti aim will no longer set pSendPacket to false/true
-		if (AACheck(pCmd) || G::SilentTime)
+		if (AACheck(pCmd))
 		{
 			*pSendPacket = false;
 			F::AntiAim.Run(pCmd, pSendPacket);
 			return;
 		}
+		else if (G::PSilentAngles)
+			return;
 		// F::AntiAim.Run(pCmd, pSendPacket);
 		F::FakeLag.Run(pCmd, pSendPacket);
 	}

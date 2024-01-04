@@ -132,6 +132,7 @@ void CTickshiftHandler::CLMoveFunc(float accumulated_extra_samples, bool bFinalT
 
 	bGoalReached = bFinalTick && G::ShiftedTicks == G::ShiftedGoal;
 
+	F::NetworkFix.FixInputDelay(bFinalTick);
 	CL_Move->Original<void(__cdecl*)(float, bool)>()(accumulated_extra_samples, bFinalTick);
 }
 
@@ -147,7 +148,7 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 	
 
 	G::MaxShift = g_ConVars.sv_maxusrcmdprocessticks ? g_ConVars.sv_maxusrcmdprocessticks->GetInt() : 24;
-	if (G::AntiAim)
+	if (Vars::AntiHack::AntiAim::Active.Value)
 		G::MaxShift -= 3;
 
 	while (G::ShiftedTicks > G::MaxShift)
@@ -214,8 +215,6 @@ void CTickshiftHandler::MovePost(CUserCmd* pCmd)
 
 void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 {
-	F::NetworkFix.FixInputDelay(bFinalTick);
-
 	MovePre();
 	MoveMain(accumulated_extra_samples, bFinalTick);
 }

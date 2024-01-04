@@ -67,5 +67,5 @@ void CNoSpread::Run(CUserCmd* pCmd)
 		break;
 	}
 
-	G::SilentTime = true;
+	G::PSilentAngles = true;
 }
