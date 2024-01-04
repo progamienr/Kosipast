@@ -62,7 +62,13 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 
 		StartDrawing(I::VGuiSurface);
 		{
-			if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot() || I::EngineVGui->IsGameUIVisible())
+			if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
+				return FinishDrawing(I::VGuiSurface);
+
+			F::AutoQueue.Run();
+			F::Notifications.Draw();
+
+			if (I::EngineVGui->IsGameUIVisible())
 				return FinishDrawing(I::VGuiSurface);
 
 			//static int nAvatar = 0;
@@ -111,8 +117,6 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 			F::CritHack.Draw();
 			F::Radar.Run();
 			F::PlayerList.Run();
-			F::Notifications.Draw();
-			F::AutoQueue.Run();
 
 			if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
 			{
