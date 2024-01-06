@@ -20,12 +20,13 @@ void CReadPacketState::Restore()
 
 void CNetworkFix::FixInputDelay(bool bFinalTick)
 {
-	if (!I::EngineClient->IsInGame() || !Vars::Misc::NetworkFix.Value)
+	static auto fnCLReadPackets = g_HookManager.GetMapHooks()["CL_ReadPackets"];
+	if (!I::EngineClient->IsInGame() || !Vars::Misc::NetworkFix.Value || !fnCLReadPackets)
 		return;
 
-	if (auto pNetChannel = I::EngineClient->GetNetChannelInfo())
+	if (INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo())
 	{
-		if (pNetChannel->IsLoopback())
+		if (iNetChan->IsLoopback())
 			return;
 	}
 
@@ -33,9 +34,7 @@ void CNetworkFix::FixInputDelay(bool bFinalTick)
 
 	Backup.Store();
 
-	static auto CL_ReadPackets = g_HookManager.GetMapHooks()["CL_ReadPackets"];
-	if (CL_ReadPackets)
-		CL_ReadPackets->Original<void(__cdecl*)(bool)>()(bFinalTick);
+	fnCLReadPackets->Original<void(__cdecl*)(bool)>()(bFinalTick);
 
 	m_State.Store();
 

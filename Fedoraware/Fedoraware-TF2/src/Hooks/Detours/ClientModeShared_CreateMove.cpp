@@ -43,6 +43,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!pCmd || !pCmd->command_number)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 
+	I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
+
 	G::Buttons = pCmd->buttons;
 	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd))
 		I::Prediction->SetLocalViewAngles(pCmd->viewangles);
@@ -50,11 +52,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	// Get the pointer to pSendPacket
 	uintptr_t _bp; __asm mov _bp, ebp;
 	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(_bp) - 0x1);
-
-	//	save old info
-	static Vec3 vOldAngles = pCmd->viewangles;
-	static float fOldSide = pCmd->sidemove;
-	static float fOldForward = pCmd->forwardmove;
 
 	G::CurrentUserCmd = pCmd;
 	if (!G::LastUserCmd)

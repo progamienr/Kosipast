@@ -302,7 +302,7 @@ void CBacktrack::MakeRecords()
 				mRecords[pEntity].clear();
 		}
 
-		if (Vars::Backtrack::UnchokePrediction.Value ? TIME_TO_TICKS(flDelta) == 1 : TIME_TO_TICKS(flDelta) > 0)
+		if (TIME_TO_TICKS(flDelta) > 0)
 		{ // create record on simulated players
 			if (!noInterpBones[pEntity->GetIndex()].first)
 				continue;
@@ -316,7 +316,7 @@ void CBacktrack::MakeRecords()
 				vOrigin
 			});
 		}
-		else if (Vars::Backtrack::UnchokePrediction.Value && TIME_TO_TICKS(flDelta) == 0)
+		else if (Vars::Backtrack::UnchokePrediction.Value && mRecords[pEntity].size() < 3)
 		{ // user is choking, predict location of next record
 			const Vec3 vOriginalPos = pEntity->GetAbsOrigin();
 			const Vec3 vOriginalEyeAngles = pEntity->GetEyeAngles();

@@ -714,9 +714,9 @@ void CMenu::MenuVisuals()
 			{
 				FToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
 				FToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value, FToggle_Middle);
-				FSlider("VM Off X", &Vars::Visuals::VMOffsetX.Value, -45.f, 45.f);
-				FSlider("VM Off Y", &Vars::Visuals::VMOffsetY.Value, -45.f, 45.f);
-				FSlider("VM Off Z", &Vars::Visuals::VMOffsetZ.Value, -45.f, 45.f);
+				FSlider("VM Offset X", &Vars::Visuals::VMOffsetX.Value, -45.f, 45.f);
+				FSlider("VM Offset Y", &Vars::Visuals::VMOffsetY.Value, -45.f, 45.f);
+				FSlider("VM Offset Z", &Vars::Visuals::VMOffsetZ.Value, -45.f, 45.f);
 				FSlider("VM Roll", &Vars::Visuals::VMRoll.Value, -180, 180);
 				FToggle("Viewmodel sway", &Vars::Visuals::ViewmodelSway.Value);
 				if (Vars::Visuals::ViewmodelSway.Value)
