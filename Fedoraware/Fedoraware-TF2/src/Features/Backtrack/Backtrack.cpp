@@ -111,6 +111,7 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
 	if (!iNetChan)
 		return false;
+
 	/*
 	const auto tb = I::GlobalVars->tickcount;
 	const auto tc = iTickCount;
@@ -118,7 +119,7 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	*/
 
 	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
-	const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
+	const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + (Vars::Misc::NetworkFix.Value ? 1 : -1) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 
 	float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(record.flSimTime));
 

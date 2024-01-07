@@ -115,7 +115,7 @@ namespace Vars
 		CVar(Window, 185)
 		CVar(UnchokePrediction, false)
 		CVar(AllowForward, false)
-		CVar(PassthroughOffset, -1, NOSAVE) // debug
+		CVar(PassthroughOffset, 0, NOSAVE) // debug
 		CVar(TicksetOffset, 0, NOSAVE) // debug
 		CVar(ChokePassMod, 1, NOSAVE) // debug
 		CVar(ChokeSetMod, 0, NOSAVE) // debug

@@ -43,7 +43,12 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!pCmd || !pCmd->command_number)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 
-	I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
+	if (Vars::Misc::NetworkFix.Value && pLocal)
+	{
+		const auto vVelocity = pLocal->m_vecVelocity(); // fucks with antiwarp if we don't restore velocity
+		I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
+		pLocal->m_vecVelocity() = vVelocity;
+	}
 
 	G::Buttons = pCmd->buttons;
 	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd))
