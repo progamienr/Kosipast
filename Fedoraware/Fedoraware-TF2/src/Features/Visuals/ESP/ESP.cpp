@@ -105,15 +105,26 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 	for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 	{
+		const int nIndex = pPlayer->GetIndex();
+
 		if (!pPlayer->IsAlive() || pPlayer->IsAGhost())
 			continue;
 
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Players::Alpha.Value * (pPlayer->GetDormant() ? 0.25f : 1.f));
-
 		if (pPlayer->GetDormant())
+		{
+			if (!Vars::ESP::Main::DormantAlpha.Value)
+				continue;
+			if (Vars::ESP::Main::DormantPriority.Value)
+			{
+				PlayerInfo_t pi{};
+				if (I::EngineClient->GetPlayerInfo(nIndex, &pi) && G::PlayerPriority[pi.friendsID].Mode < 3)
+					continue;
+			}
 			pPlayer->m_iHealth() = cResource->GetHealth(pPlayer->GetIndex());
+		}
 
-		int nIndex = pPlayer->GetIndex();
+		I::VGuiSurface->DrawSetAlphaMultiplier((pPlayer->GetDormant() ? Vars::ESP::Main::DormantAlpha.Value : Vars::ESP::Main::ActiveAlpha.Value) / 255.f);
+
 		if (nIndex != I::EngineClient->GetLocalPlayer())
 		{
 			if (Vars::ESP::Players::IgnoreCloaked.Value && pPlayer->IsCloaked())
@@ -340,7 +351,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			// Player conditions
 			{
 				// Lagcomp cond, idea from nitro
-				if (Vars::ESP::Players::Conditions.Value & (1 << 3) && pPlayer != pLocal)
+				if (!pPlayer->GetDormant() && Vars::ESP::Players::Conditions.Value & (1 << 3) && pPlayer != pLocal)
 				{
 					if (F::Backtrack.mRecords[pPlayer].size() < 3)
 					{
@@ -536,7 +547,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 	if (!Vars::ESP::Buildings::Active.Value)
 		return;
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Buildings::Alpha.Value);
+	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::ActiveAlpha.Value);
 	for (const auto& pBuilding : g_EntityCache.GetGroup(Vars::ESP::Buildings::IgnoreTeam.Value ? EGroupType::BUILDINGS_ENEMIES : EGroupType::BUILDINGS_ALL))
 	{
 		if (!pBuilding->IsAlive())
@@ -691,7 +702,7 @@ void CESP::DrawWorld() const
 	Vec3 vScreen = {};
 	const auto& fFont = g_Draw.GetFont(FONT_NAME);
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
+	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::ActiveAlpha.Value);
 
 	for (const auto& health : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
 	{

@@ -732,7 +732,7 @@ void CVisuals::PickupTimers()
 // Credits go to reestart entirely
 void CVisuals::ManualNetwork(const StartSoundParams_t& params)
 {
-	if (!Vars::ESP::Main::DormantSoundESP.Value || params.soundsource <= 0)
+	if (params.soundsource <= 0)
 		return;
 
 	Vector vOrigin;

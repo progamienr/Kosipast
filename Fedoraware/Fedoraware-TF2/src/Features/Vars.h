@@ -234,7 +234,9 @@ namespace Vars
 		SUBNAMESPACE_BEGIN(Main)
 			CVar(Active, false, VISUAL)
 			CVar(EnableTeamEnemyColors, false, VISUAL)
-			CVar(DormantSoundESP, false, VISUAL)
+			CVar(ActiveAlpha, 255, VISUAL)
+			CVar(DormantAlpha, 50, VISUAL)
+			CVar(DormantPriority, false, VISUAL)
 			CVar(DormantTime, 1.f, VISUAL)
 		SUBNAMESPACE_END(Main)
 
@@ -258,8 +260,6 @@ namespace Vars
 			CVar(Bones, false, VISUAL)
 			CVar(PriorityText, false, VISUAL)
 			CVar(Conditions, 0b010011, VISUAL)
-
-			CVar(Alpha, 1.0f, VISUAL)
 		SUBNAMESPACE_END(Players)
 
 		SUBNAMESPACE_BEGIN(Buildings)
@@ -273,7 +273,6 @@ namespace Vars
 			CVar(Owner, false, VISUAL)
 			CVar(Level, false, VISUAL)
 			CVar(Condition, false, VISUAL)
-			CVar(Alpha, 1.0f, VISUAL)
 		SUBNAMESPACE_END(Buildings)
 
 		SUBNAMESPACE_BEGIN(World)
@@ -284,7 +283,6 @@ namespace Vars
 			CVar(Bomb, false, VISUAL)
 			CVar(Spellbook, false, VISUAL)
 			CVar(Gargoyle, false, VISUAL)
-			CVar(Alpha, 1.0f, VISUAL)
 		SUBNAMESPACE_END(World)
 	NAMESPACE_END(ESP)
 
@@ -725,15 +723,23 @@ namespace Vars
 
 	NAMESPACE_BEGIN(Logging)
 		CVar(Logs, 0b0011) // { Damage, Class Changes, Vote cast, Vote start }
-		CVar(LogTo, 0b0001) // { Console, Party, Chat, Toasts }
+		CVar(Lifetime, 5.f, VISUAL)
 
+		SUBNAMESPACE_BEGIN(VoteStart)
+			CVar(LogTo, 0b0001) // { Console, Party, Chat, Toasts }
+		SUBNAMESPACE_END(VoteStart)
 
-		SUBNAMESPACE_BEGIN(Notification)
-			CVar(Background, Color_t(30, 30, 30, 255), VISUAL)
-			CVar(Outline, Color_t(255, 101, 101, 255), VISUAL)
-			CVar(Text, Color_t(255, 255, 255, 255), VISUAL)
-			CVar(Lifetime, 5.f, VISUAL)
-		SUBNAMESPACE_END(Notification)
+		SUBNAMESPACE_BEGIN(VoteCast)
+			CVar(LogTo, 0b0001) // { Console, Party, Chat, Toasts }
+		SUBNAMESPACE_END(VoteCast)
+
+		SUBNAMESPACE_BEGIN(ClassChange)
+			CVar(LogTo, 0b0001) // { Console, Party, Chat, Toasts }
+		SUBNAMESPACE_END(ClassChange)
+
+		SUBNAMESPACE_BEGIN(Damage)
+			CVar(LogTo, 0b0001) // { Console, Party, Chat, Toasts }
+		SUBNAMESPACE_END(Damage)
 	NAMESPACE_END(Logging)
 
 	NAMESPACE_BEGIN(Debug)

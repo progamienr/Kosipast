@@ -47,15 +47,10 @@ void CNotifications::Draw()
 			color.a = static_cast<int>(f * 255.f);
 
 			if (i == 0 && f < 0.2f)
-			{
 				y -= size * (1.f - f / 0.2f);
-			}
 		}
-
 		else
-		{
 			color.a = 255;
-		}
 
 		const size_t cSize = strlen(notify->Text.c_str()) + 1;
 		const auto wc = new wchar_t[cSize];
@@ -67,13 +62,13 @@ void CNotifications::Draw()
 
 		delete[] wc; // Memory leak
 
-		g_Draw.Line(x, y, x, y + 19, { Vars::Logging::Notification::Outline.Value.r, Vars::Logging::Notification::Outline.Value.g, Vars::Logging::Notification::Outline.Value.b, color.a });
+		g_Draw.Line(x, y, x, y + 19, { Vars::Menu::Theme::Accent.Value.r, Vars::Menu::Theme::Accent.Value.g, Vars::Menu::Theme::Accent.Value.b, color.a });
 		g_Draw.GradientRectA(x + 1, y, w / 3 + 9, y + 19,
-			{ Vars::Logging::Notification::Background.Value.r, Vars::Logging::Notification::Background.Value.g, Vars::Logging::Notification::Background.Value.b, color.a },
-			{ Vars::Logging::Notification::Background.Value.r, Vars::Logging::Notification::Background.Value.g, Vars::Logging::Notification::Background.Value.b, 1 },
+			{ Vars::Menu::Theme::Background.Value.r, Vars::Menu::Theme::Background.Value.g, Vars::Menu::Theme::Background.Value.b, color.a },
+			{ Vars::Menu::Theme::Background.Value.r, Vars::Menu::Theme::Background.Value.g, Vars::Menu::Theme::Background.Value.b, 1 },
 			true);
 		g_Draw.String(font, x + 6, y + 2,
-			{ Vars::Logging::Notification::Text.Value.r, Vars::Logging::Notification::Text.Value.g, Vars::Logging::Notification::Text.Value.b, color.a },
+			{ Vars::Menu::Theme::Active.Value.r, Vars::Menu::Theme::Active.Value.g, Vars::Menu::Theme::Active.Value.b, color.a },
 			ALIGN_DEFAULT, notify->Text.c_str());
 
 		y += size;

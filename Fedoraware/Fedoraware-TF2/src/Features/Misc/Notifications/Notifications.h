@@ -22,7 +22,7 @@ public:
 	CNotifications() = default;
 
 	__forceinline void Add(const std::string& text, Color_t color = { 255, 255, 255, 255 },
-		float time = Vars::Logging::Notification::Lifetime.Value)
+		float time = Vars::Logging::Lifetime.Value)
 	{
 		NotificationTexts.push_back(std::make_shared<NotifyText>(text, color, time));
 	}

@@ -113,12 +113,10 @@ void CMenu::MenuAimbot()
 			TableNextColumn();
 			if (Section("Global"))
 			{
-				FColorPicker("Target", &Vars::Colors::Target.Value);
-				FToggle("Aimbot", &Vars::Aimbot::Global::Active.Value);
 				FColorPicker("Aimbot FOV circle", &Vars::Colors::FOVCircle.Value);
+				FToggle("Aimbot", &Vars::Aimbot::Global::Active.Value);
+				FToggle("Autoshoot## AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value, FToggle_Middle);
 				FKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value);
-				FToggle("Autoshoot## AimbotAutoshoot", &Vars::Aimbot::Global::AutoShoot.Value);
-				FColorPicker("Invulnerable color", &Vars::Colors::Invulnerable.Value);
 				FDropdown("Aimbot targets## AimbotTargets", &Vars::Aimbot::Global::AimAt.Value, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Multi | FDropdown_Left);
 				FDropdown("Ignored targets## AimbotIgnoredTargets", &Vars::Aimbot::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Dead Ringer", "Friends", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
 				if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 1))
@@ -418,36 +416,17 @@ void CMenu::MenuVisuals()
 			/* Column 1 */
 			TableNextColumn();
 			if (Section("ESP"))
-			{
 				FToggle("Active## EnableESP", &Vars::ESP::Main::Active.Value);
-				if (Vars::ESP::Main::EnableTeamEnemyColors.Value)
-				{
-					FColorPicker("Enemy color", &Vars::Colors::Enemy.Value);
-					FColorPicker("Team color", &Vars::Colors::Team.Value, 1);
-				}
-				else
-				{
-					FColorPicker("RED Team color", &Vars::Colors::TeamRed.Value);
-					FColorPicker("BLU Team color", &Vars::Colors::TeamBlu.Value, 1);
-				}
-				FToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value);
-				FToggle("Dormant sound ESP", &Vars::ESP::Main::DormantSoundESP.Value);
-				if (Vars::ESP::Main::DormantSoundESP.Value)
-					FSlider("Dormant Decay Time## GlobalDormantDecayTime", &Vars::ESP::Main::DormantTime.Value, 0.015f, 5.0f, 0.1f, "%.1f", ImGuiSliderFlags_Logarithmic);
-			} EndSection();
+			EndSection();
 			if (Section("Player"))
 			{
 				FToggle("Active## PlayerESP", &Vars::ESP::Players::Active.Value);
-				FColorPicker("Local color", &Vars::Colors::Local.Value, 1); FColorPicker("Friend color", &Vars::Colors::Friend.Value);
 				FToggle("Ignore local## SelfESP", &Vars::ESP::Players::IgnoreLocal.Value);
 				FToggle("Ignore team## IgnoreTeamESP", &Vars::ESP::Players::IgnoreTeam.Value, FToggle_Middle);
-				FColorPicker("Cloaked color", &Vars::Colors::Cloak.Value);
 				FToggle("Ignore cloaked## IgnoreCloakESP", &Vars::ESP::Players::IgnoreCloaked.Value);
 				FToggle("Name## PlayerNameESP", &Vars::ESP::Players::Name.Value);
-				FColorPicker("Health Bar Top", &Vars::Colors::HealthBar.Value.StartColor, 2); FColorPicker("Health Bar Bottom", &Vars::Colors::HealthBar.Value.EndColor, 1); FColorPicker("Overheal color", &Vars::Colors::Overheal.Value);
 				FToggle("Health bar## PlayerHealthBar", &Vars::ESP::Players::HealthBar.Value);
 				FToggle("Health text## PlayerHealthText", &Vars::ESP::Players::HealthText.Value, FToggle_Middle);
-				FColorPicker("Uber Bar", &Vars::Colors::UberBar.Value);
 				FToggle("Uber bar## PlayerUberBar", &Vars::ESP::Players::UberBar.Value);
 				FToggle("Uber text## PlayerUberText", &Vars::ESP::Players::UberText.Value, FToggle_Middle);
 				FToggle("Class icon## PlayerClassIcon", &Vars::ESP::Players::ClassIcon.Value);
@@ -460,11 +439,7 @@ void CMenu::MenuVisuals()
 				FToggle("Skeleton## PlayerBones", &Vars::ESP::Players::Bones.Value, FToggle_Middle);
 				FToggle("Priority Text", &Vars::ESP::Players::PriorityText.Value);
 				FDropdown("Conditions", &Vars::ESP::Players::Conditions.Value, { "Buffs", "Debuffs", "Other Conditions", "Lag Compensation", "KD", "Ping" }, {}, FDropdown_Multi);
-				FSlider("Alpha## PlayerESPAlpha", &Vars::ESP::Players::Alpha.Value, 0.01f, 1.0f, 0.1f, "%.1f", FSlider_Clamp);
 			} EndSection();
-
-			/* Column 2 */
-			TableNextColumn();
 			if (Section("Building"))
 			{
 				FToggle("Active## BuildingESP", &Vars::ESP::Buildings::Active.Value);
@@ -477,24 +452,55 @@ void CMenu::MenuVisuals()
 				FToggle("Owner## Buildingowner", &Vars::ESP::Buildings::Owner.Value);
 				FToggle("Level## Buildinglevel", &Vars::ESP::Buildings::Level.Value, FToggle_Middle);
 				FToggle("Condition## Buildingconditions", &Vars::ESP::Buildings::Condition.Value);
-				FSlider("Alpha## BuildingESPAlpha", &Vars::ESP::Buildings::Alpha.Value, 0.01f, 1.0f, 0.1f, "%.1f", FSlider_Clamp);
 			} EndSection();
 			if (Section("World"))
 			{
 				FToggle("Active## WorldESP", &Vars::ESP::World::Active.Value);
-				FColorPicker("Healthpack color", &Vars::Colors::Health.Value);
 				FToggle("Healthpack## WorldESPHealthpack", &Vars::ESP::World::Health.Value);
-				FColorPicker("Ammopack color", &Vars::Colors::Ammo.Value);
-				FToggle("Ammopack## WorldESPAmmopack", &Vars::ESP::World::Ammo.Value);
-				FColorPicker("NPC color", &Vars::Colors::NPC.Value);
+				FToggle("Ammopack## WorldESPAmmopack", &Vars::ESP::World::Ammo.Value, FToggle_Middle);
 				FToggle("NPC## WorldESPNPC", &Vars::ESP::World::NPC.Value);
-				FColorPicker("Bomb color", &Vars::Colors::Bomb.Value);
-				FToggle("Bombs## WorldESPBomb", &Vars::ESP::World::Bomb.Value);
-				FColorPicker("Spellbook color", &Vars::Colors::Spellbook.Value);
+				FToggle("Bombs## WorldESPBomb", &Vars::ESP::World::Bomb.Value, FToggle_Middle);
 				FToggle("Spellbook## WorldESPSpellbook", &Vars::ESP::World::Spellbook.Value);
-				FColorPicker("Gargoyle color", &Vars::Colors::Gargoyle.Value);
-				FToggle("Gargoyle## WorldESPGargoyle", &Vars::ESP::World::Gargoyle.Value);
-				FSlider("Alpha## WorldESPAlpha", &Vars::ESP::World::Alpha.Value, 0.01f, 1.0f, 0.1f, "%.1f", FSlider_Clamp);
+				FToggle("Gargoyle## WorldESPGargoyle", &Vars::ESP::World::Gargoyle.Value, FToggle_Middle);
+			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
+			if (Section("Colors"))
+			{
+				FToggle("Relative colors", &Vars::ESP::Main::EnableTeamEnemyColors.Value);
+				if (Vars::ESP::Main::EnableTeamEnemyColors.Value)
+				{
+					FColorPicker("Enemy color", &Vars::Colors::Enemy.Value, 0, FColorPicker_Left);
+					FColorPicker("Team color", &Vars::Colors::Team.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				}
+				else
+				{
+					FColorPicker("RED color", &Vars::Colors::TeamRed.Value, 0, FColorPicker_Left);
+					FColorPicker("BLU color", &Vars::Colors::TeamBlu.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				}
+
+				FColorPicker("Health bar top", &Vars::Colors::HealthBar.Value.StartColor, 0, FColorPicker_Left);
+				FColorPicker("Health bar bottom", &Vars::Colors::HealthBar.Value.EndColor, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Uber bar", &Vars::Colors::UberBar.Value, 0, FColorPicker_Left);
+				FColorPicker("Invulnerable color", &Vars::Colors::Invulnerable.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Overheal color", &Vars::Colors::Overheal.Value, 0, FColorPicker_Left);
+				FColorPicker("Cloaked color", &Vars::Colors::Cloak.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Local color", &Vars::Colors::Local.Value, 0, FColorPicker_Left);
+				FColorPicker("Friend color", &Vars::Colors::Friend.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Target", &Vars::Colors::Target.Value, 0, FColorPicker_Left);
+
+				FColorPicker("Healthpack color", &Vars::Colors::Health.Value, 0, FColorPicker_Left);
+				FColorPicker("Ammopack color", &Vars::Colors::Ammo.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("NPC color", &Vars::Colors::NPC.Value, 0, FColorPicker_Left);
+				FColorPicker("Bomb color", &Vars::Colors::Bomb.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Spellbook color", &Vars::Colors::Spellbook.Value, 0, FColorPicker_Left);
+				FColorPicker("Gargoyle color", &Vars::Colors::Gargoyle.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+
+				FSlider("Active alpha## ActiveAlpha", &Vars::ESP::Main::ActiveAlpha.Value, 0, 255, 5, "%d", FSlider_Clamp);
+				FSlider("Dormant alpha## DormantAlpha", &Vars::ESP::Main::DormantAlpha.Value, 0, 255, 5, "%d", FSlider_Clamp);
+				FSlider("Dormant Decay Time## GlobalDormantDecayTime", &Vars::ESP::Main::DormantTime.Value, 0.015f, 5.0f, 0.1f, "%.1f", FSlider_Left);
+				FToggle("Dormant priority only", &Vars::ESP::Main::DormantPriority.Value, FToggle_Middle); Dummy({ 0, 8 });
 			} EndSection();
 
 			EndTable();
@@ -653,23 +659,23 @@ void CMenu::MenuVisuals()
 				FToggle("Self glow## SelfGlow", &Vars::Glow::Players::ShowLocal.Value);
 				FDropdown("Ignore team## IgnoreTeamGlow", &Vars::Glow::Players::IgnoreTeammates.Value, { "Off", "All", "Only friends" });
 			} EndSection();
+
+			/* Column 2 */
+			TableNextColumn();
 			if (Section("Building"))
 			{
 				FToggle("Active## BuildiongGlow", &Vars::Glow::Buildings::Active.Value);
 				FToggle("Ignore team## IgnoreTeamBuildingGlow", &Vars::Glow::Buildings::IgnoreTeammates.Value);
 			} EndSection();
-
-			/* Column 2 */
-			TableNextColumn();
 			if (Section("World"))
 			{
 				FToggle("Active## WorldGlow", &Vars::Glow::World::Active.Value);
 				FToggle("Healthpacks## WorldHealthpackGlow", &Vars::Glow::World::Health.Value);
-				FToggle("Ammopacks## WorldAmmopackGlow", &Vars::Glow::World::Ammo.Value);
+				FToggle("Ammopacks## WorldAmmopackGlow", &Vars::Glow::World::Ammo.Value, FToggle_Middle);
 				FToggle("NPCs## WorldNPCGlow", &Vars::Glow::World::NPCs.Value);
-				FToggle("Bombs## WorldBombGlow", &Vars::Glow::World::Bombs.Value);
+				FToggle("Bombs## WorldBombGlow", &Vars::Glow::World::Bombs.Value, FToggle_Middle);
 				FToggle("Spellbook## WorldSpellbookGlow", &Vars::Glow::World::Spellbook.Value);
-				FToggle("Gargoyle## WorldGargoyleGlow", &Vars::Glow::World::Gargoyle.Value);
+				FToggle("Gargoyle## WorldGargoyleGlow", &Vars::Glow::World::Gargoyle.Value, FToggle_Middle);
 				FDropdown("Projectiles## ProjectileGlow", &Vars::Glow::World::Projectiles.Value, { "Off", "All", "Only enemies" });
 			} EndSection();
 
@@ -819,13 +825,6 @@ void CMenu::MenuVisuals()
 			} EndSection();
 			if (Section("World"))
 			{
-				if (FColorPicker("World modulation", &Vars::Colors::WorldModulation.Value, 3) ||
-					FColorPicker("Sky modulation", &Vars::Colors::SkyModulation.Value, 2) ||
-					FColorPicker("Prop modulation", &Vars::Colors::StaticPropModulation.Value, 1))
-				{
-					G::ShouldUpdateMaterialCache = true;
-				}
-				FColorPicker("Particle modulation", &Vars::Colors::ParticleModulation.Value);
 				FDropdown("Modulations", &Vars::Visuals::World::Modulations.Value, { "World", "Sky", "Prop", "Particle" }, { }, FDropdown_Left | FDropdown_Multi);
 				static std::vector skyNames = {
 					"Off", "sky_tf2_04", "sky_upward", "sky_dustbowl_01", "sky_goldrush_01", "sky_granary_01", "sky_well_01", "sky_gravel_01", "sky_badlands_01",
@@ -833,6 +832,12 @@ void CMenu::MenuVisuals()
 					"sky_harvest_01", "sky_harvest_night_01", "sky_halloween", "sky_halloween_night_01", "sky_halloween_night2014_01", "sky_island_01", "sky_rainbow_01"
 				};
 				FSDropdown("Skybox changer", &Vars::Visuals::World::SkyboxChanger.Value, skyNames, FSDropdown_Custom | FSDropdown_Right);
+				bool bUpdate = FColorPicker("World modulation", &Vars::Colors::WorldModulation.Value, 0, FColorPicker_Left);
+				bUpdate = FColorPicker("Sky modulation", &Vars::Colors::SkyModulation.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
+				bUpdate = FColorPicker("Prop modulation", &Vars::Colors::StaticPropModulation.Value, 0, FColorPicker_Left) || bUpdate;
+				FColorPicker("Particle modulation", &Vars::Colors::ParticleModulation.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				if (bUpdate)
+					G::ShouldUpdateMaterialCache = true;
 				FToggle("World textures override", &Vars::Visuals::World::OverrideTextures.Value);
 				FToggle("Prop wireframe", &Vars::Visuals::World::PropWireframe.Value, FToggle_Middle);
 			} EndSection();
@@ -889,24 +894,21 @@ void CMenu::MenuVisuals()
 		break;
 	// Menu
 	case 5:
+	{
+		bool bUpdate = false;
+
 		if (BeginTable("MenuTable", 2))
 		{
 			/* Column 1 */
 			TableNextColumn();
 			if (Section("General"))
 			{
-				if (FColorPicker("Accent color", &Vars::Menu::Theme::Accent.Value, 0, FColorPicker_Left))
-					LoadStyle();
-				if (FColorPicker("Foremost color", &Vars::Menu::Theme::Foremost.Value, 0, FColorPicker_Middle | FColorPicker_SameLine))
-					LoadStyle();
-				if (FColorPicker("Background color", &Vars::Menu::Theme::Background.Value, 0, FColorPicker_Left))
-					LoadStyle();
-				if (FColorPicker("Foreground color", &Vars::Menu::Theme::Foreground.Value, 0, FColorPicker_Middle | FColorPicker_SameLine))
-					LoadStyle();
-				if (FColorPicker("Active color", &Vars::Menu::Theme::Active.Value, 0, FColorPicker_Left))
-					LoadStyle();
-				if (FColorPicker("Inactive color", &Vars::Menu::Theme::Inactive.Value, 0, FColorPicker_Middle | FColorPicker_SameLine))
-					LoadStyle();
+				bUpdate = FColorPicker("Accent color", &Vars::Menu::Theme::Accent.Value, 0, FColorPicker_Left);
+				bUpdate = FColorPicker("Foremost color", &Vars::Menu::Theme::Foremost.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
+				bUpdate = FColorPicker("Background color", &Vars::Menu::Theme::Background.Value, 0, FColorPicker_Left) || bUpdate;
+				bUpdate = FColorPicker("Foreground color", &Vars::Menu::Theme::Foreground.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
+				bUpdate = FColorPicker("Active color", &Vars::Menu::Theme::Active.Value, 0, FColorPicker_Left) || bUpdate;
+				bUpdate = FColorPicker("Inactive color", &Vars::Menu::Theme::Inactive.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
 
 				FSDropdown("Cheat title", &Vars::Menu::CheatName.Value, {}, FSDropdown_Left);
 				FSDropdown("Chat info prefix", &Vars::Menu::CheatPrefix.Value, {}, FSDropdown_Right);
@@ -920,7 +922,10 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 
 			EndTable();
-		break;
+		}
+
+		if (bUpdate)
+			LoadStyle();
 	}
 	}
 }
@@ -1046,17 +1051,25 @@ void CMenu::MenuLogs()
 			/* Column 1 */
 			TableNextColumn();
 			if (Section("Logging"))
-			{	// i will probably allow logto to be changed for each individually
-				FDropdown("Logs", &Vars::Logging::Logs.Value, { "Vote start", "Vote cast", "Class Changes", "Damage" }, {}, FDropdown_Left | FDropdown_Multi);
-				FDropdown("Log to", &Vars::Logging::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Right | FDropdown_Multi);
-				FColorPicker("Notification background", &Vars::Logging::Notification::Background.Value);
-				FColorPicker("Notification outline", &Vars::Logging::Notification::Outline.Value, 1);
-				FColorPicker("Notification color", &Vars::Logging::Notification::Text.Value, 2);
-				FSlider("Notification time", &Vars::Logging::Notification::Lifetime.Value, 0.5f, 3.f, 0.5f, "%.1f");
+			{
+				FDropdown("Logs", &Vars::Logging::Logs.Value, { "Vote start", "Vote cast", "Class Changes", "Damage" }, {}, FDropdown_Multi);
+				FSlider("Notification time", &Vars::Logging::Lifetime.Value, 0.5f, 3.f, 0.5f, "%.1f");
 			} EndSection();
 
 			/* Column 2 */
 			TableNextColumn();
+			if (Section("Vote Start"))
+				FDropdown("Log to", &Vars::Logging::VoteStart::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+			EndSection();
+			if (Section("Vote Cast"))
+				FDropdown("Log to", &Vars::Logging::VoteCast::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+			EndSection();
+			if (Section("Class Change"))
+				FDropdown("Log to", &Vars::Logging::ClassChange::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+			EndSection();
+			if (Section("Damage"))
+				FDropdown("Log to", &Vars::Logging::Damage::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+			EndSection();
 
 			EndTable();
 		}

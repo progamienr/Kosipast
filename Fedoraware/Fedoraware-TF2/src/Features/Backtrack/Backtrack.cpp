@@ -410,16 +410,19 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 
 	// might not even be necessary
 	G::AnticipatedChoke = 0;
-	switch (G::CurWeaponType)
+	if (G::ShiftedTicks != G::MaxShift)
 	{
-	case EWeaponType::PROJECTILE:
-		if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
-			G::AnticipatedChoke = 1;
-		break;
-	case EWeaponType::MELEE:
-		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
-			G::AnticipatedChoke = 1;
-		break;
+		switch (G::CurWeaponType)
+		{
+		case EWeaponType::PROJECTILE:
+			if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
+				G::AnticipatedChoke = 1;
+			break;
+		case EWeaponType::MELEE:
+			if (Vars::Aimbot::Melee::AimMethod.Value == 2)
+				G::AnticipatedChoke = 1;
+			break;
+		}
 	}
 	const int iChoke = G::ChokeAmount;
 	if (iChoke && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value &&
