@@ -86,7 +86,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		if (pWeapon->GetSlot() != SLOT_MELEE)
 		{
 			if (pWeapon->IsInReload())
-				G::WeaponCanAttack = true;
+				G::WeaponCanAttack = pWeapon->HasPrimaryAmmoForShot();
 
 			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN &&
 				pWeapon->GetMinigunState() != AC_STATE_FIRING && pWeapon->GetMinigunState() != AC_STATE_SPINNING)

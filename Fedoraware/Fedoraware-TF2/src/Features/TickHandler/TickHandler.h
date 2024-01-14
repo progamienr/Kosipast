@@ -8,6 +8,7 @@ class CTickshiftHandler
 	void Teleport(CUserCmd* pCmd);
 	void Doubletap(const CUserCmd* pCmd, CBaseEntity* pLocal);
 	void Speedhack(CUserCmd* pCmd);
+	bool ValidWeapon(CBaseCombatWeapon* pWeapon);
 
 	// utils
 	void CLMoveFunc(float accumulated_extra_samples, bool bFinalTick);

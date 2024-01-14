@@ -193,7 +193,8 @@ void CMenu::MenuAimbot()
 			{
 				if (Section("debug## projectile"))
 				{
-					FSlider("samples", &Vars::Aimbot::Projectile::iSamples.Value, 3, 66);
+					FSlider("ground samples", &Vars::Aimbot::Projectile::iGroundSamples.Value, 3, 66);
+					FSlider("air samples", &Vars::Aimbot::Projectile::iAirSamples.Value, 3, 66);
 					FSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, 0.5f, "%.1f");
 					FSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, 0.1f, "%.1f");
 					FSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, 0.1f, "%.1f");
@@ -202,6 +203,8 @@ void CMenu::MenuAimbot()
 						FSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, 0.5f, "%.1f");
 					if (Vars::Aimbot::Projectile::HuntermanMode.Value == 4)
 						FSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, 1.f, "%.0f%%");
+					FToggle("strafe rate check", &Vars::Aimbot::Projectile::StrafeRate.Value);
+					FToggle("strafe adjustments", &Vars::Aimbot::Projectile::StrafeAdjust.Value);
 				} EndSection();
 			}
 			if (Section("Melee"))
@@ -488,7 +491,7 @@ void CMenu::MenuVisuals()
 				FColorPicker("Cloaked color", &Vars::Colors::Cloak.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
 				FColorPicker("Local color", &Vars::Colors::Local.Value, 0, FColorPicker_Left);
 				FColorPicker("Friend color", &Vars::Colors::Friend.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("Target", &Vars::Colors::Target.Value, 0, FColorPicker_Left);
+				FColorPicker("Target color", &Vars::Colors::Target.Value, 0, FColorPicker_Left);
 
 				FColorPicker("Healthpack color", &Vars::Colors::Health.Value, 0, FColorPicker_Left);
 				FColorPicker("Ammopack color", &Vars::Colors::Ammo.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);

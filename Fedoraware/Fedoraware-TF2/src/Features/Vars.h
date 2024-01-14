@@ -164,13 +164,16 @@ namespace Vars
 			CVar(ChargeLooseCannon, false)
 			CVar(StrafePrediction, 3)
 			CVar(StrafePredictionHitchance, 0.f)
-			CVar(iSamples, 10, NOSAVE) // debug
+			CVar(iGroundSamples, 4, NOSAVE) // debug
+			CVar(iAirSamples, 3, NOSAVE) // debug
 			CVar(VerticalShift, 5.f, NOSAVE) // debug
 			CVar(LatOff, 0.f, NOSAVE) // debug
 			CVar(PhyOff, 0.f, NOSAVE) // debug
 			CVar(HuntermanMode, 4, NOSAVE) // debug
 			CVar(HuntermanShift, 2.f, NOSAVE) // debug
 			CVar(HuntermanLerp, 50.f, NOSAVE) // debug
+			CVar(StrafeRate, true, NOSAVE) // debug
+			CVar(StrafeAdjust, true, NOSAVE) // debug
 		SUBNAMESPACE_END(Projectile)
 
 		SUBNAMESPACE_BEGIN(Melee)

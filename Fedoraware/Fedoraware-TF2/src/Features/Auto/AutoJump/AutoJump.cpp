@@ -117,6 +117,9 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			else if (!bCurrGrounded && pCmd->buttons & IN_DUCK || bReloading)
 				pCmd->buttons |= IN_ATTACK;
 		}
+
+		if (iFrame == -1 && pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON && G::Buttons & IN_ATTACK2)
+			pCmd->buttons |= IN_ATTACK2;
 	}
 
 	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible())

@@ -239,9 +239,11 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 		return false;
 	}
 
+	const int iStrafeSamples = pPlayer->OnSolid() ? Vars::Aimbot::Projectile::iGroundSamples.Value : Vars::Aimbot::Projectile::iAirSamples.Value;
+
 	// calculate strafe if desired
 	if (!cancelStrafe)
-		StrafePrediction(playerStorageOut);
+		StrafePrediction(playerStorageOut, iStrafeSamples);
 
 	// really hope this doesn't work like shit
 	if (useHitchance && playerStorageOut.m_flAverageYaw && !pPlayer->m_vecVelocity().IsZero())
@@ -257,11 +259,11 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			const float flDelta = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flCompareYaw), DEG2RAD(flRecordYaw)));
 			flAverageYaw += flDelta;
 
-			if ((i + 1) % Vars::Aimbot::Projectile::iSamples.Value == 0 || i == iSamples - 1)
+			if ((i + 1) % iStrafeSamples == 0 || i == iSamples - 1)
 			{
-				flAverageYaw /= i % Vars::Aimbot::Projectile::iSamples.Value + 1;
+				flAverageYaw /= i % iStrafeSamples + 1;
 				if (fabsf(playerStorageOut.m_flAverageYaw - flAverageYaw) > 0.5f)
-					flCurrentChance -= 1.f / ((iSamples - 1) / float(Vars::Aimbot::Projectile::iSamples.Value) + 1);
+					flCurrentChance -= 1.f / ((iSamples - 1) / float(iStrafeSamples) + 1);
 				flAverageYaw = 0.f;
 			}
 
@@ -270,7 +272,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 
 		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100.f)
 		{
-			Utils::ConLog("MovementSimulation", "Hitchance", { 125, 255, 83, 255 }, Vars::Debug::Logging.Value);
+			Utils::ConLog("MovementSimulation", std::format("Hitchance ({} < {})", flCurrentChance, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100.f).c_str(), {125, 255, 83, 255}, Vars::Debug::Logging.Value);
 
 			playerStorageOut.m_bFailed = true;
 			return false;
@@ -318,10 +320,10 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	return true;
 }
 
-float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int iSamples)
+float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int iSamples, bool* inc, bool* dec)
 {
-	const int iEntIndex = playerStorage.m_pPlayer->GetIndex();
-	const auto& mVelocityRecords = m_Velocities[iEntIndex];
+	/*
+	const auto& mVelocityRecords = m_Velocities[m_Velocities[playerStorage.m_pPlayer->GetIndex()]];
 
 	if (mVelocityRecords.size() < iSamples)
 		return 0.f;
@@ -338,6 +340,28 @@ float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int
 	}
 	flAverageYaw /= iSamples;
 	flAverageYaw = fmod(flAverageYaw + 180.0f, 360.0f) - 180.0f;
+	*/
+
+	const auto& mVelocityRecords = m_Velocities[playerStorage.m_pPlayer->GetIndex()];
+
+	if (mVelocityRecords.size() < iSamples)
+		return 0.f;
+
+	float flAverageYaw = 0.f, flCompareYaw;
+	for (int i = 0; i < iSamples; i++)
+	{
+		const float flRecordYaw = Math::VelocityToAngles(mVelocityRecords.at(i).m_vecVelocity).y;
+
+		if (i)
+		{
+			*inc = *inc && flCompareYaw < flRecordYaw;
+			*dec = *dec && flCompareYaw > flRecordYaw;
+			flAverageYaw += flCompareYaw - flRecordYaw;
+		}
+
+		flCompareYaw = flRecordYaw;
+	}
+	flAverageYaw /= iSamples - 1;
 
 	/*
 	auto get_velocity_degree = [](float velocity)
@@ -362,30 +386,42 @@ float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int
 	} // ugly fix for sweaty pricks
 	*/
 
-	Utils::ConLog("MovementSimulation", std::format("flAverageYaw calculated to {} from {}", flAverageYaw, iSamples).c_str(), { 83, 255, 83, 255 }, Vars::Debug::Logging.Value);
+	Utils::ConLog("MovementSimulation", std::format("flAverageYaw calculated to {} from {}", flAverageYaw, iSamples - 1).c_str(), { 83, 255, 83, 255 }, Vars::Debug::Logging.Value);
 
 	return flAverageYaw;
 }
 
-void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage)
+void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage, const int iSamples)
 {
 	if (playerStorage.m_pPlayer->OnSolid() ? !(Vars::Aimbot::Projectile::StrafePrediction.Value & (1 << 1)) : !(Vars::Aimbot::Projectile::StrafePrediction.Value & (1 << 0)))
 		return;
 
+	/*
 	float flAverageYaw = GetAverageYaw(playerStorage, Vars::Aimbot::Projectile::iSamples.Value);
 
-	if (fabsf(flAverageYaw) < 1.f)
-	{
-		flAverageYaw = 0.f;
+	if (!flAverageYaw || fabsf(flAverageYaw) < 1.f)
 		return;
-	}
-
-	//if (flAverageYaw == 0.f)
-	//	return;
 
 	//if (playerStorage.m_pPlayer->OnSolid())
 	//	playerStorage.m_MoveData.m_vecViewAngles.y += 22.5f * (flAverageYaw > 0.f ? 1.f : -1.f); // fix for ground strafe delay
 	playerStorage.m_flAverageYaw = flAverageYaw;
+	*/
+
+	bool inc = true, dec = true;
+	float flAverageYaw = GetAverageYaw(playerStorage, iSamples, &inc, &dec);
+
+	if (!flAverageYaw || Vars::Aimbot::Projectile::StrafeRate.Value && !inc && !dec)
+		return;
+
+	if (Vars::Aimbot::Projectile::StrafeAdjust.Value && playerStorage.m_pPlayer->OnSolid())
+	{
+		flAverageYaw /= TICK_INTERVAL * 50.0f;
+		if (fabsf(flAverageYaw) < 1.f)
+			return;
+		playerStorage.m_flAverageYaw = std::clamp(flAverageYaw, -4.3f, 4.3f);
+	}
+	else
+		playerStorage.m_flAverageYaw = flAverageYaw;
 }
 
 void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
@@ -399,7 +435,7 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	I::Prediction->m_bInPrediction = true;
 	I::Prediction->m_bFirstTimePredicted = false;
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL;
-	
+
 	float flCorrection = 0.f;
 	if (playerStorage.m_flAverageYaw)
 	{
@@ -412,7 +448,6 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	//	playerStorage.m_MoveData.m_vecViewAngles.y = Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity).y;
 
 	I::TFGameMovement->ProcessMovement(playerStorage.m_pPlayer, &playerStorage.m_MoveData);
-
 
 	playerStorage.m_MoveData.m_vecViewAngles.y -= flCorrection;
 }

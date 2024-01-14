@@ -9,9 +9,7 @@ namespace S
 MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __fastcall,
 	void* ecx, void* edx, const Vec3& vecAbsVelocity)
 {
-	static DWORD dwSetAbsVelocityCall = S::CBasePlayer_PostDataUpdate_SetAbsVelocityCall();
-
-	if (reinterpret_cast<DWORD>(_ReturnAddress()) == dwSetAbsVelocityCall)
+	if (reinterpret_cast<DWORD>(_ReturnAddress()) == S::CBasePlayer_PostDataUpdate_SetAbsVelocityCall())
 	{
 		if (const auto pBasePlayer = static_cast<CBaseEntity*>(ecx))
 		{

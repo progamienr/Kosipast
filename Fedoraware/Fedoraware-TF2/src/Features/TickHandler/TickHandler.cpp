@@ -103,6 +103,34 @@ int CTickshiftHandler::GetTicks(CBaseEntity* pLocal)
 	return 0;
 }
 
+bool CTickshiftHandler::ValidWeapon(CBaseCombatWeapon* pWeapon)
+{
+	switch (pWeapon->GetWeaponID())
+	{
+	case TF_WEAPON_LUNCHBOX:
+	case TF_WEAPON_JAR_MILK:
+	case TF_WEAPON_BUFF_ITEM:
+	case TF_WEAPON_JAR_GAS:
+	case TF_WEAPON_ROCKETPACK:
+	case TF_WEAPON_LASER_POINTER:
+	case TF_WEAPON_MEDIGUN:
+	case TF_WEAPON_SNIPERRIFLE:
+	case TF_WEAPON_SNIPERRIFLE_DECAP:
+	case TF_WEAPON_SNIPERRIFLE_CLASSIC:
+	case TF_WEAPON_COMPOUND_BOW:
+	case TF_WEAPON_JAR:
+	case TF_WEAPON_PDA_SPY:
+	case TF_WEAPON_PDA_SPY_BUILD:
+	case TF_WEAPON_PDA:
+	case TF_WEAPON_PDA_ENGINEER_BUILD:
+	case TF_WEAPON_PDA_ENGINEER_DESTROY:
+	case TF_WEAPON_BUILDER:
+		return false;
+	}
+
+	return true;
+}
+
 void CTickshiftHandler::Speedhack(CUserCmd* pCmd)
 {
 	bSpeedhack = Vars::CL_Move::SpeedEnabled.Value;
@@ -139,13 +167,18 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 {
 	if (auto pWeapon = g_EntityCache.GetWeapon())
 	{
-		const auto iWeaponID = pWeapon->GetWeaponID();
-		if ((G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload()) &&
-			iWeaponID != TF_WEAPON_PIPEBOMBLAUNCHER && iWeaponID != TF_WEAPON_CANNON)
-			G::WaitForShift = G::ShiftedTicks;
+		const int iWeaponID = pWeapon->GetWeaponID();
+		if (iWeaponID != TF_WEAPON_PIPEBOMBLAUNCHER && iWeaponID != TF_WEAPON_CANNON)
+		{
+			if (!ValidWeapon(pWeapon))
+				G::WaitForShift = 2;
+			else if (G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload())
+				G::WaitForShift = Vars::CL_Move::DoubleTap::TickLimit.Value;
+		}
 	}
+	else
+		G::WaitForShift = 2;
 	
-
 	G::MaxShift = g_ConVars.sv_maxusrcmdprocessticks ? g_ConVars.sv_maxusrcmdprocessticks->GetInt() : 24;
 	if (Vars::AntiHack::AntiAim::Active.Value)
 		G::MaxShift -= 3;

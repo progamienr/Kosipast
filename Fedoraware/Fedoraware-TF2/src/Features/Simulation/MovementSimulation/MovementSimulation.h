@@ -80,8 +80,8 @@ private:
 	void Reset(PlayerStorage& playerStorage);
 
 	bool SetupMoveData(PlayerStorage& playerStorage);
-	float GetAverageYaw(PlayerStorage& playerStorage, const int iSamples);
-	void StrafePrediction(PlayerStorage& playerStorage);
+	float GetAverageYaw(PlayerStorage& playerStorage, const int iSamples, bool* inc, bool* dec);
+	void StrafePrediction(PlayerStorage& playerStorage, const int iSamples);
 
 	bool m_bOldInPrediction = false;
 	bool m_bOldFirstTimePredicted = false;
