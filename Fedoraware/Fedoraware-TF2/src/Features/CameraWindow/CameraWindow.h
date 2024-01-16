@@ -11,7 +11,6 @@ public:
 	Vec3 CameraOrigin;
 	Vec3 CameraAngles;
 	bool ShouldDraw = false;
-	Rect_t ViewRect = { 50, 50, 800, 400 };
 
 	void Init();
 	void Draw();

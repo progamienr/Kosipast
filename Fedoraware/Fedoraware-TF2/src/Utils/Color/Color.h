@@ -75,6 +75,15 @@ struct DragBox_t
 	bool update = true;
 };
 
+struct WindowBox_t
+{
+	int x = 100;
+	int y = 100;
+	int w = 200;
+	int h = 150;
+	bool update = true;
+};
+
 namespace Color
 {
 	inline float TOFLOAT(byte x)

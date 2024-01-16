@@ -43,9 +43,7 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 			bool respawnTimeIncreased = false;
 			// theoretically the respawn times could change without extendfreeze but oh well
 			if (RespawnCache.find(pTeammate->GetIndex()) == RespawnCache.end())
-			{
 				RespawnCache[pTeammate->GetIndex()] = respawnTime;
-			}
 			if (RespawnCache[pTeammate->GetIndex()] + 4.9f < respawnTime)
 			{
 				respawnTimeIncreased = true;
@@ -82,38 +80,37 @@ void CSpectatorList::Run()
 
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
-		if (!pLocal->IsAlive() || !GetSpectators(pLocal)) { return; }
+		if (!pLocal->IsAlive() || !GetSpectators(pLocal))
+			return;
 
 		int x = Vars::Menu::SpectatorsDisplay.Value.x;
 		int iconOffset = 0;
 		int y = Vars::Menu::SpectatorsDisplay.Value.y + 8;
 
-		EStringAlign align = ALIGN_CENTERHORIZONTAL;
-		if (x <= 100)
+		EAlign align = ALIGN_TOP;
+		if (x <= (100 + 50 * Vars::Menu::DPI.Value))
 		{
-			iconOffset = 36;
-			x += 8;
-			align = ALIGN_DEFAULT;
+		//	iconOffset = 36;
+			x -= 42 * Vars::Menu::DPI.Value;
+			align = ALIGN_TOPLEFT;
 		}
-		else if (x >= g_ScreenSize.w - 200)
+		else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
 		{
-			x += 92;
-			align = ALIGN_REVERSE;
+			x += 42 * Vars::Menu::DPI.Value;
+			align = ALIGN_TOPRIGHT;
 		}
-		else
-		{
-			iconOffset = 16;
-			x += 50;
-		}
+		//else
+		//	iconOffset = 16;
 
 		//if (!Vars::Menu::SpectatorAvatars.Value)
-			iconOffset = 0;
+		//	iconOffset = 0;
 
-		g_Draw.String(g_Draw.GetFont(FONT_INDICATORS), x, y, Vars::Menu::Theme::Accent.Value, align, L"Spectating You:");
+		const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
+		g_Draw.String(fFont, x, y, Vars::Menu::Theme::Accent.Value, align, L"Spectating You:");
 		for (const auto& Spectator : Spectators)
 		{
-			y += g_Draw.GetFont(FONT_INDICATORS).nTall;
+			y += fFont.nTall;
 
 			/*
 			if (Vars::Visuals::SpectatorAvatars.Value)
@@ -124,12 +121,13 @@ void CSpectatorList::Run()
 					(Spectator.Name + Spectator.Mode + std::to_wstring(Spectator.RespawnIn) + std::wstring{L" -  (respawn s)"}).c_str(), w, h);
 				switch (align)
 				{
-				case ALIGN_DEFAULT: { w = 0; break; }
-				case ALIGN_CENTERHORIZONTAL: { w /= 2; break; }
+				case ALIGN_DEFAULT: w = 0; break;
+				case ALIGN_CENTERHORIZONTAL: w /= 2; break;
 				}
 
 				PlayerInfo_t pi{};
-				if (!I::EngineClient->GetPlayerInfo(Spectator.Index, &pi)) { continue; }
+				if (!I::EngineClient->GetPlayerInfo(Spectator.Index, &pi))
+					continue;
 
 				g_Draw.Avatar(x - w - (36 - iconOffset), y, 24, 24, pi.friendsID);
 				// center - half the width of the string
@@ -137,14 +135,14 @@ void CSpectatorList::Run()
 			}
 			*/
 
-			Color_t color = { 255, 255, 255, 255 };
+			Color_t color = Vars::Menu::Theme::Active.Value;
 			if (Spectator.Mode == std::wstring{L"1st"})
 				color = { 255, 200, 127, 255 };
 			if (Spectator.RespawnTimeIncreased)
 				color = { 255, 100, 100, 255 };
 			if (Spectator.IsFriend)
 				color = { 200, 255, 200, 255 };
-			g_Draw.String(g_Draw.GetFont(FONT_INDICATORS), x + iconOffset, y, color, align,
+			g_Draw.String(fFont, x + iconOffset, y, color, align,
 				L"%ls - %ls (respawn %ds)", Spectator.Name.data(), Spectator.Mode.data(), Spectator.RespawnIn);
 		}
 	}

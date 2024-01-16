@@ -542,23 +542,21 @@ void CCritHack::Draw()
 		return;
 
 	int x = Vars::Menu::CritsDisplay.Value.x;
-	int y = Vars::Menu::CritsDisplay.Value.y + 8; // + Vars::Fonts::FONT_INDICATORS::nTall.Value
+	int y = Vars::Menu::CritsDisplay.Value.y + 8;
 
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
-	EStringAlign align = ALIGN_CENTERHORIZONTAL;
-	if (x <= 100)
+	EAlign align = ALIGN_TOP;
+	if (x <= (100 + 50 * Vars::Menu::DPI.Value))
 	{
-		x += 8;
-		align = ALIGN_DEFAULT;
+		x -= 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPLEFT;
 	}
-	else if (x >= g_ScreenSize.w - 200)
+	else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
 	{
-		x += 92;
-		align = ALIGN_REVERSE;
+		x += 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPRIGHT;
 	}
-	else
-		x += 50;
 
 	if (WeaponCanCrit(pWeapon))
 	{
@@ -581,7 +579,7 @@ void CCritHack::Draw()
 					if (bRapidFire && Storage[slot].StreamWait > 0)
 					{
 						const float time = std::max((TICKS_TO_TIME(Storage[slot].StreamWait - pLocal->m_nTickBase())), 0.f);
-						g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, std::format("Wait {:.1f}s", time).c_str());
+						g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, std::format("Wait {:.1f}s", time).c_str());
 					}
 					else
 						g_Draw.String(fFont, x, y, { 150, 255, 150, 255 }, align, "Crit Ready");
@@ -596,21 +594,20 @@ void CCritHack::Draw()
 			else
 				g_Draw.String(fFont, x, y, { 255, 150, 150, 255 }, align, std::format("Deal {} damage", DamageTilUnban).c_str());
 
-			g_Draw.String(fFont, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value + 2, { 255, 255, 255, 255 }, align, std::format("{} / {} potential Crits", Storage[slot].AvailableCrits, Storage[slot].PotentialCrits).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall + 2, Vars::Menu::Theme::Active.Value, align, std::format("{} / {} potential crits", Storage[slot].AvailableCrits, Storage[slot].PotentialCrits).c_str());
 		}
 		else
-			g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, "Calculating");
+			g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "Calculating");
 
 		if (Vars::Debug::Info.Value)
 		{
-			const int iHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
-			g_Draw.String(fFont, x, y + iHeight * 3, { 255, 255, 255, 255 }, align, std::format("AllDamage: {}, CritDamage: {}", AllDamage, CritDamage).c_str());
-			g_Draw.String(fFont, x, y + iHeight * 4, { 255, 255, 255, 255 }, align, std::format("Bucket: {}", Storage[slot].Bucket).c_str());
-			g_Draw.String(fFont, x, y + iHeight * 5, { 255, 255, 255, 255 }, align, std::format("Damage: {}, Cost: {}", Storage[slot].Damage, Storage[slot].Cost).c_str());
-			g_Draw.String(fFont, x, y + iHeight * 6, { 255, 255, 255, 255 }, align, std::format("Shots: {}, Crits: {}", Storage[slot].ShotsCrits.first, Storage[slot].ShotsCrits.second).c_str());
-			g_Draw.String(fFont, x, y + iHeight * 7, { 255, 255, 255, 255 }, align, std::format("CritBanned: {}, DamageTilUnban: {}", CritBanned, DamageTilUnban).c_str());
-			g_Draw.String(fFont, x, y + iHeight * 8, { 255, 255, 255, 255 }, align, std::format("CritChance: {:.2f}", CritChance).c_str());
-			g_Draw.String(fFont, x, y + iHeight * 9, { 255, 255, 255, 255 }, align, std::format("Force: {}, Skip: {}", ForceCmds.size(), SkipCmds.size()).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 3, { 255, 255, 255, 255 }, align, std::format("AllDamage: {}, CritDamage: {}", AllDamage, CritDamage).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 4, { 255, 255, 255, 255 }, align, std::format("Bucket: {}", Storage[slot].Bucket).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 5, { 255, 255, 255, 255 }, align, std::format("Damage: {}, Cost: {}", Storage[slot].Damage, Storage[slot].Cost).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 6, { 255, 255, 255, 255 }, align, std::format("Shots: {}, Crits: {}", Storage[slot].ShotsCrits.first, Storage[slot].ShotsCrits.second).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 7, { 255, 255, 255, 255 }, align, std::format("CritBanned: {}, DamageTilUnban: {}", CritBanned, DamageTilUnban).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 8, { 255, 255, 255, 255 }, align, std::format("CritChance: {:.2f}", CritChance).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 9, { 255, 255, 255, 255 }, align, std::format("Force: {}, Skip: {}", ForceCmds.size(), SkipCmds.size()).c_str());
 		}
 	}
 }

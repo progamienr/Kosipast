@@ -163,7 +163,7 @@ MAKE_HOOK(C_BaseEntity_FireBullets, S::CBaseEntity_FireBullets(), void, __fastca
 			Particles::ParticleTracer(team == TEAM_RED ? "dxhr_lightningball_hit_zap_red" : "dxhr_lightningball_hit_zap_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 		else if (string == "Merasmus ZAP")
 			Particles::ParticleTracer("merasmus_zap", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Merasmus ZAP Beam 2")
+		else if (string == "Merasmus ZAP 2")
 			Particles::ParticleTracer("merasmus_zap_beam02", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 		else if (string == "Big Nasty")
 			Particles::ParticleTracer(team == TEAM_RED ? "bullet_bignasty_tracer01_blue" : "bullet_bignasty_tracer01_red", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);

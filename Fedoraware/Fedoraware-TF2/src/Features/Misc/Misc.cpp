@@ -444,59 +444,6 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 				Particles::DispatchParticleEffect("ping_circle", PeekReturnPos, {});
 		}
 
-		// We need a peek direction (A / D)
-		if (!Vars::CL_Move::AutoPeekFree.Value && !hasDirection && pLocal->OnSolid())
-		{
-			const Vec3 viewAngles = I::EngineClient->GetViewAngles();
-			Vec3 vForward, vRight, vUp, vDirection;
-			Math::AngleVectors(viewAngles, &vForward, &vRight, &vUp);
-
-			if (GetAsyncKeyState(VK_A) & 0x8000 || GetAsyncKeyState(VK_W) & 0x8000 || GetAsyncKeyState(VK_D) & 0x8000 || GetAsyncKeyState(VK_S) & 0x8000)
-			{
-				CGameTrace trace;
-				CTraceFilterWorldAndPropsOnly traceFilter;
-				Ray_t traceRay;
-
-				if (GetAsyncKeyState(VK_A) & 0x8000 || GetAsyncKeyState(VK_W) & 0x8000)
-					vDirection = pLocal->GetEyePosition() - vRight * Vars::CL_Move::AutoPeekDistance.Value; // Left
-				else if (GetAsyncKeyState(VK_D) & 0x8000 || GetAsyncKeyState(VK_S) & 0x8000)
-					vDirection = pLocal->GetEyePosition() + vRight * Vars::CL_Move::AutoPeekDistance.Value; // Right
-
-				traceRay.Init(pLocal->GetEyePosition(), vDirection);
-				I::EngineTrace->TraceRay(traceRay, MASK_SOLID, &traceFilter, &trace);
-				peekStart = trace.vStartPos;
-				peekVector = trace.vEndPos - trace.vStartPos;
-				hasDirection = true;
-			}
-		}
-
-		// Should we peek?
-		if (!Vars::CL_Move::AutoPeekFree.Value && hasDirection)
-		{
-			bool targetFound = false;
-			for (int i = 10; i < 100; i += 10)
-			{
-				const float step = i / 100.f;
-				Vec3 currentPos = peekStart + (peekVector * step);
-				if (CanAttack(pLocal, currentPos))
-				{
-					Utils::WalkTo(pCmd, pLocal, currentPos);
-					targetFound = true;
-				}
-
-				if (targetFound)
-				{
-					I::DebugOverlay->AddLineOverlayAlpha(PeekReturnPos, currentPos, 68, 189, 50, 100, false, 0.04f);
-					break;
-				}
-
-				I::DebugOverlay->AddLineOverlayAlpha(PeekReturnPos, currentPos, 235, 59, 90, 100, false, 0.04f);
-			}
-
-			if (!targetFound)
-				isReturning = true;
-		}
-
 		// We've just attacked. Let's return!
 		if (G::LastUserCmd->buttons & IN_ATTACK || G::IsAttacking)
 			isReturning = true;

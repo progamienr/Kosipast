@@ -102,6 +102,7 @@ void CFakeLag::Run(CUserCmd* pCmd, bool* pSendPacket)
 	switch (Vars::CL_Move::FakeLag::Type.Value)
 	{
 	case FL_Plain: G::ChokeGoal = Vars::CL_Move::FakeLag::Value.Value; break;
+	case FL_Random: if (!G::ChokeGoal) G::ChokeGoal = Utils::RandIntSimple(Vars::CL_Move::FakeLag::Min.Value, Vars::CL_Move::FakeLag::Max.Value); break;
 	case FL_Adaptive: G::ChokeGoal = 22; break;
 	}
 
@@ -112,8 +113,6 @@ void CFakeLag::Run(CUserCmd* pCmd, bool* pSendPacket)
 		G::ChokeAmount = G::ChokeGoal = 0;
 		iAirTicks = 0;
 		bUnducking = false;
-		if (Vars::CL_Move::FakeLag::Type.Value == FL_Random)
-			G::ChokeGoal = Utils::RandIntSimple(Vars::CL_Move::FakeLag::Min.Value, Vars::CL_Move::FakeLag::Max.Value);
 		return;
 	}
 

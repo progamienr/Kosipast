@@ -48,12 +48,9 @@ void CVisuals::DrawAimbotFOV(CBaseEntity* pLocal)
 	//Current Active Aimbot FOV
 	if (curFOV)
 	{
-		const float flFOV = static_cast<float>(pLocal->IsScoped() ? Vars::Visuals::ZoomFieldOfView.Value : Vars::Visuals::FieldOfView.Value);
-		const float flR = tanf(DEG2RAD(curFOV) / 2.0f) / tanf(
-			//DEG2RAD((pLocal->IsScoped() && !Vars::Visuals::RemoveZoom.Value) ? 30.0f : flFOV) /
-			DEG2RAD(flFOV) / 2.0f) * g_ScreenSize.w;
+		const float flR = tanf(DEG2RAD(curFOV) / 2.0f) / tanf(DEG2RAD(pLocal->m_iFOV()) / 2.0f) * g_ScreenSize.w;
 		const Color_t clr = Vars::Colors::FOVCircle.Value;
-		g_Draw.OutlinedCircle(g_ScreenSize.w / 2, g_ScreenSize.h / 2, flR, 68, clr);
+		g_Draw.LineCircle(g_ScreenSize.w / 2, g_ScreenSize.h / 2, flR, 68, clr);
 	}
 }
 
@@ -70,22 +67,22 @@ void CVisuals::DrawTickbaseText()
 
 	const DragBox_t dtPos = Vars::Menu::TicksDisplay.Value;
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
-	const int iHeight = Vars::Fonts::FONT_INDICATORS::nTall.Value;
+	const int offset = 7 + 12 * Vars::Menu::DPI.Value;
 
-	g_Draw.String(fFont, dtPos.x + 50, dtPos.y + 15 - iHeight, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Ticks %d / %d", iTicks, G::MaxShift);
+	g_Draw.String(fFont, dtPos.x, dtPos.y + 2, Vars::Menu::Theme::Active.Value, ALIGN_TOP, L"Ticks %d / %d", iTicks, G::MaxShift);
 	if (G::WaitForShift)
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"Not Ready");
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall + offset, Vars::Menu::Theme::Active.Value, ALIGN_TOP, L"Not Ready");
 
 	if (Vars::Debug::Info.Value)
 	{
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 3 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Recharge: %d", G::Recharge);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 4 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::DoubleTap: %d", G::DoubleTap);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 5 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::Teleport: %d", G::Teleport);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 6 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::ShiftedGoal: %d", G::ShiftedGoal);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 7 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::AntiWarp: %d", G::AntiWarp);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 8 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::MaxShift: %d", G::MaxShift);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 9 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::WeaponCanAttack %d (%d)", G::WeaponCanAttack, I::GlobalVars->tickcount % 66);
-		g_Draw.String(fFont, dtPos.x + 50, dtPos.y + iHeight * 10 + 19, { 255,255,255,255 }, ALIGN_CENTERHORIZONTAL, L"G::IsAttacking %d", G::IsAttacking);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 3 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::Recharge: %d", G::Recharge);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 4 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::DoubleTap: %d", G::DoubleTap);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 5 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::Teleport: %d", G::Teleport);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 6 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::ShiftedGoal: %d", G::ShiftedGoal);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 7 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::AntiWarp: %d", G::AntiWarp);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 8 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::MaxShift: %d", G::MaxShift);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 9 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::WeaponCanAttack %d (%d)", G::WeaponCanAttack, I::GlobalVars->tickcount % 66);
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 10 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::IsAttacking %d", G::IsAttacking);
 	}
 }
 void CVisuals::DrawTickbaseBars()
@@ -100,17 +97,20 @@ void CVisuals::DrawTickbaseBars()
 	const int iTicks = std::clamp(G::ShiftedTicks + G::ChokeAmount, 0, G::MaxShift);
 
 	const DragBox_t dtPos = Vars::Menu::TicksDisplay.Value;
+	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 	const float ratioCurrent = (float)iTicks / (float)G::MaxShift;
 
+	float sizeX = 100 * Vars::Menu::DPI.Value, sizeY = 12 * Vars::Menu::DPI.Value;
 	ImGui::GetBackgroundDrawList()->AddRectFilled(
-		ImVec2(dtPos.x, dtPos.y + 18), ImVec2(dtPos.x + 100, dtPos.y + 30),
+		ImVec2(dtPos.x - sizeX / 2, dtPos.y + 5 + fFont.nTall), ImVec2(dtPos.x + sizeX / 2, dtPos.y + 5 + fFont.nTall + sizeY),
 		F::Menu.Background, 10
 	);
 	if (iTicks && ratioCurrent)
 	{
-		ImGui::GetBackgroundDrawList()->PushClipRect(ImVec2(dtPos.x + 2, dtPos.y + 20), ImVec2(dtPos.x + 2 + 96 * ratioCurrent, dtPos.y + 28), true);
+		sizeX = 96 * Vars::Menu::DPI.Value, sizeY = 8 * Vars::Menu::DPI.Value; float posY = dtPos.y + 5 + fFont.nTall + 2 * Vars::Menu::DPI.Value;
+		ImGui::GetBackgroundDrawList()->PushClipRect(ImVec2(dtPos.x - sizeX / 2, posY), ImVec2(dtPos.x - sizeX / 2 + sizeX * ratioCurrent + 1, posY + sizeY), true);
 		ImGui::GetBackgroundDrawList()->AddRectFilled(
-			ImVec2(dtPos.x + 2, dtPos.y + 20), ImVec2(dtPos.x + 98, dtPos.y + 28),
+			ImVec2(dtPos.x - sizeX / 2, posY), ImVec2(dtPos.x + sizeX / 2, posY + sizeY),
 			ImColor(Vars::Menu::Theme::Accent.Value.r, Vars::Menu::Theme::Accent.Value.g, Vars::Menu::Theme::Accent.Value.b, Vars::Menu::Theme::Accent.Value.a), 10
 		);
 		ImGui::GetBackgroundDrawList()->PopClipRect();
@@ -126,19 +126,17 @@ void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
 	int y = Vars::Menu::ConditionsDisplay.Value.y + 8;
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
-	EStringAlign align = ALIGN_CENTERHORIZONTAL;
-	if (x <= 100)
+	EAlign align = ALIGN_TOP;
+	if (x <= (100 + 50 * Vars::Menu::DPI.Value))
 	{
-		x += 8;
-		align = ALIGN_DEFAULT;
+		x -= 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPLEFT;
 	}
-	else if (x >= g_ScreenSize.w - 200)
+	else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
 	{
-		x += 92;
-		align = ALIGN_REVERSE;
+		x += 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPRIGHT;
 	}
-	else
-		x += 50;
 
 	std::vector<std::wstring> conditionsVec = F::LocalConditions.GetPlayerConditions(pLocal);
 
@@ -146,7 +144,7 @@ void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
 	int width, height;
 	for (const std::wstring& cond : conditionsVec)
 	{
-		g_Draw.String(fFont, x, y + offset, { 255, 255, 255, 255 }, align, cond.data());
+		g_Draw.String(fFont, x, y + offset, Vars::Menu::Theme::Active.Value, align, cond.data());
 		I::VGuiSurface->GetTextSize(fFont.dwFont, cond.data(), width, height);
 		offset += height;
 	}
@@ -171,44 +169,42 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 	int y = Vars::Menu::PingDisplay.Value.y + 8;
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
-	EStringAlign align = ALIGN_CENTERHORIZONTAL;
-	if (x <= 100)
+	EAlign align = ALIGN_TOP;
+	if (x <= (100 + 50 * Vars::Menu::DPI.Value))
 	{
-		x += 8;
-		align = ALIGN_DEFAULT;
+		x -= 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPLEFT;
 	}
-	else if (x >= g_ScreenSize.w - 200)
+	else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
 	{
-		x += 92;
-		align = ALIGN_REVERSE;
+		x += 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPRIGHT;
 	}
-	else
-		x += 50;
 
 	if (flFake || Vars::Backtrack::Interp.Value && Vars::Backtrack::Enabled.Value)
 	{
 		if (flLatency > 0.f)
 		{
 			if (!Vars::Debug::Info.Value)
-				g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, "Real %.0f (+ %.0f) ms", flLatency, flFake);
+				g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "Real %.0f (+ %.0f) ms", flLatency, flFake);
 			else
-				g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, "In %.0f, Out %.0f (+ %.0f) ms", flLatencyIn, flLatencyOut, flFake);
+				g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "In %.0f, Out %.0f (+ %.0f) ms", flLatencyIn, flLatencyOut, flFake);
 		}
 		else
-			g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, "Syncing");
+			g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "Syncing");
 	}
 	else
 	{
 		if (!Vars::Debug::Info.Value)
-			g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, "Real %.0f ms", flLatency);
+			g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "Real %.0f ms", flLatency);
 		else
-			g_Draw.String(fFont, x, y, { 255, 255, 255, 255 }, align, "In %.0f, Out %.0f ms", flLatencyIn, flLatencyOut);
+			g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "In %.0f, Out %.0f ms", flLatencyIn, flLatencyOut);
 	}
-	g_Draw.String(fFont, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value + 2, { 255, 255, 255, 255 }, align, "Scoreboard %d ms", iLatencyScoreBoard);
+	g_Draw.String(fFont, x, y + fFont.nTall + 2, Vars::Menu::Theme::Active.Value, align, "Scoreboard %d ms", iLatencyScoreBoard);
 	if (Vars::Debug::Info.Value)
 	{
-		g_Draw.String(fFont, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 2 + 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
-		g_Draw.String(fFont, x, y + Vars::Fonts::FONT_INDICATORS::nTall.Value * 3 + 2, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
+		g_Draw.String(fFont, x, y + fFont.nTall * 2 + 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
+		g_Draw.String(fFont, x, y + fFont.nTall * 3 + 2, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
 	}
 }
 
@@ -228,7 +224,7 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 		return;
 
 	ProjectileInfo projInfo = {};
-	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? Vars::Aimbot::Projectile::AutoReleaseAt.Value / 100.f : -1.f))
+	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? float(Vars::Aimbot::Projectile::AutoReleaseAt.Value) / 100 : -1.f))
 		return;
 
 	if (!F::ProjSim.Initialize(projInfo))
@@ -322,21 +318,21 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 		int yoffset = 10, xoffset = 10;
 		const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
-		g_Draw.String(fFont, xoffset, yoffset += 15, Utils::Rainbow(), ALIGN_DEFAULT, "Fedoraware");
+		g_Draw.String(fFont, xoffset, yoffset += 15, Utils::Rainbow(), ALIGN_TOPLEFT, "Fedoraware");
 		{
 			Vec3 vec = pLocal->m_vecOrigin();
-			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "Origin: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
+			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Origin: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
 		}
 		{
 			Vec3 vec = pLocal->m_vecVelocity();
-			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "Velocity: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
+			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
 		}
 
 		auto pCmd = G::LastUserCmd;
 		if (!pCmd)
 			return;
-		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
-		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_DEFAULT, "pCmd buttons: %i", pCmd->buttons);
+		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
+		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd buttons: %i", pCmd->buttons);
 	}
 }
 
@@ -426,7 +422,7 @@ void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Colo
 			const auto& vStart = Line[i - 1].first;
 			const auto& vRotate = Line[i - 1].second;
 			const auto& vEnd = Line[i].first;
-			if ((i % Vars::Visuals::SeperatorSpacing.Value) == 0)
+			if (((Line.size() - i) % Vars::Visuals::SeperatorSpacing.Value) == 0)
 				RenderLine(vStart, vRotate, Color);
 			RenderLine(vStart, vEnd, Color);
 		}
@@ -575,20 +571,15 @@ void CVisuals::FOV(CViewSetup* pView)
 
 	if (pLocal && pView)
 	{
-		/*
-		if (pLocal->IsScoped() && !Vars::Visuals::RemoveZoom.Value)
-			return;
-		*/
+		pLocal->m_iFOV() = pView->fov;
 
 		const int fov = pLocal->IsScoped() ? Vars::Visuals::ZoomFieldOfView.Value : Vars::Visuals::FieldOfView.Value;
+		if (!fov)
+			return;
 
 		pView->fov = static_cast<float>(fov);
-
 		if (pLocal->IsAlive())
-		{
-			pLocal->SetFov(fov);
-			//pLocal->m_iDefaultFOV() = fov;
-		}
+			pLocal->m_iFOV() = fov;
 	}
 }
 
@@ -599,15 +590,12 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 		// Toggle key
 		if (Vars::Visuals::ThirdPerson::Key.Value)
 		{
-			if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible())
-			{
-				if (F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
-					Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
-			}
+			if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible() && F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
+				Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
 		}
 
 		if (!Vars::Visuals::ThirdPerson::Active.Value
-			|| ((!Vars::Visuals::RemoveScope.Value || Vars::Visuals::ZoomFieldOfView.Value < 70/*!Vars::Visuals::RemoveZoom.Value*/) && pLocal->IsScoped())
+			|| ((!Vars::Visuals::RemoveScope.Value || Vars::Visuals::ZoomFieldOfView.Value < 70) && pLocal->IsScoped())
 			|| !pLocal || pLocal->IsTaunting() || !pLocal->IsAlive() || pLocal->IsAGhost())
 		{
 			if (I::Input->CAM_IsThirdPerson())

@@ -107,7 +107,7 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 			//{
 			//	I::Surface->DrawSetTexture(nAvatarID);
 			//	I::Surface->DrawTexturedRect(100, 300, w, h);
-			//	g_Draw.OutlinedCircle(100 + (w / 2), 300 + (h / 2), w / 2, 300, Utils::Rainbow());
+			//	g_Draw.LineCircle(100 + (w / 2), 300 + (h / 2), w / 2, 300, Utils::Rainbow());
 			//}
 
 			F::ESP.Run();

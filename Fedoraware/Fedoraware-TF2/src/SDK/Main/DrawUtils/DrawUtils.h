@@ -24,12 +24,16 @@ enum EFonts {
 	FONT_ENUM_SIZE // End of the font enum
 };
 
-enum EStringAlign {
-	ALIGN_DEFAULT,
+enum EAlign {
+	ALIGN_TOPLEFT,
+	ALIGN_TOP,
+	ALIGN_TOPRIGHT,
+	ALIGN_LEFT,
 	ALIGN_CENTER,
-	ALIGN_CENTERVERTICAL,
-	ALIGN_CENTERHORIZONTAL,
-	ALIGN_REVERSE
+	ALIGN_RIGHT,
+	ALIGN_BOTTOMLEFT,
+	ALIGN_BOTTOM,
+	ALIGN_BOTTOMRIGHT
 };
 
 class CDraw {
@@ -41,34 +45,38 @@ public:
 	void RemakeFonts();
 	void ReloadFonts();
 
-	void String(const Font_t& font, int x, int y, const Color_t& clr, const EStringAlign& align, const char* str, ...);
-	void String(const Font_t& font, int x, int y, const Color_t& clr, const EStringAlign& align, const wchar_t* str, ...);
+	void String(const Font_t& font, int x, int y, const Color_t& clr, const EAlign& align, const char* str, ...);
+	void String(const Font_t& font, int x, int y, const Color_t& clr, const EAlign& align, const wchar_t* str, ...);
+
 	void Line(int x, int y, int x1, int y1, const Color_t& clr);
 	void DrawTexturedPolygon(int count, Vertex_t* vertices, const Color_t& clr);
-	void DrawFilledTriangle(const std::array<Vec2, 3>& points, const Color_t& clr);
-	void DrawOutlinedTriangle(const std::array<Vec2, 3>& points, const Color_t& clr);
-	void Rect(int x, int y, int w, int h, const Color_t& clr);
-	void RectOverlay(int x, int y, int w, int h, float bwidthp, const Color_t& clr, const Color_t& outline_clr, bool horizontal);
-	void OutlinedRect(int x, int y, int w, int h, const Color_t& clr);
-	void GradientRect(int x, int y, int x1, int y1, const Color_t& top_clr, const Color_t& bottom_clr, bool horizontal);
-	void GradientRectWH(int x, int y, int w, int h, const Color_t& top_clr, const Color_t& bottom_clr, bool horizontal);
-	void OutlinedGradientBar(int x, int y, int w, int h, float bwidthp, const Color_t& top_clr, const Color_t& bottom_clr, const Color_t& outline_clr, bool horizontal);
-	void GradientRectA(int x, int y, int x1, int y1, const Color_t& top_clr, const Color_t& bottom_clr, bool horizontal);
-	void OutlinedCircle(int x, int y, float radius, int segments, const Color_t& clr);
-	void FilledCircle(int x, int y, int radius, int segments, Color_t clr);
-	void CornerRect(int x, int y, int w, int h, int _x, int _y, const Color_t& color);
+
+	void DrawFillTriangle(const std::array<Vec2, 3>& points, const Color_t& clr);
+	void DrawLineTriangle(const std::array<Vec2, 3>& points, const Color_t& clr);
+
+	void FillRect(int x, int y, int w, int h, const Color_t& clr);
+	void LineRect(int x, int y, int w, int h, const Color_t& clr);
+	void GradientRect(int x, int y, int w, int h, const Color_t& top_clr, const Color_t& bottom_clr, bool horizontal);
+	void FillRectOutline(int x, int y, int w, int h, const Color_t& clr, const Color_t& out = { 0, 0, 0, 255 });
+	void LineRectOutline(int x, int y, int w, int h, const Color_t& clr, const Color_t& out = { 0, 0, 0, 255 }, bool inside = true);
+	void FillRectPercent(int x, int y, int w, int h, float t, const Color_t& clr, const Color_t& out = { 0, 0, 0, 255 }, const EAlign& align = ALIGN_LEFT, bool adjust = false);
+	void RoundRect(int x, int y, int w, int h, int radius, const Color_t& col);
+
+	void FillCircle(int x, int y, int radius, int segments, Color_t clr);
+	void LineCircle(int x, int y, float radius, int segments, const Color_t& clr);
+
 	void Texture(int x, int y, int w, int h, const Color_t& clr, int nIndex);
 	CHudTexture* GetIcon(const char* szIcon, int eIconFormat = 0);
 	int CreateTextureFromArray(const unsigned char* rgba, int w, int h);
 	void DrawHudTexture(float x0, float y0, float s0, const CHudTexture* texture, Color_t col0);
 	void DrawHudTextureByName(float x0, float y0, float s0, const char* textureName, Color_t col0);
 	void Avatar(int x, int y, int w, int h, uint32 nFriendID);
-	void RoundedBoxStatic(int x, int y, int w, int h, int radius, const Color_t& col);
+	void ClearAvatarCache();
+
 	float EaseOut(float start, float end, float speed);
 	float EaseIn(float start, float end, float speed);
 	float Linear(float start, float end, float speed);
 	bool Timer();
-	void ClearAvatarCache();
 
 	const Font_t& GetFont(size_t idx) { return m_Fonts[idx]; }
 };

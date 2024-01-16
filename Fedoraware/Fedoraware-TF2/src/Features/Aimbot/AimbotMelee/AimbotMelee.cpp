@@ -212,7 +212,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 			F::MoveSim.Initialize(target.m_pEntity, targetStorage[target.m_pEntity], false);
 		}
 
-		for (int i = 0; i < iMax; i++) // intended for plocal to collide with targets but seems inconsistent
+		for (int i = 0; i < iMax; i++) // intended for plocal to collide with targets
 		{
 			if (i < iMax/* - 1*/)
 			{

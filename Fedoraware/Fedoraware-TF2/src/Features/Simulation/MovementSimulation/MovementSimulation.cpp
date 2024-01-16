@@ -270,9 +270,9 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			flCompareYaw = flRecordYaw;
 		}
 
-		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100.f)
+		if (flCurrentChance < float(Vars::Aimbot::Projectile::StrafePredictionHitchance.Value) / 100)
 		{
-			Utils::ConLog("MovementSimulation", std::format("Hitchance ({} < {})", flCurrentChance, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100.f).c_str(), {125, 255, 83, 255}, Vars::Debug::Logging.Value);
+			Utils::ConLog("MovementSimulation", std::format("Hitchance ({}%% < {}%%)", flCurrentChance * 100, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value).c_str(), {125, 255, 83, 255}, Vars::Debug::Logging.Value);
 
 			playerStorageOut.m_bFailed = true;
 			return false;

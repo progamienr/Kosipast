@@ -67,7 +67,7 @@ enum FColorPicker_
 
 namespace ImGui
 {
-	// to do: fix SetMouseCursor somehow, going to assume the same is overriding it
+	// to do: fix SetMouseCursor somehow, going to assume the game is overriding it
 
 	std::unordered_map<std::string, int> actives;
 
@@ -415,6 +415,10 @@ namespace ImGui
 
 	__inline bool FSlider(const char* label, float* var1, float* var2, float v_min, float v_max, float step = 1.f, const char* fmt = "%.0f", int flags = 0)
 	{
+		float originalVar1 = *var1, originalVar2;
+		if (var2)
+			originalVar2 = *var2;
+
 		if (flags & FSlider_Right)
 			SameLine(GetWindowSize().x / 2 + 4);
 
@@ -460,7 +464,7 @@ namespace ImGui
 								*var1 = text != "" ? std::stof(text) : 0.f;
 								*var1 = std::min(*var1, *var2 - step);
 								if (!(flags & FSlider_Precision))
-									*var1 = *var1 - fmodf(*var1, step);
+									*var1 = *var1 - fnmodf(*var1 - step / 2, step) + step / 2;
 								if (flags & FSlider_Clamp)
 									*var1 = std::clamp(*var1, v_min, v_max);
 								break;
@@ -468,7 +472,7 @@ namespace ImGui
 								*var2 = text != "" ? std::stof(text) : 0.f;
 								*var2 = std::max(*var2, *var1 + step);
 								if (!(flags & FSlider_Precision))
-									*var2 = *var2 - fmodf(*var2, step);
+									*var2 = *var2 - fnmodf(*var2 - step / 2, step) + step / 2;
 								if (flags & FSlider_Clamp)
 									*var2 = std::clamp(*var2, v_min, v_max);
 							}
@@ -476,7 +480,7 @@ namespace ImGui
 						{
 							*var1 = text != "" ? std::stof(text) : 0.f;
 							if (!(flags & FSlider_Precision))
-								*var1 = *var1 - fmodf(*var1, step);
+								*var1 = *var1 - fnmodf(*var1 - step / 2, step) + step / 2;
 							if (flags & FSlider_Clamp)
 								*var1 = std::clamp(*var1, v_min, v_max);
 						}
@@ -610,7 +614,11 @@ namespace ImGui
 		Button("##", { maxs.x - mins.x + 10, 12 }); // don't drag it around
 		SetCursorPos(restorePos); Dummy({ 0, flags & (FSlider_Left | FSlider_Right) ? 32.f : 24.f });
 
-		return false;
+		bool changed = *var1 != originalVar1;
+		if (!changed && var2)
+			changed = *var2 != originalVar2;
+
+		return changed;
 	}
 
 	__inline bool FSlider(const char* label, int* var1, int* var2, int v_min, int v_max, int step = 1, const char* fmt = "%d", int flags = 0)

@@ -20,12 +20,14 @@ void CCameraWindow::Draw()
 	if (!CameraMat || !I::EngineClient->IsInGame() || !ShouldDraw)
 		return;
 
+	const WindowBox_t& info = Vars::Visuals::ProjectileWindow.Value;
+
 	// Draw to screen
 	const auto renderCtx = I::MaterialSystem->GetRenderContext();
 	renderCtx->DrawScreenSpaceRectangle(
 		CameraMat,
-		ViewRect.x, ViewRect.y, ViewRect.w, ViewRect.h,
-		0, 0, ViewRect.w, ViewRect.h,
+		info.x, info.y, info.w, info.h,
+		0, 0, info.w, info.h,
 		CameraTex->GetActualWidth(), CameraTex->GetActualHeight(),
 		nullptr, 1, 1
 	);
@@ -38,6 +40,8 @@ void CCameraWindow::RenderView(void* ecx, const CViewSetup& pViewSetup)
 	if (!CameraTex || !ShouldDraw)
 		return;
 
+	const WindowBox_t& info = Vars::Visuals::ProjectileWindow.Value;
+
 	CViewSetup viewSetup = pViewSetup;
 	viewSetup.x = 0;
 	viewSetup.y = 0;
@@ -45,8 +49,8 @@ void CCameraWindow::RenderView(void* ecx, const CViewSetup& pViewSetup)
 	viewSetup.origin = CameraOrigin;
 	viewSetup.angles = CameraAngles;
 
-	viewSetup.width = ViewRect.w + 1;
-	viewSetup.height = ViewRect.h + 1;
+	viewSetup.width = info.w + 1;
+	viewSetup.height = info.h + 1;
 	viewSetup.m_flAspectRatio = static_cast<float>(viewSetup.width) / static_cast<float>(viewSetup.height);
 	viewSetup.fov = 90;
 

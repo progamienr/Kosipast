@@ -108,6 +108,17 @@ void CConfigManager::SaveJson(const char* name, const DragBox_t& val)
 	WriteTree.put_child(name, dragBoxTree);
 }
 
+void CConfigManager::SaveJson(const char* name, const WindowBox_t& val)
+{
+	boost::property_tree::ptree dragBoxTree;
+	dragBoxTree.put("x", val.x);
+	dragBoxTree.put("y", val.y);
+	dragBoxTree.put("w", val.w);
+	dragBoxTree.put("h", val.h);
+
+	WriteTree.put_child(name, dragBoxTree);
+}
+
 void CConfigManager::LoadJson(const char* name, bool& val)
 {
 	if (auto getValue = ReadTree.get_optional<bool>(name))
@@ -190,6 +201,18 @@ void CConfigManager::LoadJson(const char* name, DragBox_t& val)
 	}
 }
 
+void CConfigManager::LoadJson(const char* name, WindowBox_t& val)
+{
+	if (const auto getChild = ReadTree.get_child_optional(name))
+	{
+		if (auto getValue = getChild->get_optional<int>("x")) { val.x = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("y")) { val.y = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("w")) { val.w = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("h")) { val.h = *getValue; }
+		val.update = true;
+	}
+}
+
 CConfigManager::CConfigManager()
 {
 	ConfigPath = std::filesystem::current_path().string() + "\\FedCfgs";
@@ -237,6 +260,7 @@ bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 			else SaveT(Vec3)
 			else SaveT(Chams_t)
 			else SaveT(DragBox_t)
+			else SaveT(WindowBox_t)
 		}
 
 		write_json(ConfigPath + "\\" + configName + ConfigExtension, WriteTree);
@@ -284,6 +308,7 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 			else LoadT(Vec3)
 			else LoadT(Chams_t)
 			else LoadT(DragBox_t)
+			else LoadT(WindowBox_t)
 		}
 
 		CurrentConfig = configName; CurrentVisuals = "";
@@ -318,6 +343,7 @@ bool CConfigManager::SaveVisual(const std::string& configName, bool bNotify)
 			else SaveT(Vec3)
 			else SaveT(Chams_t)
 			else SaveT(DragBox_t)
+			else SaveT(WindowBox_t)
 		}
 
 		write_json(ConfigPath + "\\Visuals\\" + configName + ConfigExtension, WriteTree);
@@ -360,6 +386,7 @@ bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 			else LoadT(Vec3)
 			else LoadT(Chams_t)
 			else LoadT(DragBox_t)
+			else LoadT(WindowBox_t)
 		}
 
 		g_Draw.RemakeFonts();

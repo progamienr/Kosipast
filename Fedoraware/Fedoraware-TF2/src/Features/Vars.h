@@ -76,10 +76,11 @@ namespace Vars
 		CVar(CheatPrefix, std::string("[FeD]"), VISUAL)
 		CVar(MenuKey, 0)
 
-		CVar(ShowKeybinds, false, VISUAL)
-		CVar(ShowKBChanges, false, VISUAL)
+		CVar(ShowKeybinds, false)
+		CVar(KeybindsDisplay, DragBox_t())
+		CVar(ShowKBChanges, false)
 
-		CVar(Indicators, 0b00000, VISUAL)
+		CVar(Indicators, 0b00000)
 		//CVar(SpectatorAvatars, false, VISUAL)
 
 		CVar(TicksDisplay, DragBox_t())
@@ -87,6 +88,8 @@ namespace Vars
 		CVar(SpectatorsDisplay, DragBox_t())
 		CVar(PingDisplay, DragBox_t())
 		CVar(ConditionsDisplay, DragBox_t())
+
+		CVar(DPI, 1.f);
 
 		SUBNAMESPACE_BEGIN(Theme) // possibly reduce the amount of theme vars
 			CVar(Accent, Color_t(255, 101, 101, 255), VISUAL)
@@ -145,7 +148,7 @@ namespace Vars
 			CVar(SmoothingAmount, 25)
 			CVar(AimMethod, 2) //0 - Normal,	1 - Smooth, 2 - Silent
 			CVar(Hitboxes, 0b00111) // {legs, arms, body, pelvis, head}
-			CVar(PointScale, 0.f)
+			CVar(PointScale, 0)
 			CVar(Modifiers, 0)
 			CVar(TapFireDist, 1000.f)
 		SUBNAMESPACE_END(HITSCAN)
@@ -160,10 +163,10 @@ namespace Vars
 			CVar(PredictionTime, 2.0f)
 			CVar(NoSpread, false)
 			CVar(AutoRelease, false)
-			CVar(AutoReleaseAt, 0.6f)
+			CVar(AutoReleaseAt, 60)
 			CVar(ChargeLooseCannon, false)
 			CVar(StrafePrediction, 3)
-			CVar(StrafePredictionHitchance, 0.f)
+			CVar(StrafePredictionHitchance, 0)
 			CVar(iGroundSamples, 4, NOSAVE) // debug
 			CVar(iAirSamples, 3, NOSAVE) // debug
 			CVar(VerticalShift, 5.f, NOSAVE) // debug
@@ -362,9 +365,11 @@ namespace Vars
 	NAMESPACE_BEGIN(Radar)
 		SUBNAMESPACE_BEGIN(Main)
 			CVar(Active, false, VISUAL)
+			CVar(Window, WindowBox_t())
 			CVar(BackAlpha, 128, VISUAL)
 			CVar(LineAlpha, 255, VISUAL)
 			CVar(Range, 1500, VISUAL)
+			CVar(AlwaysDraw, true, VISUAL)
 		SUBNAMESPACE_END(Main)
 
 		SUBNAMESPACE_BEGIN(Players)
@@ -401,8 +406,8 @@ namespace Vars
 		CVar(CleanScreenshots, true, VISUAL)
 		CVar(RemoveDisguises, false, VISUAL)
 		CVar(RemoveTaunts, false, VISUAL)
-		CVar(FieldOfView, 90, VISUAL)
-		CVar(ZoomFieldOfView, 30, VISUAL)
+		CVar(FieldOfView, 0, VISUAL)
+		CVar(ZoomFieldOfView, 0, VISUAL)
 		CVar(RemoveScope, false, VISUAL)
 		CVar(RemoveRagdolls, false, VISUAL)
 		CVar(RemoveMOTD, false, VISUAL)
@@ -450,6 +455,7 @@ namespace Vars
 		CVar(SwingLines, false, VISUAL)
 		CVar(ProjectileTrajectory, false, VISUAL)
 		CVar(ProjectileCamera, false, VISUAL)
+		CVar(ProjectileWindow, WindowBox_t())
 		CVar(TrajectoryOnShot, false, VISUAL)
 		CVar(PTOverwrite, false, NOSAVE) // debug
 		CVar(PTType, 0, NOSAVE) // debug
@@ -560,8 +566,6 @@ namespace Vars
 		SUBNAMESPACE_END(FakeLag)
 
 		CVar(AutoPeekKey, 0)
-		CVar(AutoPeekDistance, 200.f)
-		CVar(AutoPeekFree, false)
 
 		SUBNAMESPACE_BEGIN(FLGChams)
 			CVar(Enabled, false, VISUAL)
@@ -632,7 +636,7 @@ namespace Vars
 			CVar(EnableRPC, false)
 			CVar(MatchGroup, 0) // 0 - Special Event; 1 - MvM Mann Up; 2 - Competitive; 3 - Casual; 4 - MvM Boot Camp;
 			CVar(OverrideMenu, false) // Override matchgroup when in main menu
-			CVar(MapText, std::string("Fedoraware")) // 0 - Fedoraware; 1 - CUM.clab; 2 - Meowhook.club; 3 - rathook.cc; 4 - NNitro.tf; 5 - custom;
+			CVar(MapText, std::string("Fedoraware"))
 			CVar(GroupSize, 1337)
 		SUBNAMESPACE_END(Steam)
 	NAMESPACE_END(Misc)
@@ -649,13 +653,13 @@ namespace Vars
 			CVar(YawFake, 0) //0 - None, 1 - Forward, 2 - Left, 3 - Right, 4 - Backwards, 5 - Spin, 6 - Edge
 
 			CVar(RealYawMode, 0)
-			CVar(RealYawOffset, 0.f)
+			CVar(RealYawOffset, 0)
 			CVar(FakeYawMode, 0)
-			CVar(FakeYawOffset, 0.f)
+			CVar(FakeYawOffset, 0)
 
 			CVar(SpinSpeed, 15.f)
 			CVar(AntiOverlap, false)
-			CVar(InvalidShootPitch, false) // i dont know what to name this its TRASH
+			CVar(InvalidShootPitch, false)
 		SUBNAMESPACE_END(AntiAim)
 
 		SUBNAMESPACE_BEGIN(Resolver)
@@ -680,7 +684,6 @@ namespace Vars
 		CVar(Overheal, Color_t(75, 175, 255, 255), VISUAL)
 		CVar(HealthBar, Gradient_t({ 255, 0, 0, 255 }, { 0, 200, 125, 255 }), VISUAL)
 		CVar(UberBar, Color_t( 127, 255, 255, 255 ), VISUAL)
-		CVar(Weapon, Color_t(255, 255, 255, 255), VISUAL)
 		CVar(Health, Color_t(0, 225, 75, 255), VISUAL)
 		CVar(Ammo, Color_t(175, 175, 175, 255), VISUAL)
 		CVar(NPC, Color_t(255, 255, 255, 255), VISUAL)
@@ -703,21 +706,21 @@ namespace Vars
 
 	NAMESPACE_BEGIN(Fonts)
 		SUBNAMESPACE_BEGIN(FONT_ESP)
-			CVar(szName, std::string("Small Fonts"), VISUAL)
+			CVar(szName, std::string("Tahoma"), VISUAL)
 			CVar(nTall, 12, VISUAL)
 			CVar(nWeight, 0, VISUAL)
 			CVar(nFlags, 512, VISUAL)
 		SUBNAMESPACE_END(FONT_ESP)
 
 		SUBNAMESPACE_BEGIN(FONT_NAME)
-			CVar(szName, std::string("Small Fonts"), VISUAL)
+			CVar(szName, std::string("Tahoma"), VISUAL)
 			CVar(nTall, 12, VISUAL)
 			CVar(nWeight, 0, VISUAL)
 			CVar(nFlags, 512, VISUAL)
 		SUBNAMESPACE_END(FONT_NAME)
 
 		SUBNAMESPACE_BEGIN(FONT_INDICATORS)
-			CVar(szName, std::string("ProggyClean"), VISUAL)
+			CVar(szName, std::string("Tahoma"), VISUAL)
 			CVar(nTall, 13, VISUAL)
 			CVar(nWeight, -1, VISUAL)
 			CVar(nFlags, 512, VISUAL)

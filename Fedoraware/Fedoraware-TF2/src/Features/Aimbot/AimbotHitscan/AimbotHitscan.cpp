@@ -368,7 +368,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 
 			for (auto pair : hitboxes)
 			{
-				const float flScale = Vars::Aimbot::Hitscan::PointScale.Value / 100.f;
+				const float flScale = float(Vars::Aimbot::Hitscan::PointScale.Value) / 100;
 				const Vec3 vMins = pair.first->bbmin, vMinsS = vMins * flScale;
 				const Vec3 vMaxs = pair.first->bbmax, vMaxsS = vMaxs * flScale;
 
@@ -419,7 +419,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 		}
 		else
 		{
-			const float flScale = Vars::Aimbot::Hitscan::PointScale.Value / 100.f;
+			const float flScale = float(Vars::Aimbot::Hitscan::PointScale.Value) / 100;
 			const Vec3 vMins = target.m_pEntity->m_vecMins() * flScale;
 			const Vec3 vMaxs = target.m_pEntity->m_vecMaxs() * flScale;
 

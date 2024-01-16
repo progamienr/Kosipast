@@ -102,12 +102,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		}
 		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
 		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
-
-		if (F::AimbotProjectile.bLastTickCancel)
-		{
-			I::EngineClient->ClientCmd_Unrestricted(std::format("slot{}", F::AimbotProjectile.bLastTickCancel).c_str());
-			F::AimbotProjectile.bLastTickCancel = 0;
-		}
 	}
 	/*
 	else
@@ -120,13 +114,20 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	}
 	*/
 
+	const bool bSkip = F::AimbotProjectile.bLastTickCancel;
+	if (bSkip)
+	{
+		pCmd->weaponselect = F::AimbotProjectile.bLastTickCancel;
+		F::AimbotProjectile.bLastTickCancel = 0;
+	}
+
 	// Run Features
 	F::Misc.RunPre(pCmd);
 	F::BadActors.OnTick();
 	F::Backtrack.Run(pCmd);
 	F::EnginePrediction.Start(pCmd);
 	{
-		const bool bAimRan = F::Aimbot.Run(pCmd);
+		const bool bAimRan = bSkip ? false : F::Aimbot.Run(pCmd);
 		F::Auto.Run(pCmd);
 		F::PacketManip.CreateMove(pCmd, pSendPacket);
 		if (!bAimRan && G::WeaponCanAttack && G::IsAttacking)

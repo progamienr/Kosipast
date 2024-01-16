@@ -75,12 +75,10 @@ float CAntiAim::GetBaseYaw(CBaseEntity* pLocal, CUserCmd* pCmd, const bool bFake
 {
 	const int iMode = bFake ? Vars::AntiHack::AntiAim::FakeYawMode.Value : Vars::AntiHack::AntiAim::RealYawMode.Value;
 	const float flOffset = bFake ? Vars::AntiHack::AntiAim::FakeYawOffset.Value : Vars::AntiHack::AntiAim::RealYawOffset.Value;
-	//	0 offset, 1 at player, 2 at player + offset
-	switch (iMode)
+	switch (iMode) // 0 offset, 1 at player
 	{
 	case 0: return pCmd->viewangles.y + flOffset;
 	case 1:
-	case 2:
 	{
 		float flSmallestAngleTo = 0.f; float flSmallestFovTo = 360.f;
 		for (CBaseEntity* pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
@@ -99,7 +97,7 @@ float CAntiAim::GetBaseYaw(CBaseEntity* pLocal, CUserCmd* pCmd, const bool bFake
 
 			if (flFOVTo < flSmallestFovTo) { flSmallestAngleTo = vAngleTo.y; flSmallestFovTo = flFOVTo; }
 		}
-		return (flSmallestFovTo == 360.f ? pCmd->viewangles.y + (iMode == 2 ? flOffset : 0) : flSmallestAngleTo + (iMode == 2 ? flOffset : 0));
+		return (flSmallestFovTo == 360.f ? pCmd->viewangles.y + flOffset : flSmallestAngleTo + flOffset);
 	}
 	}
 	return pCmd->viewangles.y;

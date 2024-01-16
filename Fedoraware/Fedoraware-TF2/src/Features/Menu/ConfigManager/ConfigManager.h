@@ -15,6 +15,7 @@ class CConfigManager
 	void SaveJson(const char* name, const Vec3& val);
 	void SaveJson(const char* name, const Chams_t& val);
 	void SaveJson(const char* name, const DragBox_t& val);
+	void SaveJson(const char* name, const WindowBox_t& val);
 
 	void LoadJson(const char* name, std::string& val);
 	void LoadJson(const char* name, bool& val);
@@ -25,6 +26,7 @@ class CConfigManager
 	void LoadJson(const char* name, Vec3& val);
 	void LoadJson(const char* name, Chams_t& val);
 	void LoadJson(const char* name, DragBox_t& val);
+	void LoadJson(const char* name, WindowBox_t& val);
 
 	std::string CurrentConfig = "default";
 	std::string CurrentVisuals = "default";

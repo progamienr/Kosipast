@@ -751,9 +751,9 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 	const float flChargeC = pWeapon->m_flDetonateTime() > 0.f ? pWeapon->m_flDetonateTime() - I::GlobalVars->curtime : 1.f;
 	const float flAmount = pWeapon->GetWeaponID() != TF_WEAPON_CANNON
 		? Math::RemapValClamped(flChargeS, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f)
-		: Math::RemapValClamped(1.f - flChargeC, 0.f, Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
+		: 1.f - Math::RemapValClamped(flChargeC, 0.f, Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
 
-	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && flAmount > Vars::Aimbot::Projectile::AutoReleaseAt.Value / 100.f;
+	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && flAmount > float(Vars::Aimbot::Projectile::AutoReleaseAt.Value) / 100;
 	const bool bCancel = flAmount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
 	// add user toggle to control whether to cancel or not
@@ -765,11 +765,19 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 			pCmd->buttons |= IN_ATTACK2;
 			pCmd->buttons &= ~IN_ATTACK;
 			break;
-		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		case TF_WEAPON_CANNON:
-			pCmd->buttons |= IN_ATTACK;
-			I::EngineClient->ClientCmd_Unrestricted("slot3");
-			bLastTickCancel = pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER ? 2 : 1;
+			if (auto pSwap = pLocal->GetWeaponFromSlot(SLOT_SECONDARY))
+			{
+				pCmd->weaponselect = pSwap->GetIndex();
+				bLastTickCancel = pWeapon->GetIndex();
+			}
+			break;
+		case TF_WEAPON_PIPEBOMBLAUNCHER:
+			if (auto pSwap = pLocal->GetWeaponFromSlot(SLOT_PRIMARY))
+			{
+				pCmd->weaponselect = pSwap->GetIndex();
+				bLastTickCancel = pWeapon->GetIndex();
+			}
 		}
 	}
 	else if (bAutoRelease && pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER &&

@@ -50,12 +50,11 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		bool bWillHit = false;
 		const bool bReloading = pWeapon->IsInReload();
 
+		Vec3 viewAngles = pCmd->viewangles;
+		if (bJumpKey)
+			ManageAngle(pWeapon, pCmd, viewAngles);
 		if (bJumpKey || bCTapKey)
 		{
-			Vec3 viewAngles = pCmd->viewangles;
-			if (bJumpKey)
-				ManageAngle(pWeapon, pCmd, viewAngles);
-
 			ProjectileInfo projInfo = {};
 			if (F::ProjSim.GetInfo(pLocal, pWeapon, viewAngles, projInfo) && F::ProjSim.Initialize(projInfo))
 			{
@@ -82,7 +81,8 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 							return true;
 						};
 
-						if (trace.vEndPos.DistTo(pLocal->GetShootPos()) < 120.f && VisPos(pLocal, pLocal, trace.vEndPos, pLocal->GetShootPos()))
+						// distance of 150 seems to be ideal if we predict player movement
+						if (trace.vEndPos.DistTo(pLocal->GetShootPos()) < 140.f && VisPos(pLocal, pLocal, trace.vEndPos, pLocal->GetShootPos()))
 						{	// this might be ever so slightly slow due to how jank rockets are, might cause occasional issues
 							iDelay = n + (n > Vars::Auto::Jump::ApplyAbove.Value ? Vars::Auto::Jump::TimingOffset.Value : 0);
 							bWillHit = true;
@@ -115,7 +115,14 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 					iFrame = 0;
 			}
 			else if (!bCurrGrounded && pCmd->buttons & IN_DUCK || bReloading)
+			{
 				pCmd->buttons |= IN_ATTACK;
+				if (bJumpKey)
+				{
+					G::SilentAngles = true; // would use G::PSilentAngles but that would mess with timing
+					pCmd->viewangles = viewAngles;
+				}
+			}
 		}
 
 		if (iFrame == -1 && pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON && G::Buttons & IN_ATTACK2)
