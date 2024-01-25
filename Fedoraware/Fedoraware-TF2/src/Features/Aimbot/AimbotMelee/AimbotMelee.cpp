@@ -299,12 +299,15 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 
 int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)
 {
-	static Vec3 vecSwingMins = { -18.0f, -18.0f, -18.0f };
-	static Vec3 vecSwingMaxs = { 18.0f, 18.0f, 18.0f };
-	
-	const float flRange = pWeapon->GetSwingRange(pLocal) - 0.1f;
-	if (flRange <= 0.0f)
+	const float flHull = Utils::ATTRIB_HOOK_FLOAT(18, "melee_bounds_multiplier", pWeapon);
+	const float flRange = pWeapon->GetSwingRange(pLocal) * Utils::ATTRIB_HOOK_FLOAT(1, "melee_range_multiplier", pWeapon);
+	if (flRange <= 0.f)
 		return false;
+
+	static Vec3 vecSwingMins = { -flHull, -flHull, -flHull };
+	static Vec3 vecSwingMaxs = { flHull, flHull, flHull };
+
+	Utils::ConLog("Melee", std::format("{}, {}", flHull, flRange).c_str());
 
 	CGameTrace trace;
 	CTraceFilterHitscan filter;

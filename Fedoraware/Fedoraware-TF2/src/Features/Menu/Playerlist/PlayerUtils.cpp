@@ -120,6 +120,9 @@ int CPlayerlistUtils::GetPriority(uint32_t friendsID)
 	if (!friendsID)
 		return iDefault;
 
+	if (HasTag(friendsID, "Ignored"))
+		return vTags["Ignored"].Priority;
+
 	std::vector<int> vPriorities;
 	for (const auto& sTag : G::PlayerTags[friendsID])
 	{
@@ -127,7 +130,7 @@ int CPlayerlistUtils::GetPriority(uint32_t friendsID)
 		if (F::PlayerUtils.GetTag(sTag, &plTag) && !plTag.Label)
 			vPriorities.push_back(plTag.Priority);
 	}
-	if (IsFriend(friendsID))
+	if (Utils::IsSteamFriend(friendsID))
 	{
 		auto& plTag = vTags["Friend"];
 		if (!plTag.Label)
@@ -156,13 +159,20 @@ bool CPlayerlistUtils::GetSignificantTag(uint32_t friendsID, std::string* sTag, 
 	std::vector<std::pair<std::string, PriorityLabel>> vLabels;
 	if (!iMode || iMode == 1)
 	{
+		if (HasTag(friendsID, "Ignored"))
+		{
+			*sTag = "Ignored";
+			*plTag = vTags["Ignored"];
+			return true;
+		}
+
 		for (const auto& _sTag : G::PlayerTags[friendsID])
 		{
 			PriorityLabel _plTag;
 			if (F::PlayerUtils.GetTag(_sTag, &_plTag) && !_plTag.Label)
 				vLabels.push_back({ _sTag, _plTag });
 		}
-		if (IsFriend(friendsID))
+		if (Utils::IsSteamFriend(friendsID))
 		{
 			auto& _plTag = vTags["Friend"];
 			if (!_plTag.Label)
@@ -177,7 +187,7 @@ bool CPlayerlistUtils::GetSignificantTag(uint32_t friendsID, std::string* sTag, 
 			if (F::PlayerUtils.GetTag(_sTag, &_plTag) && _plTag.Label)
 				vLabels.push_back({ _sTag, _plTag });
 		}
-		if (IsFriend(friendsID))
+		if (Utils::IsSteamFriend(friendsID))
 		{
 			auto& _plTag = vTags["Friend"];
 			if (_plTag.Label)

@@ -170,11 +170,11 @@ void CLogs::UserMessage(UserMessageType type, bf_read& msgData)
 	const int team = msgData.ReadByte();
 	const int voteID = msgData.ReadLong();
 	const int caller = msgData.ReadByte();
+	char reason[64], voteTarget[64];
+	msgData.ReadString(reason, 64);
+	msgData.ReadString(voteTarget, 64);
 	const int target = static_cast<unsigned char>(msgData.ReadByte()) >> 1;
 	const bool bSameTeam = team == pLocal->m_iTeamNum();
-	//char reason[64], voteTarget[64];
-	//msgData.ReadString(reason, 64);
-	//msgData.ReadString(voteTarget, 64);
 
 	PlayerInfo_t piTarget{}, piCaller{};
 	if (!caller || !target || !I::EngineClient->GetPlayerInfo(target, &piTarget) || !I::EngineClient->GetPlayerInfo(caller, &piCaller))
