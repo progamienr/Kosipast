@@ -307,8 +307,6 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 	static Vec3 vecSwingMins = { -flHull, -flHull, -flHull };
 	static Vec3 vecSwingMaxs = { flHull, flHull, flHull };
 
-	Utils::ConLog("Melee", std::format("{}, {}", flHull, flRange).c_str());
-
 	CGameTrace trace;
 	CTraceFilterHitscan filter;
 	filter.pSkip = pLocal;
