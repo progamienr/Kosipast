@@ -35,8 +35,8 @@
     <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
     <ClCompile Include="src\Features\Menu\ConfigManager\ConfigManager.cpp" />
     <ClCompile Include="src\Features\Menu\Menu.cpp" />
-    <ClCompile Include="src\Features\Menu\Playerlist\Playerlist.cpp" />
-    <ClCompile Include="src\Features\Menu\SpectatorList\SpectatorList.cpp" />
+    <ClCompile Include="src\Features\Menu\Playerlist\PlayerUtils.cpp" />
+    <ClCompile Include="src\Features\Visuals\SpectatorList\SpectatorList.cpp" />
     <ClCompile Include="src\Features\Misc\Misc.cpp" />
     <ClCompile Include="src\Features\Misc\Notifications\Notifications.cpp" />
     <ClCompile Include="src\Features\NoSpread\NoSpread.cpp" />
@@ -66,7 +66,6 @@
     <ClCompile Include="src\Hooks\Detours\CBaseClient_SendSignonData.cpp" />
     <ClCompile Include="src\Hooks\Detours\CBaseHudChat_ChatPrintf.cpp" />
     <ClCompile Include="src\Hooks\Detours\CEconItemSchema_GetItemDefinition.cpp" />
-    <ClCompile Include="src\Hooks\Detours\CEconNotification_HasNewItems.cpp" />
     <ClCompile Include="src\Hooks\Detours\CheckSimpleMaterial.cpp" />
     <ClCompile Include="src\Hooks\Detours\CHudCrosshair_GetDrawPosition.cpp" />
     <ClCompile Include="src\Hooks\Detours\CInterpolatedVarArrayBase_Interpolate.cpp" />
@@ -122,7 +121,6 @@
     <ClCompile Include="src\Hooks\Detours\KeyValues_SetInt.cpp" />
     <ClCompile Include="src\Hooks\Detours\ModelRender_DrawModelExecute.cpp" />
     <ClCompile Include="src\Hooks\Detours\NetChannel_SendDatagram.cpp" />
-    <ClCompile Include="src\Hooks\Detours\NotificationQueue_Add.cpp" />
     <ClCompile Include="src\Hooks\Detours\Panel_PaintTraverse.cpp" />
     <ClCompile Include="src\Hooks\Detours\StudioRender_SetAlphaModulation.cpp" />
     <ClCompile Include="src\Hooks\Detours\StudioRender_SetColorModulation.cpp" />
@@ -164,8 +162,14 @@
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_SetupBones.cpp" />
     <ClCompile Include="src\Hooks\Detours\CPrediction_RunCommand.cpp" />
     <ClCompile Include="src\Features\Visuals\Materials\Materials.cpp" />
-    <ClCompile Include="src\Hooks\Detours\ModelRender_ForcedMaterialOverride.cpp" />
     <ClCompile Include="src\Features\CameraWindow\CameraWindow.cpp" />
+    <ClCompile Include="src\Features\Menu\Playerlist\PlayerCore.cpp" />
+    <ClCompile Include="src\Hooks\Detours\NotificationQueue_Add.cpp" />
+    <ClCompile Include="src\Hooks\Detours\C_TFPlayer_BRenderAsZombie.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CTFWeaponBase_GetShootSound.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CStudioRender_DrawModelStaticProp.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CRendering3dView_EnableWorldFog.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CSkyboxView_Enable3dSkyboxFog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />
@@ -255,8 +259,8 @@
     <ClInclude Include="src\Features\Menu\ConfigManager\ConfigManager.h" />
     <ClInclude Include="src\Features\Menu\Fonts\IconsMaterialDesign.h" />
     <ClInclude Include="src\Features\Menu\Menu.h" />
-    <ClInclude Include="src\Features\Menu\Playerlist\Playerlist.h" />
-    <ClInclude Include="src\Features\Menu\SpectatorList\SpectatorList.h" />
+    <ClInclude Include="src\Features\Menu\Playerlist\PlayerUtils.h" />
+    <ClInclude Include="src\Features\Visuals\SpectatorList\SpectatorList.h" />
     <ClInclude Include="src\Features\Misc\Misc.h" />
     <ClInclude Include="src\Features\Misc\Notifications\Notifications.h" />
     <ClInclude Include="src\Features\NoSpread\NoSpread.h" />
@@ -345,7 +349,6 @@
     <ClInclude Include="src\SDK\Main\BaseEntity\AnimState\MultiPlayerAnimState.h" />
     <ClInclude Include="src\SDK\Main\BaseEntity\AnimState\TFPlayerAnimState.h" />
     <ClInclude Include="src\SDK\Main\BaseEntity\BaseEntity.h" />
-    <ClInclude Include="src\SDK\Main\BaseObject\BaseObject.h" />
     <ClInclude Include="src\SDK\Main\CEconNotification.h" />
     <ClInclude Include="src\SDK\Main\ConVars\ConVars.h" />
     <ClInclude Include="src\SDK\Main\DrawUtils\DrawUtils.h" />
@@ -381,6 +384,8 @@
     <ClInclude Include="src\Features\Menu\Fonts\RobotoBlack.h" />
     <ClInclude Include="src\Features\Menu\Fonts\MaterialIcons.h" />
     <ClInclude Include="src\Features\CameraWindow\CameraWindow.h" />
+    <ClInclude Include="src\Features\Menu\Playerlist\PlayerCore.h" />
+    <ClInclude Include="src\SDK\Interfaces\IStudioRender\IStudioRender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

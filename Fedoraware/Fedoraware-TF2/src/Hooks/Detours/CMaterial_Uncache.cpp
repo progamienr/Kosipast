@@ -6,7 +6,7 @@ MAKE_HOOK(CMaterial_Uncache, S::CMaterial_Uncache(), void, __fastcall,
 {
 	if (ecx)
 	{
-		if (std::ranges::find(F::Materials.v_MatList, ecx) != F::Materials.v_MatList.end())
+		if (std::ranges::find(F::Materials.vMatList, ecx) != F::Materials.vMatList.end())
 			return;
 	}
 

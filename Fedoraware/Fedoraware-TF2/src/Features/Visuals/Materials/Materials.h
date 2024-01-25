@@ -30,9 +30,9 @@ public:
 
 	void SetColor(IMaterial* material, Color_t color);
 
-	std::vector<CMaterial> m_ChamMaterials;
-	std::vector<CMaterial> m_GlowMaterials;
-	std::vector<IMaterial*> v_MatList;
+	std::vector<CMaterial> vChamMaterials;
+	std::vector<CMaterial> vGlowMaterials;
+	std::vector<IMaterial*> vMatList;
 };
 
 ADD_FEATURE(CMaterials, Materials)

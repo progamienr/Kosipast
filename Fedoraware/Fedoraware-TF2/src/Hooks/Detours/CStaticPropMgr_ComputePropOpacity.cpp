@@ -42,12 +42,11 @@ public:
 MAKE_HOOK(CStaticPropMgr_ComputePropOpacity, S::CStaticPropMgr_ComputePropOpacity(), void, __fastcall,
 	void* ecx, void* edx, CStaticProp* pProp)
 {
-	if (pProp && Vars::Visuals::NoStaticPropFade.Value)
+	if (Vars::Visuals::World::NoPropFade.Value && pProp)
 	{
 		pProp->m_Alpha = 255;
+		return;
 	}
-	else
-	{
-		Hook.Original<FN>()(ecx, edx, pProp);
-	}
+
+	Hook.Original<FN>()(ecx, edx, pProp);
 }

@@ -101,7 +101,7 @@ void CCommands::Init()
 			 });
 	Register("f_dumpmaterials", [](const std::deque<std::string>& args)
 			 {
-				 for (IMaterial* scanMat : F::Materials.v_MatList)
+				 for (IMaterial* scanMat : F::Materials.vMatList)
 				 {
 					 if (!scanMat)
 						 continue;

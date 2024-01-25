@@ -20,7 +20,7 @@ class ITexture;
 class IMaterial;
 
 class MaterialPropertyTypes_t;
-class VertexFormat_t;
+typedef uint64 VertexFormat_t;
 using CBaseHandle = unsigned long;
 
 class IHandleEntity

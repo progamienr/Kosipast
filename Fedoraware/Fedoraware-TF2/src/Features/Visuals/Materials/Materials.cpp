@@ -9,7 +9,7 @@ IMaterial* CMaterials::CreateNRef(char const* szName, void* pKV)
 {
 	IMaterial* returnMaterial = I::MaterialSystem->Create(szName, pKV);
 	returnMaterial->IncrementReferenceCount();
-	v_MatList.push_back(returnMaterial);
+	vMatList.push_back(returnMaterial);
 	return returnMaterial;
 }
 
@@ -23,7 +23,7 @@ void CMaterials::ReloadMaterials()
 {
 	// clear existing materials
 
-	for (auto& mat : m_ChamMaterials)
+	for (auto& mat : vChamMaterials)
 	{
 		if (!mat.pMaterial)
 			continue;
@@ -32,7 +32,7 @@ void CMaterials::ReloadMaterials()
 		mat.pMaterial->DeleteIfUnreferenced();
 		mat.pMaterial = nullptr;
 	}
-	for (auto& mat : m_GlowMaterials)
+	for (auto& mat : vGlowMaterials)
 	{
 		if (!mat.pMaterial)
 			continue;
@@ -41,107 +41,109 @@ void CMaterials::ReloadMaterials()
 		mat.pMaterial->DeleteIfUnreferenced();
 		mat.pMaterial = nullptr;
 	}
-	m_ChamMaterials.clear();
-	m_GlowMaterials.clear();
+	vChamMaterials.clear();
+	vGlowMaterials.clear();
 
 
 
 	// cham materials
 
 	// default materials
+	{	// hacky
+		CMaterial mat = { "None" };
+
+		mat.sVMT =	"\"UnlitGeneric\"";
+		mat.sVMT +=	"\n{";
+		mat.sVMT +=	"\n	$basetexture \"vgui/black\"";
+		mat.sVMT +=	"\n	$additive \"1\"";
+		mat.sVMT += "\n}";
+
+		mat.bLocked = true;
+		vChamMaterials.push_back(mat);
+	}
 	{
 		CMaterial mat = { "Flat" };
 
 		mat.sVMT =	"\"UnlitGeneric\"";
 		mat.sVMT +=	"\n{";
-		mat.sVMT +=	"\n	$basetexture vgui/white_additive";
-		mat.sVMT +=	"\n	$cloakPassEnabled 1";
+		mat.sVMT +=	"\n	$basetexture \"vgui/white_additive\"";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
 	{
 		CMaterial mat = { "Shaded" };
 
 		mat.sVMT =	"\"VertexLitGeneric\"";
 		mat.sVMT +=	"\n{";
-		mat.sVMT +=	"\n	$basetexture vgui/white_additive";
-		mat.sVMT +=	"\n	$bumpmap vgui/white_additive";
-		mat.sVMT +=	"\n	$selfillum 1";
-		mat.sVMT +=	"\n	$selfillumfresnelminmaxexp \"[-0.25 1 1]\"";
-		mat.sVMT +=	"\n	$cloakPassEnabled 1";
+		mat.sVMT +=	"\n	$basetexture \"vgui/white_additive\"";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
 	{
 		CMaterial mat = { "Shiny" };
 
 		mat.sVMT =	"\"VertexLitGeneric\"";
 		mat.sVMT +=	"\n{";
-		mat.sVMT +=	"\n	$basetexture vgui/white_additive";
-		mat.sVMT +=	"\n	$bumpmap vgui/white_additive";
-		mat.sVMT +=	"\n	$envmap cubemaps/cubemap_sheen001";
-		mat.sVMT +=	"\n	$envmaptint \"[1 1 1]\"";
-		mat.sVMT +=	"\n	$selfillum 1";
-		mat.sVMT +=	"\n	$selfillumfresnelminmaxexp \"[-0.25 1 1]\"";
-		mat.sVMT +=	"\n	$cloakPassEnabled 1";
+		mat.sVMT +=	"\n	$basetexture \"vgui/white_additive\"";
+		mat.sVMT +=	"\n	$envmap \"cubemaps/cubemap_sheen001\"";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
 	{
 		CMaterial mat = { "Wireframe" };
 
 		mat.sVMT =	"\"UnlitGeneric\"";
 		mat.sVMT += "\n{";
-		mat.sVMT += "\n	$basetexture vgui/white_additive";
-		mat.sVMT += "\n	$cloakPassEnabled 1";
-		mat.sVMT += "\n	$wireframe 1";
+		mat.sVMT += "\n	$basetexture \"vgui/white_additive\"";
+		mat.sVMT += "\n	$wireframe \"1\"";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
 	{	// make smoother
 		CMaterial mat = { "Fresnel" };
 
 		mat.sVMT =	"\"VertexLitGeneric\"";
 		mat.sVMT += "\n{";
-		mat.sVMT += "\n	$basetexture models/player/shared/ice_player";
-		mat.sVMT += "\n	$bumpmap models/player/shared/shared_normal";
-		mat.sVMT += "\n	$translucent 1";
-		mat.sVMT += "\n	$additive 1";
-		mat.sVMT += "\n	$phong 1";
-		mat.sVMT += "\n	$phongfresnelranges \"[0 0.5 10]\"";
-		mat.sVMT += "\n	$phongtint \"[0 0 0]\"";
-		mat.sVMT += "\n	$envmap skybox/sky_dustbowl_01";
-		mat.sVMT += "\n	$envmapfresnel 1";
-		mat.sVMT += "\n	$envmaptint \"[1 1 1]\"";
-		mat.sVMT += "\n	$selfillum 1";
+		mat.sVMT += "\n	$basetexture \"models/player/shared/ice_player\"";
+		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
+		mat.sVMT += "\n	$additive \"1\"";
+		mat.sVMT += "\n	$phong \"1\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 0.025 0.05]\"";
+		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
+		mat.sVMT += "\n	$envmapfresnel \"1\"";
+		mat.sVMT += "\n	$selfillum \"1\"";
 		mat.sVMT += "\n	$selfillumtint \"[0 0 0]\"";
-		mat.sVMT += "\n	$rimlight 1";
-		mat.sVMT += "\n	$rimlightboost -5";
-		mat.sVMT += "\n	$cloakPassEnabled 1";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
-	{	// unfinished
+	{
 		CMaterial mat = { "Tint" };
 
-		mat.sVMT =	"\"UnlitGeneric\"";
+		mat.sVMT = "\"VertexLitGeneric\"";
 		mat.sVMT += "\n{";
-		mat.sVMT += "\n	$basetexture vgui/white_additive";
-		mat.sVMT += "\n	$cloakPassEnabled 1";
+		mat.sVMT += "\n	$basetexture \"models/player/shared/ice_player\"";
+		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
+		mat.sVMT += "\n	$additive \"1\"";
+		mat.sVMT += "\n	$phong \"1\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 0.001 0]\"";
+		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
+		mat.sVMT += "\n	$envmapfresnel \"1\"";
+		mat.sVMT += "\n	$selfillum \"1\"";
+		mat.sVMT += "\n	$selfillumtint \"[0 0 0]\"";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
 	// user materials
 	for (const auto& entry : std::filesystem::directory_iterator(MaterialFolder))
@@ -161,10 +163,10 @@ void CMaterials::ReloadMaterials()
 		CMaterial mat = { sName };
 		mat.sVMT = sVMT;
 
-		m_ChamMaterials.push_back(mat);
+		vChamMaterials.push_back(mat);
 	}
 	// create materials
-	for (auto& mat : m_ChamMaterials)
+	for (auto& mat : vChamMaterials)
 	{
 		const auto kv = new KeyValues(mat.sName.c_str());
 		g_KeyValUtils.LoadFromBuffer(kv, mat.sName.c_str(), mat.sVMT.c_str());
@@ -181,7 +183,7 @@ void CMaterials::ReloadMaterials()
 		mat.pMaterial = I::MaterialSystem->Find("dev/glow_color", TEXTURE_GROUP_OTHER);
 		mat.pMaterial->IncrementReferenceCount();
 
-		m_GlowMaterials.push_back(mat);
+		vGlowMaterials.push_back(mat);
 	}
 	{
 		CMaterial mat = { "BlurX" };
@@ -190,7 +192,7 @@ void CMaterials::ReloadMaterials()
 		m_pMatBlurXKV->SetString("$basetexture", "glow_buffer_1");
 		mat.pMaterial = CreateNRef("m_pMatBlurX", m_pMatBlurXKV);
 
-		m_GlowMaterials.push_back(mat);
+		vGlowMaterials.push_back(mat);
 	}
 	{
 		CMaterial mat = { "BlurY" };
@@ -199,7 +201,7 @@ void CMaterials::ReloadMaterials()
 		m_pMatBlurYKV->SetString("$basetexture", "glow_buffer_2");
 		mat.pMaterial = CreateNRef("m_pMatBlurY", m_pMatBlurYKV);
 
-		m_GlowMaterials.push_back(mat);
+		vGlowMaterials.push_back(mat);
 	}
 	{
 		CMaterial mat = { "HaloAddToScreen" };
@@ -209,7 +211,7 @@ void CMaterials::ReloadMaterials()
 		m_pMatHaloAddToScreenKV->SetString("$additive", "1");
 		mat.pMaterial = CreateNRef("m_pMatHaloAddToScreen", m_pMatHaloAddToScreenKV);
 
-		m_GlowMaterials.push_back(mat);
+		vGlowMaterials.push_back(mat);
 	}
 }
 
@@ -230,14 +232,14 @@ void CMaterials::SetColor(IMaterial* material, Color_t color)
 
 IMaterial* CMaterials::GetMaterial(std::string sName)
 {
-	if (sName == "Original" || sName == "None")
+	if (sName == "Original")
 		return nullptr;
-	for (auto& mat : m_ChamMaterials)
+	for (auto& mat : vChamMaterials)
 	{
 		if (sName == mat.sName)
 			return mat.pMaterial;
 	}
-	for (auto& mat : m_GlowMaterials)
+	for (auto& mat : vGlowMaterials)
 	{
 		if (sName == mat.sName)
 			return mat.pMaterial;
@@ -247,7 +249,7 @@ IMaterial* CMaterials::GetMaterial(std::string sName)
 
 std::string CMaterials::GetVMT(std::string sName)
 {
-	for (auto& mat : m_ChamMaterials)
+	for (auto& mat : vChamMaterials)
 	{
 		if (sName == mat.sName)
 			return mat.sVMT;
@@ -257,14 +259,14 @@ std::string CMaterials::GetVMT(std::string sName)
 
 void CMaterials::AddMaterial(std::string sName)
 {
-	if (std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
+	if (sName == "Original" || std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
 		return;
-	for (auto& mat : m_ChamMaterials)
+	for (auto& mat : vChamMaterials)
 	{
 		if (sName == mat.sName)
 			return;
 	}
-	for (auto& mat : m_GlowMaterials)
+	for (auto& mat : vGlowMaterials)
 	{
 		if (sName == mat.sName)
 			return;
@@ -277,7 +279,7 @@ void CMaterials::AddMaterial(std::string sName)
 	g_KeyValUtils.LoadFromBuffer(kv, mat.sName.c_str(), mat.sVMT.c_str());
 	mat.pMaterial = CreateNRef(std::format("m_pMat%s", mat.sName).c_str(), kv);
 
-	m_ChamMaterials.push_back(mat);
+	vChamMaterials.push_back(mat);
 
 	std::ofstream outStream(MaterialFolder + "\\" + sName + ".vmt");
 	outStream << mat.sVMT;
@@ -289,7 +291,7 @@ void CMaterials::EditMaterial(std::string sName, std::string sVMT)
 	if (!std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
 		return;
 
-	for (auto& mat : m_ChamMaterials)
+	for (auto& mat : vChamMaterials)
 	{
 		if (sName != mat.sName)
 			continue;
@@ -316,7 +318,7 @@ void CMaterials::RemoveMaterial(std::string sName)
 	if (!std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
 		return;
 
-	for (auto mat = m_ChamMaterials.begin(); mat != m_ChamMaterials.end(); mat++)
+	for (auto mat = vChamMaterials.begin(); mat != vChamMaterials.end(); mat++)
 	{
 		if (sName != mat->sName)
 			continue;
@@ -331,7 +333,7 @@ void CMaterials::RemoveMaterial(std::string sName)
 			mat->pMaterial = nullptr;
 		}
 
-		m_ChamMaterials.erase(mat);
+		vChamMaterials.erase(mat);
 
 		break;
 	}

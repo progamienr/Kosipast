@@ -1,12 +1,7 @@
 #include "../Hooks.h"
 #include "../../Features/AntiHack/CheaterDetection.h"
 #include "../../Features/Visuals/Visuals.h"
-
-struct ChatFlags_t
-{
-	std::string Colour;
-	const char* Name;
-};
+#include "../../Features/Menu/Playerlist/PlayerUtils.h"
 
 MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pChatElement, 19), void, __cdecl,
 	void* ecx, int iPlayerIndex, int iFilter, const char* fmt, ...)
@@ -18,29 +13,22 @@ MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pCh
 	va_end(marker);
 
 	if (strlen(buffer) > 0 && buffer[strlen(buffer) - 1] == '\n')
-	{
 		buffer[strlen(buffer) - 1] = 0;
-	}
 	char* msg = buffer;
 	while (*msg && (*msg == '\n' || *msg == '\r' || *msg == '\x1A'))
-	{
 		msg++;
-	}
-	if (!*msg) { return; }
+	if (!*msg)
+		return;
 
 	std::string finalMsg = msg, name = {};
 
-	PlayerInfo_t info{};
-	if (!I::EngineClient->GetPlayerInfo(iPlayerIndex, &info))
-	{
+	PlayerInfo_t pi{};
+	if (!I::EngineClient->GetPlayerInfo(iPlayerIndex, &pi))
 		return Hook.Original<FN>()(ecx, iPlayerIndex, iFilter, "%s", finalMsg.c_str());
-	}
 
-	name = info.name;
+	name = pi.name;
 	if (finalMsg.find(name) == std::string::npos)
-	{
 		return Hook.Original<FN>()(ecx, iPlayerIndex, iFilter, "%s", finalMsg.c_str());
-	}
 
 	/*
 	 *	Chat Flags
@@ -49,33 +37,23 @@ MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pCh
 	*/
 	if (iPlayerIndex && Vars::Misc::ChatTags.Value)
 	{
-		ChatFlags_t chatFlag;
-		bool flagSet = false;
-
+		std::string tag = "", color = "";
 		if (iPlayerIndex == I::EngineClient->GetLocalPlayer())
-		{
-			chatFlag = { Vars::Colors::Local.Value.to_hex_alpha(), "[You]" };
-			flagSet = true;
-		}
+			tag = "You", color = Vars::Colors::Local.Value.to_hex_alpha();
 		else if (g_EntityCache.IsFriend(iPlayerIndex))
+			tag = "Friend", color = F::PlayerUtils.vTags["Friend"].Color.to_hex_alpha();
+		else
 		{
-			chatFlag = { Vars::Colors::Friend.Value.to_hex_alpha(), "[Friend]" };
-			flagSet = true;
-		}
-		else if (I::EngineClient->GetPlayerInfo(iPlayerIndex, &info) && G::PlayerPriority[info.friendsID].Mode == 4)
-		{
-			static constexpr auto RED = Color_t{ 255, 0, 0, 255 };
-			chatFlag = { RED.to_hex_alpha(), "[Cheater]" };
-			flagSet = true;
+			std::string sTag; PriorityLabel plTag;
+			if (F::PlayerUtils.GetSignificantTag(pi.friendsID, &sTag, &plTag, 0))
+				tag = sTag, color = plTag.Color.to_hex_alpha();
 		}
 
-		if (flagSet)
+		if (tag != "")
 		{
-			finalMsg = chatFlag.Colour + chatFlag.Name + " \x3" + finalMsg;
+			finalMsg = std::format("{}[{}] \x3{}", color, tag, finalMsg);
 			if (auto offset = finalMsg.find(name))
-			{
 				finalMsg = finalMsg.replace(offset + name.length(), 0, "\x1");
-			}
 		}
 	}
 

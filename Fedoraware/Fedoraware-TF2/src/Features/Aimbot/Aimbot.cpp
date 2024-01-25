@@ -62,7 +62,6 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 
 bool CAimbot::Run(CUserCmd* pCmd)
 {
-	G::CurrentTargetIdx = 0;
 	G::AimPos = Vec3();
 
 	if (F::Misc.bMovementStopped || F::Misc.bFastAccel)
@@ -76,7 +75,7 @@ bool CAimbot::Run(CUserCmd* pCmd)
 	if (!ShouldRun(pLocal, pWeapon))
 		return false;
 
-	if (SandvichAimbot::bIsSandvich = SandvichAimbot::IsSandvich())
+	if (F::AimbotGlobal.IsSandvich())
 		G::CurWeaponType = EWeaponType::PROJECTILE;
 
 	const bool bAttacking = G::IsAttacking;

@@ -6,10 +6,13 @@ MAKE_HOOK(CHudCrosshair_GetDrawPosition, S::CHudCrosshair_GetDrawPosition(), voi
 	if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(pX, pY, pbBehindCamera, angleCrosshairOffset);
 
+	const auto& pLocal = g_EntityCache.GetLocal();
+	if (!pLocal)
+		return Hook.Original<FN>()(pX, pY, pbBehindCamera, angleCrosshairOffset);
+
 	bool bSet = false;
 
-	if (const auto& pLocal = g_EntityCache.GetLocal();
-		Vars::Visuals::ThirdPerson::Crosshair.Value &&
+	if (Vars::Visuals::ThirdPerson::Crosshair.Value &&
 		I::Input->CAM_IsThirdPerson())
 	{
 		const Vec3 viewangles = I::EngineClient->GetViewAngles();
@@ -34,30 +37,27 @@ MAKE_HOOK(CHudCrosshair_GetDrawPosition, S::CHudCrosshair_GetDrawPosition(), voi
 		}
 	}
 
-	if (const auto& pLocal = g_EntityCache.GetLocal();
-		Vars::Visuals::CrosshairAimPos.Value)
+	if (Vars::Visuals::CrosshairAimPos.Value &&
+		pLocal->IsAlive())
 	{
-		static int iLastEyeTick = 0;
-		static Vec3 vPosDelayed;
-		if (pLocal->IsAlive())
-		{
-			if (!G::AimPos.IsZero())
-			{
-				vPosDelayed = G::AimPos;
-				iLastEyeTick = I::GlobalVars->tickcount;
-			}
+		static Vec3 vPos = {};
+		static int iTick = 0;
 
-			// looks hot ty senator for the idea
-			if (abs(iLastEyeTick - I::GlobalVars->tickcount) < 32)
+		if (!G::AimPos.IsZero())
+		{
+			vPos = G::AimPos;
+			iTick = I::GlobalVars->tickcount;
+		}
+
+		if (abs(iTick - I::GlobalVars->tickcount) < 32)
+		{
+			Vec3 vScreen;
+			if (Utils::W2S(vPos, vScreen))
 			{
-				Vec3 vScreen;
-				if (Utils::W2S(vPosDelayed, vScreen))
-				{
-					if (pX) *pX = vScreen.x;
-					if (pY) *pY = vScreen.y;
-					if (pbBehindCamera) *pbBehindCamera = false;
-					bSet = true;
-				}
+				if (pX) *pX = vScreen.x;
+				if (pY) *pY = vScreen.y;
+				if (pbBehindCamera) *pbBehindCamera = false;
+				bSet = true;
 			}
 		}
 	}

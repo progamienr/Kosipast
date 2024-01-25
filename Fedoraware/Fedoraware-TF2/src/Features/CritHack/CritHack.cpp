@@ -69,8 +69,6 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const boo
 	}
 	starting_num += n;
 	//ProtectData = false;
-	*reinterpret_cast<int*>(reinterpret_cast<DWORD>(pWeapon) + 0xA5C) = 0;
-	//*I::RandomSeed = seed_backup;
 }
 
 int CCritHack::LastGoodCritTick(const CUserCmd* pCmd)
@@ -149,6 +147,7 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) /
 	if (!Vars::CritHack::Active.Value)
 		return;
 
+	const auto slot = pWeapon->GetSlot();
 	auto tfWeaponInfo = pWeapon->GetTFWeaponInfo();
 	if (!tfWeaponInfo)
 		return;
@@ -162,52 +161,52 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) /
 	else
 		nProjectilesPerShot = 1;
 	flDamage *= nProjectilesPerShot;
-	Storage[pWeapon->GetSlot()].Damage = flDamage;
+	Storage[slot].Damage = flDamage;
 
 	if (pWeapon->IsStreamingWeapon())
 	{
-		Storage[pWeapon->GetSlot()].Damage *= TF_DAMAGE_CRIT_DURATION_RAPID / weaponData.m_flTimeFireDelay;
+		Storage[slot].Damage *= TF_DAMAGE_CRIT_DURATION_RAPID / weaponData.m_flTimeFireDelay;
 
-		if (Storage[pWeapon->GetSlot()].Damage * TF_DAMAGE_CRIT_MULTIPLIER > BucketCap)
-			Storage[pWeapon->GetSlot()].Damage = BucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
+		if (Storage[slot].Damage * TF_DAMAGE_CRIT_MULTIPLIER > BucketCap)
+			Storage[slot].Damage = BucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
 	}
-	if (pWeapon->GetSlot() == SLOT_MELEE)
-		Storage[pWeapon->GetSlot()].Damage *= 35.f / 32.5f;
+	if (slot == SLOT_MELEE)
+		Storage[slot].Damage *= 35.f / 32.5f;
 
 	float flMult = 1.f;
-	if (pWeapon->GetSlot() == SLOT_MELEE)
+	if (slot == SLOT_MELEE)
 		flMult = 0.5f;
-	else if (Storage[pWeapon->GetSlot()].ShotsCrits.second > 0 && Storage[pWeapon->GetSlot()].ShotsCrits.first > 0)
-		flMult = Math::RemapValClamped((float)Storage[pWeapon->GetSlot()].ShotsCrits.second / (float)Storage[pWeapon->GetSlot()].ShotsCrits.first, 0.1f, 1.f, 1.f, 3.f);
+	else if (Storage[slot].ShotsCrits.second > 0 && Storage[slot].ShotsCrits.first > 0)
+		flMult = Math::RemapValClamped((float)Storage[slot].ShotsCrits.second / (float)Storage[slot].ShotsCrits.first, 0.1f, 1.f, 1.f, 3.f);
 
-	if (pWeapon->GetSlot() == SLOT_MELEE)
+	if (slot == SLOT_MELEE)
 	{
-		const float cost = Storage[pWeapon->GetSlot()].Damage * flMult;
-		Storage[pWeapon->GetSlot()].BaseCost = cost;
-		Storage[pWeapon->GetSlot()].Cost = cost;
+		const float cost = Storage[slot].Damage * flMult;
+		Storage[slot].BaseCost = cost;
+		Storage[slot].Cost = cost;
 	}
 	else
 	{
-		Storage[pWeapon->GetSlot()].BaseCost = Storage[pWeapon->GetSlot()].Damage * TF_DAMAGE_CRIT_MULTIPLIER;
-		Storage[pWeapon->GetSlot()].Cost = Storage[pWeapon->GetSlot()].BaseCost * flMult;
+		Storage[slot].BaseCost = Storage[slot].Damage * TF_DAMAGE_CRIT_MULTIPLIER;
+		Storage[slot].Cost = Storage[slot].BaseCost * flMult;
 	}
 
-	auto Bucket = Storage[pWeapon->GetSlot()].Bucket;
+	auto Bucket = Storage[slot].Bucket;
 
 	if (BucketCap)
-		Storage[pWeapon->GetSlot()].PotentialCrits = static_cast<unsigned int>((BucketCap/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / Storage[pWeapon->GetSlot()].BaseCost);
+		Storage[slot].PotentialCrits = static_cast<unsigned int>((BucketCap/* - std::max(BucketBottom, -Storage[slot].Cost)*/) / Storage[slot].BaseCost);
 
-	if (pWeapon->GetSlot() == SLOT_MELEE)
-		Storage[pWeapon->GetSlot()].AvailableCrits = std::floor((Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / Storage[pWeapon->GetSlot()].Cost);
+	if (slot == SLOT_MELEE)
+		Storage[slot].AvailableCrits = std::floor((Bucket/* - std::max(BucketBottom, -Storage[slot].Cost)*/) / Storage[slot].Cost);
 	else
 	{
-		int shots = Storage[pWeapon->GetSlot()].ShotsCrits.first, crits = Storage[pWeapon->GetSlot()].ShotsCrits.second;
+		int shots = Storage[slot].ShotsCrits.first, crits = Storage[slot].ShotsCrits.second;
 		if (shots > 0 && crits > 0)
 		{
 			int iCrits = 0;
 
-			float bucket = Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/, flCost = Storage[pWeapon->GetSlot()].BaseCost;
-			const int iAttempts = std::min(Storage[pWeapon->GetSlot()].PotentialCrits + 1, 100); // just in case
+			float bucket = Bucket/* - std::max(BucketBottom, -Storage[slot].Cost)*/, flCost = Storage[slot].BaseCost;
+			const int iAttempts = std::min(Storage[slot].PotentialCrits + 1, 100); // just in case
 			for (int i = 0; i < iAttempts; i++)
 			{
 				flMult = Math::RemapValClamped((float)crits / (float)shots, 0.1f, 1.f, 1.f, 3.f);
@@ -219,10 +218,10 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon) /
 				iCrits++;
 			}
 
-			Storage[pWeapon->GetSlot()].AvailableCrits = iCrits;
+			Storage[slot].AvailableCrits = iCrits;
 		}
 		else
-			Storage[pWeapon->GetSlot()].AvailableCrits = std::floor((Bucket/* - std::max(BucketBottom, -Storage[pWeapon->GetSlot()].Cost)*/) / Storage[pWeapon->GetSlot()].Cost);
+			Storage[slot].AvailableCrits = std::floor((Bucket/* - std::max(BucketBottom, -Storage[slot].Cost)*/) / Storage[slot].Cost);
 	}
 }
 
@@ -432,7 +431,6 @@ void CCritHack::Run(CUserCmd* pCmd)
 
 out:
 	//ProtectData = false;
-	*I::RandomSeed = MD5_PseudoRandom(pCmd->command_number) & 0x7FFFFFFF;
 
 	GetTotalCrits(pLocal, pWeapon);
 

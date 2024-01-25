@@ -3,13 +3,6 @@
 
 #include "../../Backtrack/Backtrack.h"
 
-namespace SandvichAimbot
-{
-	extern bool bIsSandvich;
-	extern bool IsSandvich();
-	extern void RunSandvichAimbot(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, CBaseEntity* pTarget);
-}
-
 enum struct ETargetType
 {
 	UNKNOWN,
@@ -44,11 +37,10 @@ enum Ignored
 	INVUL = 1 << 0,
 	CLOAKED = 1 << 1,
 	DEADRINGER = 1 << 2,
-	FRIENDS = 1 << 3,
-	TAUNTING = 1 << 4,
-	VACCINATOR = 1 << 5,
-	UNSIMULATED = 1 << 6,
-	DISGUISED = 1 << 7
+	TAUNTING = 1 << 3,
+	VACCINATOR = 1 << 4,
+	UNSIMULATED = 1 << 5,
+	DISGUISED = 1 << 6
 };
 
 struct Target_t
@@ -59,9 +51,8 @@ struct Target_t
 	Vec3 m_vAngleTo = {};
 	float m_flFOVTo = std::numeric_limits<float>::max();
 	float m_flDistTo = std::numeric_limits<float>::max();
+	int m_nPriority = 0;
 	int m_nAimedHitbox = -1;
-	bool m_bHasMultiPointed = false;
-	Priority n_Priority = {};
 
 	// Backtrack
 	bool ShouldBacktrack = false;
@@ -74,9 +65,10 @@ public:
 	bool IsKeyDown();
 	void SortTargets(std::vector<Target_t>*, const ESortMethod& method);
 	void SortPriority(std::vector<Target_t>*, const ESortMethod& method);
-	bool ShouldIgnore(CBaseEntity* pTarget, bool hasMedigun = false);
-	Priority GetPriority(int targetIdx);
+	bool ShouldIgnore(CBaseEntity* pTarget, bool bMedigun = false);
+	int GetPriority(int targetIdx);
 	bool ValidBomb(CBaseEntity* pBomb);
+	bool IsSandvich();
 };
 
 ADD_FEATURE(CAimbotGlobal, AimbotGlobal)

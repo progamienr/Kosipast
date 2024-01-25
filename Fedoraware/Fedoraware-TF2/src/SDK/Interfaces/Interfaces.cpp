@@ -143,7 +143,7 @@ void CInterfaces::Init()
 	UniformRandomStream = *S::UniformRandomStream_Interface.As<IUniformRandomStream**>();
 	VALIDATE(UniformRandomStream);
 
-	StudioRender = g_Interface.Get<void*>(STUDIORENDER_DLL, "VStudioRender025");
+	StudioRender = g_Interface.Get<IStudioRender*>(STUDIORENDER_DLL, VENGINE_STUDIORENDER_INTERFACE_VERSION);
 	VALIDATE(StudioRender);
 
 	InputSystem = g_Interface.Get<IInputSystem*>("inputsystem.dll", "InputSystemVersion001");

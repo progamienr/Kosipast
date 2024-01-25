@@ -8,6 +8,7 @@
 #include "../PacketManip/AntiAim/AntiAim.h"
 #include "../Simulation/ProjectileSimulation/ProjectileSimulation.h"
 #include "../CameraWindow/CameraWindow.h"
+#include "Materials/Materials.h"
 
 #include <ImGui/imgui_impl_win32.h>
 #include <ImGui/imgui_stdlib.h>
@@ -224,7 +225,7 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 		return;
 
 	ProjectileInfo projInfo = {};
-	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? float(Vars::Aimbot::Projectile::AutoReleaseAt.Value) / 100 : -1.f))
+	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? float(Vars::Aimbot::Projectile::AutoRelease.Value) / 100 : -1.f))
 		return;
 
 	if (!F::ProjSim.Initialize(projInfo))
@@ -585,54 +586,44 @@ void CVisuals::FOV(CViewSetup* pView)
 
 void CVisuals::ThirdPerson(CViewSetup* pView)
 {
-	if (const auto& pLocal = g_EntityCache.GetLocal())
+	const auto& pLocal = g_EntityCache.GetLocal();
+	if (!pLocal || !pLocal->IsAlive())
+		return I::Input->CAM_ToFirstPerson();
+	
+	// Toggle key
+	if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible() && Vars::Visuals::ThirdPerson::Key.Value)
 	{
-		// Toggle key
-		if (Vars::Visuals::ThirdPerson::Key.Value)
-		{
-			if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible() && F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
-				Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
-		}
+		if (F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
+			Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
+	}
 
-		if (!Vars::Visuals::ThirdPerson::Active.Value
-			|| ((!Vars::Visuals::RemoveScope.Value || Vars::Visuals::ZoomFieldOfView.Value < 70) && pLocal->IsScoped())
-			|| !pLocal || pLocal->IsTaunting() || !pLocal->IsAlive() || pLocal->IsAGhost())
-		{
-			if (I::Input->CAM_IsThirdPerson())
-				I::EngineClient->ClientCmd_Unrestricted("firstperson");
-		}
-		else
-		{
-			if (!I::Input->CAM_IsThirdPerson())
-			{
-				//lazy
-				ConVar* sv_cheats = g_ConVars.FindVar("sv_cheats");
-				sv_cheats->m_Value.m_nValue = 1;
-				ConVar* cam_ideallag = g_ConVars.FindVar("cam_ideallag");
-				cam_ideallag->SetValue(0.f);
-				
-				I::EngineClient->ClientCmd_Unrestricted("thirdperson");
-			}
+	const bool bNoZoom = (!Vars::Visuals::RemoveScope.Value || Vars::Visuals::ZoomFieldOfView.Value < 70) && pLocal->IsScoped();
+	const bool bForce = pLocal->IsTaunting() || pLocal->IsAGhost() || pLocal->IsInBumperKart() || pLocal->InCond(TF_COND_HALLOWEEN_THRILLER);
 
-			// Thirdperson offset
-			I::ThirdPersonManager->SetDesiredCameraOffset(Vec3{}); //would've used this but right & up offsets get reversed on trace
+	//if (bForce)
+	//	return;
 
-			const Vec3 viewangles = I::EngineClient->GetViewAngles();
-			Vec3 vForward, vRight, vUp;
-			Math::AngleVectors(viewangles, &vForward, &vRight, &vUp);
+	if (Vars::Visuals::ThirdPerson::Active.Value && !bNoZoom || bForce)
+		I::Input->CAM_ToThirdPerson();
+	else
+		I::Input->CAM_ToFirstPerson();
+	pLocal->ThirdPersonSwitch();
 
-			const Vec3 viewDiff = pView->origin - pLocal->GetEyePosition();
+	if (I::Input->CAM_IsThirdPerson())
+	{	// Thirdperson offset
+		Vec3 vForward, vRight, vUp;
+		Math::AngleVectors(pView->angles, &vForward, &vRight, &vUp);
 
-			Vec3 offset;
-			offset += vRight * Vars::Visuals::ThirdPerson::Right.Value;
-			offset += vUp * Vars::Visuals::ThirdPerson::Up.Value;
-			offset -= vForward * Vars::Visuals::ThirdPerson::Distance.Value;
+		Vec3 offset;
+		offset += vRight * Vars::Visuals::ThirdPerson::Right.Value;
+		offset += vUp * Vars::Visuals::ThirdPerson::Up.Value;
+		offset -= vForward * Vars::Visuals::ThirdPerson::Distance.Value;
 
-			CGameTrace Trace = {}; CTraceFilterWorldAndPropsOnly Filter = {};
-			Utils::TraceHull(pView->origin - viewDiff, pView->origin + offset - viewDiff, { -16.0f, -16.0f, -16.0f }, { 16.0f, 16.0f, 16.0f }, MASK_SOLID, &Filter, &Trace);
+		const Vec3 viewDiff = pView->origin - pLocal->GetEyePosition();
+		CGameTrace Trace = {}; CTraceFilterWorldAndPropsOnly Filter = {};
+		Utils::TraceHull(pView->origin - viewDiff, pView->origin + offset - viewDiff, { -16.0f, -16.0f, -16.0f }, { 16.0f, 16.0f, 16.0f }, MASK_SOLID, & Filter, & Trace);
 
-			pView->origin += offset * Trace.flFraction - viewDiff;
-		}
+		pView->origin += offset * Trace.flFraction - viewDiff;
 	}
 }
 
@@ -687,7 +678,7 @@ void CVisuals::FillSightlines()
 			filter.pSkip = pEnemy;
 			Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
 
-			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::ESP::Main::EnableTeamEnemyColors.Value), true };
+			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
 		}
 	}
 }
@@ -706,7 +697,7 @@ void CVisuals::PickupTimers()
 			continue;
 		}
 
-		auto timerText = std::format("{:.1f}", 10.f - timeDiff);
+		auto timerText = std::format("{:.1f}s", 10.f - timeDiff);
 		auto color = pickupData->Type ? Vars::Colors::Health.Value : Vars::Colors::Ammo.Value;
 
 		Vec3 vScreen;
@@ -739,59 +730,51 @@ void CVisuals::ManualNetwork(const StartSoundParams_t& params)
 
 
 
-void CVisuals::OverrideWorldTextures() // This is 100% pasted from spook953
+void CVisuals::OverrideWorldTextures()
 {
-	static KeyValues* kv = nullptr;
+	KeyValues* kv = nullptr;
 
-	if (!kv)
+	auto& string = Vars::Visuals::World::WorldTexture.Value;
+	if (string == "Default")
+		return;
+
+	kv = new KeyValues("LightmappedGeneric");
+	if (string == "Dev")
+		kv->SetString("$basetexture", "dev/dev_measuregeneric01b");
+	else if (string == "Camo")
+		kv->SetString("$basetexture", "patterns/paint_strokes");
+	else if (string == "Black")
+		kv->SetString("$basetexture", "patterns/combat/black");
+	else if (string == "White")
+		kv->SetString("$basetexture", "patterns/combat/white");
+	else if (string == "Flat")
 	{
-		kv = new KeyValues("LightmappedGeneric");
 		kv->SetString("$basetexture", "vgui/white_additive");
 		kv->SetString("$color2", "[0.12 0.12 0.15]");
 	}
+	else
+		kv->SetString("$basetexture", Vars::Visuals::World::WorldTexture.Value.c_str());
 
-	if (Vars::Visuals::World::OverrideTextures.Value)
+	if (!kv)
+		return;
+
+	for (const auto& data : MaterialHandleDatas)
 	{
-		for (auto h = I::MaterialSystem->First(); h != I::MaterialSystem->Invalid(); h = I::MaterialSystem->Next(h))
-		{
-			IMaterial* pMaterial = I::MaterialSystem->Get(h);
+		if (data.Material == nullptr)
+			continue;
 
-			if (pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached()
-				|| pMaterial->IsTranslucent() || pMaterial->IsSpriteCard()
-				|| std::string_view(pMaterial->GetTextureGroupName()).find("World") == std::string_view::npos)
-				continue;
+		if (data.Material->IsTranslucent() || data.Material->IsSpriteCard() || data.GroupType != MaterialHandleData::EMatGroupType::GROUP_WORLD)
+			continue;
 
-			std::string_view sName = std::string_view(pMaterial->GetName());
+		if (!data.ShouldOverrideTextures)
+			continue;
 
-			if (sName.find("water") != std::string_view::npos || sName.find("glass") != std::string_view::npos
-				|| sName.find("door") != std::string_view::npos || sName.find("tools") != std::string_view::npos
-				|| sName.find("player") != std::string_view::npos || sName.find("chicken") != std::string_view::npos
-				|| sName.find("wall28") != std::string_view::npos || sName.find("wall26") != std::string_view::npos
-				|| sName.find("decal") != std::string_view::npos || sName.find("overlay") != std::string_view::npos
-				|| sName.find("hay") != std::string_view::npos)
-				continue;
-
-			pMaterial->SetShaderAndParams(kv);
-		}
+		data.Material->SetShaderAndParams(kv);
 	}
 }
 
 void ApplyModulation(const Color_t& clr)
 {
-	//for (MaterialHandle_t h = I::MatSystem->First(); h != I::MatSystem->Invalid(); h = I::
-	//	MatSystem->Next(h))
-	//{
-	//	if (const auto& pMaterial = I::MatSystem->Get(h))
-	//	{
-	//		if (pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached())
-	//			continue;
-
-	//		std::string_view group(pMaterial->GetTextureGroupName());
-
-	//		if (group.find(_(TEXTURE_GROUP_WORLD)) != group.npos)
-	//			pMaterial->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
-	//	}
-	//}
 	if (F::Visuals.MaterialHandleDatas.empty())
 		return;
 
@@ -842,8 +825,8 @@ void ApplySkyboxModulation(const Color_t& clr)
 void CVisuals::ModulateWorld()
 {
 	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
-	const bool bWorldModulation = Vars::Visuals::World::Modulations.Value & (1 << 0) && !bScreenshot;
-	const bool bSkyModulation = Vars::Visuals::World::Modulations.Value & (1 << 1) && !bScreenshot;
+	const bool bWorldModulation = Vars::Visuals::World::Modulations.Value & 1 << 0 && !bScreenshot;
+	const bool bSkyModulation = Vars::Visuals::World::Modulations.Value & 1 << 1 && !bScreenshot;
 
 	static bool bLastConnectionState = I::EngineClient->IsConnected() && I::EngineClient->IsInGame();
 	const bool bCurrConnectionState = I::EngineClient->IsConnected() && I::EngineClient->IsInGame();
@@ -899,8 +882,9 @@ void CVisuals::SkyboxChanger()
 {
 	using LoadNamedSkysFn = bool(_cdecl*)(const char*);
 	static auto fnLoadSkys = S::LoadSkys.As<LoadNamedSkysFn>();
+	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 
-	if (Vars::Visuals::World::SkyboxChanger.Value != "Off" && Vars::Misc::BypassPure.Value)
+	if (Vars::Visuals::World::SkyboxChanger.Value != "Off" && Vars::Misc::BypassPure.Value && !bScreenshot)
 		fnLoadSkys(Vars::Visuals::World::SkyboxChanger.Value.c_str());
 	else if (auto sv_skyname = I::Cvar->FindVar("sv_skyname"))
 		fnLoadSkys(sv_skyname->GetString());

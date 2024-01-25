@@ -8,6 +8,7 @@
 #include "../PacketManip/AntiAim/AntiAim.h"
 #include "../TickHandler/TickHandler.h"
 #include "../Simulation/MovementSimulation/MovementSimulation.h"
+#include "../Menu/Playerlist/PlayerUtils.h"
 
 extern int attackStringW;
 extern int attackStringH;
@@ -20,9 +21,10 @@ void CMisc::RunPre(CUserCmd* pCmd)
 		AutoJump(pCmd, pLocal);
 		AutoJumpbug(pCmd, pLocal);
 		AutoStrafe(pCmd, pLocal);
-		AntiBackstab(pLocal, pCmd);
+		AntiBackstab(pCmd, pLocal);
 		AutoPeek(pCmd, pLocal);
-		AntiAFK(pLocal, pCmd);
+		AntiAFK(pCmd, pLocal);
+		InstantRespawnMVM(pLocal);
 	}
 
 	CheatsBypass();
@@ -326,7 +328,7 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
+void CMisc::AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	G::AvoidingBackstab = false;
 	Vec3 vTargetPos;
@@ -351,12 +353,9 @@ void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
 				continue;
 		}
 
-		PlayerInfo_t pInfo{};
-		if (!I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pInfo))
-		{
-			if (G::IsIgnored(pInfo.friendsID))
-				continue;
-		}
+		PlayerInfo_t pi{};
+		if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pi) && F::PlayerUtils.IsIgnored(pi.friendsID))
+			continue;
 
 		Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
 		if (!Utils::VisPos(pLocal, pEnemy, vLocalPos, vEnemyPos))
@@ -469,7 +468,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AntiAFK(CBaseEntity* pLocal, CUserCmd* pCmd)
+void CMisc::AntiAFK(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	static Timer afkTimer{};
 	static int lastButtons = 0;
@@ -482,6 +481,16 @@ void CMisc::AntiAFK(CBaseEntity* pLocal, CUserCmd* pCmd)
 	// Trigger 10 seconds before kick
 	else if (Vars::Misc::AntiAFK.Value && g_ConVars.mp_idledealmethod->GetInt() && afkTimer.Check(g_ConVars.mp_idlemaxtime->GetFloat() * 60 * 1000 - 10000))
 		pCmd->buttons |= pCmd->command_number % 2 ? IN_FORWARD : IN_BACK;
+}
+
+void CMisc::InstantRespawnMVM(CBaseEntity* pLocal)
+{
+	if (I::EngineClient->IsInGame() && pLocal->IsAlive() && Vars::Misc::InstantRespawn.Value)
+	{
+		auto kv = new KeyValues("MVM_Revive_Response");
+		kv->SetInt("accepted", 1);
+		I::EngineClient->ServerCmdKeyValues(kv);
+	}
 }
 
 void CMisc::CheatsBypass()
@@ -968,39 +977,4 @@ void CMisc::SteamRPC()
 	g_SteamInterfaces.Friends->SetRichPresence("currentmap", Vars::Misc::Steam::MapText.Value.empty() ? "Fedoraware" : Vars::Misc::Steam::MapText.Value.c_str());
 	
 	g_SteamInterfaces.Friends->SetRichPresence("steam_player_group_size", std::to_string(Vars::Misc::Steam::GroupSize.Value).c_str());
-}
-
-/*
-void CMisc::InstantRespawnMVM()
-{
-	if (I::Engine->IsInGame() && I::Engine->GetLocalPlayer() && !g_EntityCache.GetLocal()->IsAlive() && Vars::Misc::MVMRes.m_Var) {
-		auto kv = new KeyValues("MVM_Revive_Response");
-		kv->SetInt("accepted", 1);
-		I::Engine->ServerCmdKeyValues(kv);
-	}
-}
-*/
-
-void CMisc::PrintProjAngles(CBaseEntity* pLocal)
-{
-	if (!Vars::Debug::Logging.Value)
-		return;
-	if (!pLocal->IsAlive() || pLocal->IsAGhost())
-		return;
-	static float flNextPrint = 0.f; if (flNextPrint > I::GlobalVars->curtime)
-		return;
-	const Vec3 vLocalEyeAngles = pLocal->GetEyeAngles();
-	const Vec3 vLocalEyePosition = pLocal->GetEyePosition();
-	for (CBaseEntity* pEntity : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
-	{
-		if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()) != pLocal)
-			continue;
-		const Vec3 vProjAngles = pEntity->GetAbsAngles();
-		const Vec3 vProjPosition = pEntity->GetAbsOrigin();
-
-		const Vec3 vDeltaAng = vLocalEyeAngles - vProjAngles;
-		const Vec3 vDeltaPos = vLocalEyePosition - vProjPosition;
-		Utils::ConLog("ProjDebug", std::format("dAngles [{}, {}, {}] : dPosition [{}, {}, {}]", vDeltaAng.x, vDeltaAng.y, vDeltaAng.z, vDeltaPos.x, vDeltaPos.y, vDeltaPos.z).c_str(), { 255, 180, 0, 255 });
-		flNextPrint = I::GlobalVars->curtime + 1.f;
-	}
 }

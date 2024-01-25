@@ -3,8 +3,8 @@
 
 namespace S
 {
-	MAKE_SIGNATURE(C_TFPlayer_Resource_GetPlayerConnectionState, CLIENT_DLL, "55 8B EC 8B 45 ? 85 C0 74 ? 83 F8 ? 7F", 0x0);
-	MAKE_SIGNATURE(C_PlayerResource_GetTeamColor, CLIENT_DLL, "55 8B EC 8B 45 08 83 F8 1F", 0x0);
+	MAKE_SIGNATURE(CTFPlayer_Resource_GetPlayerConnectionState, CLIENT_DLL, "55 8B EC 8B 45 ? 85 C0 74 ? 83 F8 ? 7F", 0x0);
+	MAKE_SIGNATURE(CPlayerResource_GetTeamColor, CLIENT_DLL, "55 8B EC 8B 45 08 83 F8 1F", 0x0);
 }
 
 class CPlayerResource

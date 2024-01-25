@@ -61,7 +61,8 @@ void CCore::Load()
 
 	F::Materials.ReloadMaterials();
 
-	g_Events.Setup({ "client_beginconnect", "client_disconnect", "game_newmap", "teamplay_round_start", "player_connect", "player_spawn", "player_changeclass", "player_hurt", "player_death", "vote_started", "vote_cast", "achievement_earned", "item_pickup" }); // all events @ https://github.com/tf2cheater2013/gameevents.txt
+	// all events @ https://github.com/tf2cheater2013/gameevents.txt
+	g_Events.Setup({ "client_beginconnect", "client_connected", "client_disconnect", "game_newmap", "teamplay_round_start", "player_activate", "player_spawn", "player_changeclass", "player_hurt", "vote_cast", "item_pickup" });
 
 	OnLoaded();
 }

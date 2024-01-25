@@ -3,5 +3,7 @@
 MAKE_HOOK(CTFPlayerInventory_GetMaxItemCount, S::CTFPlayerInventory_GetMaxItemCount(), int, __fastcall,
 	void* ecx, void* edx)
 {
-	return 3000;
+	if (Vars::Misc::BackpackExpander.Value)
+		return 3000;
+	return Hook.Original<FN>()(ecx, edx);
 }

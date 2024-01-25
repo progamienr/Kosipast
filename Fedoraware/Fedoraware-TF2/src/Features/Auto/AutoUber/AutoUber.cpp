@@ -2,6 +2,7 @@
 
 #include "../../Vars.h"
 #include "../AutoGlobal/AutoGlobal.h"
+#include "../../Menu/Playerlist/PlayerUtils.h"
 
 // This code is terrible and unoptimized
 
@@ -60,12 +61,13 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			return false;
 
 		// Ignore ignored players
-		if (F::AutoGlobal.ShouldIgnore(player)) { continue; }
+		if (F::AutoGlobal.ShouldIgnore(player))
+			continue;
 
 		const Vec3 vAngleTo = Math::CalcAngle(player->GetEyePosition(), pPatient->GetWorldSpaceCenter());
 		const float flFOVTo = Math::CalcFov(player->GetEyeAngles(), vAngleTo);
 
-		if (G::PlayerPriority[player->GetIndex()].Mode != 4 && Vars::Auto::Uber::ReactFOV.Value)
+		if (Vars::Auto::Uber::ReactFOV.Value && !F::PlayerUtils.HasTag(player->GetIndex(), "Cheater"))
 		{
 			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Auto::Uber::ReactFOV.Value))
 				continue; // account for choking :D

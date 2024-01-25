@@ -9,17 +9,16 @@ namespace S
 MAKE_HOOK(CTFPlayerShared_IsPlayerDominated, S::CTFPlayerShared_IsPlayerDominated(), bool, __fastcall,
 	void* ecx, void* edx, int index)
 {
+	static auto dwDesired = S::CTFPlayerShared_IsPlayerDominated_Desired();
+	static auto dwJump = S::CTFPlayerShared_IsPlayerDominated_Jump();
+	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
+
 	const bool bResult = Hook.Original<FN>()(ecx, edx, index);
 
 	if (!bResult && Vars::Visuals::RevealScoreboard.Value)
 	{
-		static DWORD dwDesired = S::CTFPlayerShared_IsPlayerDominated_Desired();
-		static DWORD dwJump = S::CTFPlayerShared_IsPlayerDominated_Jump();
-
-		if (reinterpret_cast<DWORD>(_ReturnAddress()) == dwDesired)
-		{
+		if (dwRetAddr == dwDesired)
 			*static_cast<uintptr_t*>(_AddressOfReturnAddress()) = dwJump;
-		}
 	}
 
 	return bResult;

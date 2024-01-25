@@ -11,10 +11,11 @@ class CMisc
 	void AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void AntiAFK(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void InstantRespawnMVM(CBaseEntity* pLocal);
 
-	void AntiAFK(CBaseEntity* pLocal, CUserCmd* pCmd);
 	void CheatsBypass();
 	int iLastCmdrate = -1;
 	void PingReducer();
@@ -32,8 +33,6 @@ class CMisc
 
 	bool SteamCleared = false;
 	bool bMovementScuffed = false;
-
-	void PrintProjAngles(CBaseEntity* pLocal);
 public:
 #ifdef DEBUG
 	void DumpClassIDS();

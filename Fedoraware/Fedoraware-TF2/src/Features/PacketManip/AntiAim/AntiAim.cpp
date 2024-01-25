@@ -1,5 +1,6 @@
 #include "AntiAim.h"
 #include "../../Misc/Misc.h"
+#include "../../Menu/Playerlist/PlayerUtils.h"
 
 void CAntiAim::FakeShotAngles(CUserCmd* pCmd)
 {
@@ -83,15 +84,13 @@ float CAntiAim::GetBaseYaw(CBaseEntity* pLocal, CUserCmd* pCmd, const bool bFake
 		float flSmallestAngleTo = 0.f; float flSmallestFovTo = 360.f;
 		for (CBaseEntity* pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
-			if (!pEnemy || !pEnemy->IsAlive() || pEnemy->GetDormant()) // is enemy valid
+			if (!pEnemy || !pEnemy->IsAlive() || pEnemy->GetDormant())
 				continue;
 
-			PlayerInfo_t pInfo{ };
-			if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pInfo))
-			{
-				if (G::IsIgnored(pInfo.friendsID))
-					continue;
-			}
+			PlayerInfo_t pi{};
+			if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pi) && F::PlayerUtils.IsIgnored(pi.friendsID))
+				continue;
+			
 			const Vec3 vAngleTo = Math::CalcAngle(pLocal->GetAbsOrigin(), pEnemy->GetAbsOrigin());
 			const float flFOVTo = Math::CalcFov(I::EngineClient->GetViewAngles(), vAngleTo);
 

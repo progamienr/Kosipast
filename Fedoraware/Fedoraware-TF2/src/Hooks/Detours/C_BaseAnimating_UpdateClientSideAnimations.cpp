@@ -3,7 +3,7 @@
 MAKE_HOOK(CBaseAnimating_UpdateClientSideAnimation, S::CBaseAnimating_UpdateClientSideAnimation(), void, __fastcall,
 	void* ecx, void* edx)
 {
-	if (!G::UpdatingAnims && Vars::Misc::DisableInterpolation.Value)
+	if (!G::UpdatingAnims && Vars::Visuals::RemoveInterpolation.Value)
 		return;
 
 	auto pEntity = reinterpret_cast<CBaseEntity*>(ecx);

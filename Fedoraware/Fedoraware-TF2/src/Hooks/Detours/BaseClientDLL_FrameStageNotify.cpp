@@ -2,7 +2,7 @@
 
 #include "../../Features/Resolver/Resolver.h"
 #include "../../Features/Visuals/Visuals.h"
-#include "../../Features/Menu/Playerlist/Playerlist.h"
+#include "../../Features/Menu/Playerlist/PlayerUtils.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Simulation/MovementSimulation/MovementSimulation.h"
 
@@ -36,6 +36,7 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		break;
 	case EClientFrameStage::FRAME_NET_UPDATE_END:
 		g_EntityCache.Fill();
+		F::PlayerUtils.UpdatePlayers();
 		for (auto pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 		{
 			if (!pEntity || pEntity == g_EntityCache.GetLocal() || pEntity->IsTaunting())
@@ -77,15 +78,14 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 				Line.m_line.pop_front();
 			}
 		}
-		for (int i = 0; i < I::EngineClient->GetMaxClients(); i++)
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 		{
-			if (const auto& player = I::ClientEntityList->GetClientEntity(i))
+			if (const auto& player = I::ClientEntityList->GetClientEntity(n))
 			{
 				const VelFixRecord record = { player->m_vecOrigin(), player->m_fFlags(), player->m_flSimulationTime() };
 				G::VelFixRecords[player] = record;
 			}
 		}
-		F::PlayerList.UpdatePlayers();
 
 		break;
 	case EClientFrameStage::FRAME_RENDER_START:

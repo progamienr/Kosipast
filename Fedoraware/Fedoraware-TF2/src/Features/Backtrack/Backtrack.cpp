@@ -1,6 +1,7 @@
 #include "Backtrack.h"
 #include "../Simulation/MovementSimulation/MovementSimulation.h"
 #include "../Visuals/Visuals.h"
+#include "../Menu/Playerlist/PlayerUtils.h"
 
 #define ROUND_TO_TICKS(t) (TICKS_TO_TIME(TIME_TO_TICKS(t)))
 
@@ -112,18 +113,12 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 	if (!iNetChan)
 		return false;
 
-	/*
-	const auto tb = I::GlobalVars->tickcount;
-	const auto tc = iTickCount;
-	Utils::ConLog("diff", tfm::format("%i (%i, %i)", tb - tc, tb, tc).c_str(), { 100, 100, 255, 255 });
-	*/
-
 	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.0f, g_ConVars.sv_maxunlag->GetFloat());
 	const int iServerTick = iTickCount + TIME_TO_TICKS(GetReal()) + (Vars::Misc::NetworkFix.Value ? 1 : -1) + Vars::Backtrack::PassthroughOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokePassMod.Value;
 
-	float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(record.flSimTime));
+	const float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(record.flSimTime));
 
-	return fabsf(flDelta) < (Vars::Backtrack::Window.Value - (flDelta > 0.f ? Vars::Backtrack::NWindowSub.Value : Vars::Backtrack::OWindowSub.Value)) / 1000.f; // older end seems more unreliable, possibly due to 1 tick choke ?
+	return fabsf(flDelta) < (Vars::Backtrack::Window.Value - (flDelta > 0.f ? Vars::Backtrack::NWindowSub.Value : Vars::Backtrack::OWindowSub.Value)) / 1000.f;
 	// in short, check if the record is +- 200ms from us
 }
 
@@ -135,6 +130,24 @@ std::deque<TickRecord>* CBacktrack::GetRecords(CBaseEntity* pEntity)
 	return &mRecords[pEntity];
 }
 
+std::optional<TickRecord> CBacktrack::GetFirstRecord(CBaseEntity* pEntity)
+{
+	if (mRecords[pEntity].empty())
+		return std::nullopt;
+	bool bFirst = true;
+	for (const auto& rCurQuery : mRecords[pEntity])
+	{
+		if (!IsTracked(rCurQuery) || !WithinRewind(rCurQuery) || IsEarly(pEntity, rCurQuery))
+		{
+			bFirst = false;
+			continue;
+		}
+		if (bFirst)
+			return std::nullopt;
+		return rCurQuery;
+	}
+	return std::nullopt;
+}
 std::optional<TickRecord> CBacktrack::GetLastRecord(CBaseEntity* pEntity)
 {
 	if (mRecords[pEntity].empty())
@@ -218,8 +231,8 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(CBaseEntity* pEntity, std::de
 
 		std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
 			{
-				float flADelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(a.flSimTime));
-				float flBDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(b.flSimTime));
+				const float flADelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(a.flSimTime));
+				const float flBDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(b.flSimTime));
 				return fabsf(flADelta) < fabsf(flBDelta);
 			});
 	}
@@ -257,13 +270,11 @@ std::optional<TickRecord> CBacktrack::GetHitRecord(CUserCmd* pCmd, CBaseEntity* 
 
 void CBacktrack::StoreNolerp()
 {
-	for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity || pEntity == g_EntityCache.GetLocal())
+		if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer())
 			continue;
-		if (!pEntity->IsPlayer())
-			return;
 
 		// bones are more of a placeholder as i haven't gotten them to work correctly yet
 		bSettingUpBones = true;
@@ -283,20 +294,18 @@ void CBacktrack::MakeRecords()
 		return;
 	iLastCreationTick = I::GlobalVars->tickcount;
 
-	for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity || pEntity == g_EntityCache.GetLocal())
+		if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer())
 			continue;
-		if (!pEntity->IsPlayer())
-			return;
 
 		const float flSimTime = pEntity->m_flSimulationTime(), flOldSimTime = pEntity->m_flOldSimulationTime();
 		const float flDelta = flSimTime - flOldSimTime;
 
 		const Vec3 vOrigin = pEntity->m_vecOrigin();
 		if (!mRecords[pEntity].empty())
-		{ // as long as we have 1 record we can check for lagcomp breaking here
+		{	// as long as we have 1 record we can check for lagcomp breaking here
 			const Vec3 vPrevOrigin = mRecords[pEntity].front().vOrigin;
 			const Vec3 vDelta = vOrigin - vPrevOrigin;
 			if (vDelta.Length2DSqr() > 4096.f)
@@ -304,7 +313,7 @@ void CBacktrack::MakeRecords()
 		}
 
 		if (TIME_TO_TICKS(flDelta) > 0)
-		{ // create record on simulated players
+		{	// create record on simulated players
 			if (!noInterpBones[pEntity->GetIndex()].first)
 				continue;
 
@@ -318,7 +327,7 @@ void CBacktrack::MakeRecords()
 			});
 		}
 		else if (Vars::Backtrack::UnchokePrediction.Value && mRecords[pEntity].size() < 3)
-		{ // user is choking, predict location of next record
+		{	// user is choking, predict location of next record
 			const Vec3 vOriginalPos = pEntity->GetAbsOrigin();
 			const Vec3 vOriginalEyeAngles = pEntity->GetEyeAngles();
 			const float flNextSimTime = flSimTime + I::GlobalVars->interval_per_tick;
@@ -365,13 +374,13 @@ void CBacktrack::MakeRecords()
 
 void CBacktrack::CleanRecords()
 {
-	for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
 		if (!pEntity)
 			continue;
 
-		if (pEntity->GetDormant() || !pEntity->IsAlive() || !pEntity->IsPlayer() || pEntity->IsAGhost())
+		if (!pEntity->IsPlayer() || pEntity->GetDormant() || !pEntity->IsAlive() || pEntity->IsAGhost())
 		{
 			mRecords[pEntity].clear();
 			continue;
@@ -451,14 +460,11 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
 			if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsAGhost())
-				continue; //	dont scan
+				continue;
 
-			PlayerInfo_t pInfo{}; //	dont care about ignored players
-			if (!I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pInfo))
-			{
-				if (G::IsIgnored(pInfo.friendsID))
-					continue;
-			}
+			PlayerInfo_t pi{}; // dont care about ignored players
+			if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pi) && F::PlayerUtils.IsIgnored(pi.friendsID))
+				continue;
 
 			if (const std::optional<TickRecord> checkRec = GetHitRecord(pCmd, pEnemy, vAngles, vShootPos))
 			{

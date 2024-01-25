@@ -4,7 +4,7 @@
 MAKE_HOOK(C_BaseEntity_Interpolate, S::CBaseEntity_Interpolate(), bool, __fastcall,
 	void* ecx, void* edx, float currentTime)
 {
-	return Vars::Misc::DisableInterpolation.Value
+	return Vars::Visuals::RemoveInterpolation.Value
 		? true
 		: Hook.Original<FN>()(ecx, edx, currentTime);
 }

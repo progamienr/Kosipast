@@ -9,17 +9,16 @@ namespace S
 MAKE_HOOK(KeyValues_SetInt, S::KeyValues_SetInt(), void, __fastcall,
 	void* ecx, void* edx, const char* szKeyName, int iValue)
 {
-	Hook.Original<FN>()(ecx, edx, szKeyName, iValue);
-
-	if (!Vars::Visuals::RevealScoreboard.Value)
-		return;
-
 	static DWORD dwDesired = S::KeyValues_SetInt_Desired();
 	static DWORD dwJump = S::KeyValues_SetInt_Jump();
+	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
+
+	Hook.Original<FN>()(ecx, edx, szKeyName, iValue);
+
+	if (!Vars::Visuals::RevealScoreboard.Value) // Vars::Visuals::CleanScreenshots.Value ineffective, doesn't update in time
+		return;
 
 	/* Scoreboard class reveal */
-	if (reinterpret_cast<DWORD>(_ReturnAddress()) == dwDesired && std::string_view(szKeyName).find("nemesis") != std::string_view::npos)
-	{
+	if (dwRetAddr == dwDesired && std::string_view(szKeyName).find("nemesis") != std::string_view::npos)
 		*static_cast<uintptr_t*>(_AddressOfReturnAddress()) = dwJump;
-	}
 }

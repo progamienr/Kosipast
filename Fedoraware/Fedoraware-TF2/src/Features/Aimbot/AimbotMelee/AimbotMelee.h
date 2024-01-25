@@ -6,7 +6,7 @@
 class CAimbotMelee
 {
 	std::vector<Target_t> GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	bool AimFriendlyBuilding(CBaseObject* pBuilding);
+	bool AimFriendlyBuilding(CBaseEntity* pBuilding);
 	std::vector<Target_t> SortTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 	int GetSwingTime(CBaseCombatWeapon* pWeapon);

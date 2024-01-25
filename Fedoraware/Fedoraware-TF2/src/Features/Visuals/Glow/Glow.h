@@ -1,30 +1,65 @@
 #pragma once
-
 #include "../../Feature.h"
+
+#include <boost/functional/hash.hpp>
 
 class CGlow
 {
-	void SetScale(int nScale, bool bReset);
-	void DrawModel(CBaseEntity* pEntity, bool bModel = false, Color_t cColor = {});
+	bool GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color);
+
+	void SetupBegin(Glow_t glow, IMatRenderContext* pRenderContext, IMaterial* m_pMatBlurY);
+	void SetupMid(IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, int w, int h);
+	void SetupEnd(Glow_t glow, IMatRenderContext* pRenderContext, IMaterial* m_pMatBlurX, IMaterial* m_pMatBlurY, IMaterial* m_pMatHaloAddToScreen, int w, int h);
+
+	void StencilBegin(IMatRenderContext* pRenderContext);
+	void StencilPreDraw(IMatRenderContext* pRenderContext);
+	void StencilEnd(IMatRenderContext* pRenderContext);
+
+	void DrawModel(CBaseEntity* pEntity, bool bModel = false);
+
+	void RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld,
+		int w, int h, IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, IMaterial* m_pMatBlurX, IMaterial* m_pMatBlurY, IMaterial* m_pMatHaloAddToScreen);
+	void RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld,
+		int w, int h, IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, IMaterial* m_pMatBlurX, IMaterial* m_pMatBlurY, IMaterial* m_pMatHaloAddToScreen);
 
 	ITexture* m_pRtFullFrame;
 	ITexture* m_pRenderBuffer1;
 	ITexture* m_pRenderBuffer2;
 
-	struct GlowEnt_t
+
+
+	struct GlowHasher_t
+	{
+		std::size_t operator()(const Glow_t& k) const
+		{
+			std::size_t seed = 0;
+
+			boost::hash_combine(seed, boost::hash_value(k.Stencil));
+			boost::hash_combine(seed, boost::hash_value(k.Blur));
+			boost::hash_combine(seed, boost::hash_value(k.StencilScale));
+			boost::hash_combine(seed, boost::hash_value(k.BlurScale));
+
+			return seed;
+		}
+	};
+	struct GlowInfo_t
 	{
 		CBaseEntity* m_pEntity;
 		Color_t m_Color;
 	};
-
-	std::vector<GlowEnt_t> m_vecGlowEntities;
+	std::unordered_map<Glow_t, std::vector<GlowInfo_t>, GlowHasher_t> mEntities = {};
 
 public:
-	void Init();
-	void Render();
+	void RenderMain();
+	void RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 
-	//bool m_bDrawingGlow;
-	bool m_bRendering;
+	void RenderViewmodel(void* ecx, int flags);
+	void RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
+
+	void Init();
+
+	bool bRendering = false;
+	bool bExtra = false;
 };
 
 ADD_FEATURE(CGlow, Glow)

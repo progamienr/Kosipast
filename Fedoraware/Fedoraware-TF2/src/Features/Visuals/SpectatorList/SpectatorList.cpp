@@ -1,7 +1,6 @@
 #include "SpectatorList.h"
 
 #include "../../Vars.h"
-#include "../Menu.h"
 
 bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 {
@@ -50,11 +49,11 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 				RespawnCache[pTeammate->GetIndex()] = -1.f;
 			}
 
-			PlayerInfo_t playerInfo{ };
-			if (I::EngineClient->GetPlayerInfo(pTeammate->GetIndex(), &playerInfo))
+			PlayerInfo_t pi{};
+			if (I::EngineClient->GetPlayerInfo(pTeammate->GetIndex(), &pi))
 			{
 				Spectators.push_back({
-					Utils::ConvertUtf8ToWide(playerInfo.name), szMode, respawnIn, respawnTimeIncreased, g_EntityCache.IsFriend(pTeammate->GetIndex()),
+					Utils::ConvertUtf8ToWide(pi.name), szMode, respawnIn, respawnTimeIncreased, g_EntityCache.IsFriend(pTeammate->GetIndex()),
 					pTeammate->m_iTeamNum(), pTeammate->GetIndex()
 				});
 			}

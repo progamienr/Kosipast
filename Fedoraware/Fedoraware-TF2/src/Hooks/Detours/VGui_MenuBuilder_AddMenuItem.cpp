@@ -1,5 +1,7 @@
 #include "../Hooks.h"
 
+#include "../../Features/Menu/Playerlist/PlayerUtils.h"
+
 //i stole this from mfed :)
 
 namespace S
@@ -9,20 +11,20 @@ namespace S
 }
 
 static int PlayerIndex;
-static uint32 CurrentFriendsID;
+static std::string PlayerName;
+static uint32_t FriendsID;
 
 MAKE_HOOK(CVoiceStatus_IsPlayerBlocked, S::CVoiceStatus_IsPlayerBlocked(), bool, __fastcall,
     void* ecx, void* edx, int playerIndex)
 {
-    if (!Vars::Misc::ScoreboardPlayerlist.Value) { return Hook.Original<FN>()(ecx, edx, playerIndex); }
-
-    auto retaddr = DWORD(_ReturnAddress());
-
     static auto CVoiceStatus_IsPlayerBlocked_Call = S::CVoiceStatus_IsPlayerBlocked_Call();
-    if (retaddr == CVoiceStatus_IsPlayerBlocked_Call)
-    {
+    const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
+
+    if (!Vars::Visuals::ScoreboardPlayerlist.Value)
+        return Hook.Original<FN>()(ecx, edx, playerIndex);
+
+    if (dwRetAddr == CVoiceStatus_IsPlayerBlocked_Call)
         PlayerIndex = playerIndex;
-    }
 
     return Hook.Original<FN>()(ecx, edx, playerIndex);
 }
@@ -30,26 +32,27 @@ MAKE_HOOK(CVoiceStatus_IsPlayerBlocked, S::CVoiceStatus_IsPlayerBlocked(), bool,
 MAKE_HOOK(VGui_MenuBuilder_AddMenuItem, S::VGui_MenuBuilder_AddMenuItem(), void*, __fastcall,
     void* ecx, void* edx, const char* pszButtonText, const char* pszCommand, const char* pszCategoryName)
 {
-    if (!Vars::Misc::ScoreboardPlayerlist.Value) { return Hook.Original<FN>()(ecx, edx, pszButtonText, pszCommand, pszCategoryName); }
-
-    auto retaddr = DWORD(_ReturnAddress());
-
     static auto VGui_MenuBuilder_AddMenuItem_Call = S::VGui_MenuBuilder_AddMenuItem_Call();
-    if (retaddr == VGui_MenuBuilder_AddMenuItem_Call && PlayerIndex != -1)
+    const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
+
+    if (!Vars::Visuals::ScoreboardPlayerlist.Value)
+        return Hook.Original<FN>()(ecx, edx, pszButtonText, pszCommand, pszCategoryName);
+
+    if (dwRetAddr == VGui_MenuBuilder_AddMenuItem_Call && PlayerIndex != -1)
     {
         auto ret = Hook.Original<FN>()(ecx, edx, pszButtonText, pszCommand, pszCategoryName);
 
-        PlayerInfo_t pi;
-
-        if (I::EngineClient->GetPlayerInfo(PlayerIndex, &pi))
+        const auto& pr = g_EntityCache.GetPR(); PlayerInfo_t pi{};
+        if (pr && I::EngineClient->GetPlayerInfo(PlayerIndex, &pi))
         {
-            CurrentFriendsID = pi.friendsID;
+            PlayerName = pi.name;
+            FriendsID = pi.friendsID;
 
-            bool ignored = G::PlayerPriority[pi.friendsID].Mode == 1;
-            bool marked = G::PlayerPriority[pi.friendsID].Mode == 4;
+            const bool bIgnored = F::PlayerUtils.HasTag(FriendsID, "Ignored");
+            const bool bCheater = F::PlayerUtils.HasTag(FriendsID, "Cheater");
 
-            Hook.Original<FN>()(ecx, edx, ignored ? "Unignore" : "Ignore", "fedignore", "fed");
-            Hook.Original<FN>()(ecx, edx, marked ? "Unmark" : "Mark as Cheater", "fedmark", "fed");
+            Hook.Original<FN>()(ecx, edx, std::format("{} {}", bIgnored ? "Unignore" : "Ignore", PlayerName).c_str(), "fedignore", "fed");
+            Hook.Original<FN>()(ecx, edx, std::format("{} {}", bCheater ? "Unmark" : "Mark", PlayerName).c_str(), "fedmark", "fed");
         }
 
         return ret;
@@ -61,22 +64,22 @@ MAKE_HOOK(VGui_MenuBuilder_AddMenuItem, S::VGui_MenuBuilder_AddMenuItem(), void*
 MAKE_HOOK(CTFClientScoreBoardDialog_OnCommand, S::CTFClientScoreBoardDialog_OnCommand(), void, __fastcall,
     void* ecx, void* edx, const char* command)
 {
-    if (!Vars::Misc::ScoreboardPlayerlist.Value) { return Hook.Original<FN>()(ecx, edx, command); return; }
+    if (!Vars::Visuals::ScoreboardPlayerlist.Value)
+        return Hook.Original<FN>()(ecx, edx, command);
 
     if (FNV1A::Hash(command) == FNV1A::HashConst("fedignore"))
     {
-        if (CurrentFriendsID)
-        {
-            G::SwitchIgnore(CurrentFriendsID);
-        }
+        if (!F::PlayerUtils.HasTag(FriendsID, "Ignored"))
+            F::PlayerUtils.AddTag(FriendsID, "Ignored", true, PlayerName);
+        else
+            F::PlayerUtils.RemoveTag(FriendsID, "Ignored", true, PlayerName);
     }
-
-    if (FNV1A::Hash(command) == FNV1A::HashConst("fedmark"))
+    else if (FNV1A::Hash(command) == FNV1A::HashConst("fedmark"))
     {
-        if (CurrentFriendsID)
-        {
-            G::SwitchMark(CurrentFriendsID);
-        }
+        if (!F::PlayerUtils.HasTag(FriendsID, "Cheater"))
+            F::PlayerUtils.AddTag(FriendsID, "Cheater", true, PlayerName);
+        else
+            F::PlayerUtils.RemoveTag(FriendsID, "Cheater", true, PlayerName);
     }
 
     Hook.Original<FN>()(ecx, edx, command);

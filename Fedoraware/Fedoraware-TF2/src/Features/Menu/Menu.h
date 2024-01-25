@@ -37,7 +37,6 @@ class CMenu
 	int GlowConfig{ 0 }; // above^
 	int CurrentGlowFilter = 0;
 
-	float TitleHeight = 22.f;
 	ImVec2 TabSize = { 65, 72 };
 	ImVec2 SubTabSize = { 90, 48 };
 
@@ -51,6 +50,7 @@ public:
 	void Init(IDirect3DDevice9* pDevice);
 
 	bool IsOpen = false;
+	int Cursor = 2;
 	bool ConfigLoaded = false;
 	bool Unload = false;
 

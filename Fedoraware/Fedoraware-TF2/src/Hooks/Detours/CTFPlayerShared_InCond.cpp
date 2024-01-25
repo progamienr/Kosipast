@@ -13,7 +13,6 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 	static const auto dwPlayerShouldDraw = S::PlayerShouldDraw();
 	static const auto dwWearableShouldDraw = S::WearableShouldDraw();
 	static const auto dwHudScopeShouldDraw = S::HudScopeShouldDraw();
-
 	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
 	//static std::map<void*, bool> retaddrs;

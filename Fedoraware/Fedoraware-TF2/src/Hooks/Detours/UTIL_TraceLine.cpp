@@ -11,8 +11,9 @@ MAKE_HOOK(UTIL_TraceLine, S::UTIL_TraceLine(), void, __cdecl,
 	void* ecx, void* edx, Vector* vecAbsStart, Vector* vecAbsEnd, unsigned int mask, CTraceFilter* pFilter, CGameTrace* ptr)
 {
 	static auto dwDisplayDamageFeedback = S::DisplayDamageFeedback();
+	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
-	if (reinterpret_cast<DWORD>(_ReturnAddress()) == dwDisplayDamageFeedback && pFilter)
+	if (dwRetAddr == dwDisplayDamageFeedback && pFilter)
 	{
 		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(pFilter) + 0x2C) = 1.0f;
 		return;

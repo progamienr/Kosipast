@@ -5,8 +5,18 @@
 
 void CEntityCache::Fill()
 {
-	CBaseEntity* _pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
+	UpdateFriends();
 
+	for (int n = I::EngineClient->GetMaxClients() + 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
+	{
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+		if (!pEntity || pEntity->GetClassID() != ETFClassID::CTFPlayerResource)
+			continue;
+
+		m_pPlayerResource = reinterpret_cast<CTFPlayerResource*>(pEntity);
+	}
+
+	CBaseEntity* _pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
 	if (_pLocal && _pLocal->IsInValidTeam())
 	{
 		m_pLocal = _pLocal;
@@ -26,12 +36,10 @@ void CEntityCache::Fill()
 		for (int n = 1; n < I::ClientEntityList->GetHighestEntityIndex(); n++)
 		{
 			CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-
 			if (!pEntity)
 				continue;
 
 			const auto nClassID = pEntity->GetClassID();
-			const int entIdx = pEntity->GetIndex();
 
 			if (pEntity->GetDormant())
 			{
@@ -39,13 +47,13 @@ void CEntityCache::Fill()
 					continue;
 
 				// Is any dormant data available?
-				if (!G::DormantPlayerESP.count(entIdx))
+				if (!G::DormantPlayerESP.count(n))
 					continue;
 
-				const auto& dormantData = G::DormantPlayerESP[entIdx];
+				const auto& dormantData = G::DormantPlayerESP[n];
 				const float lastUpdate = dormantData.LastUpdate;
 
-				if (I::EngineClient->Time() - lastUpdate > Vars::ESP::Main::DormantTime.Value)
+				if (I::EngineClient->Time() - lastUpdate > Vars::ESP::DormantTime.Value)
 					continue;
 
 				pEntity->SetAbsOrigin(dormantData.Location);
@@ -53,11 +61,11 @@ void CEntityCache::Fill()
 
 				pEntity->m_lifeState() = LIFE_ALIVE;
 				const auto& playerResource = GetPR();
-				if (playerResource && playerResource->GetValid(entIdx))
-					pEntity->m_iHealth() = playerResource->GetHealth(entIdx);
+				if (playerResource && playerResource->GetValid(n))
+					pEntity->m_iHealth() = playerResource->GetHealth(n);
 			}
 
-			if (pEntity == m_pLocal && !I::Input->CAM_IsThirdPerson()) // why was this done?
+			if (pEntity == m_pLocal && !I::Input->CAM_IsThirdPerson())
 				continue;
 
 			switch (nClassID)
@@ -68,7 +76,6 @@ void CEntityCache::Fill()
 					m_vecGroups[pEntity->m_iTeamNum() != m_pLocal->m_iTeamNum() ? EGroupType::PLAYERS_ENEMIES : EGroupType::PLAYERS_TEAMMATES].push_back(pEntity);
 					break;
 				}
-
 				case ETFClassID::CObjectSentrygun:
 				case ETFClassID::CObjectDispenser:
 				case ETFClassID::CObjectTeleporter:
@@ -77,38 +84,31 @@ void CEntityCache::Fill()
 					m_vecGroups[pEntity->m_iTeamNum() != m_pLocal->m_iTeamNum() ? EGroupType::BUILDINGS_ENEMIES : EGroupType::BUILDINGS_TEAMMATES].push_back(pEntity);
 					break;
 				}
-
 				case ETFClassID::CBaseAnimating:
 				{
 					const auto szName = pEntity->GetModelName();
-
 					if (Hash::IsAmmo(szName))
 					{
 						m_vecGroups[EGroupType::WORLD_AMMO].push_back(pEntity);
 						break;
 					}
-
 					if (Hash::IsHealth(szName))
 					{
 						m_vecGroups[EGroupType::WORLD_HEALTH].push_back(pEntity);
 						break;
 					}
-
 					if (Hash::IsSpell(szName))
 					{
 						m_vecGroups[EGroupType::WORLD_SPELLBOOK].push_back(pEntity);
 						break;
 					}
-
 					break;
 				}
-
 				case ETFClassID::CTFAmmoPack:
 				{
 					m_vecGroups[EGroupType::WORLD_AMMO].push_back(pEntity);
 					break;
 				}
-
 				case ETFClassID::CTFProjectile_Rocket:
 				case ETFClassID::CTFGrenadePipebombProjectile:
 				case ETFClassID::CTFProjectile_Jar:
@@ -162,12 +162,6 @@ void CEntityCache::Fill()
 
 					break;
 				}
-
-				case ETFClassID::CTFPlayerResource:
-				{
-					m_pPlayerResource = reinterpret_cast<CTFPlayerResource*>(pEntity);
-					break;
-				}
 				case ETFClassID::CHeadlessHatman:
 				case ETFClassID::CTFTankBoss:
 				case ETFClassID::CMerasmus:
@@ -189,24 +183,22 @@ void CEntityCache::Fill()
 						m_vecGroups[EGroupType::WORLD_GARGOYLE].push_back(pEntity);
 					break;
 				}
-
-				default: break;
 			}
 		}
-
-		UpdateFriends();
 	}
 }
 
 void CEntityCache::UpdateFriends()
 {
-	m_Friends.reset();
 	// Check friendship for every player
-	for (CBaseEntity* pEntity : GetGroup(EGroupType::PLAYERS_ALL))
+	m_Friends.reset();
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		PlayerInfo_t pInfo{};
-		if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pInfo)) { continue; }
-		m_Friends[pEntity->GetIndex()] = Utils::IsSteamFriend(pEntity) || G::PlayerPriority[pInfo.friendsID].Mode == 0;
+		PlayerInfo_t pi{};
+		if (!I::EngineClient->GetPlayerInfo(n, &pi))
+			continue;
+
+		m_Friends[n] = Utils::IsSteamFriend(pi.friendsID);
 	}
 }
 

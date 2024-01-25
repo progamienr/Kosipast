@@ -22,10 +22,6 @@ struct DormantData {
 	float LastUpdate = 0.f;
 };
 
-struct Priority {
-	int Mode = 2; // 0 - Friend, 1 - Ignore, 2 - Default, 3 - Rage, 4 - Cheater
-};
-
 struct DrawBullet {
 	std::pair<Vec3, Vec3> m_line;
 	float m_flTime;
@@ -54,7 +50,7 @@ struct DrawBox {
 
 namespace G
 {
-	inline int CurrentTargetIdx = 0; // Index of the current aimbot target
+	inline std::pair<int, int> CurrentTarget = { 0, 0 }; // Index of the current aimbot target
 	inline int CurItemDefIndex = 0; // DefIndex of the current weapon
 	inline float LerpTime = 0.f;	//	current lerp time
 	inline bool WeaponCanHeadShot = false; // Can the current weapon headshot?
@@ -122,69 +118,7 @@ namespace G
 	inline std::vector<int> MedicCallers;
 	inline std::unordered_map<CBaseEntity*, VelFixRecord> VelFixRecords;
 
-	inline std::unordered_map<uint32_t, Priority> PlayerPriority; // Playerlist priorities <FriendsID, Priority>
-	inline bool IsIgnored(uint32_t friendsID)
-	{
-		return PlayerPriority[friendsID].Mode < 2;
-	}
-	inline bool IsFriend(uint32_t friendsID)
-	{
-		return !PlayerPriority[friendsID].Mode;
-	}
-	inline bool IsRage(uint32_t friendsID)
-	{
-		return PlayerPriority[friendsID].Mode > 2;
-	}
-	inline void SwitchIgnore(uint32_t playerID) //this code is so fucking shitty
-	{
-		bool ignore = true;
-		bool unignore = false;
-
-		if (PlayerPriority[playerID].Mode > 1)
-		{
-			ignore = true;
-			unignore = false;
-		}
-		else if (PlayerPriority[playerID].Mode == 1)
-		{
-			ignore = false;
-			unignore = true;
-		}
-
-		if (ignore == true)
-			PlayerPriority[playerID].Mode = 1;
-		else if (unignore == true)
-			PlayerPriority[playerID].Mode = 2;
-	}
-	inline void SwitchMark(uint32_t playerID)
-	{
-		bool Mark = true;
-		bool Unmark = false;
-
-		if (PlayerPriority[playerID].Mode != 4)
-		{
-			Mark = true;
-			Unmark = false;
-		}
-		else if (PlayerPriority[playerID].Mode == 4)
-		{
-			Mark = false;
-			Unmark = true;
-		}
-
-		if (Mark == true)
-		{
-			PlayerPriority[playerID].Mode = 4;
-			Mark = false;
-			Unmark = true;
-		}
-		else if (Unmark == true)
-		{
-			PlayerPriority[playerID].Mode = 2;
-			Mark = true;
-			Unmark = false;
-		}
-	}
+	inline std::unordered_map<uint32_t, std::vector<std::string>> PlayerTags; // This only contains tags, get priority through F::Playerlist
 
 	inline bool InKeybind = false;
 	inline bool DrawingStaticProps = false;

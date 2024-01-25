@@ -22,7 +22,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 
 			const float flDistTo = vLocalPos.DistTo(vPos);
-			validTargets.push_back({ lockedTarget.m_pEntity, lockedTarget.m_TargetType, vPos, vAngleTo, lockedTarget.m_flFOVTo, flDistTo, -1, false, lockedTarget.n_Priority });
+			validTargets.push_back({ lockedTarget.m_pEntity, lockedTarget.m_TargetType, vPos, vAngleTo, lockedTarget.m_flFOVTo, flDistTo, lockedTarget.m_nPriority });
 
 			return validTargets;
 		}
@@ -31,17 +31,16 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 	const auto sortMethod = ESortMethod::DISTANCE; //static_cast<ESortMethod>(Vars::Aimbot::Melee::SortMethod.Value);
 
 	// Players
-	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
+	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::PLAYER)
 	{
 		const bool bDisciplinary = Vars::Aimbot::Melee::WhipTeam.Value && pWeapon->m_iItemDefinitionIndex() == Soldier_t_TheDisciplinaryAction;
-
 		for (const auto& pTarget : g_EntityCache.GetGroup(bDisciplinary ? EGroupType::PLAYERS_ALL : EGroupType::PLAYERS_ENEMIES))
 		{
 			// Is the target valid and alive?
 			if (!pTarget->IsAlive() || pTarget->IsAGhost() || pTarget == pLocal)
 				continue;
 
-			if (F::AimbotGlobal.ShouldIgnore(pTarget, true))
+			if (F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
 			Vec3 vPos = pTarget->GetHitboxPos(HITBOX_PELVIS);
@@ -51,9 +50,9 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
 				continue;
 
-			const auto& priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
 			const float flDistTo = vLocalPos.DistTo(vPos);
-			validTargets.push_back({ pTarget, ETargetType::PLAYER, vPos, vAngleTo, flFOVTo, flDistTo, -1, false, priority });
+			const int priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
+			validTargets.push_back({ pTarget, ETargetType::PLAYER, vPos, vAngleTo, flFOVTo, flDistTo, priority });
 		}
 	}
 
@@ -66,24 +65,20 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 									   G::CurItemDefIndex == Pyro_t_NeonAnnihilator ||
 									   G::CurItemDefIndex == Pyro_t_NeonAnnihilatorG);
 
-		for (const auto& pObject : g_EntityCache.GetGroup(hasWrench || canDestroySapper ? EGroupType::BUILDINGS_ALL : EGroupType::BUILDINGS_ENEMIES))
+		for (const auto& pBuilding : g_EntityCache.GetGroup(hasWrench || canDestroySapper ? EGroupType::BUILDINGS_ALL : EGroupType::BUILDINGS_ENEMIES))
 		{
-			if (!pObject)
+			if (!pBuilding->IsAlive())
 				continue;
 
-			bool isSentry = pObject->GetClassID() == ETFClassID::CObjectSentrygun;
-			bool isDispenser = pObject->GetClassID() == ETFClassID::CObjectDispenser;
-			bool isTeleporter = pObject->GetClassID() == ETFClassID::CObjectTeleporter;
+			bool isSentry = pBuilding->GetClassID() == ETFClassID::CObjectSentrygun;
+			bool isDispenser = pBuilding->GetClassID() == ETFClassID::CObjectDispenser;
+			bool isTeleporter = pBuilding->GetClassID() == ETFClassID::CObjectTeleporter;
 
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry)
+			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::SENTRY) && isSentry)
 				continue;
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser)
+			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::DISPENSER) && isDispenser)
 				continue;
-			if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter)
-				continue;
-
-			const auto& pBuilding = reinterpret_cast<CBaseObject*>(pObject);
-			if (!pBuilding || !pObject->IsAlive())
+			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::TELEPORTER) && isTeleporter)
 				continue;
 
 			if (pBuilding->m_iTeamNum() == pLocal->m_iTeamNum())
@@ -96,25 +91,25 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 
 				if (canDestroySapper)
 				{
-					if (!pBuilding->GetSapped())
+					if (!pBuilding->m_bHasSapper())
 						continue;
 				}
 			}
 
-			Vec3 vPos = pObject->GetWorldSpaceCenter();
+			Vec3 vPos = pBuilding->GetWorldSpaceCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
+			const float flDistTo = vLocalPos.DistTo(vPos);
 
 			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
 				continue;
 
-			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
-			validTargets.push_back({ pObject, isSentry ? ETargetType::SENTRY : (isDispenser ? ETargetType::DISPENSER : ETargetType::TELEPORTER), vPos, vAngleTo, flFOVTo, flDistTo });
+			validTargets.push_back({ pBuilding, isSentry ? ETargetType::SENTRY : (isDispenser ? ETargetType::DISPENSER : ETargetType::TELEPORTER), vPos, vAngleTo, flFOVTo, flDistTo });
 		}
 	}
 
 	// NPCs
-	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::NPC))
+	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::NPC)
 	{
 		for (const auto& pNPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 		{
@@ -134,9 +129,9 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 	return validTargets;
 }
 
-bool CAimbotMelee::AimFriendlyBuilding(CBaseObject* pBuilding)
+bool CAimbotMelee::AimFriendlyBuilding(CBaseEntity* pBuilding)
 {
-	if (pBuilding->GetLevel() != 3 || pBuilding->GetSapped() || pBuilding->GetHealth() < pBuilding->GetMaxHealth())
+	if (pBuilding->m_iUpgradeLevel() != 3 || pBuilding->m_bHasSapper() || pBuilding->m_iBOHealth() < pBuilding->m_iMaxHealth())
 		return true;
 
 	if (pBuilding->IsSentrygun())
@@ -525,7 +520,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			break;
 		}
 
-		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
+		G::CurrentTarget = { target.m_pEntity->GetIndex(), I::GlobalVars->tickcount };
 		if (!pRecordMap[target.m_pEntity].empty() && !lockedTarget.m_pEntity)
 			lockedTarget = target;
 
@@ -566,7 +561,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 				F::Visuals.ClearBulletLines();
 				G::BulletsStorage.push_back({ {vEyePos, target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value, true });
 			}
-			if (Vars::Aimbot::Global::ShowHitboxes.Value)
+			if (Vars::Visuals::ShowHitboxes.Value)
 				F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
 		}
 		if (Vars::Visuals::SwingLines.Value && target.pTick && G::IsAttacking)
@@ -581,7 +576,6 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		}
 
 		Aim(pCmd, target.m_vAngleTo);
-
 		G::IsAttacking = bAttacking;
 		break;
 	}

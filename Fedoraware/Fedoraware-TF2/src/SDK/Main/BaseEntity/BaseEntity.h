@@ -1018,7 +1018,6 @@ public: //Netvars & conditions
 	NETVAR(m_fadeMinDist, float, "CBaseAnimating", "m_fadeMinDist")
 	NETVAR(m_fadeMaxDist, float, "CBaseAnimating", "m_fadeMaxDist")
 	NETVAR(m_flFadeScale, float, "CBaseAnimating", "m_flFadeScale")
-
 	__inline int GetHitboxGroup(int nHitbox)
 	{
 		const auto& pModel = GetModel();
@@ -1236,6 +1235,46 @@ public: //Netvars & conditions
 		Vec3* pRenderAngles = const_cast<Vec3*>(&this->GetRenderAngles());
 		*pRenderAngles = vAngles;
 	}
+
+	NETVAR(m_bBuilding, bool, "CBaseObject", "m_bBuilding")
+	NETVAR(m_bMiniBuilding, bool, "CBaseObject", "m_bMiniBuilding")
+	NETVAR(m_bWasMapPlaced, bool, "CBaseObject", "m_bWasMapPlaced")
+	NETVAR(m_bHasSapper, bool, "CBaseObject", "m_bHasSapper")
+	NETVAR(m_bDisabled, bool, "CBaseObject", "m_bDisabled")
+	NETVAR(m_bCarried, bool, "CBaseObject", "m_bCarried")
+	NETVAR(m_bPlasmaDisable, bool, "CBaseObject", "m_bPlasmaDisable")
+	NETVAR(m_hBuilder, int /*EHANDLE*/, "CBaseObject", "m_hBuilder")
+	NETVAR(m_iBOHealth, int, "CBaseObject", "m_iHealth")
+	NETVAR(m_iMaxHealth, int, "CBaseObject", "m_iMaxHealth")
+	NETVAR(m_iUpgradeLevel, int, "CBaseObject", "m_iUpgradeLevel")
+	NETVAR(m_iHighestUpgradeLevel, int, "CBaseObject", "m_iHighestUpgradeLevel")
+	NETVAR(m_iObjectMode, int, "CBaseObject", "m_iObjectMode")
+	NETVAR(m_iObjectType, int, "CBaseObject", "m_iObjectType")
+	NETVAR(m_flPercentageConstructed, float, "CBaseObject", "m_flPercentageConstructed")
+	NETVAR(m_iAmmoShells, int, "CObjectSentrygun", "m_iAmmoShells")
+	NETVAR(m_iAmmoRockets, int, "CObjectSentrygun", "m_iAmmoRockets")
+	NETVAR(m_bPlayerControlled, bool, "CObjectSentrygun", "m_bPlayerControlled")
+	NETVAR(m_iAmmoMetal, int, "CObjectDispenser", "m_iAmmoMetal")
+	M_OFFSETGET(RechargeTime, float, 0xFC0)
+	M_OFFSETGET(CurrentChargeDuration, float, 0xFC4)
+	M_OFFSETGET(YawToExit, float, 0xFCC)
+	inline int MaxAmmoShells() // Pasted from https://github.com/Lak3/tf2-internal-base
+	{
+		if (m_iUpgradeLevel() == 1 || m_bMiniBuilding())
+			return 150;
+		else
+			return 200;
+	}
+	inline void GetAmmoCount(int& iShells, int& iMaxShells, int& iRockets, int& iMaxRockets)
+	{
+		const bool bIsMini = m_bMiniBuilding();
+
+		iShells = m_iAmmoShells();
+		iMaxShells = MaxAmmoShells();
+		iRockets = bIsMini ? 0 : m_iAmmoRockets();
+		iMaxRockets = (bIsMini || m_iUpgradeLevel() < 3) ? 0 : 20;
+	}
+	NETVAR(m_hPlayer, int/*EHANDLE*/, "CTFRagdoll", "m_hPlayer")
 
 	NETVAR(m_hOriginalLauncher, int/*EHANDLE*/, "CBaseProjectile", "m_hOriginalLauncher")
 

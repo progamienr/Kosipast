@@ -4,7 +4,6 @@
 #include "../BaseEntity/BaseEntity.h"
 #include "../BaseCombatWeapon/BaseCombatWeapon.h"
 #include "../PlayerResource/PlayerResource.h"
-#include "../BaseObject/BaseObject.h"
 
 enum struct EGroupType
 {

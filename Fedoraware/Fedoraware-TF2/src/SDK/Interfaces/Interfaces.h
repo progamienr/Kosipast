@@ -31,6 +31,7 @@
 #include "Input/Input.h"
 #include "KeyValuesSystem/KeyValuesSystem.h"
 #include "UniformRandomStream/UniformRandomStream.h"
+#include "IStudioRender/IStudioRender.h"
 #include "InputSystem/InputSystem.h"
 #include "EffectsClient/EffectsClient.h"
 #include "AchievementMgr/AchievementMgr.h"
@@ -223,7 +224,7 @@ namespace I
 	inline IInput* Input = nullptr;
 	inline IKeyValuesSystem* KeyValuesSystem = nullptr;
 	inline IUniformRandomStream* UniformRandomStream = nullptr;
-	inline void* StudioRender = nullptr;
+	inline IStudioRender* StudioRender = nullptr;
 	inline IInputSystem* InputSystem = nullptr;
 	inline void* CHud = nullptr;
 	inline CTFGameMovement* TFGameMovement = nullptr;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <sstream>
+#include <format>
 
 #include "../Math/Math.h"
 
@@ -13,31 +13,24 @@ struct Color_t
 {
 	byte r = 0, g = 0, b = 0, a = 0;
 
-	bool operator==(Color_t c) const
+	bool operator==(Color_t other) const
 	{
-		return (this->r == c.r && this->g == c.g && this->b == c.b && this->a == c.a);
+		return (r == other.r && g == other.g && b == other.b && a == other.a);
 	}
 
-	bool operator!=(Color_t c) const
+	bool operator!=(Color_t other) const
 	{
-		return !(this->r == c.r && this->g == c.g && this->b == c.b && this->a == c.a);
+		return r != other.r || g != other.g || b != other.b || a != other.a;
 	}
 
 	[[nodiscard]] std::string to_hex() const
 	{
-		std::stringstream ss;
-		ss << "\x7";
-		ss << std::hex << (static_cast<int>(r) << 16 | static_cast<int>(g) << 8 | static_cast<int>(b));
-		return ss.str();
+		return std::format("\x7{:02X}{:02X}{:02X}", r, g, b);
 	}
 
 	[[nodiscard]] std::string to_hex_alpha() const
 	{
-		std::stringstream ss;
-		ss << "\x8";
-		ss << std::hex << (static_cast<int>(r) << 16 | static_cast<int>(g) << 8 | static_cast<int>(b));
-		ss << std::hex << static_cast<int>(a);
-		return ss.str();
+		return std::format("\x8{:02X}{:02X}{:02X}{:02X}", r, g, b, a);
 	}
 
 	[[nodiscard]] Color_t lerp(Color_t to, float t) const
@@ -60,12 +53,23 @@ struct Gradient_t
 
 struct Chams_t
 {
-	bool			ChamsActive = false;
-	bool			IgnoreZ = false;
-	std::string		Material = "Original";
-	std::string		OverlayMaterial = "None";
-	Color_t Color = { 255, 255, 255, 255 };
-	Color_t OverlayColor = { 255, 255, 255, 255 };
+	std::string		VisibleMaterial = "Original";
+	std::string		OccludedMaterial = "None";
+	Color_t			VisibleColor = { 255, 255, 255, 255 };
+	Color_t			OccludedColor = { 255, 255, 255, 255 };
+};
+
+struct Glow_t
+{
+	bool	Stencil = false;
+	bool	Blur = false;
+	int		StencilScale = 1;
+	int		BlurScale = 1;
+
+	bool operator==(const Glow_t& other) const
+	{
+		return (Stencil == other.Stencil && Blur == other.Blur && StencilScale == other.StencilScale && BlurScale == other.BlurScale);
+	}
 };
 
 struct DragBox_t

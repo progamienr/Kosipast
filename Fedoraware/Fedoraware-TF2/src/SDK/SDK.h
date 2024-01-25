@@ -45,7 +45,6 @@
 #include "Signatures/Signatures.h"
 #include "Main/BaseEntity/BaseEntity.h"
 #include "Main/BaseCombatWeapon/BaseCombatWeapon.h"
-#include "Main/BaseObject/BaseObject.h"
 #include "Main/DrawUtils/DrawUtils.h"
 #include "Main/EntityCache/EntityCache.h"
 #include "Main/GlobalInfo/GlobalInfo.h"
@@ -54,10 +53,10 @@
 #include "Main/TraceFilters/TraceFilters.h"
 #include "../Features/Vars.h"
 
-#define TICK_INTERVAL		( I::GlobalVars->interval_per_tick )
-#define TIME_TO_TICKS( dt )	( static_cast<int>( (TICK_INTERVAL / 2) + static_cast<float>(dt) / TICK_INTERVAL ) )
+#define TICK_INTERVAL (I::GlobalVars->interval_per_tick)
+#define TIME_TO_TICKS(dt) (static_cast<int>(0.5f + static_cast<float>(dt) / TICK_INTERVAL))
 #ifndef TICKS_TO_TIME
-#define TICKS_TO_TIME( t )	( TICK_INTERVAL * ( t ) )
+#define TICKS_TO_TIME(t) (TICK_INTERVAL * (t))
 #endif
 #define GetKey(vKey) (Utils::IsGameWindowInFocus() && GetAsyncKeyState(vKey))
 #define Q_ARRAYSIZE(A) (sizeof(A)/sizeof((A)[0]))
@@ -255,13 +254,11 @@ namespace Utils
 		return fnInitKeyValue(32);
 	}
 
-	__inline bool IsSteamFriend(CBaseEntity* pPlayer)
+	__inline bool IsSteamFriend(uint32_t friendsID)
 	{
-		PlayerInfo_t pi = { };
-
-		if (I::EngineClient->GetPlayerInfo(pPlayer->GetIndex(), &pi) && pi.friendsID)
+		if (friendsID)
 		{
-			const CSteamID steamID{ pi.friendsID, 1, k_EUniversePublic, k_EAccountTypeIndividual };
+			const CSteamID steamID{ friendsID, 1, k_EUniversePublic, k_EAccountTypeIndividual };
 			return g_SteamInterfaces.Friends->HasFriend(steamID, k_EFriendFlagImmediate);
 		}
 
@@ -563,8 +560,8 @@ namespace Utils
 
 	__inline bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	{
-		if (pWeapon->IsInReload())
-			return false;
+		//if (pWeapon->IsInReload())
+		//	return false;
 
 		if (pWeapon->GetSlot() == SLOT_MELEE)
 		{
@@ -799,9 +796,8 @@ namespace Utils
 		for (int i = 0; hWeapons[i]; i++)
 		{
 			if (!(HandleToIDX(hWeapons[i]) >= 0 && HandleToIDX(hWeapons[i]) <= 2049 && HandleToIDX(hWeapons[i]) < 2048))
-			{
 				continue;
-			}
+			
 			// Get the weapon
 			auto* weapon = reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(HandleToIDX(hWeapons[i])));
 			// if weapon is what we are looking for, return true
@@ -821,14 +817,17 @@ namespace Utils
 
 		for (const auto& pBuilding : buildings)
 		{
-			if (!pBuilding->IsAlive()) { continue; }
+			if (!pBuilding->IsAlive())
+				continue;
 
-			const auto& building = reinterpret_cast<CBaseObject*>(pBuilding);
-			const auto nType = static_cast<EBuildingType>(building->GetType());
+			const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pBuilding->m_hBuilder());
+			if (!pOwner)
+				continue;
 
-			if (nType == EBuildingType::TELEPORTER && building->GetObjectMode() == 1 && building->GetOwner()->GetIndex() == ownerIdx)
+			const auto nType = static_cast<EBuildingType>(pBuilding->m_iObjectType());
+			if (nType == EBuildingType::TELEPORTER && pBuilding->m_iObjectMode() == 1 && pOwner->GetIndex() == ownerIdx)
 			{
-				*out = building->m_vecOrigin();
+				*out = pBuilding->m_vecOrigin();
 				return true;
 			}
 		}
@@ -838,18 +837,15 @@ namespace Utils
 
 	__inline int GetPlayerForUserID(int userID)
 	{
-		for (int i = 1; i <= I::EngineClient->GetMaxClients(); i++)
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 		{
-			PlayerInfo_t playerInfo{};
-			if (!I::EngineClient->GetPlayerInfo(i, &playerInfo))
-			{
+			PlayerInfo_t pi{};
+			if (!I::EngineClient->GetPlayerInfo(n, &pi))
 				continue;
-			}
+
 			// Found player
-			if (playerInfo.userID == userID)
-			{
-				return i;
-			}
+			if (pi.userID == userID)
+				return n;
 		}
 		return 0;
 	}

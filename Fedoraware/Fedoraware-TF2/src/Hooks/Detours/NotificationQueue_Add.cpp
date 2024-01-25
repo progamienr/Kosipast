@@ -1,32 +1,25 @@
 #include "../Hooks.h"
-
 #include "../../SDK/Main/CEconNotification.h"
+
+namespace S
+{
+	MAKE_SIGNATURE(CTFPlayer_OnHasNewItems_NotificationQueue_Add_Call, CLIENT_DLL, "83 C4 ? 5E C3 CC CC CC CC CC CC CC 56 8B F1 E8", 0x0);
+}
 
 MAKE_HOOK(NotificationQueue_Add, S::NotificationQueue_Add(), int, __cdecl,
 	CEconNotification* pNotification)
 {
-	auto OnNotification = [](CEconNotification* pNotify)
+	static const auto dwOnHasNewItems = S::CTFPlayer_OnHasNewItems_NotificationQueue_Add_Call();
+	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
+
+	if (Vars::Misc::AutoAcceptItemDrops.Value && dwRetAddr == dwOnHasNewItems)
 	{
-		if (!Vars::Misc::AutoAcceptItemDrops.Value)
-			G::NotificationVector.clear();
+		pNotification->Accept();
+		pNotification->Trigger();
+		pNotification->UpdateTick();
+		pNotification->MarkForDeletion();
+		return 0;
+	}
 
-		if (G::NotificationVector.empty())
-			return;
-
-		for (const auto& notification : G::NotificationVector)
-		{
-			if (notification == pNotify)
-			{
-				pNotify->Accept();
-				pNotify->Trigger();
-				pNotify->UpdateTick();
-				pNotify->MarkForDeletion();
-				G::NotificationVector.clear();
-				return;
-			}
-		}
-	};
-
-	OnNotification(pNotification);
 	return Hook.Original<FN>()(pNotification);
 }

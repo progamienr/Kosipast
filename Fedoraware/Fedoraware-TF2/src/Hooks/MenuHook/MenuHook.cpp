@@ -41,17 +41,43 @@ LONG __stdcall WndProc::Func(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return 1;
 		}
 
-		if (I::EngineClient->Con_IsVisible() || I::EngineVGui->IsGameUIVisible())
-		{
-			if (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST)
-			{
-				I::InputSystem->ResetInputStateVFunc();
-				return 1;
-			}
-		}
+		if (uMsg >= WM_MOUSEFIRST && WM_MOUSELAST >= uMsg)
+			return 1;
 	}
 
 	return CallWindowProc(Original, hWnd, uMsg, wParam, lParam);
+}
+
+MAKE_HOOK(VGuiSurface_LockCursor, Utils::GetVFuncPtr(I::VGuiSurface, 62), void, __fastcall,
+	void* ecx, void* edx)
+{
+	if (F::Menu.IsOpen)
+		return I::VGuiSurface->UnlockCursor();
+
+	Hook.Original<FN>()(ecx, edx);
+}
+
+MAKE_HOOK(VGuiSurface_SetCursor, Utils::GetVFuncPtr(I::VGuiSurface, 51), void, __fastcall,
+	void* ecx, void* edx, HCursor cursor)
+{
+	if (F::Menu.IsOpen)
+	{
+		switch (F::Menu.Cursor)
+		{
+		case 0: cursor = 2; break;
+		case 1: cursor = 3; break;
+		case 2: cursor = 12; break;
+		case 3: cursor = 11; break;
+		case 4: cursor = 10; break;
+		case 5: cursor = 9; break;
+		case 6: cursor = 8; break;
+		case 7: cursor = 14; break;
+		case 8: cursor = 13; break;
+		}
+		return Hook.Original<FN>()(ecx, edx, cursor);
+	}
+
+	Hook.Original<FN>()(ecx, edx, cursor);
 }
 
 void WndProc::Init()

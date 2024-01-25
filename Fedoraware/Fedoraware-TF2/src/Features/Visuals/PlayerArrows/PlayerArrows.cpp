@@ -91,7 +91,7 @@ void CPlayerArrows::Run()
 			Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
 
 			Color_t color;
-			if (!Vars::ESP::Main::EnableTeamEnemyColors.Value)
+			if (!Vars::Colors::Relative.Value)
 			{
 				if (pLocal->m_iTeamNum() == 2)
 					color = Vars::Colors::TeamBlu.Value;

@@ -3,7 +3,7 @@
 MAKE_HOOK(CSequenceTransitioner_CheckForSequenceChange, S::CSequenceTransitioner_CheckForSequenceChange(), void, __fastcall,
 	void* ecx, void* edx, CStudioHdr* hdr, int nCurSequence, bool bForceNewSequence, bool bInterpolate)
 {
-	return Hook.Original<FN>()(ecx, edx, hdr, nCurSequence, bForceNewSequence, Vars::Misc::DisableInterpolation.Value ? false : bInterpolate);
+	return Hook.Original<FN>()(ecx, edx, hdr, nCurSequence, bForceNewSequence, Vars::Visuals::RemoveInterpolation.Value ? false : bInterpolate);
 }
 
 /*

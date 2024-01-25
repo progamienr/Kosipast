@@ -62,10 +62,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!G::LastUserCmd)
 		G::LastUserCmd = pCmd;
 
-	//if (!G::DoubleTap)
-		F::Backtrack.iTickCount = pCmd->tick_count;
+	F::Backtrack.iTickCount = pCmd->tick_count;
 	// correct tick_count for fakeinterp / nointerp
-	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Misc::DisableInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
+	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Visuals::RemoveInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
 	//if (!G::DoubleTap)
 	if (pLocal && pWeapon)

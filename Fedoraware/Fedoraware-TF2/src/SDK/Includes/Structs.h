@@ -8,7 +8,7 @@ struct model_t;
 class IClientRenderable;
 typedef unsigned short ModelInstanceHandle_t;
 struct StudioData_t;
-struct StudioDecalHandle_t;
+using StudioDecalHandle_t = void*;
 
 struct mstudiobbox_t
 {

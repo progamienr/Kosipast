@@ -66,7 +66,7 @@ public:
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
 	void Draw();
 
-	std::array<WeaponStorage, 3> Storage = {};
+	std::unordered_map<int, WeaponStorage> Storage = {};
 	bool ProtectData = false;
 };
 

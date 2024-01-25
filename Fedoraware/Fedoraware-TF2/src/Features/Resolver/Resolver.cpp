@@ -7,9 +7,9 @@ static std::vector<float> vYawRotations{ 0.0f, 180.0f, 90.0f, -90.0f};
 void PResolver::UpdateSniperDots()
 {
 	mSniperDots.clear();
-	for (int i = I::EngineClient->GetMaxClients() + 1; i <= I::ClientEntityList->GetHighestEntityIndex(); i++)
+	for (int n = I::EngineClient->GetMaxClients() + 1; n <= I::ClientEntityList->GetHighestEntityIndex(); n++)
 	{
-		if (CBaseEntity* eTarget = I::ClientEntityList->GetClientEntity(i))
+		if (CBaseEntity* eTarget = I::ClientEntityList->GetClientEntity(n))
 		{
 			if (eTarget->GetClassID() != ETFClassID::CSniperDot)
 				continue;
@@ -20,7 +20,8 @@ void PResolver::UpdateSniperDots()
 	}
 }
 
-std::optional<float> PResolver::GetPitchForSniperDot(CBaseEntity* pEntity){
+std::optional<float> PResolver::GetPitchForSniperDot(CBaseEntity* pEntity)
+{
 	if (CBaseEntity* SniperDot = mSniperDots[pEntity])
 	{
 		const Vec3 vOrigin = SniperDot->m_vecOrigin();
@@ -80,7 +81,8 @@ bool PResolver::ShouldRun()
 	return true;
 }
 
-bool PResolver::ShouldRunEntity(CBaseEntity* pEntity){
+bool PResolver::ShouldRunEntity(CBaseEntity* pEntity)
+{
 	if (!pEntity->OnSolid() && Vars::AntiHack::Resolver::IgnoreAirborne.Value)
 		return false;
 	if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->IsTaunting())
@@ -99,14 +101,16 @@ bool PResolver::KeepOnShot(CBaseEntity* pEntity){
 	return false;
 }
 
-bool PResolver::IsOnShotPitchReliable(const float flPitch){
+bool PResolver::IsOnShotPitchReliable(const float flPitch)
+{
 	if (flPitch > 180)
 		return flPitch > 273.f;
 	else
 		return flPitch < 87.f;
 }
 
-float PResolver::GetRealPitch(const float flPitch){
+float PResolver::GetRealPitch(const float flPitch)
+{
 	if (flPitch < 157.5f)
 		return 89.f;
 	else
@@ -126,21 +130,24 @@ void PResolver::SetAngles(const Vec3 vAngles, CBaseEntity* pEntity)
 	}
 }
 
-int PResolver::GetPitchMode(CBaseEntity* pEntity){
-	PlayerInfo_t pInfo{};
-	if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pInfo))
+int PResolver::GetPitchMode(CBaseEntity* pEntity)
+{
+	PlayerInfo_t pi{};
+	if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pi))
 		return 0;
-	return mResolverMode[pInfo.friendsID].first;
+	return mResolverMode[pi.friendsID].first;
 }
 
-int PResolver::GetYawMode(CBaseEntity* pEntity){
-	PlayerInfo_t pInfo{};
-	if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pInfo))
+int PResolver::GetYawMode(CBaseEntity* pEntity)
+{
+	PlayerInfo_t pi{};
+	if (!I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pi))
 		return 0;
-	return mResolverMode[pInfo.friendsID].second;
+	return mResolverMode[pi.friendsID].second;
 }
 
-void PResolver::OnDormancy(CBaseEntity* pEntity){
+void PResolver::OnDormancy(CBaseEntity* pEntity)
+{
 	mResolverData[pEntity].pLastSniperPitch = {0, 0.f};
 	mResolverData[pEntity].flPitchNoise = 0.f;
 	mResolverData[pEntity].iPitchNoiseSteps = 0;
@@ -168,9 +175,9 @@ void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 
 	UpdateSniperDots();
 
-	for (auto i = 1; i <= I::EngineClient->GetMaxClients(); i++)
+	for (auto n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(i);
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
 		if (!pEntity)
 			continue;
 

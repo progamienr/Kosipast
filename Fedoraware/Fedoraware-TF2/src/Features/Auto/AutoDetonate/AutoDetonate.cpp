@@ -67,10 +67,10 @@ void CAutoDetonate::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 		return;
 
 	// Check sticky detonation
-	if (Vars::Auto::Detonate::Stickies.Value && CheckDetonation(pLocal, EGroupType::LOCAL_STICKIES, Vars::Auto::Detonate::RadiusScale.Value / 100, pCmd))
+	if (Vars::Auto::Detonate::Stickies.Value && CheckDetonation(pLocal, EGroupType::LOCAL_STICKIES, float(Vars::Auto::Detonate::RadiusScale.Value) / 100, pCmd))
 		pCmd->buttons |= IN_ATTACK2;
 
 	// Check flare detonation
-	if (Vars::Auto::Detonate::Flares.Value && CheckDetonation(pLocal, EGroupType::LOCAL_FLARES, Vars::Auto::Detonate::RadiusScale.Value / 100, pCmd))
+	if (Vars::Auto::Detonate::Flares.Value && CheckDetonation(pLocal, EGroupType::LOCAL_FLARES, float(Vars::Auto::Detonate::RadiusScale.Value) / 100, pCmd))
 		pCmd->buttons |= IN_ATTACK2;
 }

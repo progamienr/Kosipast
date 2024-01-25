@@ -1,9 +1,5 @@
 #include "ConfigManager.h"
 
-#include <string>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-
 #include "../../Vars.h"
 #include "../../../SDK/SDK.h"
 #include "../../Misc/Notifications/Notifications.h"
@@ -11,7 +7,7 @@
 boost::property_tree::ptree WriteTree;
 boost::property_tree::ptree ReadTree;
 
-boost::property_tree::ptree ColorToTree(const Color_t& color)
+boost::property_tree::ptree CConfigManager::ColorToTree(const Color_t& color)
 {
 	boost::property_tree::ptree colorTree;
 	colorTree.put("r", color.r);
@@ -22,7 +18,7 @@ boost::property_tree::ptree ColorToTree(const Color_t& color)
 	return colorTree;
 }
 
-void TreeToColor(const boost::property_tree::ptree& tree, Color_t& out)
+void CConfigManager::TreeToColor(const boost::property_tree::ptree& tree, Color_t& out)
 {
 	if (auto v = tree.get_optional<byte>("r")) { out.r = *v; }
 	if (auto v = tree.get_optional<byte>("g")) { out.g = *v; }
@@ -30,7 +26,7 @@ void TreeToColor(const boost::property_tree::ptree& tree, Color_t& out)
 	if (auto v = tree.get_optional<byte>("a")) { out.a = *v; }
 }
 
-boost::property_tree::ptree VecToTree(const Vec3& vec)
+boost::property_tree::ptree CConfigManager::VecToTree(const Vec3& vec)
 {
 	boost::property_tree::ptree vecTree;
 	vecTree.put("x", vec.x);
@@ -40,12 +36,14 @@ boost::property_tree::ptree VecToTree(const Vec3& vec)
 	return vecTree;
 }
 
-void TreeToVec(const boost::property_tree::ptree& tree, Vec3& out)
+void CConfigManager::TreeToVec(const boost::property_tree::ptree& tree, Vec3& out)
 {
 	if (auto v = tree.get_optional<float>("x")) { out.x = *v; }
 	if (auto v = tree.get_optional<float>("y")) { out.y = *v; }
 	if (auto v = tree.get_optional<float>("z")) { out.z = *v; }
 }
+
+
 
 void CConfigManager::SaveJson(const char* name, bool val)
 {
@@ -89,14 +87,23 @@ void CConfigManager::SaveJson(const char* name, const Vec3& val)
 void CConfigManager::SaveJson(const char* name, const Chams_t& val)
 {
 	boost::property_tree::ptree chamTree;
-	chamTree.put("ChamsActive", val.ChamsActive);
-	chamTree.put("IgnoreZ", val.IgnoreZ);
-	chamTree.put("Material", val.Material);
-	chamTree.put_child("Color", ColorToTree(val.Color));
-	chamTree.put("OverlayMaterial", val.OverlayMaterial);
-	chamTree.put_child("OverlayColor", ColorToTree(val.OverlayColor));
+	chamTree.put("VisibleMaterial", val.VisibleMaterial);
+	chamTree.put_child("VisibleColor", ColorToTree(val.VisibleColor));
+	chamTree.put("OccludedMaterial", val.OccludedMaterial);
+	chamTree.put_child("OccludedColor", ColorToTree(val.OccludedColor));
 
 	WriteTree.put_child(name, chamTree);
+}
+
+void CConfigManager::SaveJson(const char* name, const Glow_t& val)
+{
+	boost::property_tree::ptree glowTree;
+	glowTree.put("Stencil", val.Stencil);
+	glowTree.put("Blur", val.Blur);
+	glowTree.put("StencilScale", val.StencilScale);
+	glowTree.put("BlurScale", val.BlurScale);
+
+	WriteTree.put_child(name, glowTree);
 }
 
 void CConfigManager::SaveJson(const char* name, const DragBox_t& val)
@@ -182,12 +189,21 @@ void CConfigManager::LoadJson(const char* name, Chams_t& val)
 {
 	if (const auto getChild = ReadTree.get_child_optional(name))
 	{
-		if (auto getValue = getChild->get_optional<bool>("ChamsActive")) { val.ChamsActive = *getValue; }
-		if (auto getValue = getChild->get_optional<bool>("IgnoreZ")) { val.IgnoreZ = *getValue; }
-		if (auto getValue = getChild->get_optional<std::string>("Material")) { val.Material = *getValue; }
-		if (const auto getChildColor = getChild->get_child_optional("Color")) { TreeToColor(*getChildColor, val.Color); }
-		if (auto getValue = getChild->get_optional<std::string>("OverlayMaterial")) { val.OverlayMaterial = *getValue; }
-		if (const auto getChildColor = getChild->get_child_optional("OverlayColor")) { TreeToColor(*getChildColor, val.OverlayColor); }
+		if (auto getValue = getChild->get_optional<std::string>("VisibleMaterial")) { val.VisibleMaterial = *getValue; }
+		if (const auto getChildColor = getChild->get_child_optional("VisibleColor")) { TreeToColor(*getChildColor, val.VisibleColor); }
+		if (auto getValue = getChild->get_optional<std::string>("OccludedMaterial")) { val.OccludedMaterial = *getValue; }
+		if (const auto getChildColor = getChild->get_child_optional("OccludedColor")) { TreeToColor(*getChildColor, val.OccludedColor); }
+	}
+}
+
+void CConfigManager::LoadJson(const char* name, Glow_t& val)
+{
+	if (const auto getChild = ReadTree.get_child_optional(name))
+	{
+		if (auto getValue = getChild->get_optional<bool>("Stencil")) { val.Stencil = *getValue; }
+		if (auto getValue = getChild->get_optional<bool>("Blur")) { val.Blur = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("StencilScale")) { val.StencilScale = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("BlurScale")) { val.BlurScale = *getValue; }
 	}
 }
 
@@ -259,6 +275,7 @@ bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 			else SaveT(Gradient_t)
 			else SaveT(Vec3)
 			else SaveT(Chams_t)
+			else SaveT(Glow_t)
 			else SaveT(DragBox_t)
 			else SaveT(WindowBox_t)
 		}
@@ -307,6 +324,7 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 			else LoadT(Gradient_t)
 			else LoadT(Vec3)
 			else LoadT(Chams_t)
+			else LoadT(Glow_t)
 			else LoadT(DragBox_t)
 			else LoadT(WindowBox_t)
 		}
@@ -342,6 +360,7 @@ bool CConfigManager::SaveVisual(const std::string& configName, bool bNotify)
 			else SaveT(Gradient_t)
 			else SaveT(Vec3)
 			else SaveT(Chams_t)
+			else SaveT(Glow_t)
 			else SaveT(DragBox_t)
 			else SaveT(WindowBox_t)
 		}
@@ -385,6 +404,7 @@ bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 			else LoadT(Gradient_t)
 			else LoadT(Vec3)
 			else LoadT(Chams_t)
+			else LoadT(Glow_t)
 			else LoadT(DragBox_t)
 			else LoadT(WindowBox_t)
 		}

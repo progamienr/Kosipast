@@ -46,6 +46,7 @@ namespace S
 	MAKE_SIGNATURE(CBaseAnimating_MaintainSequenceTransitions, CLIENT_DLL, "55 8B EC 83 EC ? 56 8B 75 ? 57 8B F9 8B CE E8 ? ? ? ? 85 C0", 0x0);
 	MAKE_SIGNATURE(CBaseAnimating_SetupBones, CLIENT_DLL, "55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 33 C9 33 D2 89 4D EC 89 55 F0 8B 46 08", 0x0);
 	MAKE_SIGNATURE(CBaseAnimating_UpdateClientSideAnimation, CLIENT_DLL, "55 8B EC 83 EC 0C 56 57 8B F1 E8 ? ? ? ? 8B F8 85 FF 74 10 8B 17 8B CF 8B 92 ? ? ? ? FF D2", 0x0);
+	MAKE_SIGNATURE(CBaseAnimating_DrawModel, CLIENT_DLL, "55 8B EC 83 EC 20 8B 15 ? ? ? ? 53 33 DB 56", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_AddToCritBucket, CLIENT_DLL, "55 8B EC A1 ? ? ? ? F3 0F 10 81 ? ? ? ? F3 0F 10 48", 0x0);
 	MAKE_SIGNATURE(CBaseCombatWeapon_IsAllowedToWithdrawFromCritBucket, CLIENT_DLL, "55 8B EC 56 8B F1 0F B7 86", 0x0);
 	MAKE_SIGNATURE(CBaseEntity_FireBullets, CLIENT_DLL, "55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 8B 5D", 0x0);
@@ -57,6 +58,7 @@ namespace S
 	MAKE_SIGNATURE(COP_RenderSprites_RenderSpriteCard, CLIENT_DLL, "55 8B EC 83 EC ? 56 8B 75 ? 57 8B 7D ? 8B C7", 0x0);
 	MAKE_SIGNATURE(CTFPlayer_AvoidPlayers, CLIENT_DLL, "55 8B EC 81 EC ? ? ? ? A1 ? ? ? ? 57 8B F9 89 7D ? 83 78 ? ? 0F 84 ? ? ? ? A1", 0x0);
 	MAKE_SIGNATURE(CTFPlayer_FireEvent, CLIENT_DLL, "55 8B EC 8B 45 ? 81 EC ? ? ? ? 53 56 57 8B F9 3D", 0x0);
+	MAKE_SIGNATURE(CTFPlayer_BRenderAsZombie, CLIENT_DLL, "55 8B EC 56 FF 75 08 8B F1 6A 02 E8 ? ? ? ? 83 C4 08 84 C0", 0x0);
 	MAKE_SIGNATURE(CTFRagdoll_CreateTFRagdoll, CLIENT_DLL, "55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 57 8B F9 8B 8F", 0x0);
 	MAKE_SIGNATURE(CTFWeaponBase_CalcIsAttackCritical, CLIENT_DLL, "53 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 8B F9 E8 ? ? ? ? 50 E8 ? ? ? ? 8B D8 83 C4 ? 85 DB 0F 84", 0x0);
 	MAKE_SIGNATURE(CAchievementMgr_CheckAchievementsEnabled, CLIENT_DLL, "55 8B EC A1 ? ? ? ? 83 EC ? 56 8B F1 8B 48", 0x0);
@@ -92,6 +94,7 @@ namespace S
 	MAKE_SIGNATURE(CTFPlayerInventory_GetMaxItemCount, CLIENT_DLL, "8B 49 68 56", 0x0);
 	MAKE_SIGNATURE(CTFPlayerShared_InCond, CLIENT_DLL, "55 8B EC 83 EC 08 56 57 8B 7D 08 8B F1 83 FF 20", 0x0);
 	MAKE_SIGNATURE(CTFPlayerShared_IsPlayerDominated, CLIENT_DLL, "55 8B EC 56 57 8B F1 E8 ? ? ? ? 8B F8 85 FF 75 08 5F 32 C0 5E 5D C2 04 00", 0x0);
+	MAKE_SIGNATURE(CTFWeaponBase_GetShootSound, CLIENT_DLL, "55 8B EC 53 8B 5D 08 57 8B F9 80 BF ? ? ? ? ? 0F 84 ? ? ? ? 8B 07", 0x0);
 	MAKE_SIGNATURE(CViewRender_DrawUnderwaterOverlay, CLIENT_DLL, "55 8B EC 83 EC 2C 53 8B 99 ? ? ? ? 89 5D E0 85 DB 0F 84 ? ? ? ? 8B 0D ? ? ? ? 57 33 FF 89", 0x0);
 	MAKE_SIGNATURE(DataTable_Warning, ENGINE_DLL, "55 8B EC B8 ? ? ? ? E8 ? ? ? ? 8D 45 ? 50 FF 75 ? 8D 85 ? ? ? ? 68 ? ? ? ? 50 E8 ? ? ? ? 8D 85 ? ? ? ? 50 68 ? ? ? ? FF 15", 0x0);
 	MAKE_SIGNATURE(DoEnginePostProcessing, CLIENT_DLL, "55 8B EC 81 EC ? ? ? ? 8B 0D ? ? ? ? 53 33 DB 89 5D ? 89 5D ? 8B 01 89 5D ? 89 5D ? 56 57", 0x0);

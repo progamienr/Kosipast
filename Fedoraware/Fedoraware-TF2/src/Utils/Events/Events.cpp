@@ -29,7 +29,7 @@ void CEventListener::Destroy()
 
 void CEventListener::FireGameEvent(CGameEvent* pEvent)
 {
-	if (pEvent == nullptr || I::EngineClient->IsPlayingTimeDemo())
+	if (!pEvent || I::EngineClient->IsPlayingTimeDemo())
 		return;
 
 	const FNV1A_t uNameHash = FNV1A::Hash(pEvent->GetName());
@@ -47,7 +47,6 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 	if (uNameHash == FNV1A::HashConst("player_spawn"))
 		F::Backtrack.SetLerp(pEvent);
 
-	// Pickup Timers
 	if (Vars::Visuals::PickupTimers.Value && uNameHash == FNV1A::HashConst("item_pickup"))
 	{
 		const auto itemName = pEvent->GetString("item");
@@ -57,6 +56,16 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 				F::Visuals.PickupDatas.push_back({ 1, I::EngineClient->Time(), pEntity->GetAbsOrigin() });
 			else if (std::strstr(itemName, "ammopack"))
 				F::Visuals.PickupDatas.push_back({ 0, I::EngineClient->Time(), pEntity->GetAbsOrigin() });
+		}
+	}
+
+	if (Vars::Misc::InstantRevive.Value && uNameHash == FNV1A::HashConst("revive_player_notify"))
+	{
+		if (pEvent->GetInt("entindex") == I::EngineClient->GetLocalPlayer())
+		{
+			auto kv = new KeyValues("MVM_Revive_Response");
+			kv->SetInt("accepted", 1);
+			I::EngineClient->ServerCmdKeyValues(kv);
 		}
 	}
 }

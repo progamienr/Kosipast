@@ -3,7 +3,7 @@
 #include "../BaseEntity/BaseEntity.h"
 
 #ifndef TICKS_TO_TIME
-#define TICKS_TO_TIME( t )	( I::GlobalVars->interval_per_tick * ( t ) )
+#define TICKS_TO_TIME(t) (I::GlobalVars->interval_per_tick * (t))
 #endif
 
 namespace S

@@ -21,22 +21,22 @@ MAKE_HOOK(C_BasePlayer_CalcViewModelView, S::CBasePlayer_CalcViewModelView(), vo
 
 	if (Vars::Visuals::AimbotViewmodel.Value)
 	{
-		static int iLastEyeTick = 0;
-		static Vec3 vEyeAngDelayed;
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
 			if (pLocal->IsAlive())
 			{
+				static Vec3 vAng = {};
+				static int iTick = 0;
+
 				if (!G::AimPos.IsZero())
 				{
-					vEyeAngDelayed = Math::CalcAngle(vEyePosition, G::AimPos);
-					iLastEyeTick = I::GlobalVars->tickcount;
+					vAng = Math::CalcAngle(vEyePosition, G::AimPos);
+					iTick = I::GlobalVars->tickcount;
 				}
 
-				// looks hot ty senator for the idea
-				if (abs(iLastEyeTick - I::GlobalVars->tickcount) < 32)
+				if (abs(iTick - I::GlobalVars->tickcount) < 32)
 				{
-					Vec3 vDiff = I::EngineClient->GetViewAngles() - vEyeAngDelayed;
+					Vec3 vDiff = I::EngineClient->GetViewAngles() - vAng;
 					if (bFlip)
 						vDiff.y *= -1;
 					vEyeAngles = I::EngineClient->GetViewAngles() - vDiff;

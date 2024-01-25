@@ -134,77 +134,72 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 	// Draw buildings
 	if (Vars::Radar::Buildings::Active.Value)
 	{
-		const auto& buildings = g_EntityCache.GetGroup(Vars::Radar::Buildings::IgnoreTeam.Value
-													   ? EGroupType::BUILDINGS_ENEMIES
-													   : EGroupType::BUILDINGS_ALL);
 
-		for (const auto& building : buildings)
+		for (const auto& pBuilding : g_EntityCache.GetGroup(Vars::Radar::Buildings::IgnoreTeam.Value ? EGroupType::BUILDINGS_ENEMIES : EGroupType::BUILDINGS_ALL))
 		{
-			if (const auto& pObject = reinterpret_cast<CBaseObject*>(building))
+			if (!pBuilding->IsAlive())
+				continue;
+
+			int nX = -1, nY = -1, nZ = 0;
+			if (GetDrawPosition(nX, nY, nZ, pBuilding))
 			{
-				if (!pObject->IsAlive()) { continue; }
+				Color_t clrDraw = GetEntityDrawColor(pBuilding, Vars::Colors::Relative.Value);
 
-				int nX = -1, nY = -1, nZ = 0;
-				if (GetDrawPosition(nX, nY, nZ, pObject))
+				const int nSize = Vars::Radar::Buildings::IconSize.Value;
+				nX -= (nSize / 2), nY -= (nSize / 2);
+
+				switch (pBuilding->GetClassID())
 				{
-					Color_t clrDraw = GetEntityDrawColor(building, Vars::ESP::Main::EnableTeamEnemyColors.Value);
-
-					const int nSize = Vars::Radar::Buildings::IconSize.Value;
-					nX -= (nSize / 2), nY -= (nSize / 2);
-
-					switch (pObject->GetClassID())
+					case ETFClassID::CObjectSentrygun:
 					{
-						case ETFClassID::CObjectSentrygun:
-						{
-							int nTexture = (pObject->GetLevel() + 40);
+						int nTexture = (pBuilding->m_iUpgradeLevel() + 40);
 
-							if (Vars::Radar::Buildings::Outline.Value)
-								g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, nTexture);
+						if (Vars::Radar::Buildings::Outline.Value)
+							g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, nTexture);
 
-							g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture);
-							break;
-						}
-						case ETFClassID::CObjectDispenser:
-						{
-							if (Vars::Radar::Buildings::Outline.Value)
-								g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, 44);
-
-							g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, 44);
-							break;
-						}
-						case ETFClassID::CObjectTeleporter:
-						{
-							int nTexture = 46; //Exit texture ID
-
-							//If "YawToExit" is not zero, it most like is an entrance
-							if (pObject->GetYawToExit())
-								nTexture -= 1; //In that case, -1 from "nTexture" so we get entrace texture ID
-
-							if (Vars::Radar::Buildings::Outline.Value)
-								g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, nTexture);
-
-							g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture);
-							break;
-						}
-						default: break;
+						g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture);
+						break;
 					}
-
-					if (Vars::Radar::Buildings::Health.Value)
+					case ETFClassID::CObjectDispenser:
 					{
-						const int nHealth = pObject->GetHealth();
-						const int nMaxHealth = pObject->GetMaxHealth();
-						Color_t clrHealth = GetHealthColor(nHealth, nMaxHealth);
+						if (Vars::Radar::Buildings::Outline.Value)
+							g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, 44);
 
-						const auto flHealth = static_cast<float>(nHealth);
-						const auto flMaxHealth = static_cast<float>(nMaxHealth);
-
-						static constexpr int nW = 2;
-
-						const float flRatio = (flHealth / flMaxHealth);
-
-						g_Draw.FillRect(((nX - nW) - 1), nY, nW, nSize, { 0, 0, 0, 255 });
-						g_Draw.FillRect(((nX - nW) - 1), (nY + nSize - (nSize * flRatio)), nW, (nSize * flRatio), clrHealth);
+						g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, 44);
+						break;
 					}
+					case ETFClassID::CObjectTeleporter:
+					{
+						int nTexture = 46; //Exit texture ID
+
+						//If "YawToExit" is not zero, it most like is an entrance
+						if (pBuilding->GetYawToExit())
+							nTexture -= 1; //In that case, -1 from "nTexture" so we get entrace texture ID
+
+						if (Vars::Radar::Buildings::Outline.Value)
+							g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, nTexture);
+
+						g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture);
+						break;
+					}
+					default: break;
+				}
+
+				if (Vars::Radar::Buildings::Health.Value)
+				{
+					const int nHealth = pBuilding->m_iBOHealth();
+					const int nMaxHealth = pBuilding->m_iMaxHealth();
+					Color_t clrHealth = GetHealthColor(nHealth, nMaxHealth);
+
+					const auto flHealth = static_cast<float>(nHealth);
+					const auto flMaxHealth = static_cast<float>(nMaxHealth);
+
+					static constexpr int nW = 2;
+
+					const float flRatio = (flHealth / flMaxHealth);
+
+					g_Draw.FillRect(((nX - nW) - 1), nY, nW, nSize, { 0, 0, 0, 255 });
+					g_Draw.FillRect(((nX - nW) - 1), (nY + nSize - (nSize * flRatio)), nW, (nSize * flRatio), clrHealth);
 				}
 			}
 		}
@@ -263,7 +258,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 				const int nSize = Vars::Radar::Players::IconSize.Value;
 				nX -= (nSize / 2), nY -= (nSize / 2);
 
-				Color_t clrDraw = GetEntityDrawColor(player, Vars::ESP::Main::EnableTeamEnemyColors.Value);
+				Color_t clrDraw = GetEntityDrawColor(player, Vars::Colors::Relative.Value);
 
 				//Background
 				//Just a filled rect or a bit better looking texture RN
@@ -284,12 +279,9 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 
 				//Prepare the correct texture index for player icon, and draw it
 				{
-					PlayerInfo_t playerInfo{};
-					if (Vars::Radar::Players::IconType.Value == 2 && I::EngineClient->GetPlayerInfo(player->GetIndex(), &playerInfo) && !playerInfo.fakeplayer)
-					{
-						// Avatar
-						g_Draw.Avatar(nX, nY, nSize, nSize, playerInfo.friendsID);
-					}
+					PlayerInfo_t pi{};
+					if (Vars::Radar::Players::IconType.Value == 2 && I::EngineClient->GetPlayerInfo(player->GetIndex(), &pi) && !pi.fakeplayer) // Avatar
+						g_Draw.Avatar(nX, nY, nSize, nSize, pi.friendsID);
 					else
 					{
 						int nTexture = player->m_iClass();

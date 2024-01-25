@@ -5,12 +5,12 @@
 #include "../../Features/Visuals/Visuals.h"
 #include "../../Features/Visuals/PlayerArrows/PlayerArrows.h"
 #include "../../Features/CritHack/CritHack.h"
-#include "../../Features/Menu/SpectatorList/SpectatorList.h"
+#include "../../Features/Visuals/SpectatorList/SpectatorList.h"
 #include "../../Features/Visuals/Radar/Radar.h"
 #include "../../Features/Menu/Menu.h"
 #include "../../Features/Misc/Notifications/Notifications.h"
 #include "../../Features/AutoQueue/AutoQueue.h"
-#include "../../Features/Menu/Playerlist/Playerlist.h"
+#include "../../Features/Menu/Playerlist/PlayerCore.h"
 
 namespace S
 {
@@ -25,9 +25,7 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 	static auto FinishDrawing = reinterpret_cast<void(__thiscall*)(void*)>(S::FinishDrawing());
 
 	if (!g_ScreenSize.w || !g_ScreenSize.h)
-	{
 		g_ScreenSize.Update();
-	}
 
 	//HACK: for some reason we need to do this
 	{
@@ -62,6 +60,8 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 
 		StartDrawing(I::VGuiSurface);
 		{
+			F::PlayerCore.Run();
+
 			if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 				return FinishDrawing(I::VGuiSurface);
 
@@ -116,7 +116,6 @@ MAKE_HOOK(EngineVGui_Paint, Utils::GetVFuncPtr(I::EngineVGui, 14), void, __fastc
 			F::SpectatorList.Run();
 			F::CritHack.Draw();
 			F::Radar.Run();
-			F::PlayerList.Run();
 
 			if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
 			{

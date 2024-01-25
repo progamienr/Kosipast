@@ -16,12 +16,12 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 	const Vec3 vLocalAngles = I::EngineClient->GetViewAngles();
 
 	// Players
-	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
+	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::PLAYER)
 	{
 		EGroupType groupType = EGroupType::PLAYERS_ENEMIES;
-		if (pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW || SandvichAimbot::bIsSandvich)
+		if (pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW)
 			groupType = EGroupType::PLAYERS_ALL;
-		else if (SandvichAimbot::bIsSandvich)
+		else if (F::AimbotGlobal.IsSandvich())
 			groupType = EGroupType::PLAYERS_TEAMMATES;
 
 		for (const auto& pTarget : g_EntityCache.GetGroup(groupType))
@@ -37,11 +37,8 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 					continue;
 			}
 
-			if (pTarget->m_iTeamNum() != pLocal->m_iTeamNum())
-			{
-				if (F::AimbotGlobal.ShouldIgnore(pTarget))
-					continue;
-			}
+			if (F::AimbotGlobal.ShouldIgnore(pTarget))
+				continue;
 
 			Vec3 vPos = pTarget->GetWorldSpaceCenter();
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
@@ -51,8 +48,8 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 				continue;
 
 			const float flDistTo = (sortMethod == ESortMethod::DISTANCE) ? vLocalPos.DistTo(vPos) : 0.0f;
-			const auto& priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
-			validTargets.push_back({ pTarget, ETargetType::PLAYER, vPos, vAngleTo, flFOVTo, flDistTo, -1, false, priority });
+			const int priority = F::AimbotGlobal.GetPriority(pTarget->GetIndex());
+			validTargets.push_back({ pTarget, ETargetType::PLAYER, vPos, vAngleTo, flFOVTo, flDistTo, priority });
 		}
 	}
 
@@ -61,25 +58,24 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 
 	for (const auto& pBuilding : g_EntityCache.GetGroup(bIsRescueRanger ? EGroupType::BUILDINGS_ALL : EGroupType::BUILDINGS_ENEMIES))
 	{
+		if (!pBuilding->IsAlive())
+			continue;
+
 		bool isSentry = pBuilding->GetClassID() == ETFClassID::CObjectSentrygun;
 		bool isDispenser = pBuilding->GetClassID() == ETFClassID::CObjectDispenser;
 		bool isTeleporter = pBuilding->GetClassID() == ETFClassID::CObjectTeleporter;
 
-		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::SENTRY)) && isSentry)
+		if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::SENTRY) && isSentry)
 			continue;
-		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::DISPENSER)) && isDispenser)
+		if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::DISPENSER) && isDispenser)
 			continue;
-		if (!(Vars::Aimbot::Global::AimAt.Value & (ToAimAt::TELEPORTER)) && isTeleporter)
+		if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::TELEPORTER) && isTeleporter)
 			continue;
-
-		const auto& Building = reinterpret_cast<CBaseObject*>(pBuilding);
-
-		if (!pBuilding->IsAlive()) { continue; }
 
 		// Check if the Rescue Ranger should shoot at friendly buildings
 		if (bIsRescueRanger && (pBuilding->m_iTeamNum() == pLocal->m_iTeamNum()))
 		{
-			if (Building->GetHealth() >= Building->GetMaxHealth())
+			if (pBuilding->m_iBOHealth() >= pBuilding->m_iMaxHealth())
 				continue;
 		}
 
@@ -94,7 +90,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 	}
 
 	// NPCs
-	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::NPC))
+	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::NPC)
 	{
 		for (const auto& pNPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 		{
@@ -112,7 +108,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 	}
 
 	//Bombs
-	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::BOMB))
+	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::BOMB)
 	{
 		//This is pretty bad with projectiles
 		for (const auto& pBomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
@@ -537,7 +533,7 @@ std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* p
 	{
 		target.m_vAngleTo = vAngleTo;
 		target.m_vPos = vTargetPos;
-		if (Vars::Aimbot::Global::ShowHitboxes.Value)
+		if (Vars::Visuals::ShowHitboxes.Value)
 		{
 			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f));
 
@@ -669,16 +665,10 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 	for (auto& target : targets)
 	{
-		if (SandvichAimbot::bIsSandvich)
-		{
-			SandvichAimbot::RunSandvichAimbot(pLocal, pWeapon, pCmd, target.m_pEntity);
-			return false;
-		}
-
 		const auto result = CanHit(target, pLocal, pWeapon);
 		if (!result.first) continue;
 
-		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
+		G::CurrentTarget = { target.m_pEntity->GetIndex(), I::GlobalVars->tickcount };
 		if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
 			G::AimPos = target.m_vPos;
 
@@ -724,7 +714,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
 
-		if ((G::IsAttacking || !Vars::Aimbot::Global::AutoShoot.Value) && Vars::Visuals::SimLines.Value)
+		if ((G::IsAttacking || !Vars::Aimbot::Global::AutoShoot.Value) && Vars::Visuals::SimLines.Value /*&& !pWeapon->IsInReload()*/)
 		{
 			F::Visuals.ClearBulletLines();
 			G::LinesStorage.clear();
@@ -735,7 +725,6 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		}
 
 		Aim(pCmd, target.m_vAngleTo);
-
 		break;
 	}
 
@@ -753,7 +742,7 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 		? Math::RemapValClamped(flChargeS, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f)
 		: 1.f - Math::RemapValClamped(flChargeC, 0.f, Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
 
-	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && flAmount > float(Vars::Aimbot::Projectile::AutoReleaseAt.Value) / 100;
+	const bool bAutoRelease = Vars::Aimbot::Projectile::AutoRelease.Value && flAmount > float(Vars::Aimbot::Projectile::AutoRelease.Value) / 100;
 	const bool bCancel = flAmount > 0.95f && pWeapon->GetWeaponID() != TF_WEAPON_COMPOUND_BOW;
 
 	// add user toggle to control whether to cancel or not
