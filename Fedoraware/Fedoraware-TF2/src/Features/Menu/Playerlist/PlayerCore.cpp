@@ -25,18 +25,20 @@ void CPlayerlistCore::LoadPlayers()
 			read_json(g_CFG.GetConfigPath() + "\\Core\\Players.json", readTree);
 			G::PlayerTags.clear();
 
-			for (auto& it : readTree)
+			for (auto& player : readTree)
 			{
-				uint32_t friendsID = std::stoi(it.first);
+				uint32_t friendsID = std::stoi(player.first);
 
-				for (const auto& [sTag, plTag] : F::PlayerUtils.vTags)
+				for (auto& tag : player.second)
 				{
-					if (!plTag.Assignable)
+					std::string sTag = std::string(tag.first.data()).empty() ? tag.second.data() : tag.first.data(); // account for dumb old format
+
+					PriorityLabel plTag;
+					if (F::PlayerUtils.GetTag(sTag, &plTag) && !plTag.Assignable)
 						continue;
 
-					if (auto _ = it.second.get_optional<int>(sTag)) {
+					if (!F::PlayerUtils.HasTag(friendsID, sTag))
 						F::PlayerUtils.AddTag(friendsID, sTag, false);
-					}
 				}
 			}
 		}
@@ -81,11 +83,14 @@ void CPlayerlistCore::SavePlayers()
 			if (!vTags.size())
 				continue;
 
-			boost::property_tree::ptree userTree;
+			boost::property_tree::ptree tagTree;
 			for (const auto& sTag : vTags)
-				userTree.put(sTag, 0);
+			{
+				boost::property_tree::ptree child; child.put("", sTag);
+				tagTree.push_back(std::make_pair("", child));
+			}
 
-			writeTree.put_child(std::to_string(friendsID), userTree);
+			writeTree.put_child(std::to_string(friendsID), tagTree);
 		}
 
 		// Save the file

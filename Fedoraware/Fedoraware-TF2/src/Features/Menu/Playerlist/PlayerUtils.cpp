@@ -19,7 +19,7 @@ bool CPlayerlistUtils::GetTag(std::string sTag, PriorityLabel* plTag)
 	const auto find = vTags.find(sTag);
 	if (find != vTags.end())
 	{
-		*plTag = (*find).second;
+		*plTag = find->second;
 		return true;
 	}
 
@@ -205,8 +205,8 @@ bool CPlayerlistUtils::GetSignificantTag(uint32_t friendsID, std::string* sTag, 
 
 			return a.first < b.first;
 		});
-	*sTag = (*vLabels.begin()).first;
-	*plTag = (*vLabels.begin()).second;
+	*sTag = vLabels.begin()->first;
+	*plTag = vLabels.begin()->second;
 	return true;
 }
 bool CPlayerlistUtils::GetSignificantTag(int iIndex, std::string* sTag, PriorityLabel* plTag, int iMode)

@@ -348,7 +348,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 				if (target.m_TargetType != ETargetType::SENTRY)
 				{
 					std::vector<std::pair<const mstudiobbox_t*, int>> primary, secondary, tertiary; // dumb
-					for (int nHitbox = 0/*-1*/; nHitbox < target.m_pEntity->GetNumOfHitboxes(); nHitbox++)
+					for (int nHitbox = 0; nHitbox < target.m_pEntity->GetNumOfHitboxes(); nHitbox++)
 					{
 						if (!IsHitboxValid(nHitbox))
 							continue;
@@ -369,13 +369,21 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 				}
 				else
 				{
-					for (int nHitbox = target.m_pEntity->GetNumOfHitboxes() - 1; nHitbox >= 0; nHitbox--)
+					for (int nHitbox = 0; nHitbox < target.m_pEntity->GetNumOfHitboxes(); nHitbox++)
 					{
 						const mstudiobbox_t* pBox = pSet->hitbox(nHitbox);
 						if (!pBox) continue;
 
 						hitboxes.push_back({ pBox, nHitbox });
 					}
+					std::sort(hitboxes.begin(), hitboxes.end(), [&](const auto& a, const auto& b) -> bool
+						{
+							Vec3 aCenter = {}, bCenter = {}, vCenter = target.m_pEntity->GetWorldSpaceCenter();
+							Math::VectorTransform({}, boneMatrix[a.first->bone], aCenter);
+							Math::VectorTransform({}, boneMatrix[b.first->bone], bCenter);
+
+							return vCenter.DistTo(aCenter) < vCenter.DistTo(bCenter);
+						});
 				}
 			}
 
@@ -585,7 +593,7 @@ void CAimbotHitscan::Aim(CUserCmd* pCmd, Vec3& vAngle)
 	if (Vars::Aimbot::Hitscan::AimMethod.Value != 2)
 	{
 		pCmd->viewangles = vAngle;
-		I::EngineClient->SetViewAngles(pCmd->viewangles);
+		//I::EngineClient->SetViewAngles(vAngle);
 	}
 	else if (G::IsAttacking)
 	{

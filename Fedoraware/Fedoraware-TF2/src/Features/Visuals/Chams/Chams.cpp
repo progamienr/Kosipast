@@ -13,6 +13,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams, bool* bViewmodel)
 	if (!pLocal || pEntity->GetDormant() || !pEntity->ShouldDraw())
 		return false;
 
+	if (!Utils::IsOnScreen(pEntity, pEntity->GetWorldSpaceCenter()))
+		return false;
+
 	switch (pEntity->GetClassID())
 	{
 	// player chams
@@ -181,21 +184,31 @@ void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* p
 	mEntities[pEntity->GetIndex()] = true;
 	bRendering = true;
 
-	auto visibleMaterial = F::Materials.GetMaterial(chams.VisibleMaterial), occludedMaterial = F::Materials.GetMaterial(chams.OccludedMaterial);
+	auto visibleMaterials = chams.VisibleMaterial.size() ? chams.VisibleMaterial : std::vector<std::string>{ "None" };
+	auto occludedMaterials = chams.OccludedMaterial.size() ? chams.OccludedMaterial : std::vector<std::string>{ "None" };
 
 	StencilBegin(pRenderContext, bTwoModels);
 
 	StencilVisible(pRenderContext, bTwoModels);
-	F::Materials.SetColor(visibleMaterial, chams.VisibleColor);
-	I::ModelRender->ForcedMaterialOverride(visibleMaterial ? visibleMaterial : nullptr);
-	pEntity->DrawModel(STUDIO_RENDER);
+	for (auto it = visibleMaterials.begin(); it != visibleMaterials.end(); it++)
+	{
+		auto material = F::Materials.GetMaterial(*it);
 
+		F::Materials.SetColor(material, chams.VisibleColor, it + 1 == visibleMaterials.end()); // only apply color to last material
+		I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+		pEntity->DrawModel(STUDIO_RENDER);
+	}
 	if (bTwoModels)
 	{
 		StencilOccluded(pRenderContext);
-		F::Materials.SetColor(occludedMaterial, chams.OccludedColor);
-		I::ModelRender->ForcedMaterialOverride(occludedMaterial ? occludedMaterial : nullptr);
-		pEntity->DrawModel(STUDIO_RENDER);
+		for (auto it = occludedMaterials.begin(); it != occludedMaterials.end(); it++)
+		{
+			auto material = F::Materials.GetMaterial(*it);
+
+			F::Materials.SetColor(material, chams.OccludedColor, it + 1 == occludedMaterials.end());
+			I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+			pEntity->DrawModel(STUDIO_RENDER);
+		}
 	}
 
 	StencilEnd(pRenderContext, bTwoModels);
@@ -204,20 +217,6 @@ void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* p
 	I::ModelRender->ForcedMaterialOverride(nullptr);
 
 	bRendering = false;
-}
-void CChams::DrawModel(IMaterial* material, Color_t color, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
-{
-	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
-	if (!ModelRender_DrawModelExecute)
-		return;
-
-	F::Materials.SetColor(material, color);
-	I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
-	ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
-	
-	I::RenderView->SetColorModulation(1.f, 1.f, 1.f);
-	I::RenderView->SetBlend(1.f);
-	I::ModelRender->ForcedMaterialOverride(nullptr);
 }
 
 
@@ -271,6 +270,10 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 	if (!Vars::Backtrack::Enabled.Value || !Vars::Chams::Backtrack::Active.Value)
 		return;
 
+	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
+	if (!ModelRender_DrawModelExecute)
+		return;
+
 	const auto& pEntity = I::ClientEntityList->GetClientEntity(pInfo.m_nEntIndex);
 	if (!pEntity || pEntity->GetClassID() != ETFClassID::CTFPlayer || !pEntity->IsAlive())
 		return;
@@ -288,8 +291,29 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 
 
 
-	auto pMaterial = F::Materials.GetMaterial(Vars::Chams::Backtrack::Chams.Value.VisibleMaterial);
-	auto sColor = Vars::Chams::Backtrack::Chams.Value.VisibleColor;
+	auto drawModel = [ModelRender_DrawModelExecute, pLocal](Vec3 vCenter, std::vector<std::string> materials, Color_t color, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+		{
+			if (!Utils::IsOnScreen(pLocal, vCenter))
+				return;
+
+			for (auto it = materials.begin(); it != materials.end(); it++)
+			{
+				auto material = F::Materials.GetMaterial(*it);
+
+				F::Materials.SetColor(material, color, it + 1 == materials.end());
+				I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+				ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
+			}
+
+			I::RenderView->SetColorModulation(1.f, 1.f, 1.f);
+			I::RenderView->SetBlend(1.f);
+			I::ModelRender->ForcedMaterialOverride(nullptr);
+		};
+
+
+
+	auto& vMaterials = Vars::Chams::Backtrack::Chams.Value.VisibleMaterial;
+	auto& sColor = Vars::Chams::Backtrack::Chams.Value.VisibleColor;
 
 	switch (Vars::Chams::Backtrack::Draw.Value)
 	{
@@ -297,17 +321,17 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 	{
 		std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
 		if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
-			DrawModel(pMaterial, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+			drawModel(vLastRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 		break;
 	}
 	case 1: // last + first
 	{
 		std::optional<TickRecord> vFirstRec = F::Backtrack.GetFirstRecord(pEntity);
 		if (vFirstRec && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) >= 0.1f)
-			DrawModel(pMaterial, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
+			drawModel(vFirstRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
 		std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
 		if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
-			DrawModel(pMaterial, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+			drawModel(vLastRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 		break;
 	}
 	case 2: // all
@@ -322,7 +346,7 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 				if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) <= 0.1f)
 					continue;
 
-				DrawModel(pMaterial, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
+				drawModel(record.vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
 			}
 		}
 	}
@@ -333,10 +357,27 @@ void CChams::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderIn
 	if (!Vars::Chams::FakeAngle::Active.Value || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAng.DrawChams)
 		return;
 
-	auto pMaterial = F::Materials.GetMaterial(Vars::Chams::FakeAngle::Chams.Value.VisibleMaterial);
-	auto sColor = Vars::Chams::FakeAngle::Chams.Value.VisibleColor;
+	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
+	if (!ModelRender_DrawModelExecute)
+		return;
 
-	DrawModel(pMaterial, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&F::FakeAng.BoneMatrix));
+
+
+	auto& vMaterials = Vars::Chams::FakeAngle::Chams.Value.VisibleMaterial;
+	auto& sColor = Vars::Chams::FakeAngle::Chams.Value.VisibleColor;
+
+	for (auto it = vMaterials.begin(); it != vMaterials.end(); it++)
+	{
+		auto material = F::Materials.GetMaterial(*it);
+
+		F::Materials.SetColor(material, sColor, it + 1 == vMaterials.end());
+		I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, reinterpret_cast<matrix3x4*>(&F::FakeAng.BoneMatrix));
+	}
+
+	I::RenderView->SetColorModulation(1.f, 1.f, 1.f);
+	I::RenderView->SetBlend(1.f);
+	I::ModelRender->ForcedMaterialOverride(nullptr);
 }
 void CChams::RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 {
@@ -352,19 +393,28 @@ void CChams::RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo
 	}
 }
 
-bool CChams::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+bool CChams::RenderViewmodel(void* ecx, int flags, int* iReturn)
 {
-	if (!Vars::Chams::Viewmodel::Hands.Value)
+	if (!Vars::Chams::Viewmodel::Weapon.Value)
 		return false;
 
-	auto& chams = Vars::Chams::Viewmodel::Chams.Value;
+	const auto C_BaseAnimating_DrawModel = g_HookManager.GetMapHooks()["C_BaseAnimating_DrawModel"];
+	if (!C_BaseAnimating_DrawModel)
+		return false;
 
-	auto material = F::Materials.GetMaterial(chams.VisibleMaterial);
-	F::Materials.SetColor(material, chams.VisibleColor);
-	I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
 
-	if (const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"])
-		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
+
+	auto& vMaterials = Vars::Chams::Viewmodel::Chams.Value.VisibleMaterial;
+	auto& sColor = Vars::Chams::Viewmodel::Chams.Value.VisibleColor;
+
+	for (auto it = vMaterials.begin(); it != vMaterials.end(); it++)
+	{
+		auto material = F::Materials.GetMaterial(*it);
+
+		F::Materials.SetColor(material, sColor, it + 1 == vMaterials.end());
+		I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+		*iReturn = C_BaseAnimating_DrawModel->Original<int(__thiscall*)(void*, int)>()(ecx, flags);
+	}
 
 	I::RenderView->SetColorModulation(1.f, 1.f, 1.f);
 	I::RenderView->SetBlend(1.f);
@@ -372,19 +422,28 @@ bool CChams::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderIn
 
 	return true;
 }
-bool CChams::RenderViewmodel(void* ecx, int flags, int* iReturn)
+bool CChams::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 {
-	if (!Vars::Chams::Viewmodel::Weapon.Value)
+	if (!Vars::Chams::Viewmodel::Hands.Value)
 		return false;
 
-	auto& chams = Vars::Chams::Viewmodel::Chams.Value;
+	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
+	if (!ModelRender_DrawModelExecute)
+		return false;
 
-	auto material = F::Materials.GetMaterial(chams.VisibleMaterial);
-	F::Materials.SetColor(material, chams.VisibleColor);
-	I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
 
-	if (const auto C_BaseAnimating_DrawModel = g_HookManager.GetMapHooks()["C_BaseAnimating_DrawModel"])
-		*iReturn = C_BaseAnimating_DrawModel->Original<int(__thiscall*)(void*, int)>()(ecx, flags);
+
+	auto& vMaterials = Vars::Chams::Viewmodel::Chams.Value.VisibleMaterial;
+	auto& sColor = Vars::Chams::Viewmodel::Chams.Value.VisibleColor;
+
+	for (auto it = vMaterials.begin(); it != vMaterials.end(); it++)
+	{
+		auto material = F::Materials.GetMaterial(*it);
+
+		F::Materials.SetColor(material, sColor, it + 1 == vMaterials.end());
+		I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
+	}
 
 	I::RenderView->SetColorModulation(1.f, 1.f, 1.f);
 	I::RenderView->SetBlend(1.f);

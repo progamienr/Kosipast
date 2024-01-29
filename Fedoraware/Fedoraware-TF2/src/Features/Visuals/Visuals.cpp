@@ -373,14 +373,6 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool
 	}
 }
 
-void CVisuals::DrawHitbox(CBaseEntity* pTarget, Vec3 vOrigin, float flTime, const bool bClear)
-{
-	if (bClear)
-		G::BoxesStorage.clear();
-
-	G::BoxesStorage.push_back({ vOrigin, pTarget->m_vecMins(), pTarget->m_vecMaxs(), Vec3(), flTime, Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value, true });
-}
-
 void CVisuals::DrawBulletLines()
 {
 	/*

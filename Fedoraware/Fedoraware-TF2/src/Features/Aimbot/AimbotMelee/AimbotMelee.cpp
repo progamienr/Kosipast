@@ -446,7 +446,7 @@ void CAimbotMelee::Aim(CUserCmd* pCmd, Vec3& vAngle)
 	if (Vars::Aimbot::Melee::AimMethod.Value != 2)
 	{
 		pCmd->viewangles = vAngle;
-		I::EngineClient->SetViewAngles(pCmd->viewangles);
+		//I::EngineClient->SetViewAngles(vAngle);
 	}
 	else if (G::IsAttacking)
 	{
@@ -460,7 +460,6 @@ Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 {
 	Vec3 vReturn = {};
 
-	vToAngle -= G::PunchAngles;
 	Math::ClampAngles(vToAngle);
 
 	switch (iMethod)

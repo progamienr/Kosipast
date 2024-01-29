@@ -14,6 +14,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 	if (!pLocal || pEntity->GetDormant() || !pEntity->ShouldDraw())
 		return false;
 
+	if (!Utils::IsOnScreen(pEntity, pEntity->GetWorldSpaceCenter()))
+		return false;
+
 	switch (pEntity->GetClassID())
 	{
 		// player glow
@@ -273,10 +276,10 @@ void CGlow::RenderMain()
 		return;
 
 	const auto pRenderContext = I::MaterialSystem->GetRenderContext();
-	auto m_pMatGlowColor = F::Materials.GetMaterial("GlowColor");
-	auto m_pMatBlurX = F::Materials.GetMaterial("BlurX");
-	auto m_pMatBlurY = F::Materials.GetMaterial("BlurY");
-	auto m_pMatHaloAddToScreen = F::Materials.GetMaterial("HaloAddToScreen");
+	auto m_pMatGlowColor = F::Materials.mGlowMaterials["GlowColor"].pMaterial;
+	auto m_pMatBlurX = F::Materials.mGlowMaterials["BlurX"].pMaterial;
+	auto m_pMatBlurY = F::Materials.mGlowMaterials["BlurY"].pMaterial;
+	auto m_pMatHaloAddToScreen = F::Materials.mGlowMaterials["HaloAddToScreen"].pMaterial;
 	if (!pRenderContext || !m_pMatGlowColor || !m_pMatBlurX || !m_pMatBlurY || !m_pMatHaloAddToScreen)
 		return F::Materials.ReloadMaterials();
 
@@ -364,18 +367,17 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 
 
 
-	auto drawModel = [ModelRender_DrawModelExecute](const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+	auto drawModel = [ModelRender_DrawModelExecute, pLocal](Vec3 vCenter, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 		{
+			if (!Utils::IsOnScreen(pLocal, vCenter))
+				return;
+
 			ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
 		};
 	auto drawModels = [drawModel, pEntity, pState, pInfo](bool bModel)
 		{
-			auto pMaterial = F::Materials.GetMaterial("None");
-			if (!pMaterial)
-				return;
-
 			if (bModel)
-				I::ModelRender->ForcedMaterialOverride(pMaterial);
+				I::RenderView->SetBlend(0.f);
 
 			switch (Vars::Glow::Backtrack::Draw.Value)
 			{
@@ -383,17 +385,17 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 			{
 				std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
 				if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
-					drawModel(pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+					drawModel(vLastRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 				break;
 			}
 			case 1: // last + first
 			{
 				std::optional<TickRecord> vFirstRec = F::Backtrack.GetFirstRecord(pEntity);
 				if (vFirstRec && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) >= 0.1f)
-					drawModel(pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
+					drawModel(vFirstRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
 				std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
 				if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
-					drawModel(pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+					drawModel(vLastRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 				break;
 			}
 			case 2: // all
@@ -408,14 +410,14 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 						if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) <= 0.1f)
 							continue;
 
-						drawModel(pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
+						drawModel(record.vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
 					}
 				}
 			}
 			}
 
 			if (bModel)
-				I::ModelRender->ForcedMaterialOverride(nullptr);
+				I::RenderView->SetBlend(1.f);
 		};
 
 
@@ -442,6 +444,8 @@ void CGlow::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInf
 	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
 	if (!ModelRender_DrawModelExecute)
 		return;
+
+
 
 	auto drawModel = [ModelRender_DrawModelExecute, pState, pInfo](bool bModel)
 		{
@@ -483,10 +487,10 @@ void CGlow::RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_
 			return;
 
 		const auto pRenderContext = I::MaterialSystem->GetRenderContext();
-		auto m_pMatGlowColor = F::Materials.GetMaterial("GlowColor");
-		auto m_pMatBlurX = F::Materials.GetMaterial("BlurX");
-		auto m_pMatBlurY = F::Materials.GetMaterial("BlurY");
-		auto m_pMatHaloAddToScreen = F::Materials.GetMaterial("HaloAddToScreen");
+		auto m_pMatGlowColor = F::Materials.mGlowMaterials["GlowColor"].pMaterial;
+		auto m_pMatBlurX = F::Materials.mGlowMaterials["BlurX"].pMaterial;
+		auto m_pMatBlurY = F::Materials.mGlowMaterials["BlurY"].pMaterial;
+		auto m_pMatHaloAddToScreen = F::Materials.mGlowMaterials["HaloAddToScreen"].pMaterial;
 		if (!pRenderContext || !m_pMatGlowColor || !m_pMatBlurX || !m_pMatBlurY || !m_pMatHaloAddToScreen)
 			return F::Materials.ReloadMaterials();
 
@@ -505,26 +509,31 @@ void CGlow::RenderViewmodel(void* ecx, int flags)
 		return;
 
 	const auto pRenderContext = I::MaterialSystem->GetRenderContext();
-	auto m_pMatGlowColor = F::Materials.GetMaterial("GlowColor");
-	auto m_pMatBlurX = F::Materials.GetMaterial("BlurX");
-	auto m_pMatBlurY = F::Materials.GetMaterial("BlurY");
-	auto m_pMatHaloAddToScreen = F::Materials.GetMaterial("HaloAddToScreen");
+	auto m_pMatGlowColor = F::Materials.mGlowMaterials["GlowColor"].pMaterial;
+	auto m_pMatBlurX = F::Materials.mGlowMaterials["BlurX"].pMaterial;
+	auto m_pMatBlurY = F::Materials.mGlowMaterials["BlurY"].pMaterial;
+	auto m_pMatHaloAddToScreen = F::Materials.mGlowMaterials["HaloAddToScreen"].pMaterial;
 	if (!pRenderContext || !m_pMatGlowColor || !m_pMatBlurX || !m_pMatBlurY || !m_pMatHaloAddToScreen)
 		return F::Materials.ReloadMaterials();
 
+	const auto C_BaseAnimating_DrawModel = g_HookManager.GetMapHooks()["C_BaseAnimating_DrawModel"];
+	if (!C_BaseAnimating_DrawModel)
+		return;
 
 
-	auto drawModel = [ecx, flags](bool bModel)
+
+	auto drawModel = [C_BaseAnimating_DrawModel, ecx, flags](bool bModel)
 		{
 			if (bModel)
 				I::RenderView->SetBlend(0.f);
 
-			if (const auto C_BaseAnimating_DrawModel = g_HookManager.GetMapHooks()["C_BaseAnimating_DrawModel"])
-				C_BaseAnimating_DrawModel->Original<int(__thiscall*)(void*, int)>()(ecx, flags);
+			C_BaseAnimating_DrawModel->Original<int(__thiscall*)(void*, int)>()(ecx, flags);
 
 			if (bModel)
 				I::RenderView->SetBlend(1.f);
 		};
+
+
 
 	SetupBegin(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurY);
 	drawModel(true);
@@ -549,26 +558,31 @@ void CGlow::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInf
 		return;
 
 	const auto pRenderContext = I::MaterialSystem->GetRenderContext();
-	auto m_pMatGlowColor = F::Materials.GetMaterial("GlowColor");
-	auto m_pMatBlurX = F::Materials.GetMaterial("BlurX");
-	auto m_pMatBlurY = F::Materials.GetMaterial("BlurY");
-	auto m_pMatHaloAddToScreen = F::Materials.GetMaterial("HaloAddToScreen");
+	auto m_pMatGlowColor = F::Materials.mGlowMaterials["GlowColor"].pMaterial;
+	auto m_pMatBlurX = F::Materials.mGlowMaterials["BlurX"].pMaterial;
+	auto m_pMatBlurY = F::Materials.mGlowMaterials["BlurY"].pMaterial;
+	auto m_pMatHaloAddToScreen = F::Materials.mGlowMaterials["HaloAddToScreen"].pMaterial;
 	if (!pRenderContext || !m_pMatGlowColor || !m_pMatBlurX || !m_pMatBlurY || !m_pMatHaloAddToScreen)
 		return F::Materials.ReloadMaterials();
 
+	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
+	if (!ModelRender_DrawModelExecute)
+		return;
 
 
-	auto drawModel = [pState, pInfo, pBoneToWorld](bool bModel)
+
+	auto drawModel = [ModelRender_DrawModelExecute, pState, pInfo, pBoneToWorld](bool bModel)
 		{
 			if (bModel)
 				I::RenderView->SetBlend(0.f);
 
-			if (const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"])
-				ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
+			ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
 
 			if (bModel)
 				I::RenderView->SetBlend(1.f);
 		};
+
+
 
 	SetupBegin(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurY);
 	drawModel(true);

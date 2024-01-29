@@ -306,6 +306,9 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 
 	target.m_pEntity->SetAbsOrigin(vPredict);
 
+	if (Vars::Aimbot::Projectile::AimMethod.Value != 1)
+		projInfo.m_hull += Vec3(Vars::Aimbot::Projectile::HullInc.Value, Vars::Aimbot::Projectile::HullInc.Value, Vars::Aimbot::Projectile::HullInc.Value);
+
 	for (int n = 0; n < iSimTime; n++) {
 		Vec3 Old = F::ProjSim.GetOrigin();
 		F::ProjSim.RunTick(projInfo);
@@ -396,14 +399,14 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 	return false;
 }
 
-std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
+int CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, float* flTimeTo, std::vector<DrawBox>* bBoxes)
 {
 	if (Vars::Aimbot::Global::IgnoreOptions.Value & (1 << 6) && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::Global::TickTolerance.Value)
-		return { false, 0.f };
+		return false;
 
 	const INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
 	if (!iNetChan)
-		return { false, 0.f };
+		return false;
 
 	ProjectileInfo projInfo = {};
 
@@ -414,7 +417,7 @@ std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* p
 	float flMaxTime = Vars::Aimbot::Projectile::PredictionTime.Value;
 	{
 		if (!F::ProjSim.GetInfo(pLocal, pWeapon, {}, projInfo))
-			return { false, 0.f };
+			return false;
 
 		if (flMaxTime > projInfo.m_lifetime)
 			flMaxTime = projInfo.m_lifetime;
@@ -470,7 +473,7 @@ std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* p
 	PlayerStorage storage;
 	F::MoveSim.Initialize(target.m_pEntity, storage);
 
-	Vec3 vAngleTo; float flTimeTo;
+	Vec3 vAngleTo;
 	int i = 0, iLowestPriority = 3, iEndTick = 0; // time to point valid, end in n ticks
 	for (;i < TIME_TO_TICKS(flMaxTime); i++)
 	{
@@ -516,7 +519,7 @@ std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* p
 			{
 				iLowestPriority = iPriority;
 				vAngleTo = vAngles;
-				flTimeTo = solution.m_flTime + flLatency + latOff;
+				*flTimeTo = solution.m_flTime + flLatency + latOff;
 			}
 		}
 
@@ -535,26 +538,26 @@ std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* p
 		target.m_vPos = vTargetPos;
 		if (Vars::Visuals::ShowHitboxes.Value)
 		{
-			F::Visuals.DrawHitbox(target.m_pEntity, vTargetPos, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f));
+			bBoxes->push_back({ vTargetPos, target.m_pEntity->m_vecMins(), target.m_pEntity->m_vecMaxs(), Vec3(), I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f), Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value, true });
 
 			if (target.m_nAimedHitbox == HITBOX_HEAD) // huntsman head
 			{
 				const Vec3 vOriginOffset = target.m_pEntity->GetAbsOrigin() - vTargetPos;
 
 				const model_t* pModel = target.m_pEntity->GetModel();
-				if (!pModel) return { true, flTimeTo };
+				if (!pModel) return true;
 				const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
-				if (!pHDR) return { true, flTimeTo };
+				if (!pHDR) return true;
 				const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->m_nHitboxSet());
-				if (!pSet) return { true, flTimeTo };
+				if (!pSet) return true;
 
 				matrix3x4 BoneMatrix[128];
 				if (!target.m_pEntity->SetupBones(BoneMatrix, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
-					return { true, flTimeTo };
+					return true;
 
 				const mstudiobbox_t* bbox = pSet->hitbox(HITBOX_HEAD);
 				if (!bbox)
-					return { true, flTimeTo };
+					return true;
 
 				matrix3x4 rotMatrix;
 				Math::AngleMatrix(bbox->angle, rotMatrix);
@@ -568,13 +571,13 @@ std::pair<int, float> CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* p
 				Vec3 matrixOrigin;
 				Math::GetMatrixOrigin(matrix, matrixOrigin);
 
-				G::BoxesStorage.push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f), Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value });
+				bBoxes->push_back({ matrixOrigin - vOriginOffset, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + (Vars::Visuals::TimedLines.Value ? TICKS_TO_TIME(i) : 5.f), Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value });
 			}
 		}
-		return { true, flTimeTo };
+		return true;
 	}
 
-	return { false, 0.f };
+	return false;
 }
 
 
@@ -585,7 +588,7 @@ void CAimbotProjectile::Aim(CUserCmd* pCmd, Vec3& vAngle)
 	if (Vars::Aimbot::Projectile::AimMethod.Value != 2)
 	{
 		pCmd->viewangles = vAngle;
-		I::EngineClient->SetViewAngles(pCmd->viewangles);
+		//I::EngineClient->SetViewAngles(vAngle);
 	}
 	else if (G::IsAttacking)
 	{
@@ -602,7 +605,6 @@ Vec3 CAimbotProjectile::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 {
 	Vec3 vReturn = {};
 
-	vToAngle -= G::PunchAngles;
 	Math::ClampAngles(vToAngle);
 
 	switch (iMethod)
@@ -665,8 +667,9 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 	for (auto& target : targets)
 	{
-		const auto result = CanHit(target, pLocal, pWeapon);
-		if (!result.first) continue;
+		float flTimeTo = 0.f; std::vector<DrawBox> bBoxes = {};
+		const int result = CanHit(target, pLocal, pWeapon, &flTimeTo, &bBoxes);
+		if (!result) continue;
 
 		G::CurrentTarget = { target.m_pEntity->GetIndex(), I::GlobalVars->tickcount };
 		if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
@@ -703,7 +706,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 						float flDetonateTime = pWeapon->m_flDetonateTime();
 						float flDetonateMaxTime = Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon);
 						float flCharge = Math::RemapValClamped(flDetonateTime - I::GlobalVars->curtime, 0.f, flDetonateMaxTime, 0.f, 1.f);
-						if (std::clamp(flCharge - 0.05f, 0.f, 1.f) < result.second)
+						if (std::clamp(flCharge - 0.05f, 0.f, 1.f) < flTimeTo)
 							pCmd->buttons &= ~IN_ATTACK;
 					}
 					else
@@ -722,6 +725,10 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			G::LinesStorage.push_back({ G::MoveLines, Vars::Visuals::TimedLines.Value ? -1.f : I::GlobalVars->curtime + 5.f, Vars::Colors::PredictionColor.Value });
 			if (G::IsAttacking)
 				G::LinesStorage.push_back({ G::ProjLines, Vars::Visuals::TimedLines.Value ? -1.f - F::Backtrack.GetReal() : I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value });
+			
+			G::BoxesStorage.clear();
+			for (auto& bBox : bBoxes)
+				G::BoxesStorage.push_back(bBox);
 		}
 
 		Aim(pCmd, target.m_vAngleTo);

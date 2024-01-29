@@ -8,7 +8,6 @@ struct WeaponStorage
 {
 	float Bucket = 300.f;
 
-	float BaseDamage = 0.f; // literally fucking unused, yet causes crash with some weapons if removed ??
 	float Damage = 0.f;
 	float BaseCost = 0.f;
 	std::pair<int, int> ShotsCrits = { 0, 0 };

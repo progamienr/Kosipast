@@ -3,9 +3,8 @@
 
 #define MaterialFolder (g_CFG.GetConfigPath() + "\\Materials")
 
-struct CMaterial
+struct Material_t
 {
-	std::string sName = "";
 	IMaterial* pMaterial;
 
 	std::string sVMT = ""; // will be shown to user through material editor, for glow this won't matter
@@ -28,10 +27,10 @@ public:
 	void EditMaterial(std::string sName, std::string sVMT);
 	void RemoveMaterial(std::string sName);
 
-	void SetColor(IMaterial* material, Color_t color);
+	void SetColor(IMaterial* material, Color_t color, bool bSetColor = true);
 
-	std::vector<CMaterial> vChamMaterials;
-	std::vector<CMaterial> vGlowMaterials;
+	std::unordered_map<std::string, Material_t> mChamMaterials;
+	std::unordered_map<std::string, Material_t> mGlowMaterials;
 	std::vector<IMaterial*> vMatList;
 };
 

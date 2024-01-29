@@ -323,7 +323,8 @@ void CBacktrack::MakeRecords()
 				I::GlobalVars->tickcount,
 				mDidShoot[pEntity->GetIndex()],
 				*reinterpret_cast<BoneMatrixes*>(&noInterpBones[pEntity->GetIndex()].second),
-				vOrigin
+				vOrigin,
+				pEntity->GetWorldSpaceCenter()
 			});
 		}
 		else if (Vars::Backtrack::UnchokePrediction.Value && mRecords[pEntity].size() < 3)
@@ -356,7 +357,8 @@ void CBacktrack::MakeRecords()
 						I::GlobalVars->tickcount + 1,
 						false,
 						*reinterpret_cast<BoneMatrixes*>(&noInterpBones[pEntity->GetIndex()].second),
-						storage.m_MoveData.m_vecOrigin
+						storage.m_MoveData.m_vecOrigin,
+						storage.m_MoveData.m_vecOrigin + Vec3(0, 0, (pEntity->m_vecMins().z + pEntity->m_vecMaxs().z) / 2)
 					});
 				}
 

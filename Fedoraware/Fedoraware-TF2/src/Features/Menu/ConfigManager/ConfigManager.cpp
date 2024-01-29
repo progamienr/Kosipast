@@ -3,6 +3,7 @@
 #include "../../Vars.h"
 #include "../../../SDK/SDK.h"
 #include "../../Misc/Notifications/Notifications.h"
+#include "../../Visuals/Materials/Materials.h"
 
 boost::property_tree::ptree WriteTree;
 boost::property_tree::ptree ReadTree;
@@ -87,9 +88,25 @@ void CConfigManager::SaveJson(const char* name, const Vec3& val)
 void CConfigManager::SaveJson(const char* name, const Chams_t& val)
 {
 	boost::property_tree::ptree chamTree;
-	chamTree.put("VisibleMaterial", val.VisibleMaterial);
+	{
+		boost::property_tree::ptree vectorTree;
+		for (const auto& sMat : val.VisibleMaterial)
+		{
+			boost::property_tree::ptree child; child.put("", sMat);
+			vectorTree.push_back(std::make_pair("", child));
+		}
+		chamTree.put_child("VisibleMaterial", vectorTree);
+	}
 	chamTree.put_child("VisibleColor", ColorToTree(val.VisibleColor));
-	chamTree.put("OccludedMaterial", val.OccludedMaterial);
+	{
+		boost::property_tree::ptree vectorTree;
+		for (const auto& sMat : val.OccludedMaterial)
+		{
+			boost::property_tree::ptree child; child.put("", sMat);
+			vectorTree.push_back(std::make_pair("", child));
+		}
+		chamTree.put_child("OccludedMaterial", vectorTree);
+	}
 	chamTree.put_child("OccludedColor", ColorToTree(val.OccludedColor));
 
 	WriteTree.put_child(name, chamTree);
@@ -189,9 +206,48 @@ void CConfigManager::LoadJson(const char* name, Chams_t& val)
 {
 	if (const auto getChild = ReadTree.get_child_optional(name))
 	{
-		if (auto getValue = getChild->get_optional<std::string>("VisibleMaterial")) { val.VisibleMaterial = *getValue; }
+		auto getMaterials = [](std::vector<std::string>& val, const boost::optional<boost::property_tree::ptree&> getVector)
+			{
+				if (!getVector)
+					return;
+				
+				if (getVector->data() != "") // account for old format
+					val = { getVector->data() };
+				else
+				{
+					val.clear();
+					for (auto& mat : *getVector)
+					{
+						std::string sMat = mat.second.data();
+
+						bool bFound = false; // ensure no duplicates are assigned
+						for (auto& str : val)
+						{
+							if (str == sMat)
+							{
+								bFound = true;
+								break;
+							}
+						}
+
+						if (!bFound)
+							val.push_back(mat.second.data());
+					}
+				}
+
+				// remove invalid materials
+				for (auto it = val.begin(); it != val.end();)
+				{
+					if (*it == "None" || *it != "Original" && F::Materials.mChamMaterials.find(*it) == F::Materials.mChamMaterials.end())
+						it = val.erase(it);
+					else
+						++it;
+				}
+			};
+
+		getMaterials(val.VisibleMaterial, getChild->get_child_optional("VisibleMaterial"));
 		if (const auto getChildColor = getChild->get_child_optional("VisibleColor")) { TreeToColor(*getChildColor, val.VisibleColor); }
-		if (auto getValue = getChild->get_optional<std::string>("OccludedMaterial")) { val.OccludedMaterial = *getValue; }
+		getMaterials(val.OccludedMaterial, getChild->get_child_optional("OccludedMaterial"));
 		if (const auto getChildColor = getChild->get_child_optional("OccludedColor")) { TreeToColor(*getChildColor, val.OccludedColor); }
 	}
 }

@@ -211,6 +211,7 @@ void CMenu::MenuAimbot()
 					FSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, 0.5f, "%.1f");
 					FSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, 0.1f, "%.1f");
 					FSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, 0.1f, "%.1f");
+					FSlider("hull inc", &Vars::Aimbot::Projectile::HullInc.Value, 0.f, 3.f, 0.5f, "%.1f");
 					FDropdown("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top", "lerp to top" });
 					if (Vars::Aimbot::Projectile::HuntermanMode.Value == 1 || Vars::Aimbot::Projectile::HuntermanMode.Value == 2)
 						FSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, 0.5f, "%.1f");
@@ -680,8 +681,8 @@ void CMenu::MenuVisuals()
 			} EndSection();
 			if (Section("UI"))
 			{
-				FSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 0, 160, 1, "%d", FSlider_Clamp);
-				FSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 0, 160, 1, "%d", FSlider_Clamp);
+				FSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 0, 160, 1, "%d");
+				FSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 0, 160, 1, "%d");
 				FToggle("Reveal scoreboard", &Vars::Visuals::RevealScoreboard.Value);
 				FToggle("Scoreboard colors", &Vars::Visuals::ScoreboardColors.Value, FToggle_Middle);
 				FToggle("Clean screenshots", &Vars::Visuals::CleanScreenshots.Value);
@@ -1820,27 +1821,48 @@ void CMenu::MenuSettings()
 				if (FButton("Folder", FButton_Fit | FButton_SameLine | FButton_Large))
 					ShellExecuteA(nullptr, "open", MaterialFolder.c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
 
-				for (auto const& mat : F::Materials.vChamMaterials)
+				std::vector<std::pair<std::string, Material_t>> vMaterials;
+				for (auto const& [sName, mat] : F::Materials.mChamMaterials)
+					vMaterials.push_back({ sName, mat });
+
+				std::sort(vMaterials.begin(), vMaterials.end(), [&](const auto& a, const auto& b) -> bool
+					{
+						// override for none material
+						if (a.first == "None")
+							return true;
+						if (b.first == "None")
+							return false;
+
+						// keep locked materials higher
+						if (a.second.bLocked && !b.second.bLocked)
+							return true;
+						if (!a.second.bLocked && b.second.bLocked)
+							return false;
+
+						return a.first < b.first;
+					});
+
+				for (auto const& pair : vMaterials)
 				{
 					const auto current = GetCursorPos().y;
 
 					SetCursorPos({ 14, current + 11 });
-					TextColored(mat.bLocked ? Inactive.Value : Active.Value, mat.sName.c_str());
+					TextColored(pair.second.bLocked ? Inactive.Value : Active.Value, pair.first.c_str());
 
 					int o = 26;
 
-					if (!mat.bLocked)
+					if (!pair.second.bLocked)
 					{
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_DELETE))
-							OpenPopup(std::format("Confirmation## DeleteMat{}", mat.sName).c_str());
-						if (BeginPopupModal(std::format("Confirmation## DeleteMat{}", mat.sName).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+							OpenPopup(std::format("Confirmation## DeleteMat{}", pair.first).c_str());
+						if (BeginPopupModal(std::format("Confirmation## DeleteMat{}", pair.first).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
 						{
-							Text(std::format("Do you really want to delete '{}'?", mat.sName).c_str());
+							Text(std::format("Do you really want to delete '{}'?", pair.first).c_str());
 
 							if (FButton("Yes", FButton_Left))
 							{
-								F::Materials.RemoveMaterial(mat.sName);
+								F::Materials.RemoveMaterial(pair.first);
 								CloseCurrentPopup();
 							}
 							if (FButton("No", FButton_Right | FButton_SameLine))
@@ -1854,8 +1876,8 @@ void CMenu::MenuSettings()
 					SetCursorPos({ GetWindowSize().x - o, current + 9 });
 					if (IconButton(ICON_MD_EDIT))
 					{
-						CurrentMaterial = mat.sName;
-						LockedMaterial = mat.bLocked;
+						CurrentMaterial = pair.first;
+						LockedMaterial = pair.second.bLocked;
 
 						TextEditor.SetText(F::Materials.GetVMT(CurrentMaterial));
 						TextEditor.SetReadOnly(LockedMaterial);
@@ -1869,7 +1891,8 @@ void CMenu::MenuSettings()
 			TableNextColumn();
 			if (CurrentMaterial != "")
 			{
-				if (Section("Editor", GetContentRegionMax().y - 18, true))
+				auto count = std::ranges::count(TextEditor.GetText(), '\n'); // doesn't account for text editor size otherwise
+				if (Section("Editor", 81 + 15 * count, true))
 				{
 					// Toolbar
 					if (!LockedMaterial)
@@ -1891,7 +1914,10 @@ void CMenu::MenuSettings()
 
 					// Text editor
 					Dummy({ 0, 8 });
+
+					PushFont(FontMono);
 					TextEditor.Render("TextEditor");
+					PopFont();
 				} EndSection();
 			}
 
@@ -2199,6 +2225,7 @@ void CMenu::Init(IDirect3DDevice9* pDevice)
 		FontBold = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBold_compressed_data, RobotoBold_compressed_size, 13.f, &fontConfig, fontRange);
 		FontBlack = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBlack_compressed_data, RobotoBlack_compressed_size, 15.f, &fontConfig, fontRange);
 		FontLarge = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 20.f, &fontConfig, fontRange);
+		FontMono = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\cascadiamono.ttf)", 15.f, &fontConfig, fontRange);
 
 		ImFontConfig iconConfig;
 		iconConfig.PixelSnapH = true;

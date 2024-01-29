@@ -11,7 +11,6 @@ class CChams
 	void StencilEnd(IMatRenderContext* pRenderContext, bool bTwoModels = false);
 
 	void DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* pRenderContext, bool bTwoModels = true, bool bViewmodel = false);
-	void DrawModel(IMaterial* material, Color_t color, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 
 	void RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 	void RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);

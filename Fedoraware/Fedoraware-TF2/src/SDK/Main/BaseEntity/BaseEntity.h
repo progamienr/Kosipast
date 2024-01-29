@@ -726,10 +726,7 @@ public: //Netvars & conditions
 	}
 	__inline Vec3 GetWorldSpaceCenter()
 	{
-		Vec3 vMin, vMax; GetRenderBounds(vMin, vMax);
-		Vec3 vWorldSpaceCenter = GetAbsOrigin();
-		vWorldSpaceCenter.z += (vMin.z + vMax.z) / 2.0f;
-		return vWorldSpaceCenter;
+		return m_vecOrigin() + Vec3(0, 0, (m_vecMins().z + m_vecMaxs().z) / 2);
 	}
 	__inline Vec3 GetViewOffset() // in the case it isn't networked properly
 	{

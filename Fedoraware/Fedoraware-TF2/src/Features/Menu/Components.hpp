@@ -33,26 +33,26 @@ enum FToggle_
 enum FSlider_
 {
 	FSlider_None = 0,
-	FSlider_Clamp = 1 << 0, // will keep within bounds when using text input
-	FSlider_Precision = 1 << 1, // allow more precise values outside of step when using text input
-	FSlider_Left = 1 << 2,
-	FSlider_Right = 1 << 3
+	FSlider_Left = 1 << 0,
+	FSlider_Right = 1 << 1,
+	FSlider_Clamp = 1 << 2, // will keep within bounds when using text input
+	FSlider_Precision = 1 << 3, // allow more precise values outside of step when using text input
 };
 
 enum FDropdown_
 {
 	FDropdown_None = 0,
-	FDropdown_Multi = 1 << 0,
-	FDropdown_Left = 1 << 1,
-	FDropdown_Right = 1 << 2
+	FDropdown_Left = 1 << 0,
+	FDropdown_Right = 1 << 1,
+	FDropdown_Multi = 1 << 2
 };
 
 enum FSDropdown_
 {
 	FSDropdown_None = 0,
-	FSDropdown_Custom = 1 << 0,
-	FSDropdown_Left = 1 << 1,
-	FSDropdown_Right = 1 << 2,
+	FSDropdown_Left = 1 << 0,
+	FSDropdown_Right = 1 << 1,
+	FSDropdown_Custom = 1 << 2,
 	FSDropdown_AutoUpdate = 1 << 3
 };
 
@@ -67,8 +67,6 @@ enum FColorPicker_
 
 namespace ImGui
 {
-	// to do: fix SetMouseCursor somehow, going to assume the game is overriding it
-
 	std::unordered_map<std::string, int> mActives;
 	bool bDisabled = false, bTransparent = false;
 
@@ -1058,6 +1056,123 @@ namespace ImGui
 		return changed;
 	}
 
+	__inline bool FVDropdown(const char* label, std::vector<std::string>* var, std::vector<std::string> titles, int flags = 0, int colors = 0)
+	{
+		if (bTransparent || bDisabled)
+			PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+
+		bool changed = false;
+
+		std::unordered_map<std::string, std::vector<std::string>::iterator> iterators = {};
+		for (auto it = var->begin(); it != var->end(); it++)
+			iterators[*it] = it;
+		std::unordered_map<std::string, int> integers = {};
+		for (size_t i = 0; i < var->size(); i++)
+			integers[(*var)[i]] = i + 1;
+
+		std::string preview = "";
+		if (!var->size())
+			preview = "None";
+		else
+		{
+			for (size_t i = 0; i < var->size(); i++)
+				preview += std::format("{}, ", (*var)[i].c_str());
+			preview.pop_back(); preview.pop_back();
+		}
+
+		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, 13.5f });
+		float sizex = GetWindowSize().x;
+		if (flags & (FDropdown_Left | FDropdown_Right))
+			sizex = sizex / 2 + 4;
+		if (flags & FDropdown_Right)
+			SameLine(sizex);
+		sizex = sizex - 2 * GetStyle().WindowPadding.x - 10 * colors;
+		PushItemWidth(sizex);
+
+		const auto restorePos = GetCursorPos();
+		DebugShift({ 0, 8 });
+
+		if (bDisabled)
+		{	// lol
+			Button("##", { sizex, 40 });
+			SetCursorPos(restorePos);
+			DebugShift({ 0, 8 });
+		}
+
+		bool active = false;
+		if (BeginCombo(std::format("##{}", label).c_str(), "", ImGuiComboFlags_CustomPreview | ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_HeightLarge))
+		{
+			active = true;
+
+			DebugDummy({ 0, 8 });
+			PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 19 });
+			for (size_t i = 0; i < titles.size(); i++)
+			{
+				auto find = iterators.find(titles[i]);
+				bool flagActive = find != iterators.end();
+
+				if (Selectable(std::format("##{}", titles[i]).c_str(), flagActive, ImGuiSelectableFlags_DontClosePopups))
+				{
+					if (flagActive)
+						var->erase(find->second);
+					else
+						var->push_back(titles[i]);
+					changed = true;
+				}
+				
+				// shift based on number of digits in var size
+				const auto originalPos = GetCursorPos();
+				SetCursorPos({ originalPos.x + 40 + 6 * std::min(int(log10(var->size())), 0), originalPos.y - 31 });
+				PushStyleColor(ImGuiCol_Text, flagActive ? F::Menu.Active.Value : F::Menu.Inactive.Value);
+				TextUnformatted(titles[i].c_str());
+				PopStyleColor();
+
+				if (flagActive)
+				{
+					SetCursorPos({ originalPos.x + 18, originalPos.y - 31 });
+					PushStyleColor(ImGuiCol_Text, F::Menu.Accent.Value);
+					TextUnformatted(std::format("{}", integers[titles[i]]).c_str());
+					PopStyleColor();
+				}
+				SetCursorPos(originalPos);
+			}
+			PopStyleVar();
+			SetCursorPosY(GetCursorPosY() - 10); Dummy({});
+
+			EndCombo();
+		}
+		if (IsItemHovered())
+			SetMouseCursor(ImGuiMouseCursor_Hand);
+		if (BeginComboPreview())
+		{
+			const auto originalPos = GetCursorPos();
+
+			SetCursorPos({ originalPos.x + 12, originalPos.y - 5 });
+			PushFont(F::Menu.FontSmall);
+			PushStyleColor(ImGuiCol_Text, F::Menu.Inactive.Value);
+			TextUnformatted(StripDoubleHash(label).c_str());
+			PopStyleColor();
+			PopFont();
+
+			SetCursorPos({ originalPos.x + 12, originalPos.y + 8 });
+			TextUnformatted(TruncateText(preview.c_str(), sizex - 55).c_str());
+
+			SetCursorPos({ originalPos.x + sizex - 25, originalPos.y - 2 });
+			IconImage(active ? ICON_MD_ARROW_DROP_UP : ICON_MD_ARROW_DROP_DOWN, true);
+
+			EndComboPreview();
+		}
+		SetCursorPos(restorePos); DebugDummy({ sizex, 48 });
+
+		PopItemWidth();
+		PopStyleVar();
+
+		if (bTransparent || bDisabled)
+			PopStyleVar();
+
+		return changed;
+	}
+
 	__inline bool ColorPicker(const char* label, Color_t* color, bool marker = true, int flags = 0)
 	{
 		if (bDisabled)
@@ -1259,11 +1374,30 @@ namespace ImGui
 	}
 
 	// dropdown for materials
-	__inline bool FMDropdown(const char* label, std::string* current_mat, int flags = 0, int colors = 0)
+	__inline bool FMDropdown(const char* label, std::vector<std::string>* var, int flags = 0, int colors = 0)
 	{
-		std::vector<const char*> entries = { "Original" };
-		for (const auto& mat : F::Materials.vChamMaterials)
-			entries.push_back(mat.sName.c_str());
-		return FSDropdown(label, current_mat, entries, flags, colors);
+		std::vector<std::pair<std::string, Material_t>> vMaterials;
+		for (auto const& [sName, mat] : F::Materials.mChamMaterials)
+		{
+			if (sName != "None")
+				vMaterials.push_back({ sName, mat });
+		}
+
+		std::sort(vMaterials.begin(), vMaterials.end(), [&](const auto& a, const auto& b) -> bool
+			{
+				// keep locked materials higher
+				if (a.second.bLocked && !b.second.bLocked)
+					return true;
+				if (!a.second.bLocked && b.second.bLocked)
+					return false;
+
+				return a.first < b.first;
+			});
+
+		std::vector<std::string> entries = { "Original" };
+		for (const auto& pair : vMaterials)
+			entries.push_back(pair.first.c_str());
+
+		return FVDropdown(label, var, entries, flags, colors);
 	}
 }

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <format>
+#include <vector>
 
 #include "../Math/Math.h"
 
@@ -53,10 +54,10 @@ struct Gradient_t
 
 struct Chams_t
 {
-	std::string		VisibleMaterial = "Original";
-	std::string		OccludedMaterial = "None";
-	Color_t			VisibleColor = { 255, 255, 255, 255 };
-	Color_t			OccludedColor = { 255, 255, 255, 255 };
+	std::vector<std::string>	VisibleMaterial = { "Original" };
+	std::vector<std::string>	OccludedMaterial = {};
+	Color_t						VisibleColor = { 255, 255, 255, 255 };
+	Color_t						OccludedColor = { 255, 255, 255, 255 };
 };
 
 struct Glow_t

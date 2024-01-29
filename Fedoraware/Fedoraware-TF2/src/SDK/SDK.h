@@ -273,15 +273,12 @@ namespace Utils
 		return (nClass < 10 && nClass > 0) ? szClasses[nClass] : szClasses[0];
 	}
 
-	__inline bool IsOnScreen(CBaseEntity* pLocal, CBaseEntity* pEntity)
+	__inline bool IsOnScreen(CBaseEntity* pLocal, Vec3 vCenter)
 	{
-		const Vec3 wsc = pEntity->GetWorldSpaceCenter();
-
-		if (wsc.DistTo(pLocal->GetWorldSpaceCenter()) > 300.0f)
+		if (vCenter.DistTo(pLocal->GetWorldSpaceCenter()) > 300.0f)
 		{
 			Vec3 vScreen = {};
-
-			if (W2S(pEntity->GetWorldSpaceCenter(), vScreen))
+			if (W2S(vCenter, vScreen))
 			{
 				if (vScreen.x < -400
 					|| vScreen.x > g_ScreenSize.w + 400
@@ -292,9 +289,7 @@ namespace Utils
 				}
 			}
 			else
-			{
 				return false;
-			}
 		}
 
 		return true;

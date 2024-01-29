@@ -31,6 +31,7 @@ struct TickRecord
 	bool bOnShot = false;
 	BoneMatrixes BoneMatrix{};
 	Vec3 vOrigin = {};
+	Vec3 vCenter = {}; // cham / glow optimization
 };
 
 enum class BacktrackMode
