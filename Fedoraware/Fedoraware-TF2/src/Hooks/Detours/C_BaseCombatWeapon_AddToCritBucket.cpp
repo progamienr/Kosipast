@@ -17,5 +17,5 @@ MAKE_HOOK(C_BaseCombatWeapon_AddToCritBucket, S::CBaseCombatWeapon_AddToCritBuck
 	if (F::CritHack.ProtectData)
 		return;
 
-	return Hook.Original<FN>()(ecx, edx, flAmount);
+	Hook.Original<FN>()(ecx, edx, flAmount);
 }

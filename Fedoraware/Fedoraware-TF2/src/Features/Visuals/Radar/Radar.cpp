@@ -173,7 +173,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 						int nTexture = 46; //Exit texture ID
 
 						//If "YawToExit" is not zero, it most like is an entrance
-						if (pBuilding->GetYawToExit())
+						if (pBuilding->YawToExit())
 							nTexture -= 1; //In that case, -1 from "nTexture" so we get entrace texture ID
 
 						if (Vars::Radar::Buildings::Outline.Value)

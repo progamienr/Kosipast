@@ -56,14 +56,8 @@ void CMisc::AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal)
 		|| !pLocal->IsAlive()
 		|| pLocal->IsSwimming()
 		|| pLocal->IsInBumperKart()
-		|| pLocal->IsAGhost())
-	{
-		return;
-	}
-
-	if (pLocal->GetMoveType() == MOVETYPE_NOCLIP
-		|| pLocal->GetMoveType() == MOVETYPE_LADDER
-		|| pLocal->GetMoveType() == MOVETYPE_OBSERVER)
+		|| pLocal->IsAGhost()
+		|| pLocal->MoveType() != MOVETYPE_WALK)
 	{
 		return;
 	}
@@ -106,14 +100,8 @@ void CMisc::AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal)
 		|| !pLocal->IsAlive()
 		|| pLocal->IsSwimming()
 		|| pLocal->IsInBumperKart()
-		|| pLocal->IsAGhost())
-	{
-		return;
-	}
-
-	if (pLocal->GetMoveType() == MOVETYPE_NOCLIP
-		|| pLocal->GetMoveType() == MOVETYPE_LADDER
-		|| pLocal->GetMoveType() == MOVETYPE_OBSERVER)
+		|| pLocal->IsAGhost()
+		|| pLocal->MoveType() != MOVETYPE_WALK)
 	{
 		return;
 	}
@@ -166,14 +154,8 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 		|| pLocal->IsSwimming()
 		|| pLocal->IsInBumperKart()
 		|| pLocal->IsAGhost()
-		|| pLocal->OnSolid())
-	{
-		return;
-	}
-
-	if (pLocal->GetMoveType() == MOVETYPE_NOCLIP
-		|| pLocal->GetMoveType() == MOVETYPE_LADDER
-		|| pLocal->GetMoveType() == MOVETYPE_OBSERVER)
+		|| pLocal->OnSolid()
+		|| pLocal->MoveType() != MOVETYPE_WALK)
 	{
 		return;
 	}
@@ -239,7 +221,7 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 						return tmp;
 				};
 
-			if (pLocal->GetMoveType() != MOVETYPE_WALK)
+			if (pLocal->MoveType() != MOVETYPE_WALK)
 				return;
 
 			auto velocity = pLocal->m_vecVelocity();
@@ -382,39 +364,6 @@ void CMisc::AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-bool CanAttack(CBaseEntity* pLocal, const Vec3& pPos)
-{
-	if (const auto pWeapon = pLocal->GetActiveWeapon())
-	{
-		if (!G::WeaponCanHeadShot && pLocal->IsScoped())
-			return false;
-		if (!pWeapon->CanPrimary(pLocal))
-			return false;
-
-		for (const auto& target : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
-		{
-			if (!target->IsAlive() || target->IsAGhost())
-				continue;
-			if (F::AimbotGlobal.ShouldIgnore(target))
-				continue;
-
-			// Get the hitbox position (Backtrack if possible)
-			Vec3 targetPos = target->GetHitboxPos(HITBOX_HEAD);
-			//if (Vars::Backtrack::Enabled.Value)
-			//{
-			//	const auto& btRecord = F::Backtrack.GetRecord(target->GetIndex(), BacktrackMode::Last);
-			//	if (btRecord)
-			//		targetPos = btRecord->HeadPosition;
-			//}
-
-			// Is the player visible?
-			if (Utils::VisPos(pLocal, target, pPos, targetPos))
-				return true;
-		}
-	}
-
-	return false;
-}
 void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	static bool posPlaced = false;
@@ -594,14 +543,8 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 		|| pLocal->IsInBumperKart()
 		|| pLocal->IsAGhost()
 		|| pLocal->IsCharging()
-		|| !pLocal->OnSolid())
-	{
-		return;
-	}
-
-	if (pLocal->GetMoveType() == MOVETYPE_NOCLIP
-		|| pLocal->GetMoveType() == MOVETYPE_LADDER
-		|| pLocal->GetMoveType() == MOVETYPE_OBSERVER)
+		|| !pLocal->OnSolid()
+		|| pLocal->MoveType() != MOVETYPE_WALK)
 	{
 		return;
 	}
@@ -609,7 +552,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (pCmd->buttons & (IN_JUMP | IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK))
 		return;
 
-	const float speed = pLocal->GetVecVelocity().Length2D();
+	const float speed = pLocal->m_vecVelocity().Length2D();
 	const float speedLimit = 10.f;
 
 	if (speed > speedLimit)
@@ -618,7 +561,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 		{
 		case 1:
 		{
-			Vec3 direction = pLocal->GetVecVelocity().toAngle();
+			Vec3 direction = pLocal->m_vecVelocity().toAngle();
 			direction.y = pCmd->viewangles.y - direction.y;
 			const Vec3 negatedDirection = direction.fromAngle() * -speed;
 			pCmd->forwardmove = negatedDirection.x;
@@ -650,11 +593,11 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 
 	if (!pLocal->IsAlive() || pLocal->IsSwimming() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsTaunting() || pLocal->IsCharging() ||
 		G::Recharge || G::Frozen || G::IsAttacking ||
-		pLocal->GetMoveType() == MOVETYPE_NOCLIP || pLocal->GetMoveType() == MOVETYPE_LADDER || pLocal->GetMoveType() == MOVETYPE_OBSERVER)
+		pLocal->MoveType() != MOVETYPE_WALK)
 		return;
 
 	const int maxSpeed = std::min(pLocal->m_flMaxspeed() * (pCmd->forwardmove < 0 && !pCmd->sidemove ? 0.9f : 1.f), 520.f) - 10.f;
-	const float curSpeed = pLocal->GetVecVelocity().Length2D();
+	const float curSpeed = pLocal->m_vecVelocity().Length2D();
 	if (curSpeed > maxSpeed)
 		return;
 
@@ -780,7 +723,7 @@ void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	static bool pos = true;
 	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
-	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->GetVecVelocity().Length2D() < 10.f && (F::AntiAim.bSendingReal)) // force leg jitter if we are sending our real.
+	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->m_vecVelocity().Length2D() < 10.f && (F::AntiAim.bSendingReal)) // force leg jitter if we are sending our real.
 	{
 		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;
 		pos ? pCmd->sidemove = scale : pCmd->sidemove = -scale;

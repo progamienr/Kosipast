@@ -266,25 +266,24 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	if (!pLocal || !pTarget)
 		return false;
 
-	Vector vecToTarget;
-	vecToTarget = pTarget->GetAbsOrigin() - pLocal->m_vecOrigin();
-	vecToTarget.z = 0.0f;
-	float vecDist = vecToTarget.Length();
-	vecToTarget.Normalize();
+	Vector vToTarget;
+	vToTarget = pTarget->GetAbsOrigin() - pLocal->m_vecOrigin();
+	vToTarget.z = 0.f;
+	vToTarget.Normalize();
 
-	Vector vecOwnerForward;
-	Math::AngleVectors(eyeAngles, &vecOwnerForward);
-	vecOwnerForward.z = 0.0f;
-	vecOwnerForward.Normalize();
+	Vector vOwnerForward;
+	Math::AngleVectors(eyeAngles, &vOwnerForward);
+	vOwnerForward.z = 0.f;
+	vOwnerForward.Normalize();
 
-	Vector vecTargetForward;
-	Math::AngleVectors(F::Backtrack.noInterpEyeAngles[pTarget->GetIndex()], &vecTargetForward);
-	vecTargetForward.z = 0.0f;
-	vecTargetForward.Normalize();
+	Vector vTargetForward;
+	Math::AngleVectors(F::Backtrack.noInterpEyeAngles[pTarget->GetIndex()], &vTargetForward);
+	vTargetForward.z = 0.f;
+	vTargetForward.Normalize();
 
-	float flPosVsTargetViewDot = vecToTarget.Dot(vecTargetForward); // Behind?
-	float flPosVsOwnerViewDot = vecToTarget.Dot(vecOwnerForward); // Facing?
-	float flViewAnglesDot = vecTargetForward.Dot(vecOwnerForward); // Facestab?
+	float flPosVsTargetViewDot = vToTarget.Dot(vTargetForward); // Behind?
+	float flPosVsOwnerViewDot = vToTarget.Dot(vOwnerForward); // Facing?
+	float flViewAnglesDot = vTargetForward.Dot(vOwnerForward); // Facestab?
 
 	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->m_iClass() == CLASS_SNIPER)
 	{
@@ -293,8 +292,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 			return false;
 	}
 
-	return (vecDist >= 1.f &&
-		flPosVsTargetViewDot > 0.f && flPosVsOwnerViewDot > 0.5 && flViewAnglesDot > -0.3f);
+	return flPosVsTargetViewDot > (0.f + 0.03125f) && flPosVsOwnerViewDot > (0.5f + 0.03125f) && flViewAnglesDot > (-0.3f + 0.03125f);
 }
 
 int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)

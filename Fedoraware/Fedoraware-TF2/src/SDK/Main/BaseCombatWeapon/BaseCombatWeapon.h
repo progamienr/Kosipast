@@ -70,11 +70,15 @@ public: //Netvars
 	NETVAR(m_nInspectStage, int, "CTFWeaponBase", "m_nInspectStage")
 	NETVAR(m_iConsecutiveShots, int, "CTFWeaponBase", "m_iConsecutiveShots")
 
-	M_OFFSETGET(CritTokenBucket, float, 0xA54)
-	M_OFFSETGET(CritChecks, int, 0xA58)
-	M_OFFSETGET(CritSeedRequests, int, 0xA5C)
-	M_OFFSETGET(CritTime, float, 0xB50)
-	M_OFFSETGET(LastRapidFireCritCheckTime, float, 0xB60)
+	OFFSET(CritTokenBucket, float, 0xA54)
+	OFFSET(CritChecks, int, 0xA58)
+	OFFSET(CritSeedRequests, int, 0xA5C)
+	OFFSET(CritTime, float, 0xB50)
+	OFFSET(LastCritCheckTime, float, 0xB54)
+	OFFSET(LastCritCheckFrame, int, 0xB58)
+	OFFSET(LastRapidfireCritCheckTime, float, 0xB60)
+	OFFSET(CritShot, bool, 0xB36)
+	OFFSET(RandomSeed, int, 0xB5C)
 
 	M_VIRTUALGET(Slot, int, this, int(__thiscall*)(void*), 330)
 	M_VIRTUALGET(WeaponID, int, this, int(__thiscall*)(void*), 381)
@@ -148,7 +152,7 @@ public: //Netvars
 			return false;
 
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return pLocal->GetTankPressure() >= 100.0f;
+			return pLocal->TankPressure() >= 100.0f;
 
 		return CanPrimaryAttack(pLocal);
 	}
@@ -158,7 +162,7 @@ public: //Netvars
 			return false;
 
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return pLocal->GetTankPressure() >= 100.0f;
+			return pLocal->TankPressure() >= 100.0f;
 
 		return CanSecondaryAttack(pLocal);
 	}
@@ -179,9 +183,9 @@ public: //Netvars
 		bool bResult = false;
 		if (const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(m_hOwnerEntity()))
 		{
-			const int nOldFov = pOwner->m_iFOV(); pOwner->SetFov(-1);
+			const int nOldFov = pOwner->m_iFOV(); pOwner->m_iFOV() = -1;
 			bResult = GetVFunc<bool(__thiscall*)(decltype(this), bool, CBaseEntity*)>(this, 425)(this, bHeadShot, nullptr);
-			pOwner->SetFov(nOldFov);
+			pOwner->m_iFOV() = nOldFov;
 		} return bResult;
 	}
 	__inline bool CanFireCriticalShot()
@@ -243,8 +247,7 @@ public: //Netvars
 		if (!tfWeaponInfo)
 			return false;
 
-		const bool ret = tfWeaponInfo->GetWeaponData(0).m_bUseRapidFireCrits;
-		return ret || this->GetClientClass()->m_ClassID == static_cast<int>(ETFClassID::CTFMinigun);
+		return tfWeaponInfo->GetWeaponData(0).m_bUseRapidFireCrits;
 	}
 	__inline bool IsEnergyWeapon()
 	{

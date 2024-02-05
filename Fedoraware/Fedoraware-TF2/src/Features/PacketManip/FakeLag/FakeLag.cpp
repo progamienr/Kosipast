@@ -20,7 +20,7 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 	if (G::ShiftedGoal != G::ShiftedTicks)
 		return false;
 	
-	const bool bMoving = !(Vars::CL_Move::FakeLag::Options.Value & (1 << 0)) || pLocal->GetVecVelocity().Length2D() > 10.f;
+	const bool bMoving = !(Vars::CL_Move::FakeLag::Options.Value & (1 << 0)) || pLocal->m_vecVelocity().Length2D() > 10.f;
 	if (!bMoving)
 		return false;
 

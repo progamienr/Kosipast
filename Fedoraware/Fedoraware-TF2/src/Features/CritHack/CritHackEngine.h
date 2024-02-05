@@ -6,17 +6,11 @@ typedef unsigned int       u32;
 
 struct WeaponStorage
 {
-	float Bucket = 300.f;
-
 	float Damage = 0.f;
-	std::pair<int, int> ShotsCrits = { 1, 0 };
 	float Cost = 0.f;
 
 	int AvailableCrits = 0;
 	int PotentialCrits = 0;
-
-	int StreamWait = -1;
-	int StreamEnd = -1;
 
 	int DefIndex = -1;
 };
@@ -44,8 +38,6 @@ private:
 	std::deque<int> ForceCmds{};
 	std::deque<int> SkipCmds{};
 
-	float BucketDefault = 300.f;
-	float BucketBottom = -250.f;
 	float BucketCap = 1000.f;
 
 	float CritDamage = 0;

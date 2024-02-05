@@ -234,7 +234,7 @@ int BlastDangerValue(CBaseEntity* pPatient)
 		if (pProjectile->GetVelocity().IsZero())
 			continue;
 
-		if (pProjectile->GetTouched()) // Ignore landed Stickies
+		if (pProjectile->Touched()) // Ignore landed Stickies
 			continue;
 
 		if (pProjectile->m_iTeamNum() == pPatient->m_iTeamNum())

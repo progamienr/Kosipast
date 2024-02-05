@@ -21,7 +21,7 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 				const auto& record = G::VelFixRecords[pBasePlayer];
 
 				const float flSimTimeDelta = pBasePlayer->m_flSimulationTime() - record.m_flSimulationTime;
-				if (flSimTimeDelta > 0.0f)
+				if (flSimTimeDelta > 0.f)
 				{
 					Vec3 vOldOrigin = record.m_vecOrigin;
 
@@ -30,6 +30,13 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 
 					if (!(nCurFlags & FL_ONGROUND) && !(nOldFlags & FL_ONGROUND))
 					{
+						if ((nCurFlags & FL_DUCKING) && !(nOldFlags & FL_DUCKING))
+							vOldOrigin.z += 20.f;
+
+						if (!(nCurFlags & FL_DUCKING) && (nOldFlags & FL_DUCKING))
+							vOldOrigin.z -= 20.f;
+
+						/*
 						bool bCorrected = false;
 
 						if ((nCurFlags & FL_DUCKING) && !(nOldFlags & FL_DUCKING))
@@ -49,9 +56,11 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 							Vec3 vNewVelocity = vecAbsVelocity;
 							vNewVelocity.z = (pBasePlayer->m_vecOrigin().z - vOldOrigin.z) / flSimTimeDelta;
 							Hook.Original<FN>()(ecx, edx, vNewVelocity);
-							return;
 						}
+						*/
 					}
+
+					return Hook.Original<FN>()(ecx, edx, (pBasePlayer->m_vecOrigin() - vOldOrigin) / flSimTimeDelta);
 				}
 			}
 		}

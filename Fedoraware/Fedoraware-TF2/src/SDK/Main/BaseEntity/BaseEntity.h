@@ -90,16 +90,14 @@ public:
 class CBaseEntity
 {
 public: //Netvars & conditions
-	M_DYNVARGET(TargetPlayer, int, this, "DT_CHalloweenGiftPickup", "m_hTargetPlayer")
 
-	M_OFFSETGET(PipebombPulsed, bool, 0x908)	//	this is incredibly fucking lazy.	//	16
-	M_OFFSETGET(Touched, bool, 0x8FC)													//	0
-	M_OFFSETGET(CreationTime, float, 0x900)	// type + 8
-	M_OFFSETGET(PunchAngles, Vec3, 0xE8C)
-	M_OFFSETGET(VecVelocity, Vec3, 0x120)
-	M_OFFSETGET(WaterJumpTime, float, 0x10FC)
-	M_OFFSETGET(SurfaceFriction, float, 0x12D4)
-	M_OFFSETGET(TankPressure, float, 0x1B40)
+	OFFSET(PipebombPulsed, bool, 0x908)	//	this is incredibly fucking lazy.	//	16
+	OFFSET(Touched, bool, 0x8FC)													//	0
+	OFFSET(CreationTime, float, 0x900)	// type + 8
+	OFFSET(PunchAngles, Vec3, 0xE8C)
+	OFFSET(WaterJumpTime, float, 0x10FC)
+	OFFSET(SurfaceFriction, float, 0x12D4)
+	OFFSET(TankPressure, float, 0x1B40)
 
 	// thanks litebase this is just better ngl
 	NETVAR(m_flAnimTime, float, "CBaseEntity", "m_flAnimTime")
@@ -146,10 +144,6 @@ public: //Netvars & conditions
 
 	M_VIRTUALGET(AbsOrigin, Vec3&, this, Vec3& (__thiscall*)(void*), 0x9)
 	M_VIRTUALGET(AbsAngles, Vec3&, this, Vec3& (__thiscall*)(void*), 0xa)
-	__inline void SetVecOrigin(const Vec3& vOrigin)
-	{
-		DYNVAR_SET(Vec3, this, vOrigin, "DT_BaseEntity", "m_vecOrigin");
-	}
 	__inline CCollisionProperty* GetCollision()
 	{
 		return reinterpret_cast<CCollisionProperty*>(this + 0x1C8);
@@ -359,10 +353,6 @@ public: //Netvars & conditions
 				fnAddToLeafSystem(this, RENDER_GROUP_OPAQUE_ENTITY);
 		}
 	}
-	__inline void SetAnimTime(const float flAnimTime)
-	{
-		DYNVAR_SET(float, this, flAnimTime, "DT_BaseEntity", "m_flAnimTime");
-	}
 
 	NETVAR(m_Local, void*, "CBasePlayer", "m_Local")
 	NETVAR(m_chAreaBits, void*, "CBasePlayer", "m_chAreaBits")
@@ -427,10 +417,6 @@ public: //Netvars & conditions
 	__inline bool IsAlive()
 	{
 		return m_lifeState() == LIFE_ALIVE;
-	}
-	__inline void SetFov(const int nFov)
-	{
-		DYNVAR_SET(int, this, nFov, "DT_BasePlayer", "m_iFOV");
 	}
 	__inline void ClearPunchAngle()
 	{	//m_vecPunchAngle
@@ -669,48 +655,48 @@ public: //Netvars & conditions
 	NETVAR(m_iPlayerSkinOverride, int, "CTFPlayer", "m_iPlayerSkinOverride")
 	NETVAR(m_bViewingCYOAPDA, bool, "CTFPlayer", "m_bViewingCYOAPDA")
 
-	M_CONDGET(OnGround, m_fFlags(), FL_ONGROUND)
-	M_CONDGET(InWater, m_fFlags(), FL_INWATER)
-	M_CONDGET(Ducking, m_fFlags(), FL_DUCKING)
-	M_CONDGET(Charging, m_nPlayerCond(), TFCond_Charging)
-	M_CONDGET(Scoped, m_nPlayerCond(), TFCond_Zoomed)
-	M_CONDGET(UberedCond, m_nPlayerCond(), TFCond_Ubercharged)
-	M_CONDGET(Bonked, m_nPlayerCond(), TFCond_Bonked)
-	M_CONDGET(InMilk, m_nPlayerCond(), TFCond_Milked)
-	M_CONDGET(InJarate, m_nPlayerCond(), TFCond_Jarated)
-	M_CONDGET(Bleeding, m_nPlayerCond(), TFCond_Bleeding)
-	M_CONDGET(Disguised, m_nPlayerCond(), TFCond_Disguised)
-	M_CONDGET(Taunting, m_nPlayerCond(), TFCond_Taunting)
-	M_CONDGET(OnFire, m_nPlayerCond(), TFCond_OnFire)
-	M_CONDGET(Stunned, m_nPlayerCond(), TFCond_Stunned)
-	M_CONDGET(Slowed, m_nPlayerCond(), TFCond_Slowed)
-	M_CONDGET(MegaHealed, m_nPlayerCond(), TFCond_MegaHeal)
-	M_CONDGET(AGhost, m_nPlayerCondEx2(), TFCondEx2_HalloweenGhostMode)
-	M_CONDGET(InBumperKart, m_nPlayerCondEx2(), TFCondEx2_InKart)
-	M_CONDGET(PhlogUbered, m_nPlayerCondEx(), TFCondEx_PhlogUber)
-	M_CONDGET(BlastImmune, m_nPlayerCondEx2(), TFCondEx2_BlastImmune)
-	M_CONDGET(BulletImmune, m_nPlayerCondEx2(), TFCondEx2_BulletImmune)
-	M_CONDGET(FireImmune, m_nPlayerCondEx2(), TFCondEx2_FireImmune)
-	M_CONDGET(StrengthRune, m_nPlayerCondEx2(), TFCondEx2_StrengthRune)
-	M_CONDGET(HasteRune, m_nPlayerCondEx2(), TFCondEx2_HasteRune)
-	M_CONDGET(RegenRune, m_nPlayerCondEx2(), TFCondEx2_RegenRune)
-	M_CONDGET(ResistRune, m_nPlayerCondEx2(), TFCondEx2_ResistRune)
-	M_CONDGET(VampireRune, m_nPlayerCondEx2(), TFCondEx2_VampireRune)
-	M_CONDGET(ReflectRune, m_nPlayerCondEx2(), TFCondEx2_ReflectRune)
-	M_CONDGET(PrecisionRune, m_nPlayerCondEx3(), TFCondEx3_PrecisionRune)
-	M_CONDGET(AgilityRune, m_nPlayerCondEx3(), TFCondEx3_AgilityRune)
-	M_CONDGET(KnockoutRune, m_nPlayerCondEx3(), TFCondEx3_KnockoutRune)
-	M_CONDGET(ImbalanceRune, m_nPlayerCondEx3(), TFCondEx3_ImbalanceRune)
-	M_CONDGET(CritTempRune, m_nPlayerCondEx3(), TFCondEx3_CritboostedTempRune)
-	M_CONDGET(KingRune, m_nPlayerCondEx3(), TFCondEx3_KingRune)
-	M_CONDGET(PlagueRune, m_nPlayerCondEx3(), TFCondEx3_PlagueRune)
-	M_CONDGET(SupernovaRune, m_nPlayerCondEx3(), TFCondEx3_SupernovaRune)
-	M_CONDGET(BuffedByKing, m_nPlayerCondEx3(), TFCondEx3_KingBuff)
-	M_CONDGET(BlastResist, m_nPlayerCondEx(), TFCondEx_ExplosiveCharge)
-	M_CONDGET(BulletResist, m_nPlayerCondEx(), TFCondEx_BulletCharge)
-	M_CONDGET(FireResist, m_nPlayerCondEx(), TFCondEx_FireCharge)
+	CONDGET(OnGround, m_fFlags(), FL_ONGROUND)
+	CONDGET(InWater, m_fFlags(), FL_INWATER)
+	CONDGET(Ducking, m_fFlags(), FL_DUCKING)
+	CONDGET(Charging, m_nPlayerCond(), TFCond_Charging)
+	CONDGET(Scoped, m_nPlayerCond(), TFCond_Zoomed)
+	CONDGET(UberedCond, m_nPlayerCond(), TFCond_Ubercharged)
+	CONDGET(Bonked, m_nPlayerCond(), TFCond_Bonked)
+	CONDGET(InMilk, m_nPlayerCond(), TFCond_Milked)
+	CONDGET(InJarate, m_nPlayerCond(), TFCond_Jarated)
+	CONDGET(Bleeding, m_nPlayerCond(), TFCond_Bleeding)
+	CONDGET(Disguised, m_nPlayerCond(), TFCond_Disguised)
+	CONDGET(Taunting, m_nPlayerCond(), TFCond_Taunting)
+	CONDGET(OnFire, m_nPlayerCond(), TFCond_OnFire)
+	CONDGET(Stunned, m_nPlayerCond(), TFCond_Stunned)
+	CONDGET(Slowed, m_nPlayerCond(), TFCond_Slowed)
+	CONDGET(MegaHealed, m_nPlayerCond(), TFCond_MegaHeal)
+	CONDGET(AGhost, m_nPlayerCondEx2(), TFCondEx2_HalloweenGhostMode)
+	CONDGET(InBumperKart, m_nPlayerCondEx2(), TFCondEx2_InKart)
+	CONDGET(PhlogUbered, m_nPlayerCondEx(), TFCondEx_PhlogUber)
+	CONDGET(BlastImmune, m_nPlayerCondEx2(), TFCondEx2_BlastImmune)
+	CONDGET(BulletImmune, m_nPlayerCondEx2(), TFCondEx2_BulletImmune)
+	CONDGET(FireImmune, m_nPlayerCondEx2(), TFCondEx2_FireImmune)
+	CONDGET(StrengthRune, m_nPlayerCondEx2(), TFCondEx2_StrengthRune)
+	CONDGET(HasteRune, m_nPlayerCondEx2(), TFCondEx2_HasteRune)
+	CONDGET(RegenRune, m_nPlayerCondEx2(), TFCondEx2_RegenRune)
+	CONDGET(ResistRune, m_nPlayerCondEx2(), TFCondEx2_ResistRune)
+	CONDGET(VampireRune, m_nPlayerCondEx2(), TFCondEx2_VampireRune)
+	CONDGET(ReflectRune, m_nPlayerCondEx2(), TFCondEx2_ReflectRune)
+	CONDGET(PrecisionRune, m_nPlayerCondEx3(), TFCondEx3_PrecisionRune)
+	CONDGET(AgilityRune, m_nPlayerCondEx3(), TFCondEx3_AgilityRune)
+	CONDGET(KnockoutRune, m_nPlayerCondEx3(), TFCondEx3_KnockoutRune)
+	CONDGET(ImbalanceRune, m_nPlayerCondEx3(), TFCondEx3_ImbalanceRune)
+	CONDGET(CritTempRune, m_nPlayerCondEx3(), TFCondEx3_CritboostedTempRune)
+	CONDGET(KingRune, m_nPlayerCondEx3(), TFCondEx3_KingRune)
+	CONDGET(PlagueRune, m_nPlayerCondEx3(), TFCondEx3_PlagueRune)
+	CONDGET(SupernovaRune, m_nPlayerCondEx3(), TFCondEx3_SupernovaRune)
+	CONDGET(BuffedByKing, m_nPlayerCondEx3(), TFCondEx3_KingBuff)
+	CONDGET(BlastResist, m_nPlayerCondEx(), TFCondEx_ExplosiveCharge)
+	CONDGET(BulletResist, m_nPlayerCondEx(), TFCondEx_BulletCharge)
+	CONDGET(FireResist, m_nPlayerCondEx(), TFCondEx_FireCharge)
 
-	M_OFFSETGET(MoveType, MoveType_t, 0x1A4)
+	OFFSET(MoveType, MoveType_t, 0x1A4)
 	M_VIRTUALGET(MaxHealth, int, this, int(__thiscall*)(void*), 0x6b)
 	__inline Vec3 GetShootPos()
 	{
@@ -912,7 +898,8 @@ public: //Netvars & conditions
 	}
 	__inline void SetEyeAngles(const Vec3& vAngles)
 	{
-		DYNVAR_SET(Vec3, this, vAngles, "DT_TFPlayer", "tfnonlocaldata", "m_angEyeAngles[0]");
+		m_angEyeAnglesX() = vAngles.x;
+		m_angEyeAnglesY() = vAngles.y;
 	}
 	__inline float GetInvisPercentage()
 	{
@@ -984,14 +971,6 @@ public: //Netvars & conditions
 	{
 		static int nOffset = GetNetVar("CTFPlayer", "m_flHandScale");
 		return reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
-	}
-	__inline void ForceTauntCam(const int nTo)
-	{
-		DYNVAR_SET(int, this, nTo, "DT_TFPlayer", "m_nForceTauntCam");
-	}
-	__inline void SetGlowEnabled(const bool bState)
-	{
-		DYNVAR_SET(bool, this, bState, "DT_TFPlayer", "m_bGlowEnabled");
 	}
 
 	NETVAR(m_nSequence, int, "CBaseAnimating", "m_nSequence")
@@ -1252,9 +1231,9 @@ public: //Netvars & conditions
 	NETVAR(m_iAmmoRockets, int, "CObjectSentrygun", "m_iAmmoRockets")
 	NETVAR(m_bPlayerControlled, bool, "CObjectSentrygun", "m_bPlayerControlled")
 	NETVAR(m_iAmmoMetal, int, "CObjectDispenser", "m_iAmmoMetal")
-	M_OFFSETGET(RechargeTime, float, 0xFC0)
-	M_OFFSETGET(CurrentChargeDuration, float, 0xFC4)
-	M_OFFSETGET(YawToExit, float, 0xFCC)
+	OFFSET(RechargeTime, float, 0xFC0)
+	OFFSET(CurrentChargeDuration, float, 0xFC4)
+	OFFSET(YawToExit, float, 0xFCC)
 	inline int MaxAmmoShells() // Pasted from https://github.com/Lak3/tf2-internal-base
 	{
 		if (m_iUpgradeLevel() == 1 || m_bMiniBuilding())
@@ -1312,4 +1291,6 @@ public: //Netvars & conditions
 		static int nOffset = GetNetVar("CTFGrenadePipebombProjectile", "m_iType") + 4;
 		return *reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
+
+	NETVAR(m_hTargetPlayer, int, "CHalloweenGiftPickup", "m_hTargetPlayer")
 };

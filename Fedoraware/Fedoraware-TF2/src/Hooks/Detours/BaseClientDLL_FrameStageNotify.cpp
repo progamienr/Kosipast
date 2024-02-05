@@ -16,7 +16,7 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
 			// Remove punch effect
-			G::PunchAngles = pLocal->GetPunchAngles(); // use in aimbot 
+			G::PunchAngles = pLocal->PunchAngles(); // use in aimbot 
 			if (Vars::Visuals::RemovePunch.Value)
 				pLocal->ClearPunchAngle(); // visual no-recoil
 			F::Resolver.FrameStageNotify(pLocal);

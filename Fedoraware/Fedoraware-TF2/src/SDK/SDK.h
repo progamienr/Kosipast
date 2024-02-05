@@ -596,31 +596,11 @@ namespace Utils
 			case TF_WEAPON_STICKY_BALL_LAUNCHER:
 			case TF_WEAPON_GRENADE_STICKY_BALL:
 			{
-				static bool bCharging = false;
-
-				if (pWeapon->m_flChargeBeginTime() > 0.0f)
-					bCharging = true;
-
-				if (!(pCmd->buttons & IN_ATTACK) && bCharging)
-				{
-					bCharging = false;
-					return true;
-				}
-				break;
+				return !(pCmd->buttons & IN_ATTACK) && pWeapon->m_flChargeBeginTime() > 0.f;
 			}
 			case TF_WEAPON_CANNON:
 			{
-				static bool bCharging = false;
-
-				if (pWeapon->m_flDetonateTime() > 0.0f)
-					bCharging = true;
-
-				if (!(pCmd->buttons & IN_ATTACK) && bCharging)
-				{
-					bCharging = false;
-					return true;
-				}
-				break;
+				return !(pCmd->buttons & IN_ATTACK) && pWeapon->m_flDetonateTime() > 0.f;
 			}
 			case TF_WEAPON_JAR:
 			case TF_WEAPON_JAR_MILK:
@@ -642,18 +622,12 @@ namespace Utils
 			}
 			case TF_WEAPON_MINIGUN:
 			{
-				if ((pWeapon->GetMinigunState() == AC_STATE_FIRING || pWeapon->GetMinigunState() == AC_STATE_SPINNING) &&
-					pCmd->buttons & IN_ATTACK && G::WeaponCanAttack)
-				{
-					return true;
-				}
-				break;
+				return (pWeapon->GetMinigunState() == AC_STATE_FIRING || pWeapon->GetMinigunState() == AC_STATE_SPINNING) &&
+					pCmd->buttons & IN_ATTACK && G::WeaponCanAttack;
 			}
 			default:
 			{
-				if (pCmd->buttons & IN_ATTACK && G::WeaponCanAttack)
-					return true;
-				break;
+				return pCmd->buttons & IN_ATTACK && G::WeaponCanAttack;
 			}
 			}
 		}
@@ -705,7 +679,7 @@ namespace Utils
 
 		if (!G::IsAttacking)
 		{
-			const float direction = Math::VelocityToAngles(pLocal->GetVecVelocity()).y;
+			const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
 			pCmd->viewangles.x = -90;
 			pCmd->viewangles.y = direction;
 			pCmd->viewangles.z = 0;
@@ -714,9 +688,9 @@ namespace Utils
 		}
 		else
 		{
-			Vec3 direction = pLocal->GetVecVelocity().toAngle();
+			Vec3 direction = pLocal->m_vecVelocity().toAngle();
 			direction.y = pCmd->viewangles.y - direction.y;
-			const Vec3 negatedDirection = direction.fromAngle() * -pLocal->GetVecVelocity().Length2D();
+			const Vec3 negatedDirection = direction.fromAngle() * -pLocal->m_vecVelocity().Length2D();
 			pCmd->forwardmove = negatedDirection.x;
 			pCmd->sidemove = negatedDirection.y;
 		}

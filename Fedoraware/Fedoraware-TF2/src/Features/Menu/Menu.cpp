@@ -14,6 +14,7 @@
 #include "Fonts/RobotoMedium.h"
 #include "Fonts/RobotoBold.h"
 #include "Fonts/RobotoBlack.h"
+#include "Fonts/CascadiaMono.h"
 
 #include "Playerlist/PlayerUtils.h"
 
@@ -375,13 +376,13 @@ void CMenu::MenuAimbot()
 			if (Section("Autouber"))
 			{
 				FToggle("Active", &Vars::Auto::Uber::Active.Value);
+				FToggle("Activate charge trigger", &Vars::Auto::Uber::VoiceCommand.Value, FToggle_Middle);
 				FToggle("Only uber friends", &Vars::Auto::Uber::OnlyFriends.Value);
-				FToggle("Preserve self", &Vars::Auto::Uber::PopLocal.Value);
+				FToggle("Preserve self", &Vars::Auto::Uber::PopLocal.Value, FToggle_Middle);
 				FDropdown("Auto vaccinator", &Vars::Auto::Uber::AutoVaccinator.Value, { "Bullet", "Blast", "Fire" }, {}, FDropdown_Multi | FDropdown_Left);
 				FDropdown("Bullet react classes", &Vars::Auto::Uber::ReactClasses.Value, { "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, FDropdown_Multi | FDropdown_Right);
-				FSlider("Health left", &Vars::Auto::Uber::HealthLeft.Value, 1.f, 99.f, 1.f, "%.0f%%", FSlider_Clamp);
-				FSlider("Reaction FOV", &Vars::Auto::Uber::ReactFOV.Value, 0, 90, 1, "%d", FSlider_Clamp);
-				FToggle("Activate charge trigger", &Vars::Auto::Uber::VoiceCommand.Value);
+				FSlider("Health left", &Vars::Auto::Uber::HealthLeft.Value, 1.f, 99.f, 1.f, "%.0f%%", FSlider_Clamp | FSlider_Left);
+				FSlider("Reaction FOV", &Vars::Auto::Uber::ReactFOV.Value, 0, 90, 1, "%d", FSlider_Clamp | FSlider_Right);
 			} EndSection();
 			if (Section("Auto Jump"))
 			{
@@ -1319,7 +1320,8 @@ void CMenu::MenuSettings()
 				FToggle("Debug logging", &Vars::Debug::Logging.Value, FToggle_Middle);
 				FToggle("Allow secure servers", I::AllowSecureServers);
 				bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
-				FToggle("Pending ping refresh", m_bPendingPingRefresh, FToggle_Middle);
+				if (m_bPendingPingRefresh)
+					FToggle("Pending ping refresh", m_bPendingPingRefresh, FToggle_Middle);
 				FToggle("Show server hitboxes", &Vars::Debug::ServerHitbox.Value); HelpMarker("localhost servers");
 				FToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value, FToggle_Middle);
 				static std::string particleName = "ping_circle";
@@ -2225,7 +2227,7 @@ void CMenu::Init(IDirect3DDevice9* pDevice)
 		FontBold = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBold_compressed_data, RobotoBold_compressed_size, 13.f, &fontConfig, fontRange);
 		FontBlack = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBlack_compressed_data, RobotoBlack_compressed_size, 15.f, &fontConfig, fontRange);
 		FontLarge = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 20.f, &fontConfig, fontRange);
-		FontMono = io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\cascadiamono.ttf)", 15.f, &fontConfig, fontRange);
+		FontMono = io.Fonts->AddFontFromMemoryCompressedTTF(CascadiaMono_compressed_data, CascadiaMono_compressed_size, 15.f, &fontConfig, fontRange);
 
 		ImFontConfig iconConfig;
 		iconConfig.PixelSnapH = true;

@@ -33,7 +33,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 			case ETFClassID::CTFGrenadePipebombProjectile:
 			case ETFClassID::CTFStunBall:
 			{
-				if (pProjectile->GetTouched())
+				if (pProjectile->Touched())
 					continue; //Ignore landed stickies and sandman balls
 				break;
 			}

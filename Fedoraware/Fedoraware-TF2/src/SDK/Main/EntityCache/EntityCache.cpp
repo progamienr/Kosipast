@@ -57,7 +57,7 @@ void CEntityCache::Fill()
 					continue;
 
 				pEntity->SetAbsOrigin(dormantData.Location);
-				pEntity->SetVecOrigin(dormantData.Location);
+				pEntity->m_vecOrigin() = dormantData.Location;
 
 				pEntity->m_lifeState() = LIFE_ALIVE;
 				const auto& playerResource = GetPR();
@@ -128,7 +128,7 @@ void CEntityCache::Fill()
 				{
 					m_vecGroups[EGroupType::WORLD_PROJECTILES].push_back(pEntity);
 
-					if (nClassID == ETFClassID::CTFGrenadePipebombProjectile && (pEntity->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE || pEntity->GetPipebombPulsed()))
+					if (nClassID == ETFClassID::CTFGrenadePipebombProjectile && (pEntity->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE || pEntity->PipebombPulsed()))
 					{
 						CBaseEntity* pThrower = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hThrower());
 						CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity());
@@ -179,7 +179,7 @@ void CEntityCache::Fill()
 				}
 				case ETFClassID::CHalloweenGiftPickup:
 				{
-					if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->GetTargetPlayer()) == m_pLocal)
+					if (I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hTargetPlayer()) == m_pLocal)
 						m_vecGroups[EGroupType::WORLD_GARGOYLE].push_back(pEntity);
 					break;
 				}

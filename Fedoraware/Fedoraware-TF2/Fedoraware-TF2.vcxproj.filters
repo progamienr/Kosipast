@@ -32,7 +32,6 @@
     <ClCompile Include="src\Features\Auto\AutoUber\AutoUber.cpp" />
     <ClCompile Include="src\Features\Backtrack\Backtrack.cpp" />
     <ClCompile Include="src\Features\Commands\Commands.cpp" />
-    <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
     <ClCompile Include="src\Features\Menu\ConfigManager\ConfigManager.cpp" />
     <ClCompile Include="src\Features\Menu\Menu.cpp" />
     <ClCompile Include="src\Features\Menu\Playerlist\PlayerUtils.cpp" />
@@ -170,6 +169,8 @@
     <ClCompile Include="src\Hooks\Detours\CStudioRender_DrawModelStaticProp.cpp" />
     <ClCompile Include="src\Hooks\Detours\CRendering3dView_EnableWorldFog.cpp" />
     <ClCompile Include="src\Hooks\Detours\CSkyboxView_Enable3dSkyboxFog.cpp" />
+    <ClCompile Include="src\Features\Menu\Fonts\CascadiaMono.h" />
+    <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />
@@ -253,7 +254,6 @@
     <ClInclude Include="src\Features\Backtrack\Backtrack.h" />
     <ClInclude Include="src\Features\Color.h" />
     <ClInclude Include="src\Features\Commands\Commands.h" />
-    <ClInclude Include="src\Features\CritHack\CritHack.h" />
     <ClInclude Include="src\Features\Feature.h" />
     <ClInclude Include="src\Features\Menu\Components.hpp" />
     <ClInclude Include="src\Features\Menu\ConfigManager\ConfigManager.h" />
@@ -386,6 +386,7 @@
     <ClInclude Include="src\Features\CameraWindow\CameraWindow.h" />
     <ClInclude Include="src\Features\Menu\Playerlist\PlayerCore.h" />
     <ClInclude Include="src\SDK\Interfaces\IStudioRender\IStudioRender.h" />
+    <ClInclude Include="src\Features\CritHack\CritHack.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

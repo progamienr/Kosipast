@@ -73,18 +73,6 @@ void CVisuals::DrawTickbaseText()
 	g_Draw.String(fFont, dtPos.x, dtPos.y + 2, Vars::Menu::Theme::Active.Value, ALIGN_TOP, L"Ticks %d / %d", iTicks, G::MaxShift);
 	if (G::WaitForShift)
 		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall + offset, Vars::Menu::Theme::Active.Value, ALIGN_TOP, L"Not Ready");
-
-	if (Vars::Debug::Info.Value)
-	{
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 3 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::Recharge: %d", G::Recharge);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 4 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::DoubleTap: %d", G::DoubleTap);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 5 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::Teleport: %d", G::Teleport);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 6 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::ShiftedGoal: %d", G::ShiftedGoal);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 7 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::AntiWarp: %d", G::AntiWarp);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 8 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::MaxShift: %d", G::MaxShift);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 9 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::WeaponCanAttack %d (%d)", G::WeaponCanAttack, I::GlobalVars->tickcount % 66);
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall * 10 + offset, { 255, 255, 255, 255 }, ALIGN_TOP, L"G::IsAttacking %d", G::IsAttacking);
-	}
 }
 void CVisuals::DrawTickbaseBars()
 {

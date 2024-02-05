@@ -20,7 +20,7 @@ void CTickshiftHandler::Recharge(CUserCmd* pCmd, CBaseEntity* pLocal) // occasio
 	if (Vars::CL_Move::DoubleTap::Options.Value & (1 << 4) && !pLocal->IsAlive())
 		bPassive = true;
 
-	if (Vars::CL_Move::DoubleTap::Options.Value & (1 << 3) && !G::DoubleTap && !G::Teleport && G::ShiftedTicks < G::MaxShift && pLocal->GetVecVelocity().Length2D() < 5.0f && !(pCmd->buttons))
+	if (Vars::CL_Move::DoubleTap::Options.Value & (1 << 3) && !G::DoubleTap && !G::Teleport && G::ShiftedTicks < G::MaxShift && pLocal->m_vecVelocity().Length2D() < 5.0f && !(pCmd->buttons))
 		bPassive = true;
 
 	if (I::GlobalVars->tickcount >= iNextPassiveTick && Vars::CL_Move::DoubleTap::PassiveRecharge.Value)

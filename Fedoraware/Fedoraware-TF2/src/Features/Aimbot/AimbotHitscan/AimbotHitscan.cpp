@@ -109,7 +109,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (!pOwner)
 				continue;
 
-			if ((!pProjectile->GetTouched()) || (pOwner->m_iTeamNum() == pLocal->m_iTeamNum()))
+			if ((!pProjectile->Touched()) || (pOwner->m_iTeamNum() == pLocal->m_iTeamNum()))
 				continue;
 
 			Vec3 vPos = pProjectile->GetWorldSpaceCenter();

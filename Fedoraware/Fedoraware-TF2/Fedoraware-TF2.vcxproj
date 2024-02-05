@@ -192,6 +192,7 @@
     <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
     <ClCompile Include="src\Features\Logs\Logs.cpp" />
     <ClCompile Include="src\Features\Menu\ConfigManager\ConfigManager.cpp" />
+    <ClCompile Include="src\Features\Menu\Fonts\CascadiaMono.h" />
     <ClCompile Include="src\Features\Menu\Menu.cpp" />
     <ClCompile Include="src\Features\Menu\Playerlist\PlayerUtils.cpp" />
     <ClCompile Include="src\Features\Menu\Playerlist\PlayerCore.cpp" />

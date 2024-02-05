@@ -6,9 +6,9 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 {
 	for (const auto& pExplosive : g_EntityCache.GetGroup(entityGroup))
 	{
-		float flRadius = (entityGroup == EGroupType::LOCAL_STICKIES ? (pExplosive->GetTouched() ? 150.f : 100.f) : 110.f) * flRadiusScale;
+		float flRadius = (entityGroup == EGroupType::LOCAL_STICKIES ? (pExplosive->Touched() ? 150.f : 100.f) : 110.f) * flRadiusScale;
 
-		if (pExplosive->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE || !pExplosive->GetPipebombPulsed())
+		if (pExplosive->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE || !pExplosive->PipebombPulsed())
 			continue;
 
 		const Vec3 vOrigin = pExplosive->GetWorldSpaceCenter();

@@ -74,26 +74,6 @@ public:
 	}
 };
 
-#define DYNVAR(name, type, ...) static CDynamicNetvar<type>  ##name( __VA_ARGS__ )
-#define DYNVAR_RETURN(type, base, ...) DYNVAR(n, type, __VA_ARGS__); return n.GetValue(base)
-#define DYNVAR_SET(type, base, value, ...) DYNVAR(n, type, __VA_ARGS__); n.SetValue(base,value)
-
-#define M_DYNVARGET(name, type, base, ...) __inline type& Get##name() \
-{ \
-	static CDynamicNetvar<type>  Var##name( __VA_ARGS__ ); \
-	return Var##name.GetValue(base); \
-}
-
-#define M_OFFSETGET(name, type, offset) __inline type& Get##name() \
-{ \
-	return *reinterpret_cast<type*>(this + offset); \
-}
-
-#define M_CONDGET(name, conditions, cond) __inline bool Is##name() \
-{ \
-	return (conditions & cond); \
-}
-
 // lol
 
 inline int GetOffset(RecvTable* pTable, const char* szNetVar)
@@ -138,4 +118,14 @@ inline int GetNetVar(const char* szClass, const char* szNetVar)
 { \
 	static int nOffset = GetNetVar(table, name) + offset; \
 	return *reinterpret_cast<type *>(reinterpret_cast<DWORD>(this) + nOffset); \
+}
+
+#define OFFSET(_name, type, offset) inline type &_name() \
+{ \
+	return *reinterpret_cast<type *>(reinterpret_cast<DWORD>(this) + offset); \
+}
+
+#define CONDGET(name, conditions, cond) __inline bool Is##name() \
+{ \
+	return (conditions & cond); \
 }
