@@ -5,7 +5,7 @@
 #define M_OFFSETGET(name, type, offset) __inline type Get##name() { return *reinterpret_cast<type*>(this + offset); }
 #define M_CONDGET(name, conditions, cond) __inline bool Is##name() { return (conditions & cond); }
 #define FL_DUCKING (1<<1)
-#define M_VIRTUALGET(name, type, base, fn, index) __inline type Get##name() { void* pBase = base; return GetVFunc<fn>(pBase, index)(pBase); }
+#define VIRTUAL(name, type, base, fn, index) __inline type Get##name() { void* pBase = base; return GetVFunc<fn>(pBase, index)(pBase); }
 #define NETVAR(_name, type, table, name) inline type &_name() { static int nOffset = GetNetVar(table, name); return *reinterpret_cast<type *>(reinterpret_cast<DWORD>(this) + nOffset); }
 #define NETVAR_OFF(_name, type, table, name, offset) inline type &_name() { static int nOffset = GetNetVar(table, name) + offset; return *reinterpret_cast<type *>(reinterpret_cast<DWORD>(this) + nOffset); }
 #define _(s) XorStr(s).c_str()

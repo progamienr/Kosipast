@@ -3,7 +3,7 @@
 
 #include "AnimState/TFPlayerAnimState.h" //includes class C_BaseCombatWeapon
 
-#define M_VIRTUALGET(name, type, base, fn, index) __inline type Get##name() \
+#define VIRTUAL(name, type, base, fn, index) __inline type Get##name() \
 { \
 	void* pBase = base; \
 	return GetVFunc<fn>(pBase, index)(pBase); \
@@ -89,8 +89,7 @@ public:
 
 class CBaseEntity
 {
-public: //Netvars & conditions
-
+public:
 	OFFSET(PipebombPulsed, bool, 0x908)	//	this is incredibly fucking lazy.	//	16
 	OFFSET(Touched, bool, 0x8FC)													//	0
 	OFFSET(CreationTime, float, 0x900)	// type + 8
@@ -99,6 +98,7 @@ public: //Netvars & conditions
 	OFFSET(SurfaceFriction, float, 0x12D4)
 	OFFSET(TankPressure, float, 0x1B40)
 
+public:
 	// thanks litebase this is just better ngl
 	NETVAR(m_flAnimTime, float, "CBaseEntity", "m_flAnimTime")
 	NETVAR(m_flSimulationTime, float, "CBaseEntity", "m_flSimulationTime")
@@ -142,8 +142,8 @@ public: //Netvars & conditions
 	NETVAR(m_nModelIndexOverrides, void*, "CBaseEntity", "m_nModelIndexOverrides")
 	NETVAR(movetype, int, "CBaseEntity", "movetype")
 
-	M_VIRTUALGET(AbsOrigin, Vec3&, this, Vec3& (__thiscall*)(void*), 0x9)
-	M_VIRTUALGET(AbsAngles, Vec3&, this, Vec3& (__thiscall*)(void*), 0xa)
+	VIRTUAL(AbsOrigin, Vec3&, this, Vec3& (__thiscall*)(void*), 0x9)
+	VIRTUAL(AbsAngles, Vec3&, this, Vec3& (__thiscall*)(void*), 0xa)
 	__inline CCollisionProperty* GetCollision()
 	{
 		return reinterpret_cast<CCollisionProperty*>(this + 0x1C8);
@@ -354,6 +354,7 @@ public: //Netvars & conditions
 		}
 	}
 
+public:
 	NETVAR(m_Local, void*, "CBasePlayer", "m_Local")
 	NETVAR(m_chAreaBits, void*, "CBasePlayer", "m_chAreaBits")
 	NETVAR(m_chAreaPortalBits, void*, "CBasePlayer", "m_chAreaPortalBits")
@@ -465,24 +466,26 @@ public: //Netvars & conditions
 		const float flVel = this->m_vecVelocity().Length2D();
 		return flVel / iDivide;
 	}
-	//Virtuals from networkable
 	__inline IClientNetworkable* Networkable()
 	{
 		return reinterpret_cast<IClientNetworkable*>((reinterpret_cast<uintptr_t>(this) + 0x8));
 	}
-	M_VIRTUALGET(ClientClass, CClientClass*, Networkable(), CClientClass* (__thiscall*)(void*), 2)
-	M_VIRTUALGET(Dormant, bool, Networkable(), bool(__thiscall*)(void*), 8)
-	M_VIRTUALGET(Index, int, Networkable(), int(__thiscall*)(void*), 9)
+	VIRTUAL(ClientClass, CClientClass*, Networkable(), CClientClass* (__thiscall*)(void*), 2)
+	VIRTUAL(Dormant, bool, Networkable(), bool(__thiscall*)(void*), 8)
+	VIRTUAL(Index, int, Networkable(), int(__thiscall*)(void*), 9)
 
+public:
 	NETVAR(m_flNextAttack, float, "CBaseCombatCharacter", "m_flNextAttack")
 	NETVAR(m_hActiveWeapon, int /*EHANDLE*/, "CBaseCombatCharacter", "m_hActiveWeapon")
 	NETVAR(m_hMyWeapons, int /*EHANDLE*/, "CBaseCombatCharacter", "m_hMyWeapons")
 	NETVAR(m_bGlowEnabled, bool, "CBaseCombatCharacter", "m_bGlowEnabled")
+
 	__inline CBaseCombatWeapon* GetActiveWeapon()
 	{
 		return reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(m_hActiveWeapon()));
 	}
 
+public:
 	NETVAR(m_bSaveMeParity, bool, "CTFPlayer", "m_bSaveMeParity")
 	NETVAR(m_bIsMiniBoss, bool, "CTFPlayer", "m_bIsMiniBoss")
 	NETVAR(m_bIsABot, bool, "CTFPlayer", "m_bIsABot")
@@ -612,7 +615,6 @@ public: //Netvars & conditions
 	NETVAR(m_nExperienceLevelProgress, int, "CTFPlayer", "m_nExperienceLevelProgress")
 	NETVAR(m_bMatchSafeToLeave, bool, "CTFPlayer", "m_bMatchSafeToLeave")
 	NETVAR(m_vecTFOrigin, Vec3, "CTFPlayer", "m_vecOrigin")
-	//NETVAR(m_angEyeAngles, Vec3, "CTFPlayer", "m_angEyeAngles[0]")
 	NETVAR(m_angEyeAnglesX, float, "CTFPlayer", "m_angEyeAngles[0]")
 	NETVAR(m_angEyeAnglesY, float, "CTFPlayer", "m_angEyeAngles[1]")
 	NETVAR(m_bAllowMoveDuringTaunt, bool, "CTFPlayer", "m_bAllowMoveDuringTaunt")
@@ -697,7 +699,7 @@ public: //Netvars & conditions
 	CONDGET(FireResist, m_nPlayerCondEx(), TFCondEx_FireCharge)
 
 	OFFSET(MoveType, MoveType_t, 0x1A4)
-	M_VIRTUALGET(MaxHealth, int, this, int(__thiscall*)(void*), 0x6b)
+	VIRTUAL(MaxHealth, int, this, int(__thiscall*)(void*), 0x6b)
 	__inline Vec3 GetShootPos()
 	{
 		return m_vecOrigin() + m_vecViewOffset();
@@ -714,28 +716,35 @@ public: //Netvars & conditions
 	{
 		return m_vecOrigin() + Vec3(0, 0, (m_vecMins().z + m_vecMaxs().z) / 2);
 	}
-	__inline Vec3 GetViewOffset() // in the case it isn't networked properly
+	__inline Vec3 GetViewOffset() // in the case m_vecViewOffset isn't networked/handled properly
 	{
-		const Vec3 vOffset = m_vecViewOffset();
-		if (vOffset.z)
-			return vOffset;
+		auto getMainOffset = [this]() -> Vec3
+			{
+				if (IsDucking())
+					return { 0.f, 0.f, 45.f };
 
-		if (IsDucking())
-			return { 0.f, 0.f, 45.f };
+				switch (m_iClass())
+				{
+				case ETFClass::CLASS_SCOUT: return { 0.f, 0.f, 65.f };
+				case ETFClass::CLASS_SOLDIER: return { 0.f, 0.f, 68.f };
+				case ETFClass::CLASS_PYRO: return { 0.f, 0.f, 68.f };
+				case ETFClass::CLASS_DEMOMAN: return { 0.f, 0.f, 68.f };
+				case ETFClass::CLASS_HEAVY: return { 0.f, 0.f, 75.f };
+				case ETFClass::CLASS_ENGINEER: return { 0.f, 0.f, 68.f };
+				case ETFClass::CLASS_MEDIC: return { 0.f, 0.f, 75.f };
+				case ETFClass::CLASS_SNIPER: return { 0.f, 0.f, 75.f };
+				case ETFClass::CLASS_SPY: return { 0.f, 0.f, 75.f };
+				}
 
-		switch (m_iClass())
-		{
-		case ETFClass::CLASS_SCOUT: return { 0.f, 0.f, 65.f };
-		case ETFClass::CLASS_SOLDIER: return { 0.f, 0.f, 68.f };
-		case ETFClass::CLASS_PYRO: return { 0.f, 0.f, 68.f };
-		case ETFClass::CLASS_DEMOMAN: return { 0.f, 0.f, 68.f };
-		case ETFClass::CLASS_HEAVY: return { 0.f, 0.f, 75.f };
-		case ETFClass::CLASS_ENGINEER: return { 0.f, 0.f, 68.f };
-		case ETFClass::CLASS_MEDIC: return { 0.f, 0.f, 75.f };
-		case ETFClass::CLASS_SNIPER: return { 0.f, 0.f, 75.f };
-		case ETFClass::CLASS_SPY: return { 0.f, 0.f, 75.f };
-		default: return { 0.f, 0.f, 68.f };
-		}
+				const Vec3 vOffset = m_vecViewOffset();
+				if (vOffset.z)
+					return vOffset;
+				
+				return { 0.f, 0.f, 68.f };
+			};
+
+		const float flSize = (m_vecMaxs().z - m_vecMins().z) / (IsDucking() ? 62 : 82);
+		return getMainOffset() * flSize;
 	}
 	// credits: KGB
 	__inline bool InCond(const ETFCond eCond)
@@ -822,17 +831,35 @@ public: //Netvars & conditions
 	}
 	__inline bool IsCritBoosted()
 	{
-		return InCond(TF_COND_CRITBOOSTED)
+		if (InCond(TF_COND_CRITBOOSTED)
 			|| InCond(TF_COND_CRITBOOSTED_PUMPKIN)
 			|| InCond(TF_COND_CRITBOOSTED_USER_BUFF)
-			|| InCond(TF_COND_CRITBOOSTED_DEMO_CHARGE)
+			// || InCond(TF_COND_CRITBOOSTED_DEMO_CHARGE) // only client
 			|| InCond(TF_COND_CRITBOOSTED_FIRST_BLOOD)
 			|| InCond(TF_COND_CRITBOOSTED_BONUS_TIME)
 			|| InCond(TF_COND_CRITBOOSTED_CTF_CAPTURE)
 			|| InCond(TF_COND_CRITBOOSTED_ON_KILL)
-			|| InCond(TF_COND_CRITBOOSTED_RAGE_BUFF)
 			|| InCond(TF_COND_CRITBOOSTED_CARD_EFFECT)
-			|| InCond(TF_COND_CRITBOOSTED_RUNE_TEMP);
+			|| InCond(TF_COND_CRITBOOSTED_RUNE_TEMP))
+			return true;
+
+		/*
+		CBaseCombatWeapon* pWeapon = GetActiveWeapon();
+		if (pWeapon)
+		{
+			auto tfWeaponInfo = pWeapon->GetTFWeaponInfo();
+			if (InCond(TF_COND_CRITBOOSTED_RAGE_BUFF) && tfWeaponInfo && tfWeaponInfo->m_iWeaponType == 0)
+				// Only primary weapon can be crit boosted by pyro rage
+				return true;
+			
+			float flCritHealthPercent = Utils::ATTRIB_HOOK_FLOAT(1.f, "mult_crit_when_health_is_below_percent", pWeapon);
+			float flHealthFraction = GetMaxHealth() ? (float)m_iHealth() / GetMaxHealth() : 1.f;
+			if (flCritHealthPercent < 1.f && flHealthFraction < flCritHealthPercent)
+				return true;
+		}
+		*/
+
+		return false;
 	}
 	__inline bool IsMiniCritBoosted()
 	{
@@ -973,6 +1000,7 @@ public: //Netvars & conditions
 		return reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 
+public:
 	NETVAR(m_nSequence, int, "CBaseAnimating", "m_nSequence")
 	NETVAR(m_nForceBone, int, "CBaseAnimating", "m_nForceBone")
 	NETVAR(m_vecForce, Vec3, "CBaseAnimating", "m_vecForce")
@@ -1177,15 +1205,17 @@ public: //Netvars & conditions
 		static DWORD dwOff = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
 		*reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOff) = param;
 	}
-	//Virtuals from renderable
+	__inline bool GetAttachment(int number, Vec3& origin)
+	{
+		return GetVFunc<bool(__thiscall*)(void*, int, Vec3&)>(this, 71)(this, number, origin);
+	}
 	__inline void* Renderable()
 	{
 		return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(this) + 0x4);
 	}
-	M_VIRTUALGET(UpdateClientSideAnimation, void, Renderable(), void(__thiscall*)(void*), 3)
-	M_VIRTUALGET(RenderAngles, const Vec3&, Renderable(), const Vec3& (__thiscall*)(void*), 2)
-	M_VIRTUALGET(Model, model_t*, Renderable(), model_t* (__thiscall*)(void*), 9)
-	M_VIRTUALGET(RgflCoordinateFrame, matrix3x4&, Renderable(), matrix3x4& (__thiscall*)(void*), 34)
+	VIRTUAL(RenderAngles, const Vec3&, Renderable(), const Vec3& (__thiscall*)(void*), 2)
+	VIRTUAL(Model, model_t*, Renderable(), model_t* (__thiscall*)(void*), 9)
+	VIRTUAL(RgflCoordinateFrame, matrix3x4&, Renderable(), matrix3x4& (__thiscall*)(void*), 34)
 	__inline bool ShouldDraw()
 	{
 		const auto pRend = Renderable();
@@ -1211,7 +1241,13 @@ public: //Netvars & conditions
 		Vec3* pRenderAngles = const_cast<Vec3*>(&this->GetRenderAngles());
 		*pRenderAngles = vAngles;
 	}
+	__inline int LookupAttachment(const char* pAttachmentName)
+	{
+		const auto pRend = Renderable();
+		return GetVFunc<int(__thiscall*)(void*, const char*)>(pRend, 35)(pRend, pAttachmentName);
+	}
 
+public:
 	NETVAR(m_bBuilding, bool, "CBaseObject", "m_bBuilding")
 	NETVAR(m_bMiniBuilding, bool, "CBaseObject", "m_bMiniBuilding")
 	NETVAR(m_bWasMapPlaced, bool, "CBaseObject", "m_bWasMapPlaced")
@@ -1234,14 +1270,14 @@ public: //Netvars & conditions
 	OFFSET(RechargeTime, float, 0xFC0)
 	OFFSET(CurrentChargeDuration, float, 0xFC4)
 	OFFSET(YawToExit, float, 0xFCC)
-	inline int MaxAmmoShells() // Pasted from https://github.com/Lak3/tf2-internal-base
+	__inline int MaxAmmoShells() // Pasted from https://github.com/Lak3/tf2-internal-base
 	{
 		if (m_iUpgradeLevel() == 1 || m_bMiniBuilding())
 			return 150;
 		else
 			return 200;
 	}
-	inline void GetAmmoCount(int& iShells, int& iMaxShells, int& iRockets, int& iMaxRockets)
+	__inline void GetAmmoCount(int& iShells, int& iMaxShells, int& iRockets, int& iMaxRockets)
 	{
 		const bool bIsMini = m_bMiniBuilding();
 
@@ -1250,10 +1286,29 @@ public: //Netvars & conditions
 		iRockets = bIsMini ? 0 : m_iAmmoRockets();
 		iMaxRockets = (bIsMini || m_iUpgradeLevel() < 3) ? 0 : 20;
 	}
+	__inline void* IHasBuildPoints()
+	{
+		return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(this) + 0xDC8);
+	}
+	VIRTUAL(NumBuildPoints, int, IHasBuildPoints(), int(__thiscall*)(void*), 0)
+	__inline bool GetBuildPoint(int iPoint, Vec3& vecOrigin, Vec3& vecAngles)
+	{
+		void* pPoints = IHasBuildPoints();
+		return GetVFunc<bool(__thiscall*)(void*, int, Vec3&, Vec3&)>(pPoints, 1)(pPoints, iPoint, vecOrigin, vecAngles);
+	}
+	__inline int GetBuildPointAttachmentIndex(int iPoint)
+	{
+		void* pPoints = IHasBuildPoints();
+		return GetVFunc<int(__thiscall*)(void*, int)>(pPoints, 2)(pPoints, iPoint);
+	}
+
+public:
 	NETVAR(m_hPlayer, int/*EHANDLE*/, "CTFRagdoll", "m_hPlayer")
 
+public:
 	NETVAR(m_hOriginalLauncher, int/*EHANDLE*/, "CBaseProjectile", "m_hOriginalLauncher")
 
+public:
 	NETVAR(m_flDamage, float, "CBaseGrenade", "m_flDamage")
 	NETVAR(m_DmgRadius, float, "CBaseGrenade", "m_DmgRadius")
 	NETVAR(m_bIsLive, bool, "CBaseGrenade", "m_bIsLive")
@@ -1261,16 +1316,20 @@ public: //Netvars & conditions
 	NETVAR(m_vecBGVelocity, Vec3, "CBaseGrenade", "m_vecVelocity")
 	NETVAR(m_fBGFlags, int, "CBaseGrenade", "m_fFlags")
 
+public:
 	NETVAR(m_vBRInitialVelocity, Vec3, "CTFBaseRocket", "m_vInitialVelocity")
 	NETVAR(m_vecBROrigin, Vec3, "CTFBaseRocket", "m_vecOrigin")
 	NETVAR(m_angBRRotation, Vec3, "CTFBaseRocket", "m_angRotation")
 	NETVAR(m_iBRDeflected, int, "CTFBaseRocket", "m_iDeflected")
 	NETVAR(m_hBRLauncher, int/*EHANDLE*/, "CTFBaseRocket", "m_hLauncher")
 
+public:
 	NETVAR(m_bFCritical, bool, "CTFProjectile_Flare", "m_bCritical")
 
+public:
 	NETVAR(m_bRCritical, bool, "CTFProjectile_Rocket", "m_bCritical")
 
+public:
 	NETVAR(m_vBGInitialVelocity, Vec3, "CTFWeaponBaseGrenadeProj", "m_vInitialVelocity")
 	NETVAR(m_bBGCritical, bool, "CTFWeaponBaseGrenadeProj", "m_bCritical")
 	NETVAR(m_iBGDeflected, int, "CTFWeaponBaseGrenadeProj", "m_iDeflected")
@@ -1278,6 +1337,7 @@ public: //Netvars & conditions
 	NETVAR(m_angBGRotation, Vec3, "CTFWeaponBaseGrenadeProj", "m_angRotation")
 	NETVAR(m_hDeflectOwner, int/*EHANDLE*/, "CTFWeaponBaseGrenadeProj", "m_hDeflectOwner")
 
+public:
 	NETVAR(m_bTouched, bool, "CTFGrenadePipebombProjectile", "m_bTouched")
 	NETVAR(m_iType, int, "CTFGrenadePipebombProjectile", "m_iType")
 	NETVAR(m_hPBLauncher, int/*EHANDLE*/, "CTFGrenadePipebombProjectile", "m_hLauncher")
@@ -1292,5 +1352,6 @@ public: //Netvars & conditions
 		return *reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 
+public:
 	NETVAR(m_hTargetPlayer, int, "CHalloweenGiftPickup", "m_hTargetPlayer")
 };

@@ -20,6 +20,9 @@ class CAimbotMelee
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
 	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod = Vars::Aimbot::Melee::AimMethod.Value);
 
+	bool FindNearestBuildPoint(CBaseEntity* pBuilding, CBaseEntity* pLocal, Vec3& vPoint);
+	bool RunSapper(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+
 	Target_t lockedTarget;
 	int iDoubletapTicks = 0;
 	int iDoubletapMax = 0;

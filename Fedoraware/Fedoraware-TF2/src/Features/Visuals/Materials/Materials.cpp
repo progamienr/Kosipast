@@ -84,18 +84,6 @@ void CMaterials::ReloadMaterials()
 		mChamMaterials["Shaded"] = mat;
 	}
 	{
-		Material_t mat = {}; // Shiny
-
-		mat.sVMT =	"\"VertexLitGeneric\"";
-		mat.sVMT +=	"\n{";
-		mat.sVMT +=	"\n	$basetexture \"vgui/white_additive\"";
-		mat.sVMT +=	"\n	$envmap \"cubemaps/cubemap_sheen001\"";
-		mat.sVMT += "\n}";
-
-		mat.bLocked = true;
-		mChamMaterials["Shiny"] = mat;
-	}
-	{
 		Material_t mat = {}; // Wireframe
 
 		mat.sVMT =	"\"UnlitGeneric\"";
@@ -107,7 +95,7 @@ void CMaterials::ReloadMaterials()
 		mat.bLocked = true;
 		mChamMaterials["Wireframe"] = mat;
 	}
-	{	// make smoother
+	{
 		Material_t mat = {}; // Fresnel
 
 		mat.sVMT =	"\"VertexLitGeneric\"";
@@ -116,7 +104,7 @@ void CMaterials::ReloadMaterials()
 		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
 		mat.sVMT += "\n	$additive \"1\"";
 		mat.sVMT += "\n	$phong \"1\"";
-		mat.sVMT += "\n	$phongfresnelranges \"[0 0.025 0.05]\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 1 1]\"";
 		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
 		mat.sVMT += "\n	$envmapfresnel \"1\"";
 		mat.sVMT += "\n	$selfillum \"1\"";
@@ -127,6 +115,19 @@ void CMaterials::ReloadMaterials()
 		mChamMaterials["Fresnel"] = mat;
 	}
 	{
+		Material_t mat = {}; // Shine
+
+		mat.sVMT = "\"VertexLitGeneric\"";
+		mat.sVMT += "\n{";
+		mat.sVMT += "\n	$additive \"1\"";
+		mat.sVMT += "\n	$envmap \"cubemaps/cubemap_sheen002.hdr\"";
+		mat.sVMT += "\n	$envmaptint \"[1 1 1]\"";
+		mat.sVMT += "\n}";
+
+		mat.bLocked = true;
+		mChamMaterials["Shine"] = mat;
+	}
+	{
 		Material_t mat = {}; // Tint
 
 		mat.sVMT = "\"VertexLitGeneric\"";
@@ -135,7 +136,7 @@ void CMaterials::ReloadMaterials()
 		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
 		mat.sVMT += "\n	$additive \"1\"";
 		mat.sVMT += "\n	$phong \"1\"";
-		mat.sVMT += "\n	$phongfresnelranges \"[0 0.001 0]\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 0.025 0.05]\"";
 		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
 		mat.sVMT += "\n	$envmapfresnel \"1\"";
 		mat.sVMT += "\n	$selfillum \"1\"";
@@ -264,8 +265,7 @@ void CMaterials::AddMaterial(std::string sName)
 	if (sName == "Original" || std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
 		return;
 
-	const auto cham = mChamMaterials.find(sName);
-	if (cham != mChamMaterials.end())
+	if (mChamMaterials.contains(sName))
 		return;
 
 	Material_t mat = {};

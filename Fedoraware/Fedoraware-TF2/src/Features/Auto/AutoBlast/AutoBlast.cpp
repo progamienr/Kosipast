@@ -5,7 +5,7 @@
 
 void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Auto::Airblast::Active.Value || !G::WeaponCanSecondaryAttack)
+	if (!Vars::Auto::Airblast::Active.Value || !G::CanSecondaryAttack)
 		return;
 
 	id = pWeapon->GetWeaponID();

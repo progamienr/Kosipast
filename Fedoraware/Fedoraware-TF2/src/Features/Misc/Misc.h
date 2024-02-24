@@ -24,8 +24,8 @@ class CMisc
 
 	void TauntKartControl(CUserCmd* pCmd, bool* pSendPacket);
 	void FastStop(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket);
-	void FastStrafe(CUserCmd* pCmd, bool* pSendPacket);
+	void FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void FastStrafe(CUserCmd* pCmd);
 	void InstaStop(CUserCmd* pCmd, bool* pSendPacket);
 	void StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal);

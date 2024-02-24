@@ -130,12 +130,10 @@ void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
 	std::vector<std::wstring> conditionsVec = F::LocalConditions.GetPlayerConditions(pLocal);
 
 	int offset = 0;
-	int width, height;
 	for (const std::wstring& cond : conditionsVec)
 	{
 		g_Draw.String(fFont, x, y + offset, Vars::Menu::Theme::Active.Value, align, cond.data());
-		I::VGuiSurface->GetTextSize(fFont.dwFont, cond.data(), width, height);
-		offset += height;
+		offset += fFont.nTall + 1;
 	}
 }
 
@@ -150,8 +148,8 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 
 	const float flLatencyIn = iNetChan->GetLatency(FLOW_INCOMING) * 1000.f;
 	const float flLatencyOut = iNetChan->GetLatency(FLOW_OUTGOING) * 1000.f;
-	const float flFake = std::min((F::Backtrack.GetFake() + (F::Backtrack.flFakeInterp > G::LerpTime ? F::Backtrack.flFakeInterp/* - G::LerpTime*/ : 0.f)) * 1000.f, 800.f);
-	const float flLatency = flLatencyIn + flLatencyOut - F::Backtrack.GetFake() * 1000.f;
+	const float flFake = std::min((F::Backtrack.GetFake() + (F::Backtrack.flFakeInterp > G::LerpTime ? F::Backtrack.flFakeInterp : 0.f)) * 1000.f, F::Backtrack.flMaxUnlag * 1000.f);
+	const float flLatency = F::Backtrack.GetReal() * 1000.f;
 	const int iLatencyScoreBoard = cResource->GetPing(pLocal->GetIndex());
 
 	int x = Vars::Menu::PingDisplay.Value.x;
@@ -189,11 +187,11 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 		else
 			g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "In %.0f, Out %.0f ms", flLatencyIn, flLatencyOut);
 	}
-	g_Draw.String(fFont, x, y + fFont.nTall + 2, Vars::Menu::Theme::Active.Value, align, "Scoreboard %d ms", iLatencyScoreBoard);
+	g_Draw.String(fFont, x, y + fFont.nTall + 1, Vars::Menu::Theme::Active.Value, align, "Scoreboard %d ms", iLatencyScoreBoard);
 	if (Vars::Debug::Info.Value)
 	{
-		g_Draw.String(fFont, x, y + fFont.nTall * 2 + 2, { 255, 255, 255, 255 }, align, "GetFake %.0f, flFakeInterp %.0f", F::Backtrack.GetFake() * 1000.f, F::Backtrack.flFakeInterp * 1000.f);
-		g_Draw.String(fFont, x, y + fFont.nTall * 3 + 2, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
+		g_Draw.String(fFont, x, y + fFont.nTall * 3, { 255, 255, 255, 255 }, align, "iTickCount %i (%i, %i, %i)", F::Backtrack.iTickCount, TIME_TO_TICKS(F::Backtrack.GetReal()), TIME_TO_TICKS(flLatencyIn / 1000), TIME_TO_TICKS(flLatencyOut / 1000));
+		g_Draw.String(fFont, x, y + fFont.nTall * 4, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
 	}
 }
 
@@ -213,10 +211,8 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 		return;
 
 	ProjectileInfo projInfo = {};
-	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? float(Vars::Aimbot::Projectile::AutoRelease.Value) / 100 : -1.f))
-		return;
-
-	if (!F::ProjSim.Initialize(projInfo))
+	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? float(Vars::Aimbot::Projectile::AutoRelease.Value) / 100 : -1.f)
+		|| !F::ProjSim.Initialize(projInfo))
 		return;
 
 	for (int n = 0; n < TIME_TO_TICKS(projInfo.m_lifetime); n++)
@@ -363,24 +359,6 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool
 
 void CVisuals::DrawBulletLines()
 {
-	/*
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-
-	if (pWeapon)
-	{
-		for (auto& Line : G::BulletsStorage)
-		{
-			if (Line.m_flTime < I::GlobalVars->curtime) continue;
-
-			RenderLine(Line.m_line.first, Line.m_line.second, Line.m_color);
-		}
-	}
-	else
-	{
-		for (auto& Line : G::BulletsStorage)
-			Line.m_flTime = -10.f;
-	}
-	*/
 	for (auto& Line : G::BulletsStorage)
 	{
 		if (Line.m_flTime < I::GlobalVars->curtime) continue;
@@ -389,16 +367,16 @@ void CVisuals::DrawBulletLines()
 	}
 }
 
-void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators, bool bZBuffer)
+void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators, bool bZBuffer, float flTime)
 {
-	if (!bSeparators)
+	for (size_t i = 1; i < Line.size(); i++)
 	{
-		for (size_t i = 1; i < Line.size(); i++)
+		if (flTime < 0.f && Line.size() - i > -flTime)
+			continue;
+
+		if (!bSeparators)
 			RenderLine(Line.at(i - 1).first, Line.at(i).first, Color, bZBuffer);
-	}
-	else
-	{
-		for (size_t i = 1; i < Line.size(); i++)
+		else
 		{
 			const auto& vStart = Line[i - 1].first;
 			const auto& vRotate = Line[i - 1].second;
@@ -412,53 +390,17 @@ void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Colo
 
 void CVisuals::DrawSimLines()
 {
-	/*
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-
-	if (pWeapon)
-	{
-		for (auto& Line : G::LinesStorage)
-		{
-			if (Line.m_flTime < I::GlobalVars->curtime) continue;
-
-			DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::SimSeperators.Value);
-		}
-	}
-	else
-	{
-		for (auto& Line : G::LinesStorage)
-			Line.m_flTime = -10.f;
-	}
-	*/
 	for (auto& Line : G::LinesStorage)
 	{
-		if (Line.m_flTime > 0.f && Line.m_flTime < I::GlobalVars->curtime)
+		if (Line.m_flTime >= 0.f && Line.m_flTime < I::GlobalVars->curtime)
 			continue;
 
-		DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::SimSeperators.Value, Line.m_bZBuffer);
+		DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::SimSeperators.Value, Line.m_bZBuffer, Line.m_flTime);
 	}
 }
 
 void CVisuals::DrawBoxes()
 {
-	/*
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-
-	if (pWeapon)
-	{
-		for (auto& Box : G::BoxesStorage)
-		{
-			if (Box.m_flTime < I::GlobalVars->curtime) continue;
-
-			RenderBox(Box.m_vecPos, Box.m_vecMins, Box.m_vecMaxs, Box.m_vecOrientation, Box.m_colorEdge, Box.m_colorFace);
-		}
-	}
-	else
-	{
-		for (auto& Box : G::BoxesStorage)
-			Box.m_flTime = -10.f;
-	}
-	*/
 	for (auto& Box : G::BoxesStorage)
 	{
 		if (Box.m_flTime < I::GlobalVars->curtime) continue;
@@ -523,11 +465,11 @@ void CVisuals::DrawServerHitboxes()
 	}
 }
 
-void CVisuals::RenderLine(const Vec3& v1, const Vec3& v2, Color_t c, bool bZBuffer)
+void CVisuals::RenderLine(const Vec3& vStart, const Vec3& vEnd, Color_t cLine, bool bZBuffer)
 {
 	using FN = void(__cdecl*)(const Vector&, const Vector&, Color_t, bool);
 	static auto fnRenderLine = S::RenderLine.As<FN>();
-	fnRenderLine(v1, v2, c, bZBuffer);
+	fnRenderLine(vStart, vEnd, cLine, bZBuffer);
 }
 
 void CVisuals::RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace, bool bZBuffer)
@@ -636,10 +578,20 @@ void CVisuals::FillSightlines()
 {
 	if (Vars::Visuals::SniperSightlines.Value)
 	{
-		Vec3 vShootPos, vForward, vShootEnd;
-		CTraceFilterHitscan filter{};
-		CGameTrace trace{};
 		m_SightLines = {}; // should get rid of residual lines
+
+		std::unordered_map<CBaseEntity*, Vec3> mDots = {};
+		for (int n = I::EngineClient->GetMaxClients() + 1; n <= I::ClientEntityList->GetHighestEntityIndex(); n++)
+		{
+			if (CBaseEntity* pDot = I::ClientEntityList->GetClientEntity(n))
+			{
+				if (pDot->GetClassID() != ETFClassID::CSniperDot)
+					continue;
+
+				if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pDot->m_hOwnerEntity()))
+					mDots[pOwner] = pDot->m_vecOrigin();
+			}
+		}
 
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 		{
@@ -648,17 +600,25 @@ void CVisuals::FillSightlines()
 			if (!pEnemy->IsAlive() || pEnemy->IsAGhost() || pEnemy->GetDormant() || !pEnemy->InCond(TF_COND_AIMING) ||
 				!pWeapon || pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN)
 			{
-				m_SightLines[iEntityIndex] = { Vec3(), Vec3(), Color_t(), false };
 				continue;
 			}
-			vShootPos = pEnemy->GetAbsOrigin() + (pEnemy->IsDucking() ? Vec3(0, 0, 45) : Vec3(0, 0, 75));
-			Math::AngleVectors(pEnemy->GetEyeAngles(), &vForward);
-			vShootEnd = vShootPos + (vForward * 8192.f);
 
-			filter.pSkip = pEnemy;
-			Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
+			Vec3 vShootPos = pEnemy->GetAbsOrigin() + pEnemy->GetViewOffset();
+			if (!mDots.contains(pEnemy))
+			{
+				CTraceFilterHitscan filter{};
+				CGameTrace trace{};
 
-			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
+				Vec3 vForward; Math::AngleVectors(pEnemy->GetEyeAngles(), &vForward);
+				Vec3 vShootEnd = vShootPos + (vForward * 8192.f);
+
+				filter.pSkip = pEnemy;
+				Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
+
+				m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
+			}
+			else
+				m_SightLines[pEnemy->GetIndex()] = { vShootPos, mDots[pEnemy], GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
 		}
 	}
 }
@@ -773,19 +733,6 @@ void ApplyModulation(const Color_t& clr)
 
 void ApplySkyboxModulation(const Color_t& clr)
 {
-	//for (MaterialHandle_t h = I::MatSystem->First(); h != I::MatSystem->Invalid(); h = I::
-	//	MatSystem->Next(h))
-	//{
-	//	const auto& pMaterial = I::MatSystem->Get(h);
-
-	//	if (pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached())
-	//		continue;
-
-	//	std::string_view group(pMaterial->GetTextureGroupName());
-
-	//	if (group._Starts_with("SkyBox"))
-	//		pMaterial->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
-	//}
 	if (F::Visuals.MaterialHandleDatas.empty())
 		return;
 
@@ -804,6 +751,13 @@ void ApplySkyboxModulation(const Color_t& clr)
 
 void CVisuals::ModulateWorld()
 {
+	if (G::ShouldUpdateMaterialCache)
+	{
+		F::Visuals.ClearMaterialHandles();
+		F::Visuals.StoreMaterialHandles();
+		G::ShouldUpdateMaterialCache = false;
+	}
+
 	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 	const bool bWorldModulation = Vars::Visuals::World::Modulations.Value & 1 << 0 && !bScreenshot;
 	const bool bSkyModulation = Vars::Visuals::World::Modulations.Value & 1 << 1 && !bScreenshot;
@@ -813,35 +767,29 @@ void CVisuals::ModulateWorld()
 	const bool bUnchanged = bLastConnectionState == bCurrConnectionState;
 
 	bool bSetChanged = false;
-	// check if modulation has been switched
-	{
+	{	// check if modulation has been switched
 		static auto oldW = bWorldModulation;
 		const auto curW = bWorldModulation;
 		static auto oldS = bSkyModulation;
 		const auto curS = bSkyModulation;
 
-		if (curS != oldS || curW != oldW)
-		{
-			oldW = curW;
-			oldS = curS;
-			bSetChanged = true;
-		}
+		bSetChanged = curS != oldS || curW != oldW;
+
+		oldW = curW;
+		oldS = curS;
 	}
 
 	bool bColorChanged = false;
-	// check if colours have been changed
-	{
+	{	// check if colours have been changed
 		static auto oldW = Vars::Colors::WorldModulation.Value;
 		static auto oldS = Vars::Colors::SkyModulation.Value;
 		const auto curW = Vars::Colors::WorldModulation.Value;
 		const auto curS = Vars::Colors::SkyModulation.Value;
 
-		if (curW.r != oldW.r || curW.g != oldW.g || curW.b != oldW.b || curS.r != oldS.r || curS.g != oldS.g || curS.b != oldS.b)
-		{
-			oldW = curW;
-			oldS = curS;
-			bColorChanged = true;
-		}
+		bColorChanged = curW != oldW || curS != oldS;
+	
+		oldW = curW;
+		oldS = curS;
 	}
 
 	if (bSetChanged || bColorChanged || !bUnchanged)

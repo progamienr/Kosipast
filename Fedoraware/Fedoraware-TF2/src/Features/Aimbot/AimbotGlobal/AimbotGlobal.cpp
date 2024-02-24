@@ -21,7 +21,7 @@ void CAimbotGlobal::SortTargets(std::vector<Target_t>* targets, const ESortMetho
 			  });
 }
 
-void CAimbotGlobal::SortPriority(std::vector<Target_t>* targets, const ESortMethod& method)
+void CAimbotGlobal::SortPriority(std::vector<Target_t>* targets)
 {	// Sort by priority
 	std::sort((*targets).begin(), (*targets).end(), [&](const Target_t& a, const Target_t& b) -> bool
 			  {
@@ -115,9 +115,9 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 			continue;
 
 		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & PLAYER && pTarget->IsPlayer();
-		const bool isSentry = Vars::Aimbot::Global::AimAt.Value & SENTRY && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
-		const bool isDispenser = Vars::Aimbot::Global::AimAt.Value & DISPENSER && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
-		const bool isTeleporter = Vars::Aimbot::Global::AimAt.Value & TELEPORTER && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
+		const bool isSentry = Vars::Aimbot::Global::AimAt.Value & SENTRY && pTarget->IsSentrygun();
+		const bool isDispenser = Vars::Aimbot::Global::AimAt.Value & DISPENSER && pTarget->IsDispenser();
+		const bool isTeleporter = Vars::Aimbot::Global::AimAt.Value & TELEPORTER && pTarget->IsTeleporter();
 		const bool isNPC = Vars::Aimbot::Global::AimAt.Value & NPC && pTarget->IsNPC();
 
 		if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC)

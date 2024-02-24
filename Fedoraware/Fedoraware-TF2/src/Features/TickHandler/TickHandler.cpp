@@ -69,7 +69,7 @@ void CTickshiftHandler::Doubletap(const CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (Vars::CL_Move::DoubleTap::Mode.Value == 1 && !F::KeyHandler.Down(Vars::CL_Move::DoubleTap::DoubletapKey.Value))
 		return;
 
-	if (G::WeaponCanAttack && (G::IsAttacking || G::CurWeaponType == EWeaponType::MELEE && pCmd->buttons & IN_ATTACK) &&
+	if (G::CanPrimaryAttack && (G::IsAttacking || G::CurWeaponType == EWeaponType::MELEE && pCmd->buttons & IN_ATTACK) &&
 		(Vars::CL_Move::DoubleTap::Options.Value & (1 << 1) ? pLocal->OnSolid() : true))
 	{
 		G::DoubleTap = true;
@@ -172,7 +172,7 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 		{
 			if (!ValidWeapon(pWeapon))
 				G::WaitForShift = 2;
-			else if (G::IsAttacking || !G::WeaponCanAttack || pWeapon->IsInReload())
+			else if (G::IsAttacking || !G::CanPrimaryAttack || pWeapon->IsInReload())
 				G::WaitForShift = Vars::CL_Move::DoubleTap::TickLimit.Value;
 		}
 	}
@@ -204,7 +204,7 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 	if (G::ShiftedTicks > G::ShiftedGoal) // normal use/doubletap/teleport
 	{
 		while (G::ShiftedTicks > G::ShiftedGoal)
-			CLMoveFunc(accumulated_extra_samples, bFinalTick);
+			CLMoveFunc(accumulated_extra_samples, G::ShiftedTicks - 1 == G::ShiftedGoal);
 		G::AntiWarp = false;
 		if (G::Teleport)
 			iDeficit = 0;

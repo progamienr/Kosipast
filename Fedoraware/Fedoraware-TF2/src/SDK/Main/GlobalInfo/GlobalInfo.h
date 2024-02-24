@@ -53,9 +53,9 @@ namespace G
 	inline std::pair<int, int> CurrentTarget = { 0, 0 }; // Index of the current aimbot target
 	inline int CurItemDefIndex = 0; // DefIndex of the current weapon
 	inline float LerpTime = 0.f;	//	current lerp time
-	inline bool WeaponCanHeadShot = false; // Can the current weapon headshot?
-	inline bool WeaponCanAttack = false; // Can the current weapon attack?
-	inline bool WeaponCanSecondaryAttack = false;
+	inline bool CanHeadShot = false; // Can the current weapon headshot?
+	inline bool CanPrimaryAttack = false; // Can the current weapon attack?
+	inline bool CanSecondaryAttack = false;
 	inline bool AntiAim = false; // Is the Anti-Aim active?
 	inline bool AvoidingBackstab = false; // Are we currently avoiding a backstab? (Overwrites AA)
 	inline bool FirstSpectated = false; // currently unused
@@ -118,9 +118,9 @@ namespace G
 	inline std::vector<int> MedicCallers;
 	inline std::unordered_map<CBaseEntity*, VelFixRecord> VelFixRecords;
 
-	inline std::unordered_map<uint32_t, std::vector<std::string>> PlayerTags; // This only contains tags, get priority through F::Playerlist
+	inline std::unordered_map<uint32_t, std::vector<std::string>> PlayerTags; // This only contains tags, get priority through F::PlayerUtils
 
 	inline bool InKeybind = false;
 	inline bool DrawingStaticProps = false;
-	inline bool ShouldUpdateMaterialCache = false;
+	inline bool ShouldUpdateMaterialCache = true;
 };

@@ -129,9 +129,8 @@ void CAntiAim::Run(CUserCmd* pCmd, bool* pSendPacket)
 	G::AntiAim = false;
 	bSendingReal = !*pSendPacket;
 
-	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!iNetChan || !pLocal)
+	if (!pLocal)
 		return;
 
 	Vec2& vAngles = bSendingReal ? vRealAngles : vFakeAngles;
@@ -147,7 +146,7 @@ void CAntiAim::Run(CUserCmd* pCmd, bool* pSendPacket)
 	G::AntiAim = true;
 	G::SilentAngles = true;
 
-	if (!iNetChan->m_nChokedPackets) // get base yaw on the first choked tick.
+	if (!I::ClientState->chokedcommands) // get base yaw on the first choked tick.
 		flBaseYaw = GetBaseYaw(pLocal, pCmd, false);
 	vAngles = {
 		GetPitch(pCmd->viewangles.x),

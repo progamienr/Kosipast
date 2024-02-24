@@ -5,7 +5,7 @@
 #include "../../../Hooks/Hooks.h"
 #include "../../../Hooks/HookManager.h"
 #include "../Materials/Materials.h"
-#include "../FakeAngleManager/FakeAng.h"
+#include "../FakeAngle/FakeAngle.h"
 #include "../../Backtrack/Backtrack.h"
 
 bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
@@ -142,7 +142,7 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 	if (const auto& pWeapon = reinterpret_cast<CBaseCombatWeapon*>(pEntity))
 	{
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pWeapon->m_hOwnerEntity());
-		if (!pOwner)
+		if (!pOwner || !pOwner->IsPlayer())
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
@@ -379,39 +379,38 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 			if (bModel)
 				I::RenderView->SetBlend(0.f);
 
+			const auto& pRecords = F::Backtrack.GetRecords(pEntity);
+			auto vRecords = F::Backtrack.GetValidRecords(pRecords, BacktrackMode::ALL);
+			if (!vRecords.size())
+				return;
+
 			switch (Vars::Glow::Backtrack::Draw.Value)
 			{
 			case 0: // last
 			{
-				std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
-				if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
+				auto vLastRec = vRecords.end() - 1;
+				if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
 					drawModel(vLastRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 				break;
 			}
 			case 1: // last + first
 			{
-				std::optional<TickRecord> vFirstRec = F::Backtrack.GetFirstRecord(pEntity);
-				if (vFirstRec && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) >= 0.1f)
+				auto vFirstRec = vRecords.begin();
+				if (vFirstRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) > 0.1f)
 					drawModel(vFirstRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
-				std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
-				if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
+				auto vLastRec = vRecords.end() - 1;
+				if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
 					drawModel(vLastRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 				break;
 			}
 			case 2: // all
 			{
-				const auto& vRecords = F::Backtrack.GetRecords(pEntity);
-				if (vRecords && !vRecords->empty())
+				for (auto& record : vRecords)
 				{
-					for (auto& record : *vRecords)
-					{
-						if (!F::Backtrack.WithinRewind(record))
-							continue;
-						if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) <= 0.1f)
-							continue;
+					if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) < 0.1f)
+						continue;
 
-						drawModel(record.vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
-					}
+					drawModel(record.vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
 				}
 			}
 			}
@@ -438,7 +437,7 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 void CGlow::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld,
 	int w, int h, IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, IMaterial* m_pMatBlurX, IMaterial* m_pMatBlurY, IMaterial* m_pMatHaloAddToScreen)
 {
-	if (!Vars::Glow::FakeAngle::Active.Value || !Vars::Glow::FakeAngle::Glow.Value.Stencil && !Vars::Glow::FakeAngle::Glow.Value.Blur || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAng.DrawChams)
+	if (!Vars::Glow::FakeAngle::Active.Value || !Vars::Glow::FakeAngle::Glow.Value.Stencil && !Vars::Glow::FakeAngle::Glow.Value.Blur || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAngle.DrawChams || !F::FakeAngle.BonesSetup)
 		return;
 
 	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
@@ -452,7 +451,7 @@ void CGlow::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInf
 			if (bModel)
 				I::RenderView->SetBlend(0.f);
 
-			ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, reinterpret_cast<matrix3x4*>(&F::FakeAng.BoneMatrix));
+			ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, F::FakeAngle.BoneMatrix);
 
 			if (bModel)
 				I::RenderView->SetBlend(1.f);

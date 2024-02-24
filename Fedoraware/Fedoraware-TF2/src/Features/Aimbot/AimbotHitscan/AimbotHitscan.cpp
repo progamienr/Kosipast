@@ -72,9 +72,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (!pBuilding->IsAlive())
 				continue;
 
-			bool isSentry = pBuilding->GetClassID() == ETFClassID::CObjectSentrygun;
-			bool isDispenser = pBuilding->GetClassID() == ETFClassID::CObjectDispenser;
-			bool isTeleporter = pBuilding->GetClassID() == ETFClassID::CObjectTeleporter;
+			bool isSentry = pBuilding->IsSentrygun(), isDispenser = pBuilding->IsDispenser(), isTeleporter = pBuilding->IsTeleporter();
 
 			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::SENTRY) && isSentry)
 				continue;
@@ -175,7 +173,7 @@ std::vector<Target_t> CAimbotHitscan::SortTargets(CBaseEntity* pLocal, CBaseComb
 
 	const auto& sortMethod = static_cast<ESortMethod>(Vars::Aimbot::Hitscan::SortMethod.Value);
 	F::AimbotGlobal.SortTargets(&validTargets, sortMethod);
-	F::AimbotGlobal.SortPriority(&validTargets, sortMethod);
+	F::AimbotGlobal.SortPriority(&validTargets);
 
 	std::vector<Target_t> sortedTargets = {};
 	int i = 0; for (auto& target : validTargets)
@@ -303,26 +301,30 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(target.m_pEntity->m_nHitboxSet());
 	if (!pSet) return false;
 
-	std::deque<TickRecord> pRecords;
+	std::deque<TickRecord> vRecords;
 	{
-		const auto& records = F::Backtrack.GetRecords(target.m_pEntity);
-		if (!records || !Vars::Backtrack::Enabled.Value || target.m_TargetType != ETargetType::PLAYER)
+		const auto& pRecords = F::Backtrack.GetRecords(target.m_pEntity);
+		if (pRecords && target.m_TargetType == ETargetType::PLAYER)
+		{
+			vRecords = F::Backtrack.GetValidRecords(pRecords, (BacktrackMode)Vars::Backtrack::Method.Value, pLocal);
+			if (!Vars::Backtrack::Enabled.Value && !vRecords.empty())
+				vRecords = { vRecords.front() };
+		}
+		else
 		{
 			matrix3x4 bones[128];
 			if (!target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
 				return false;
 
-			pRecords.push_front({
+			vRecords.push_front({
 				target.m_pEntity->m_flSimulationTime(),
 				I::GlobalVars->curtime,
 				I::GlobalVars->tickcount,
 				false,
 				*reinterpret_cast<BoneMatrixes*>(&bones),
 				target.m_pEntity->m_vecOrigin()
-				});
+			});
 		}
-		else
-			pRecords = *records;
 	}
 
 	auto RayToOBB = [](const Vec3& origin, const Vec3& direction, const Vec3& position, const Vec3& min, const Vec3& max, const matrix3x4 orientation) -> bool
@@ -334,8 +336,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 		};
 
 	int iReturn = false;
-	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER ? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value) : pRecords;
-	for (auto& pTick : validRecords)
+	for (auto& pTick : vRecords)
 	{
 		if (target.m_TargetType == ETargetType::PLAYER || target.m_TargetType == ETargetType::SENTRY)
 		{
@@ -437,7 +438,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 								target.m_vPos = vTransformed;
 								if (target.m_TargetType == ETargetType::PLAYER)
 								{
-									if (Vars::Backtrack::Enabled.Value)
+									//if (Vars::Backtrack::Enabled.Value)
 										target.ShouldBacktrack = target.m_TargetType == ETargetType::PLAYER;
 									target.m_nAimedHitbox = pair.second;
 								}
@@ -515,7 +516,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		{
 			if (G::CurItemDefIndex != Sniper_m_TheClassic
 				&& G::CurItemDefIndex != Sniper_m_TheSydneySleeper
-				&& !G::WeaponCanHeadShot && bIsScoped)
+				&& !G::CanHeadShot && bIsScoped)
 			{
 				return false;
 			}
@@ -539,7 +540,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 				else
 				{
-					if (!bIsCritBoosted && !G::WeaponCanHeadShot)
+					if (!bIsCritBoosted && !G::CanHeadShot)
 						return false;
 				}
 			}
@@ -584,7 +585,7 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 
 bool CAimbotHitscan::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 {
-	return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
+	return ((pCmd->buttons & IN_ATTACK) && G::CanPrimaryAttack);
 }
 
 // assume angle calculated outside with other overload
@@ -637,10 +638,10 @@ Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
 	const bool bAutomatic = pWeapon->IsStreamingWeapon(), bKeepFiring = bAutomatic && G::LastUserCmd->buttons & IN_ATTACK;
-	if (bKeepFiring && !G::WeaponCanAttack && Vars::Aimbot::Global::Active.Value && F::AimbotGlobal.IsKeyDown())
+	if (bKeepFiring && !G::CanPrimaryAttack && Vars::Aimbot::Global::Active.Value && F::AimbotGlobal.IsKeyDown())
 		pCmd->buttons |= IN_ATTACK;
 
-	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::WeaponCanAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2/* && !G::DoubleTap*/)
+	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::CanPrimaryAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2/* && !G::DoubleTap*/)
 	{
 		bLastTickHeld = false;
 		if (pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() != AC_STATE_IDLE)
@@ -759,7 +760,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 			if (target.pTick)
 			{
 				if (target.ShouldBacktrack)
-					pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokeSetMod.Value;
+					pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
 
 				if (!pWeapon->IsInReload())
 				{

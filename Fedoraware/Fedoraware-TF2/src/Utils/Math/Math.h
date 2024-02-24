@@ -335,6 +335,16 @@ public:
 		return Vec3(x / v, y / v, z / v);
 	}
 
+	bool operator==(const Vec3& v) const
+	{
+		return (x == v.x && y == v.y && z == v.z);
+	}
+
+	bool operator!=(const Vec3& v) const
+	{
+		return (x != v.x || y != v.y || z != v.z);
+	}
+
 	void Set(float X = 0.0f, float Y = 0.0f, float Z = 0.0f)
 	{
 		x = X; y = Y; z = Z;

@@ -7,12 +7,13 @@ class CAutoJump
 
 	bool bLastGrounded = false;
 
-	int iFrame = -1;
 	bool bFull = false;
 	int iDelay = 0;
 
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+
+	int iFrame = -1;
 };
 
 ADD_FEATURE(CAutoJump, AutoJump)

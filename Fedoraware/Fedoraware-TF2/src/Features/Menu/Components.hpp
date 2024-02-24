@@ -259,7 +259,7 @@ namespace ImGui
 	__inline bool Section(const char* title, float minHeight = 1.f, bool forceHeight = false)
 	{
 		storedTitles.push_back(title);
-		if (!forceHeight && lastHeights.find(title) != lastHeights.end() && lastHeights[title] > minHeight)
+		if (!forceHeight && lastHeights.contains(title) && lastHeights[title] > minHeight)
 			minHeight = lastHeights[title];
 		PushStyleVar(ImGuiStyleVar_CellPadding, { 0, 0 });
 		const bool active = BeginChild(title, { GetColumnWidth(), minHeight + 8 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding);

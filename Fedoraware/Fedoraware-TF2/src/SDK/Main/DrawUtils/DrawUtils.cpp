@@ -72,14 +72,12 @@ void CDraw::String(const Font_t& font, int x, int y, const Color_t& clr, const E
 	I::VGuiSurface->DrawSetTextPos(x, y);
 	I::VGuiSurface->DrawSetTextFont(dwFont);
 	I::VGuiSurface->DrawSetTextColor(clr.r, clr.g, clr.b, clr.a);
-	I::VGuiSurface->DrawPrintText(wstr, wcslen(wstr));
+	I::VGuiSurface->DrawPrintText(wstr);
 }
 void CDraw::String(const Font_t& font, int x, int y, const Color_t& clr, const EAlign& align, const wchar_t* str, ...)
 {
 	if (str == nullptr)
-	{
 		return;
-	}
 
 	va_list va_alist;
 	wchar_t wstr[1024] = { '\0' };
@@ -107,7 +105,7 @@ void CDraw::String(const Font_t& font, int x, int y, const Color_t& clr, const E
 	I::VGuiSurface->DrawSetTextPos(x, y);
 	I::VGuiSurface->DrawSetTextFont(dwFont);
 	I::VGuiSurface->DrawSetTextColor(clr.r, clr.g, clr.b, clr.a);
-	I::VGuiSurface->DrawPrintText(wstr, wcslen(wstr));
+	I::VGuiSurface->DrawPrintText(wstr);
 }
 
 void CDraw::Line(int x, int y, int x1, int y1, const Color_t& clr)

@@ -119,59 +119,41 @@ void CMovementSimulation::FillVelocities()
 	const auto pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
 	{
-		m_Velocities.clear();
+		mVelocities.clear();
 		return;
 	}
 
 	if (Vars::Aimbot::Projectile::StrafePrediction.Value)
 	{
-		auto FillVelocity = [](CBaseEntity* pEntity, std::map<int, std::deque<VelocityData>>& m_Velocities, Vec3 vVelocity)
-		{
-			const int iEntIndex = pEntity->GetIndex();
-
-			if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant() || vVelocity.IsZero())
+		auto FillVelocity = [this](CBaseEntity* pEntity, Vec3 vVelocity)
 			{
-				m_Velocities[iEntIndex].clear();
-				return;
-			}
+				const int iEntIndex = pEntity->GetIndex();
 
-			const VelocityData vRecord = {
-				vVelocity,
-				pEntity->IsOnGround()
-			};
+				if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant() || vVelocity.IsZero())
+				{
+					mVelocities[iEntIndex].clear();
+					return;
+				}
 
-			if (!m_Velocities[iEntIndex].empty())
-			{
-				if (G::ChokeMap[pEntity->GetIndex()])
+				const float flSimTime = pEntity->m_flSimulationTime(), flOldSimTime = pEntity->m_flOldSimulationTime();
+				if (TIME_TO_TICKS(flSimTime - flOldSimTime) <= 0)
 					return;
 
-				const VelocityData vLast = m_Velocities[iEntIndex][0];
+				mVelocities[iEntIndex].push_front(vVelocity);
 
-				const float flLastYaw = Math::VelocityToAngles(vRecord.m_vecVelocity).y;
-				const float flYaw = Math::VelocityToAngles(vLast.m_vecVelocity).y;
-				const float flDelta = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flLastYaw), DEG2RAD(flYaw)));
-				if (fabsf(flDelta) > 90.f)
-					m_Velocities[iEntIndex].clear();
-
-				if (vRecord.m_bGrounded != vLast.m_bGrounded)
-					m_Velocities[iEntIndex].clear();
-			}
-
-			m_Velocities[iEntIndex].push_front(vRecord);
-
-			if (m_Velocities[iEntIndex].size() > 66)
-				m_Velocities[iEntIndex].pop_back();
-		};
+				if (mVelocities[iEntIndex].size() > 66)
+					mVelocities[iEntIndex].pop_back();
+			};
 
 		for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 		{
-			if (pEntity && pEntity != pLocal) // only appears when in thirdperson ?
-				FillVelocity(pEntity, m_Velocities, pEntity->m_vecVelocity());
+			if (pEntity && pEntity != pLocal) // only appears when in thirdperson
+				FillVelocity(pEntity, pEntity->m_vecVelocity());
 		}
-		FillVelocity(pLocal, m_Velocities, pLocal->m_vecVelocity());
+		FillVelocity(pLocal, pLocal->m_vecVelocity());
 	}
 	else
-		m_Velocities.clear();
+		mVelocities.clear();
 }
 
 
@@ -206,8 +188,8 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 		{
 			pPlayer->m_fFlags() &= ~FL_DUCKING; // breaks origin's z if FL_DUCKING is not removed
 			pPlayer->m_bDucked() = true; // (mins/maxs will be fine when ducking as long as m_bDucked is true)
-			pPlayer->m_flDucktime() = 0.0f;
-			pPlayer->m_flDuckJumpTime() = 0.0f;
+			pPlayer->m_flDucktime() = 0.f;
+			pPlayer->m_flDuckJumpTime() = 0.f;
 			pPlayer->m_bDucking() = false;
 			pPlayer->m_bInDuckJump() = false;
 		}
@@ -227,7 +209,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			pPlayer->m_vecVelocity().y = 0.015f;
 
 		if (pPlayer->OnSolid())
-			pPlayer->m_vecVelocity().z = 0.0f; // step fix
+			pPlayer->m_vecVelocity().z = 0.f; // step fix
 
 		pPlayer->m_vecBaseVelocity() = Vec3(); // i think residual basevelocity causes issues
 	}
@@ -242,19 +224,18 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	const int iStrafeSamples = pPlayer->OnSolid() ? Vars::Aimbot::Projectile::iGroundSamples.Value : Vars::Aimbot::Projectile::iAirSamples.Value;
 
 	// calculate strafe if desired
-	if (!cancelStrafe)
-		StrafePrediction(playerStorageOut, iStrafeSamples);
+	bool bCalculated = cancelStrafe ? false : StrafePrediction(playerStorageOut, iStrafeSamples);
 
 	// really hope this doesn't work like shit
-	if (useHitchance && playerStorageOut.m_flAverageYaw && !pPlayer->m_vecVelocity().IsZero())
+	if (useHitchance && bCalculated && !pPlayer->m_vecVelocity().IsZero())
 	{
-		const auto& mVelocityRecords = m_Velocities[playerStorageOut.m_pPlayer->GetIndex()];
+		const auto& mVelocityRecords = mVelocities[playerStorageOut.m_pPlayer->GetIndex()];
 		const int iSamples = mVelocityRecords.size();
 
 		float flCurrentChance = 1.f, flAverageYaw = 0.f, flCompareYaw = Math::VelocityToAngles(playerStorageOut.m_PlayerData.m_vecVelocity).y;
 		for (int i = 0; i < iSamples; i++)
 		{
-			const float flRecordYaw = Math::VelocityToAngles(mVelocityRecords.at(i).m_vecVelocity).y;
+			const float flRecordYaw = Math::VelocityToAngles(mVelocityRecords[i]).y;
 
 			const float flDelta = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flCompareYaw), DEG2RAD(flRecordYaw)));
 			flAverageYaw += flDelta;
@@ -270,9 +251,9 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			flCompareYaw = flRecordYaw;
 		}
 
-		if (flCurrentChance < float(Vars::Aimbot::Projectile::StrafePredictionHitchance.Value) / 100)
+		if (flCurrentChance + 0.001f < float(Vars::Aimbot::Projectile::StrafePredictionHitchance.Value) / 100)
 		{
-			Utils::ConLog("MovementSimulation", std::format("Hitchance ({}%% < {}%%)", flCurrentChance * 100, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value).c_str(), {125, 255, 83, 255}, Vars::Debug::Logging.Value);
+			Utils::ConLog("MovementSimulation", std::format("Hitchance ({}% < {}%)", flCurrentChance * 100, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value).c_str(), { 125, 255, 83, 255 }, Vars::Debug::Logging.Value);
 
 			playerStorageOut.m_bFailed = true;
 			return false;
@@ -307,12 +288,11 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 		playerStorage.m_MoveData.m_flForwardMove = playerStorage.m_MoveData.m_flSideMove = 0.f;
 
 	playerStorage.m_MoveData.m_flClientMaxSpeed = playerStorage.m_MoveData.m_flMaxSpeed;
-	playerStorage.m_MoveData.m_vecAngles = playerStorage.m_MoveData.m_vecViewAngles;
-	playerStorage.m_MoveData.m_vecOldAngles = playerStorage.m_MoveData.m_vecViewAngles;
+	playerStorage.m_MoveData.m_vecAngles = playerStorage.m_MoveData.m_vecOldAngles = playerStorage.m_MoveData.m_vecViewAngles;
 	//if (playerStorage.m_pPlayer->m_hConstraintEntity())
 	//	playerStorage.m_MoveData.m_vecConstraintCenter = I::ClientEntityList->GetClientEntityFromHandle(playerStorage.m_pPlayer->m_hConstraintEntity())->GetAbsOrigin();
 	///else
-		playerStorage.m_MoveData.m_vecConstraintCenter = playerStorage.m_pPlayer->m_vecConstraintCenter();
+	playerStorage.m_MoveData.m_vecConstraintCenter = playerStorage.m_pPlayer->m_vecConstraintCenter();
 	playerStorage.m_MoveData.m_flConstraintRadius = playerStorage.m_pPlayer->m_flConstraintRadius();
 	playerStorage.m_MoveData.m_flConstraintWidth = playerStorage.m_pPlayer->m_flConstraintWidth();
 	playerStorage.m_MoveData.m_flConstraintSpeedFactor = playerStorage.m_pPlayer->m_flConstraintSpeedFactor();
@@ -320,108 +300,61 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	return true;
 }
 
-float CMovementSimulation::GetAverageYaw(PlayerStorage& playerStorage, const int iSamples, bool* inc, bool* dec)
+bool CMovementSimulation::GetYawDifference(const std::deque<Vec3>& mVelocityRecords, const int iTime, float* flYaw)
 {
-	/*
-	const auto& mVelocityRecords = m_Velocities[m_Velocities[playerStorage.m_pPlayer->GetIndex()]];
+	if (mVelocityRecords.size() <= iTime + 2)
+		return false;
 
-	if (mVelocityRecords.size() < iSamples)
-		return 0.f;
+	const float flRecordYaw1 = Math::VelocityToAngles(mVelocityRecords[iTime]).y;
+	const float flRecordYaw2 = Math::VelocityToAngles(mVelocityRecords[iTime + 1]).y;
 
-	float flAverageYaw = 0.f, flCompareYaw = playerStorage.m_MoveData.m_vecViewAngles.y;
-	for (int i = 0; i < iSamples; i++)
+	*flYaw = fmodf(flRecordYaw1 - flRecordYaw2 + 180.f, 360.f);
+	*flYaw += *flYaw < 0 ? 180.f : -180.f;
+
+	static int iSign = 0;
+	const int iLastSign = iSign;
+	const int iCurSign = iSign = *flYaw > 0 ? 1 : -1;
+	if (fabsf(*flYaw) < 640.f / mVelocityRecords[iTime].Length2D()) // dumb way to get straight bool
+		return false;
+
+	return !iTime || iLastSign == iCurSign ? true : false;
+}
+
+float CMovementSimulation::GetAverageYaw(const int iIndex, const int iSamples)
+{
+	const auto& mVelocityRecords = mVelocities[iIndex];
+
+	float flAverageYaw = 0.f; int i = 0;
+	for (; i < iSamples; i++)
 	{
-		const float flRecordYaw = Math::VelocityToAngles(mVelocityRecords.at(i).m_vecVelocity).y;
+		float flYaw;
+		if (!GetYawDifference(mVelocityRecords, i, &flYaw))
+			break;
 
-		const float flDelta = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flCompareYaw), DEG2RAD(flRecordYaw)));
-		flAverageYaw += flDelta;
-
-		flCompareYaw = flRecordYaw;
+		flAverageYaw += flYaw;
 	}
-	flAverageYaw /= iSamples;
-	flAverageYaw = fmod(flAverageYaw + 180.0f, 360.0f) - 180.0f;
-	*/
-
-	const auto& mVelocityRecords = m_Velocities[playerStorage.m_pPlayer->GetIndex()];
-
-	if (mVelocityRecords.size() < iSamples)
+	if (i < 2) // valid strafes too low
 		return 0.f;
 
-	float flAverageYaw = 0.f, flCompareYaw;
-	for (int i = 0; i < iSamples; i++)
-	{
-		const float flRecordYaw = Math::VelocityToAngles(mVelocityRecords.at(i).m_vecVelocity).y;
+	flAverageYaw /= i;
 
-		if (i)
-		{
-			*inc = *inc && flCompareYaw < flRecordYaw;
-			*dec = *dec && flCompareYaw > flRecordYaw;
-			flAverageYaw += flCompareYaw - flRecordYaw;
-		}
-
-		flCompareYaw = flRecordYaw;
-	}
-	flAverageYaw /= iSamples - 1;
-
-	/*
-	auto get_velocity_degree = [](float velocity)
-	{
-		auto tmp = RAD2DEG(atan(30.0f / velocity));
-
-		#define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
-		if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
-			return 90.0f;
-
-		else if (tmp < 0.0f)
-			return 0.0f;
-		else
-			return tmp;
-	};
-
-	const float flMaxDelta = get_velocity_degree(fabsf(flAverageYaw)) / fmaxf((float)iSamples, 2.f);
-
-	if (fabsf(flAverageYaw) > flMaxDelta) {
-		m_Velocities[iEntIndex].clear();
-		return 0.f;
-	} // ugly fix for sweaty pricks
-	*/
-
-	Utils::ConLog("MovementSimulation", std::format("flAverageYaw calculated to {} from {}", flAverageYaw, iSamples - 1).c_str(), { 83, 255, 83, 255 }, Vars::Debug::Logging.Value);
+	Utils::ConLog("MovementSimulation", std::format("flAverageYaw calculated to {} from {}", flAverageYaw, i).c_str(), { 83, 255, 83, 255 }, Vars::Debug::Logging.Value);
 
 	return flAverageYaw;
 }
 
-void CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage, const int iSamples)
+bool CMovementSimulation::StrafePrediction(PlayerStorage& playerStorage, const int iSamples)
 {
 	if (playerStorage.m_pPlayer->OnSolid() ? !(Vars::Aimbot::Projectile::StrafePrediction.Value & (1 << 1)) : !(Vars::Aimbot::Projectile::StrafePrediction.Value & (1 << 0)))
-		return;
+		return false;
 
-	/*
-	float flAverageYaw = GetAverageYaw(playerStorage, Vars::Aimbot::Projectile::iSamples.Value);
+	float flAverageYaw = GetAverageYaw(playerStorage.m_pPlayer->GetIndex(), iSamples);
 
-	if (!flAverageYaw || fabsf(flAverageYaw) < 1.f)
-		return;
-
-	//if (playerStorage.m_pPlayer->OnSolid())
+	//if (playerStorage.m_pPlayer->OnSolid() && flAverageYaw)
 	//	playerStorage.m_MoveData.m_vecViewAngles.y += 22.5f * (flAverageYaw > 0.f ? 1.f : -1.f); // fix for ground strafe delay
 	playerStorage.m_flAverageYaw = flAverageYaw;
-	*/
 
-	bool inc = true, dec = true;
-	float flAverageYaw = GetAverageYaw(playerStorage, iSamples, &inc, &dec);
-
-	if (!flAverageYaw || Vars::Aimbot::Projectile::StrafeRate.Value && !inc && !dec)
-		return;
-
-	if (Vars::Aimbot::Projectile::StrafeAdjust.Value && playerStorage.m_pPlayer->OnSolid())
-	{
-		flAverageYaw /= TICK_INTERVAL * 50.0f;
-		if (fabsf(flAverageYaw) < 1.f)
-			return;
-		playerStorage.m_flAverageYaw = std::clamp(flAverageYaw, -4.3f, 4.3f);
-	}
-	else
-		playerStorage.m_flAverageYaw = flAverageYaw;
+	return true;
 }
 
 void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
@@ -429,12 +362,12 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	if (playerStorage.m_bFailed || !playerStorage.m_pPlayer || !playerStorage.m_pPlayer->IsPlayer())
 		return;
 
-	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value)});
+	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
 
 	//make sure frametime and prediction vars are right
 	I::Prediction->m_bInPrediction = true;
 	I::Prediction->m_bFirstTimePredicted = false;
-	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL;
+	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.f : TICK_INTERVAL;
 
 	float flCorrection = 0.f;
 	if (playerStorage.m_flAverageYaw)

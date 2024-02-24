@@ -141,17 +141,17 @@ namespace Vars
 			CVar(ChargeLooseCannon, false)
 			CVar(NoSpread, false)
 
-			CVar(iGroundSamples, 4, NOSAVE) // debug
-			CVar(iAirSamples, 3, NOSAVE) // debug
+			CVar(iGroundSamples, 5, NOSAVE) // debug
+			CVar(iAirSamples, 5, NOSAVE) // debug
 			CVar(VerticalShift, 5.f, NOSAVE) // debug
-			CVar(LatOff, -1.f, NOSAVE) // debug
-			CVar(PhyOff, -1.f, NOSAVE) // debug
+			CVar(LatOff, -2.f, NOSAVE) // debug
+			CVar(PhyOff, -2.f, NOSAVE) // debug
 			CVar(HullInc, 0.f, NOSAVE) // debug
+			CVar(DragOverride, 0.f, NOSAVE) // debug
+			CVar(TimeOverride, 0.f, NOSAVE) // debug
 			CVar(HuntermanMode, 4, NOSAVE) // debug
 			CVar(HuntermanShift, 2.f, NOSAVE) // debug
 			CVar(HuntermanLerp, 50.f, NOSAVE) // debug
-			CVar(StrafeRate, true, NOSAVE) // debug
-			CVar(StrafeAdjust, true, NOSAVE) // debug
 		SUBNAMESPACE_END(Projectile)
 
 		SUBNAMESPACE_BEGIN(Melee)
@@ -161,7 +161,7 @@ namespace Vars
 			CVar(SortMethod, 1) // 0 - FOV, 1 - Distance
 			CVar(SmoothingAmount, 25)
 			CVar(AutoBackstab, true)
-			CVar(IgnoreRazorback, true) // doesn't work
+			CVar(IgnoreRazorback, true)
 			CVar(SwingPrediction, false)
 			CVar(WhipTeam, false)
 
@@ -182,15 +182,8 @@ namespace Vars
 		CVar(Latency, 0)
 		CVar(Interp, 0)
 		CVar(Window, 185)
-		CVar(UnchokePrediction, false)
-		CVar(AllowForward, false)
 
-		CVar(PassthroughOffset, 0, NOSAVE) // debug
-		CVar(TicksetOffset, 0, NOSAVE) // debug
-		CVar(ChokePassMod, 1, NOSAVE) // debug
-		CVar(ChokeSetMod, 0, NOSAVE) // debug
-		CVar(NWindowSub, 0, NOSAVE) // debug
-		CVar(OWindowSub, 0, NOSAVE) // debug
+		CVar(Offset, 0, NOSAVE) // debug
 	NAMESPACE_END(Backtrack)
 
 	NAMESPACE_BEGIN(CL_Move)
@@ -211,9 +204,9 @@ namespace Vars
 			CVar(Mode, 1) // 0 - Always, 1 - Hold, 2 - Toggle
 			CVar(Key, 0x0)
 			CVar(Type, 0) // 0 - plain, 1 - random, 2 - adaptive
-			CVar(Value, 1)
-			CVar(Min, 1)
-			CVar(Max, 1)
+			CVar(Value, 12)
+			CVar(Min, 10)
+			CVar(Max, 14)
 			CVar(Options, 0b000) // { While Airborne, While Unducking, While Moving }
 			CVar(UnchokeOnAttack, true)
 			CVar(RetainBlastJump, false)
@@ -432,9 +425,9 @@ namespace Vars
 		CVar(FieldOfView, 0, VISUAL)
 		CVar(ZoomFieldOfView, 0, VISUAL)
 		CVar(RevealScoreboard, false, VISUAL)
-		CVar(ScoreboardColors, false, VISUAL)
-		CVar(CleanScreenshots, true, VISUAL)
 		CVar(ScoreboardPlayerlist, false)
+		CVar(CleanScreenshots, true)
+		CVar(ScoreboardColors, false, VISUAL)
 		CVar(SniperSightlines, false, VISUAL)
 		CVar(PickupTimers, false, VISUAL)
 
@@ -479,27 +472,28 @@ namespace Vars
 		CVar(SwingLines, false, VISUAL)
 
 		CVar(PTOverwrite, false, NOSAVE) // debug
-		CVar(PTType, 0, NOSAVE) // debug
-		CVar(PTOffX, 23.5f, NOSAVE) // debug
-		CVar(PTOffY, 12.f, NOSAVE) // debug
-		CVar(PTOffZ, -3.f, NOSAVE) // debug
-		CVar(PTPipes, false, NOSAVE) // debug
-		CVar(PTHull, 1.f, NOSAVE) // debug
-		CVar(PTSpeed, 1000.f, NOSAVE) // debug
-		CVar(PTGravity, 0.f, NOSAVE) // debug
-		CVar(PTNoSpin, true, NOSAVE) // debug
-		CVar(PTLifeTime, 10.f, NOSAVE) // debug
-		CVar(PTUpVelocity, 0.f, NOSAVE) // debug
-		CVar(PTAngVelocityX, 0.f, NOSAVE) // debug
-		CVar(PTAngVelocityY, 0.f, NOSAVE) // debug
+		CVar(PTOffX, 16.f, NOSAVE) // debug
+		CVar(PTOffY, 8.f, NOSAVE) // debug
+		CVar(PTOffZ, -6.f, NOSAVE) // debug
+		CVar(PTPipes, true, NOSAVE) // debug
+		CVar(PTHull, 5.f, NOSAVE) // debug
+		CVar(PTSpeed, 1200.f, NOSAVE) // debug
+		CVar(PTGravity, 1.f, NOSAVE) // debug
+		CVar(PTNoSpin, false, NOSAVE) // debug
+		CVar(PTLifeTime, 2.2f, NOSAVE) // debug
+		CVar(PTUpVelocity, 200.f, NOSAVE) // debug
+		CVar(PTAngVelocityX, 600.f, NOSAVE) // debug
+		CVar(PTAngVelocityY, -1200.f, NOSAVE) // debug
 		CVar(PTAngVelocityZ, 0.f, NOSAVE) // debug
-		CVar(PTDrag, 0.f, NOSAVE) // debug
-		CVar(PTDragBasisX, 0.f, NOSAVE) // debug
-		CVar(PTDragBasisY, 0.f, NOSAVE) // debug
-		CVar(PTDragBasisZ, 0.f, NOSAVE) // debug
-		CVar(PTAngDragBasisX, 0.f, NOSAVE) // debug
-		CVar(PTAngDragBasisY, 0.f, NOSAVE) // debug
-		CVar(PTAngDragBasisZ, 0.f, NOSAVE) // debug
+		CVar(PTDrag, 1.f, NOSAVE) // debug
+		CVar(PTDragBasisX, 0.003902f, NOSAVE) // debug
+		CVar(PTDragBasisY, 0.009962f, NOSAVE) // debug
+		CVar(PTDragBasisZ, 0.009962f, NOSAVE) // debug
+		CVar(PTAngDragBasisX, 0.003618f, NOSAVE) // debug
+		CVar(PTAngDragBasisY, 0.001514f, NOSAVE) // debug
+		CVar(PTAngDragBasisZ, 0.001514f, NOSAVE) // debug
+		CVar(MaxVelocity, k_flMaxVelocity, NOSAVE) // debug
+		CVar(MaxAngularVelocity, k_flMaxAngularVelocity, NOSAVE) // debug
 
 		CVar(ShowHitboxes, false, VISUAL)
 
@@ -618,6 +612,7 @@ namespace Vars
 		CVar(InstantRevive, false)
 
 		CVar(NetworkFix, false)
+		CVar(PredictionFix, false)
 		CVar(PredictionErrorJitterFix, false)
 		CVar(SetupBonesOptimization, false)
 

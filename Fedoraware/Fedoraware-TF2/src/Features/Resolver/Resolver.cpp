@@ -178,7 +178,7 @@ void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 	for (auto n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
 		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity)
+		if (!pEntity || n == I::EngineClient->GetLocalPlayer())
 			continue;
 
 		if (pEntity->GetDormant())
@@ -321,7 +321,7 @@ void PResolver::OnPlayerHurt(CGameEvent* pEvent)
 
 	if (pVictim == pWaiting.second.first)
 	{ 
-		if (pWaiting.second.second && G::WeaponCanHeadShot)
+		if (pWaiting.second.second && G::CanHeadShot)
 		{	// should be headshot
 			const bool bCrit = pEvent->GetBool("crit");
 			if (!bCrit)

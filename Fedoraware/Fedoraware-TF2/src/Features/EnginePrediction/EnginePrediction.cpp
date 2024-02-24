@@ -39,13 +39,10 @@ void CEnginePrediction::Simulate(CUserCmd* pCmd)
 	I::Prediction->SetLocalViewAngles(pCmd->viewangles);
 
 	I::Prediction->SetupMove(pLocal, pCmd, I::MoveHelper, &m_MoveData);
-	// demo charge fix pt 2 (still currently iffy without antiwarp occasionally)
-	//if (G::DoubleTap && G::CurWeaponType == EWeaponType::MELEE && pLocal->IsCharging() && F::Ticks.GetTicks(pLocal) <= 14)
+	//if (G::DoubleTap && G::CurWeaponType == EWeaponType::MELEE && pLocal->IsCharging() && F::Ticks.GetTicks(pLocal) <= 14) // demo charge fix pt 2
 	//	m_MoveData.m_flMaxSpeed = m_MoveData.m_flClientMaxSpeed = pLocal->TeamFortress_CalculateMaxSpeed(true);
 	I::GameMovement->ProcessMovement(pLocal, &m_MoveData);
-	// I::Prediction->FinishMove occasionally fucks with pCmd, might only be when respawning within a tick
-	// upd: this is probably fixed, if someone sees this, lmk if it still crashes
-	I::Prediction->FinishMove(pLocal, pCmd, &m_MoveData); // CRASH: read access violation. pCmd was 0x... (after call)
+	I::Prediction->FinishMove(pLocal, pCmd, &m_MoveData);
 
 	pLocal->m_nTickBase() = nOldTickBase;
 	I::Prediction->m_bFirstTimePredicted = bOldIsFirstPrediction;
@@ -68,9 +65,6 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 	I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal);
 	I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL;
-
-	if (F::Ticks.GetTicks(pLocal) && Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid()) // assume we won't move
-		return; // fix for melee antiwarp more than anything
 
 	Simulate(pCmd);
 }

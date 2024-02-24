@@ -8,7 +8,6 @@ MAKE_HOOK(NetChannel_SendDatagram, S::NetChannel_SendDatagram(), int, __fastcall
 		return Hook.Original<FN>()(netChannel, edx, datagram);
 
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-
 	if (!pLocal ||/* !pLocal->IsAlive() || pLocal->IsAGhost() ||*/ !Vars::Backtrack::Enabled.Value || !Vars::Backtrack::Latency.Value)
 	{
 		F::Backtrack.bFakeLatency = false;

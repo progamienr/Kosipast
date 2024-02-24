@@ -15,7 +15,7 @@ struct ProjectileInfo
 
 	bool no_spin{};
 
-	float m_lifetime = 10.f;
+	float m_lifetime = 100.f;
 
 	std::deque<std::pair<Vec3, Vec3>> PredictionLines;
 };
@@ -45,6 +45,9 @@ public:
 	void RunTick(ProjectileInfo& info);
 	Vec3 GetOrigin();
 	Vec3 GetVelocity();
+
+	IPhysicsEnvironment* env = nullptr;
+	IPhysicsObject* obj = nullptr;
 };
 
 ADD_FEATURE(CProjectileSimulation, ProjSim)

@@ -43,93 +43,95 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		pCmd->buttons &= ~IN_ATTACK2; // fix for retarded issue
 
 	// doesn't seem 100% consistent, unsure if it's fps related, user error, or what
-	if (bValidWeapon && iFrame == -1 && G::WeaponCanAttack && pWeapon->m_iClip1() > 0)
+	if (pLocal->IsAlive() && !pLocal->IsAGhost() && !I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible() && bValidWeapon)
 	{
-		const bool bJumpKey = F::KeyHandler.Down(Vars::Auto::Jump::JumpKey.Value);
-		const bool bCTapKey = F::KeyHandler.Down(Vars::Auto::Jump::CTapKey.Value);
-		bool bWillHit = false;
-		const bool bReloading = pWeapon->IsInReload();
-
-		Vec3 viewAngles = pCmd->viewangles;
-		if (bJumpKey)
-			ManageAngle(pWeapon, pCmd, viewAngles);
-		if (bJumpKey || bCTapKey)
+		if (iFrame == -1 && G::CanPrimaryAttack && pWeapon->m_iClip1() > 0)
 		{
-			ProjectileInfo projInfo = {};
-			if (F::ProjSim.GetInfo(pLocal, pWeapon, viewAngles, projInfo) && F::ProjSim.Initialize(projInfo))
+			const bool bJumpKey = F::KeyHandler.Down(Vars::Auto::Jump::JumpKey.Value);
+			const bool bCTapKey = F::KeyHandler.Down(Vars::Auto::Jump::CTapKey.Value);
+			bool bWillHit = false;
+			const bool bReloading = pWeapon->IsInReload();
+
+			Vec3 viewAngles = pCmd->viewangles;
+			if (bJumpKey)
+				ManageAngle(pWeapon, pCmd, viewAngles);
+			if (bJumpKey || bCTapKey)
 			{
-				for (int n = 0; n < 10; n++)
+				ProjectileInfo projInfo = {};
+				if (F::ProjSim.GetInfo(pLocal, pWeapon, viewAngles, projInfo) && F::ProjSim.Initialize(projInfo))
 				{
-					Vec3 Old = F::ProjSim.GetOrigin();
-					F::ProjSim.RunTick(projInfo);
-					Vec3 New = F::ProjSim.GetOrigin();
-
-					CGameTrace trace = {};
-					CTraceFilterProjectile filter = {};
-					filter.pSkip = pLocal;
-					Utils::Trace(Old, New, MASK_SOLID, &filter, &trace);
-					if (trace.DidHit())
+					for (int n = 0; n < 10; n++)
 					{
-						auto VisPos = [](CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to)
+						Vec3 Old = F::ProjSim.GetOrigin();
+						F::ProjSim.RunTick(projInfo);
+						Vec3 New = F::ProjSim.GetOrigin();
+
+						CGameTrace trace = {};
+						CTraceFilterProjectile filter = {};
+						filter.pSkip = pLocal;
+						Utils::Trace(Old, New, MASK_SOLID, &filter, &trace);
+						if (trace.DidHit())
 						{
-							CGameTrace trace = {};
-							CTraceFilterProjectile filter = {};
-							filter.pSkip = pSkip;
-							Utils::Trace(from, to, MASK_SOLID, &filter, &trace);
-							if (trace.DidHit())
-								return trace.entity && trace.entity == pEntity;
-							return true;
-						};
+							auto VisPos = [](CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to)
+								{
+									CGameTrace trace = {};
+									CTraceFilterProjectile filter = {};
+									filter.pSkip = pSkip;
+									Utils::Trace(from, to, MASK_SOLID, &filter, &trace);
+									if (trace.DidHit())
+										return trace.entity && trace.entity == pEntity;
+									return true;
+								};
 
-						// distance of 150 seems to be ideal if we predict player movement
-						if (trace.vEndPos.DistTo(pLocal->GetShootPos()) < 140.f && VisPos(pLocal, pLocal, trace.vEndPos, pLocal->GetShootPos()))
-						{	// this might be ever so slightly slow due to how jank rockets are, might cause occasional issues
-							iDelay = n + (n > Vars::Auto::Jump::ApplyAbove.Value ? Vars::Auto::Jump::TimingOffset.Value : 0);
-							bWillHit = true;
+							// distance of 150 seems to be ideal if we predict player movement
+							if (!n || trace.vEndPos.DistTo(pLocal->GetShootPos()) < 140.f && VisPos(pLocal, pLocal, trace.vEndPos, pLocal->GetShootPos()))
+							{	// this might be ever so slightly slow due to how jank rockets are, might cause occasional issues
+								iDelay = std::max(n + (n > Vars::Auto::Jump::ApplyAbove.Value ? Vars::Auto::Jump::TimingOffset.Value : 0), 0);
+								bWillHit = true;
 
-							Utils::ConLog("Auto jump", std::format("Ticks to hit: {}", iDelay).c_str(), { 255, 0, 0, 255 }, Vars::Debug::Logging.Value);
-							if (Vars::Debug::Info.Value && !bReloading)
-							{
-								G::LinesStorage.push_back({ {{ pLocal->GetShootPos(), {} }, { trace.vEndPos, {} }}, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value, true });
-								Vec3 angles; Math::VectorAngles(trace.Plane.normal, angles);
-								G::BoxesStorage.push_back({ trace.vEndPos, { -1.f, -1.f, -1.f }, { 1.f, 1.f, 1.f }, angles, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value, {}, true });
+								Utils::ConLog("Auto jump", std::format("Ticks to hit: {}", iDelay).c_str(), { 255, 0, 0, 255 }, Vars::Debug::Logging.Value);
+								if (Vars::Debug::Info.Value && !bReloading)
+								{
+									G::LinesStorage.push_back({ {{ pLocal->GetShootPos(), {} }, { trace.vEndPos, {} }}, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value, true });
+									Vec3 angles; Math::VectorAngles(trace.Plane.normal, angles);
+									G::BoxesStorage.push_back({ trace.vEndPos, { -1.f, -1.f, -1.f }, { 1.f, 1.f, 1.f }, angles, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value, {}, true });
+								}
 							}
-						}
 
-						break;
+							break;
+						}
 					}
 				}
 			}
-		}
 
-		if (bWillHit)
-		{
-			if (bCurrGrounded && bCurrGrounded == bLastGrounded && !pLocal->IsDucking() && !bReloading)
+			if (bWillHit)
 			{
-				if (bJumpKey)
+				if (bCurrGrounded && bCurrGrounded == bLastGrounded && !pLocal->IsDucking() && !bReloading)
 				{
-					iFrame = 0;
-					bFull = true;
+					if (bJumpKey)
+					{
+						iFrame = 0;
+						bFull = true;
+					}
+					else if (bCTapKey)
+						iFrame = 0;
 				}
-				else if (bCTapKey)
-					iFrame = 0;
-			}
-			else if (!bCurrGrounded && pCmd->buttons & IN_DUCK || bReloading)
-			{
-				pCmd->buttons |= IN_ATTACK;
-				if (bJumpKey)
+				else if (!bCurrGrounded && pCmd->buttons & IN_DUCK || bReloading)
 				{
-					G::SilentAngles = true; // would use G::PSilentAngles but that would mess with timing
-					pCmd->viewangles = viewAngles;
+					pCmd->buttons |= IN_ATTACK;
+					if (bJumpKey)
+					{
+						G::SilentAngles = true; // would use G::PSilentAngles but that would mess with timing
+						pCmd->viewangles = viewAngles;
+					}
 				}
 			}
-		}
 
-		if (iFrame == -1 && pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON && G::Buttons & IN_ATTACK2)
-			pCmd->buttons |= IN_ATTACK2;
+			if (iFrame == -1 && pWeapon->GetWeaponID() == TF_WEAPON_PARTICLE_CANNON && G::Buttons & IN_ATTACK2)
+				pCmd->buttons |= IN_ATTACK2;
+		}
 	}
-
-	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible())
+	else
 		iFrame = -1;
 
 	if (iFrame != -1)
@@ -163,7 +165,7 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		else // won't ctap in time
 			pCmd->buttons |= IN_DUCK | IN_JUMP;
 
-		if (iFrame - iDelay == 1)
+		if (iFrame == iDelay + (iDelay > 1 ? 1 : 3))
 		{
 			iFrame = -1;
 			bFull = false;

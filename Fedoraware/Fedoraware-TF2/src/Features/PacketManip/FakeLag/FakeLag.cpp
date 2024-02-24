@@ -1,17 +1,15 @@
 #include "FakeLag.h"
-#include "../../Visuals/FakeAngleManager/FakeAng.h"
 #include "../../Simulation/MovementSimulation/MovementSimulation.h"
 
 bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 {
-	const int iMaxSend = 22 - G::ShiftedTicks;
+	const int iMaxSend = std::min(24 - G::ShiftedTicks, 22);
 	const bool bVar = Vars::CL_Move::FakeLag::Enabled.Value || bPreservingBlast || bUnducking;
 	const bool bChargePrio = (iMaxSend > 0 && G::ChokeAmount < iMaxSend) || !G::ShiftedTicks;
-	const bool bNeedAirUpdate = iAirTicks >= 14 && !pLocal->OnSolid();
 	const bool bAttacking = G::IsAttacking && Vars::CL_Move::FakeLag::UnchokeOnAttack.Value;
 	const bool bNotAir = Vars::CL_Move::FakeLag::Options.Value & (1 << 2) && !pLocal->OnSolid();
 
-	if (!bVar || bNeedAirUpdate || !bChargePrio || bAttacking || bNotAir)
+	if (!bVar || !bChargePrio || bAttacking || bNotAir)
 		return false;
 
 	if (bPreservingBlast || bUnducking)
@@ -51,18 +49,7 @@ void CFakeLag::PreserveBlastJump()
 		return;
 
 	const bool bVar = Vars::CL_Move::FakeLag::RetainBlastJump.Value && Vars::Misc::AutoJump.Value; // don't bother if we aren't bhopping
-	//static bool bOldSolid = false;
-	//const bool bPlayerReady = pLocal->OnSolid() || bOldSolid;
-	//bOldSolid = pLocal->OnSolid();
-	bool bPlayerReady = pLocal->OnSolid();
-	if (!bPlayerReady)
-	{
-		PlayerStorage localStorage;
-		F::MoveSim.Initialize(pLocal, localStorage, false, true);
-		F::MoveSim.RunTick(localStorage);
-		bPlayerReady = pLocal->OnSolid();
-		F::MoveSim.Restore(localStorage);
-	}
+	static bool bOldSolid = false; const bool bPlayerReady = pLocal->OnSolid() || bOldSolid; bOldSolid = pLocal->OnSolid();
 	const bool bCanPreserve = pLocal->m_iClass() == ETFClass::CLASS_SOLDIER && pLocal->m_nPlayerCondEx2() & TFCondEx2_BlastJumping;
 	const bool bValid = G::Buttons & IN_JUMP && !pLocal->IsDucking();
 

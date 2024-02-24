@@ -20,10 +20,6 @@ class CKeyHandler
 public:
 	void StoreKey(int iKey)
 	{
-		// init if not found
-		if (StorageMap.find(iKey) == StorageMap.end())
-			StorageMap[iKey] = {};
-
 		// down
 		bool bDown = GetAsyncKeyState(iKey) & 0x8000;
 		if (bDown)

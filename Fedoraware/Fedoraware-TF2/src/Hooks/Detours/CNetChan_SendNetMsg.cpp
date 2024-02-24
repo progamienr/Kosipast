@@ -62,34 +62,14 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 
 		case clc_Move:
 		{
-			/*
-			// Charge
-			if (G::Recharge && G::ShiftedTicks < G::MaxShift)
+			const int iAllowedNewCommands = fmax(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, 0); // g_ConVars.sv_maxusrcmdprocessticks->GetInt();
+			const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
+			const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands - 3;
+			if (iCmdCount > iAllowedNewCommands)
 			{
-				auto moveMsg = (CLC_Move*)&msg;
-
-				moveMsg->m_nBackupCommands = 0;
-				moveMsg->m_nNewCommands = 0;
-				moveMsg->m_DataOut.Reset();
-				moveMsg->m_DataOut.m_nDataBits = 0;
-				moveMsg->m_DataOut.m_nDataBytes = 0;
-				moveMsg->m_DataOut.m_iCurBit = 0;
-
-				G::ShiftedTicks++;
-				G::WaitForShift = G::ShiftedTicks;
-			}
-			else
-			*/
-			{
-				const int iAllowedNewCommands = fmax(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, 0); // g_ConVars.sv_maxusrcmdprocessticks->GetInt();
-				const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
-				const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands - 3;
-				if (iCmdCount > iAllowedNewCommands)
-				{
-					Utils::ConLog("clc_Move", std::format("{:d} sent <{:d} | {:d}>, max was {:d}.", iCmdCount, moveMsg.m_nNewCommands, moveMsg.m_nBackupCommands, iAllowedNewCommands).c_str(), { 0, 222, 255, 255 }, Vars::Debug::Logging.Value);
-					G::ShiftedTicks = G::ShiftedGoal -= iCmdCount - iAllowedNewCommands;
-					F::Ticks.iDeficit = iCmdCount - iAllowedNewCommands;
-				}
+				Utils::ConLog("clc_Move", std::format("{:d} sent <{:d} | {:d}>, max was {:d}.", iCmdCount, moveMsg.m_nNewCommands, moveMsg.m_nBackupCommands, iAllowedNewCommands).c_str(), { 0, 222, 255, 255 }, Vars::Debug::Logging.Value);
+				G::ShiftedTicks = G::ShiftedGoal -= iCmdCount - iAllowedNewCommands;
+				F::Ticks.iDeficit = iCmdCount - iAllowedNewCommands;
 			}
 			break;
 		}

@@ -32,6 +32,7 @@ struct TickRecord
 	BoneMatrixes BoneMatrix{};
 	Vec3 vOrigin = {};
 	Vec3 vCenter = {}; // cham / glow optimization
+	bool bInvalid = false;
 };
 
 enum class BacktrackMode
@@ -44,8 +45,7 @@ enum class BacktrackMode
 class CBacktrack
 {
 	// logic
-	bool IsTracked(const TickRecord& record);
-	bool IsEarly(CBaseEntity* pEntity, const TickRecord& record);
+	bool WithinRewind(const TickRecord& record);
 
 	// utils
 	void SendLerp();
@@ -61,23 +61,17 @@ class CBacktrack
 
 	// data - fake latency
 	std::deque<CIncomingSequence> dSequences;
-	float flLatencyRampup = 0.f;
 	int iLastInSequence = 0;
 
-	size_t iMaxUnlag = 0;
 	bool bLastTickHeld = false;
 
 public:
 	float GetLerp();
 	float GetFake();
 	float GetReal();
-	int iTickCount = 0;
 
-	bool WithinRewind(const TickRecord& record);
 	std::deque<TickRecord>* GetRecords(CBaseEntity* pEntity);
-	std::optional<TickRecord> GetLastRecord(CBaseEntity* pEntity);
-	std::optional<TickRecord> GetFirstRecord(CBaseEntity* pEntity);
-	std::deque<TickRecord> GetValidRecords(CBaseEntity* pEntity, std::deque<TickRecord> pRecords, BacktrackMode iMode = BacktrackMode::ALL, CBaseEntity* pLocal = nullptr);
+	std::deque<TickRecord> GetValidRecords(std::deque<TickRecord>* pRecords, BacktrackMode iMode = BacktrackMode::ALL, CBaseEntity* pLocal = nullptr, bool bDistance = false);
 
 	void Restart();
 	void FrameStageNotify();
@@ -92,10 +86,14 @@ public:
 	float flWishInterp = G::LerpTime;
 	float flFakeInterp = G::LerpTime;
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> mRecords;
-	std::unordered_map<int, std::pair<int, matrix3x4[128]>> noInterpBones;
-	std::unordered_map<int, Vec3> noInterpEyeAngles;
+	std::unordered_map<CBaseEntity*, std::pair<int, matrix3x4[128]>> mBones;
+	std::unordered_map<CBaseEntity*, Vec3> mEyeAngles;
+	std::unordered_map<CBaseEntity*, bool> mLagCompensation;
 
 	bool bSettingUpBones = false;
+
+	int iTickCount = 0;
+	float flMaxUnlag = 1.f;
 };
 
 ADD_FEATURE(CBacktrack, Backtrack)

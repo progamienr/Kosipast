@@ -80,11 +80,11 @@ public: //Netvars
 	OFFSET(CritShot, bool, 0xB36)
 	OFFSET(RandomSeed, int, 0xB5C)
 
-	M_VIRTUALGET(Slot, int, this, int(__thiscall*)(void*), 330)
-	M_VIRTUALGET(WeaponID, int, this, int(__thiscall*)(void*), 381)
-	M_VIRTUALGET(DamageType, int, this, int(__thiscall*)(void*), 340)
-	M_VIRTUALGET(FinishReload, void, this, void(__thiscall*)(void*), 275)
-	M_VIRTUALGET(BulletSpread, Vec3&, this, Vec3& (__thiscall*)(void*), 286)
+	VIRTUAL(Slot, int, this, int(__thiscall*)(void*), 330)
+	VIRTUAL(WeaponID, int, this, int(__thiscall*)(void*), 381)
+	VIRTUAL(DamageType, int, this, int(__thiscall*)(void*), 340)
+	VIRTUAL(FinishReload, void, this, void(__thiscall*)(void*), 275)
+	VIRTUAL(BulletSpread, Vec3&, this, Vec3& (__thiscall*)(void*), 286)
 
 	int GetBulletAmount();
 	bool IsStreamingWeapon();
@@ -437,15 +437,6 @@ public: //Netvars
 	__inline const char* GetName()
 	{
 		return GetVFunc<const char* (__thiscall*)(void*)>(this, 333)(this);
-	}
-	__inline int LookupAttachment(const char* pAttachmentName)
-	{
-		const auto pRend = Renderable();
-		return GetVFunc<int(__thiscall*)(void*, const char*)>(pRend, 35)(pRend, pAttachmentName);
-	}
-	__inline bool GetAttachment(int number, Vec3& origin)
-	{
-		return GetVFunc<bool(__thiscall*)(void*, int, Vec3&)>(this, 71)(this, number, origin);
 	}
 };
 

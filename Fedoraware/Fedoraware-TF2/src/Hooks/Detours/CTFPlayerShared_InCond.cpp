@@ -17,7 +17,7 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 
 	//static std::map<void*, bool> retaddrs;
 
-	//if (retaddrs.find(retad) == retaddrs.end())
+	//if (!retaddrs.contains(retad))
 	//{
 	//	retaddrs[retad] = true;
 	//	I::CVars->ConsolePrintf("%p\n", retad);

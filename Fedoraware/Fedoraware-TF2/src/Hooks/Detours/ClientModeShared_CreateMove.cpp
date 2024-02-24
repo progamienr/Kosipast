@@ -9,7 +9,7 @@
 #include "../../Features/AntiHack/CheaterDetection.h"
 #include "../../Features/TickHandler/TickHandler.h"
 #include "../../Features/PacketManip/PacketManip.h"
-#include "../../Features/Visuals/FakeAngleManager/FakeAng.h"
+#include "../../Features/Visuals/FakeAngle/FakeAngle.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/CritHack/CritHack.h"
 #include "../../Features/NoSpread/NoSpread.h"
@@ -37,27 +37,20 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	G::SilentAngles = false;
 	G::IsAttacking = false;
 
-	const auto& pLocal = g_EntityCache.GetLocal();
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-
 	if (!pCmd || !pCmd->command_number)
 		return Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 
-	if (Vars::Misc::NetworkFix.Value && pLocal)
-	{
-		const auto vVelocity = pLocal->m_vecVelocity(); // fucks with antiwarp if we don't restore velocity
-		I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
-		pLocal->m_vecVelocity() = vVelocity;
-	}
-
-	G::Buttons = pCmd->buttons;
-	if (Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd))
-		I::Prediction->SetLocalViewAngles(pCmd->viewangles);
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto& pWeapon = g_EntityCache.GetWeapon();
 
 	// Get the pointer to pSendPacket
 	uintptr_t _bp; __asm mov _bp, ebp;
 	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(_bp) - 0x1);
 
+	if (Vars::Misc::NetworkFix.Value || Vars::Misc::PredictionFix.Value) // fixes various issues mainly with low fps, however may cause a couple other issues (?)
+		I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
+
+	G::Buttons = pCmd->buttons;
 	G::CurrentUserCmd = pCmd;
 	if (!G::LastUserCmd)
 		G::LastUserCmd = pCmd;
@@ -66,7 +59,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Visuals::RemoveInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
-	//if (!G::DoubleTap)
 	if (pLocal && pWeapon)
 	{
 		if (const int MaxSpeed = pLocal->m_flMaxspeed())
@@ -79,39 +71,29 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			G::WaitForShift = 1; //Vars::CL_Move::DoubleTap::WaitReady.Value;
 
 		G::CurItemDefIndex = nItemDefIndex;
-		G::WeaponCanHeadShot = pWeapon->CanWeaponHeadShot();
-		G::WeaponCanAttack = pWeapon->CanPrimary(pLocal);
-		G::WeaponCanSecondaryAttack = pWeapon->CanSecondaryAttack(pLocal);
+		G::CanPrimaryAttack = pWeapon->CanPrimary(pLocal);
+		G::CanSecondaryAttack = pWeapon->CanSecondary(pLocal);
 		if (pWeapon->GetSlot() != SLOT_MELEE)
 		{
 			if (pWeapon->IsInReload())
-				G::WeaponCanAttack = pWeapon->HasPrimaryAmmoForShot();
+				G::CanPrimaryAttack = pWeapon->HasPrimaryAmmoForShot();
 
 			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN &&
 				pWeapon->GetMinigunState() != AC_STATE_FIRING && pWeapon->GetMinigunState() != AC_STATE_SPINNING)
 			{
-				G::WeaponCanAttack = false;
+				G::CanPrimaryAttack = false;
 			}
 
 			if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->m_iClip1() == 0)
-				G::WeaponCanAttack = false;
+				G::CanPrimaryAttack = false;
 
 			if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
-				G::WeaponCanAttack = false;
+				G::CanPrimaryAttack = false;
 		}
+		G::CanHeadShot = pWeapon->CanWeaponHeadShot();
 		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
 		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
 	}
-	/*
-	else
-	{
-		//const int nOldTickBase = pLocal->GetTickBase();
-		//pLocal->GetTickBase() -= G::ShiftedTicks + 1; // silly
-		G::WeaponCanAttack = pWeapon->CanShoot(pLocal);
-		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
-		//pLocal->GetTickBase() = nOldTickBase;
-	}
-	*/
 
 	const bool bSkip = F::AimbotProjectile.bLastTickCancel;
 	if (bSkip)
@@ -129,7 +111,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		const bool bAimRan = bSkip ? false : F::Aimbot.Run(pCmd);
 		F::Auto.Run(pCmd);
 		F::PacketManip.CreateMove(pCmd, pSendPacket);
-		if (!bAimRan && G::WeaponCanAttack && G::IsAttacking)
+		if (!bAimRan && G::CanPrimaryAttack && G::IsAttacking && !F::AimbotProjectile.bLastTickCancel)
 			F::Visuals.ProjectileTrace(false);
 	}
 	F::EnginePrediction.End(pCmd);
@@ -138,12 +120,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	F::NoSpread.Run(pCmd);
 	F::Misc.RunPost(pCmd, pSendPacket);
 	F::Resolver.CreateMove();
+	F::FakeAngle.ShouldRun = *pSendPacket;
 
-	if (*pSendPacket)
-	{
-		F::FakeAng.Run(pCmd);
-		F::FakeAng.DrawChams = Vars::AntiHack::AntiAim::Active.Value || Vars::CL_Move::FakeLag::Enabled.Value;
-	}
 	if (!G::DoubleTap)
 	{
 		if (G::PSilentAngles && G::ShiftedTicks == G::MaxShift)
@@ -151,10 +129,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 		static bool bWasSet = false;
 
-		INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-		if (G::PSilentAngles && iNetChan && iNetChan->m_nChokedPackets < 2) // failsafe
+		if (G::PSilentAngles && I::ClientState->chokedcommands < 21/*2*/) // failsafe
 			*pSendPacket = false, bWasSet = true;
-		else if (bWasSet || !iNetChan)
+		else if (bWasSet)
 			*pSendPacket = true, bWasSet = false;
 	}
 	else

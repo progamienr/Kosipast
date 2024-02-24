@@ -561,7 +561,7 @@ namespace Utils
 		if (pWeapon->GetSlot() == SLOT_MELEE)
 		{
 			if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
-				return ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack);
+				return ((pCmd->buttons & IN_ATTACK) && G::CanPrimaryAttack);
 
 			auto pLocal = g_EntityCache.GetLocal();
 			float flTime = pLocal ? TICKS_TO_TIME(pLocal->m_nTickBase() + 1) : I::GlobalVars->curtime;
@@ -579,7 +579,7 @@ namespace Utils
 			else if (!bFiring)
 				bLoading = true;
 
-			if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::WeaponCanAttack)
+			if ((bFiring || bLoading && !(pCmd->buttons & IN_ATTACK)) && G::CanPrimaryAttack)
 			{
 				bFiring = true;
 				bLoading = false;
@@ -610,7 +610,7 @@ namespace Utils
 			{
 				static float flThrowTime = 0.0f;
 
-				if (pCmd->buttons & IN_ATTACK && G::WeaponCanAttack && !flThrowTime)
+				if (pCmd->buttons & IN_ATTACK && G::CanPrimaryAttack && !flThrowTime)
 					flThrowTime = I::GlobalVars->curtime + I::GlobalVars->interval_per_tick;
 
 				if (flThrowTime && I::GlobalVars->curtime >= flThrowTime)
@@ -623,11 +623,11 @@ namespace Utils
 			case TF_WEAPON_MINIGUN:
 			{
 				return (pWeapon->GetMinigunState() == AC_STATE_FIRING || pWeapon->GetMinigunState() == AC_STATE_SPINNING) &&
-					pCmd->buttons & IN_ATTACK && G::WeaponCanAttack;
+					pCmd->buttons & IN_ATTACK && G::CanPrimaryAttack;
 			}
 			default:
 			{
-				return pCmd->buttons & IN_ATTACK && G::WeaponCanAttack;
+				return pCmd->buttons & IN_ATTACK && G::CanPrimaryAttack;
 			}
 			}
 		}
@@ -757,25 +757,20 @@ namespace Utils
 	// A function to find a weapon by WeaponID
 	__inline int GetWeaponByID(CBaseEntity* pPlayer, int pWeaponID)
 	{
-		// Invalid player
-		if (!pPlayer) { return -1; }
+		if (!pPlayer)
+			return -1;
 
-		const size_t* hWeapons = pPlayer->GetMyWeapons();
-		// Go through the handle array and search for the item
-		for (int i = 0; hWeapons[i]; i++)
+		const auto hWeapons = pPlayer->GetMyWeapons();
+		for (int i = 0; hWeapons[i]; i++) // Go through the handle array and search for the item
 		{
-			if (!(HandleToIDX(hWeapons[i]) >= 0 && HandleToIDX(hWeapons[i]) <= 2049 && HandleToIDX(hWeapons[i]) < 2048))
+			if (HandleToIDX(hWeapons[i]) < 0 || HandleToIDX(hWeapons[i]) >= 2048)
 				continue;
 			
-			// Get the weapon
-			auto* weapon = reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(HandleToIDX(hWeapons[i])));
-			// if weapon is what we are looking for, return true
-			if (weapon && weapon->GetWeaponID() == pWeaponID)
-			{
-				return weapon->GetIndex();
-			}
+			auto* pWeapon = reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(HandleToIDX(hWeapons[i])));
+			if (pWeapon && pWeapon->GetWeaponID() == pWeaponID)
+				return pWeapon->GetIndex();
 		}
-		// Nothing found
+
 		return -1;
 	}
 

@@ -5,6 +5,7 @@
 #include "../../TickHandler/TickHandler.h"
 #include "../../Backtrack/Backtrack.h"
 #include "../../Visuals/Visuals.h"
+#include "../../EnginePrediction/EnginePrediction.h"
 
 std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
@@ -70,9 +71,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			if (!pBuilding->IsAlive())
 				continue;
 
-			bool isSentry = pBuilding->GetClassID() == ETFClassID::CObjectSentrygun;
-			bool isDispenser = pBuilding->GetClassID() == ETFClassID::CObjectDispenser;
-			bool isTeleporter = pBuilding->GetClassID() == ETFClassID::CObjectTeleporter;
+			bool isSentry = pBuilding->IsSentrygun(), isDispenser = pBuilding->IsDispenser(), isTeleporter = pBuilding->IsTeleporter();
 
 			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::SENTRY) && isSentry)
 				continue;
@@ -131,7 +130,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 
 bool CAimbotMelee::AimFriendlyBuilding(CBaseEntity* pBuilding)
 {
-	if (pBuilding->m_iUpgradeLevel() != 3 || pBuilding->m_bHasSapper() || pBuilding->m_iBOHealth() < pBuilding->m_iMaxHealth())
+	if (!pBuilding->m_bMiniBuilding() && pBuilding->m_iUpgradeLevel() != 3 || pBuilding->m_bHasSapper() || pBuilding->m_iBOHealth() < pBuilding->m_iMaxHealth())
 		return true;
 
 	if (pBuilding->IsSentrygun())
@@ -165,7 +164,7 @@ std::vector<Target_t> CAimbotMelee::SortTargets(CBaseEntity* pLocal, CBaseCombat
 		sortedTargets.push_back(target);
 	}
 
-	F::AimbotGlobal.SortPriority(&sortedTargets, sortMethod);
+	F::AimbotGlobal.SortPriority(&sortedTargets);
 
 	return sortedTargets;
 }
@@ -183,11 +182,14 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 								   Vec3& vEyePos, std::unordered_map<CBaseEntity*, std::deque<TickRecord>>& pRecordMap,
 								   std::unordered_map<CBaseEntity*, std::deque<std::pair<Vec3, Vec3>>>& simLines)
 {
-	for (auto& target : targets)
-		pRecordMap[target.m_pEntity] = {};
-
 	if (lockedTarget.m_pEntity)
 		return;
+
+	if (iDoubletapTicks && Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid())
+	{
+		pLocal->GetAbsOrigin() = F::EnginePrediction.m_vOldOrigin;
+		vEyePos = pLocal->GetEyePosition();
+	}
 
 	// swing prediction / auto warp
 	const int iSwingTicks = GetSwingTime(pWeapon);
@@ -201,6 +203,14 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 		std::unordered_map<CBaseEntity*, PlayerStorage> targetStorage;
 
 		F::MoveSim.Initialize(pLocal, localStorage, false, iDoubletapTicks);
+		if (pLocal->OnSolid()) // lol
+		{
+			localStorage.m_MoveData.m_flForwardMove = G::CurrentUserCmd->forwardmove;
+			localStorage.m_MoveData.m_flSideMove = G::CurrentUserCmd->sidemove;
+			localStorage.m_MoveData.m_flUpMove = G::CurrentUserCmd->upmove;
+
+			localStorage.m_MoveData.m_vecAngles.y = localStorage.m_MoveData.m_vecOldAngles.y = localStorage.m_MoveData.m_vecViewAngles.y = G::CurrentUserCmd->viewangles.y;
+		}
 		for (auto& target : targets)
 		{
 			targetStorage[target.m_pEntity] = {};
@@ -209,7 +219,7 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 
 		for (int i = 0; i < iMax; i++) // intended for plocal to collide with targets
 		{
-			if (i < iMax/* - 1*/)
+			if (i < iMax)
 			{
 				if (pLocal->IsCharging() && iMax - i <= GetSwingTime(pWeapon)) // demo charge fix for swing pred
 				{
@@ -266,9 +276,22 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	if (!pLocal || !pTarget)
 		return false;
 
+	if (Vars::Aimbot::Melee::IgnoreRazorback.Value)
+	{
+		CUtlVector<CBaseEntity*> itemList;
+		int iBackstabShield = Utils::ATTRIB_HOOK_FLOAT(0, "set_blockbackstab_once", pTarget, &itemList);
+		if (iBackstabShield && itemList.Count())
+		{
+			CBaseEntity* pEntity = itemList.Element(0);
+			if (pEntity && pEntity->ShouldDraw())
+				return false;
+		}
+	}
+
 	Vector vToTarget;
 	vToTarget = pTarget->GetAbsOrigin() - pLocal->m_vecOrigin();
 	vToTarget.z = 0.f;
+	const float flDist = vToTarget.Length();
 	vToTarget.Normalize();
 
 	Vector vOwnerForward;
@@ -277,22 +300,15 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	vOwnerForward.Normalize();
 
 	Vector vTargetForward;
-	Math::AngleVectors(F::Backtrack.noInterpEyeAngles[pTarget->GetIndex()], &vTargetForward);
+	Math::AngleVectors(F::Backtrack.mEyeAngles[pTarget], &vTargetForward);
 	vTargetForward.z = 0.f;
 	vTargetForward.Normalize();
 
-	float flPosVsTargetViewDot = vToTarget.Dot(vTargetForward); // Behind?
-	float flPosVsOwnerViewDot = vToTarget.Dot(vOwnerForward); // Facing?
-	float flViewAnglesDot = vTargetForward.Dot(vOwnerForward); // Facestab?
+	const float flPosVsTargetViewDot = vToTarget.Dot(vTargetForward); // Behind?
+	const float flPosVsOwnerViewDot = vToTarget.Dot(vOwnerForward); // Facing?
+	const float flViewAnglesDot = vTargetForward.Dot(vOwnerForward); // Facestab?
 
-	if (Vars::Aimbot::Melee::IgnoreRazorback.Value && pTarget->m_iClass() == CLASS_SNIPER)
-	{
-		auto pWeapon = pTarget->GetWeaponFromSlot(SLOT_SECONDARY);
-		if (pWeapon && pWeapon->m_iItemDefinitionIndex() == Sniper_s_TheRazorback)
-			return false;
-	}
-
-	return flPosVsTargetViewDot > (0.f + 0.03125f) && flPosVsOwnerViewDot > (0.5f + 0.03125f) && flViewAnglesDot > (-0.3f + 0.03125f);
+	return flDist > 0.1f && flPosVsTargetViewDot > (0.f + 0.0031f) && flPosVsOwnerViewDot > 0.5f && flViewAnglesDot > (-0.3f + 0.0031f); // 0.00306795676297 ?
 }
 
 int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)
@@ -312,12 +328,18 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 	matrix3x4 bones[128];
 	target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime());
 
-	std::deque<TickRecord> pRecords;
+	std::deque<TickRecord> vRecords;
 	{
-		const auto& records = F::Backtrack.GetRecords(target.m_pEntity);
-		if (!records || !Vars::Backtrack::Enabled.Value || target.m_TargetType != ETargetType::PLAYER)
+		const auto& pRecords = F::Backtrack.GetRecords(target.m_pEntity);
+		if (pRecords && target.m_TargetType == ETargetType::PLAYER)
+			vRecords = *pRecords;
+		else
 		{
-			pRecords.push_front({
+			matrix3x4 bones[128];
+			if (!target.m_pEntity->SetupBones(bones, 128, BONE_USED_BY_ANYTHING, target.m_pEntity->m_flSimulationTime()))
+				return false;
+
+			vRecords.push_front({
 				target.m_pEntity->m_flSimulationTime(),
 				I::GlobalVars->curtime,
 				I::GlobalVars->tickcount,
@@ -326,32 +348,29 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 				target.m_pEntity->m_vecOrigin()
 			});
 		}
-		else
-			pRecords = *records;
 	}
-
 	if (!newRecords.empty())
 	{
 		for (TickRecord& pTick : newRecords)
 		{
-			pRecords.pop_back(); pRecords.push_front({ pTick.flSimTime, pTick.flCreateTime, pTick.iTickCount, false, *reinterpret_cast<BoneMatrixes*>(&bones), pTick.vOrigin });
+			vRecords.pop_back(); vRecords.push_front({ pTick.flSimTime, pTick.flCreateTime, pTick.iTickCount, false, *reinterpret_cast<BoneMatrixes*>(&bones), pTick.vOrigin });
 		}
-		for (TickRecord& pTick : pRecords)
+		for (TickRecord& pTick : vRecords)
 		{
 			pTick.flSimTime -= TICKS_TO_TIME(newRecords.size());
 			pTick.flCreateTime -= TICKS_TO_TIME(newRecords.size());
 			pTick.iTickCount -= newRecords.size();
 		}
 	}
+	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER ? F::Backtrack.GetValidRecords(&vRecords, (BacktrackMode)Vars::Backtrack::Method.Value, pLocal, true) : vRecords;
+	if (!Vars::Backtrack::Enabled.Value && !validRecords.empty())
+		validRecords = { validRecords.front() };
 
 	// this might be retarded
 	const float flTargetPos = (target.m_pEntity->m_vecMaxs().z - target.m_pEntity->m_vecMins().z) * 65.f / 82.f;
 	const float flLocalPos = (pLocal->m_vecMaxs().z - pLocal->m_vecMins().z) * 65.f / 82.f;
 	const Vec3 vecDiff = { 0, 0, std::min(flTargetPos, flLocalPos) };
 
-	std::deque<TickRecord> validRecords = target.m_TargetType == ETargetType::PLAYER
-		? F::Backtrack.GetValidRecords(target.m_pEntity, pRecords, (BacktrackMode)Vars::Backtrack::Method.Value, pLocal)
-		: pRecords;
 	for (auto& pTick : validRecords)
 	{
 		const Vec3 vRestore = target.m_pEntity->GetAbsOrigin();
@@ -402,12 +421,9 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 
 		if (bReturn)
 		{
-			if (target.m_TargetType == ETargetType::PLAYER)
-			{
-				target.pTick = &pTick;
-				if (Vars::Backtrack::Enabled.Value)
-					target.ShouldBacktrack = true;
-			}
+			target.pTick = &pTick;
+			if (target.m_TargetType == ETargetType::PLAYER) // && Vars::Backtrack::Enabled.Value
+				target.ShouldBacktrack = true;
 
 			return true;
 		}
@@ -489,11 +505,14 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 {
 	if (lockedTarget.m_pEntity && pWeapon->m_flSmackTime() < 0.f)
 		lockedTarget.m_pEntity = nullptr;
-	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::WeaponCanAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->m_flSmackTime() < 0.f)
+	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::CanPrimaryAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->m_flSmackTime() < 0.f)
 		return;
 
 	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
 	if (!bShouldAim && !lockedTarget.m_pEntity)
+		return;
+
+	if (RunSapper(pLocal, pWeapon, pCmd))
 		return;
 
 	auto targets = SortTargets(pLocal, pWeapon);
@@ -532,17 +551,15 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			if (iDoubletapTicks)
 				G::DoubleTap = true;
 		}
-		// game will not manage this while shifting, do it manually
-		static float flSmackTime = -1.f;
-		if (G::DoubleTap && pCmd->buttons & IN_ATTACK && pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
+
+		// game will not manage this while shifting w/o prediction, force its hand
+		if (!Vars::Misc::NetworkFix.Value && !Vars::Misc::PredictionFix.Value
+			&& G::DoubleTap && pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
 		{
-			flSmackTime = TICKS_TO_TIME(I::GlobalVars->tickcount + 13 - (Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid() ? 1 : 0));
-			pWeapon->m_flSmackTime() = flSmackTime;
+			if (pCmd->buttons & IN_ATTACK && pWeapon->m_flSmackTime() < 0.f)
+				pWeapon->m_flSmackTime() = TICKS_TO_TIME(I::GlobalVars->tickcount + 13);
+			I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
 		}
-		else if (pWeapon->m_flSmackTime() > 0.f && flSmackTime > 0.f)
-			pWeapon->m_flSmackTime() = flSmackTime;
-		else if (pWeapon->m_flSmackTime() < 0.f)
-			flSmackTime = -1.f;
 
 		const bool bAttacking = IsAttacking(pCmd, pWeapon);
 		G::IsAttacking = bAttacking || bShouldSwing && G::DoubleTap; // dumb but works
@@ -550,9 +567,8 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (G::IsAttacking && target.pTick)
 		{
 			if (target.ShouldBacktrack)
-				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp) + Vars::Backtrack::TicksetOffset.Value + G::AnticipatedChoke * Vars::Backtrack::ChokeSetMod.Value;
-			// bug: older (maybe only fast) records seem to be progressively more unreliable ?
-			// ^ this might be something wonky with the tr_walkway ramp because rijin misses on this too lmao
+				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
+			// bug: fast old records seem to be progressively more unreliable ?
 
 			if (Vars::Visuals::BulletTracer.Value)
 			{
@@ -569,7 +585,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 			{
 				G::LinesStorage.clear();
 				G::LinesStorage.push_back({ G::ProjLines, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value });
-				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Colors::PredictionColor.Value }); // not working for whatever reason
+				G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Colors::PredictionColor.Value });
 			}
 		}
 
@@ -577,4 +593,94 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		G::IsAttacking = bAttacking;
 		break;
 	}
+}
+
+int GetAttachment(CBaseEntity* pBuilding, int i)
+{
+	int iAttachment = pBuilding->GetBuildPointAttachmentIndex(i);
+	if (pBuilding->IsSentrygun() && pBuilding->m_iUpgradeLevel() > 1) // idk why i need this
+		iAttachment = 3;
+	return iAttachment;
+}
+bool CAimbotMelee::FindNearestBuildPoint(CBaseEntity* pBuilding, CBaseEntity* pLocal, Vec3& vPoint)
+{
+	bool bFoundPoint = false;
+
+	static auto tf_obj_max_attach_dist = I::Cvar->FindVar("tf_obj_max_attach_dist");
+	float flNearestPoint = tf_obj_max_attach_dist ? tf_obj_max_attach_dist->GetFloat() : 160.f;
+	for (int i = 0; i < pBuilding->GetNumBuildPoints(); i++)
+	{
+		int v = GetAttachment(pBuilding, i);
+
+		Vec3 vOrigin;
+		if (pBuilding->GetAttachment(v, vOrigin)) // issues using pBuilding->GetBuildPoint i on sentries above level 1 for some reason
+		{
+			if (!Utils::VisPos(pLocal, pBuilding, pLocal->GetShootPos(), vOrigin))
+				continue;
+
+			float flDist = (vOrigin - pLocal->GetAbsOrigin()).Length();
+			if (flDist < flNearestPoint)
+			{
+				flNearestPoint = flDist;
+				vPoint = vOrigin;
+				bFoundPoint = true;
+			}
+		}
+	}
+
+	return bFoundPoint;
+}
+
+bool CAimbotMelee::RunSapper(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
+{
+	if (pWeapon->GetWeaponID() != TF_WEAPON_BUILDER)
+		return false;
+
+	std::vector<Target_t> validTargets;
+
+	const Vec3 vLocalPos = pLocal->GetShootPos();
+	const Vec3 vLocalAngles = I::EngineClient->GetViewAngles();
+	for (const auto& pBuilding : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ENEMIES))
+	{
+		if (!pBuilding->IsAlive() || pBuilding->m_bHasSapper() || pBuilding->m_iTeamNum() != 2 && pBuilding->m_iTeamNum() != 3)
+			continue;
+
+		Vec3 vPoint;
+		if (!FindNearestBuildPoint(pBuilding, pLocal, vPoint))
+			continue;
+
+		Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPoint);
+		const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
+		const float flDistTo = vLocalPos.DistTo(vPoint);
+
+		if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
+			continue;
+
+		validTargets.push_back({ pBuilding, ETargetType::UNKNOWN, vPoint, vAngleTo, flFOVTo, flDistTo });
+	}
+
+	F::AimbotGlobal.SortTargets(&validTargets, ESortMethod::DISTANCE);
+	for (auto& target : validTargets)
+	{
+		static int iLastRun = 0;
+
+		if (iLastRun != I::GlobalVars->tickcount - 1 || G::PSilentAngles && G::ShiftedTicks == G::MaxShift)
+		{
+			if (Vars::Aimbot::Global::AutoShoot.Value)
+				pCmd->buttons |= IN_ATTACK;
+
+			if (pCmd->buttons & IN_ATTACK)
+			{
+				Utils::FixMovement(pCmd, target.m_vAngleTo);
+				pCmd->viewangles.y = target.m_vAngleTo.y;
+				G::PSilentAngles = true;
+
+				iLastRun = I::GlobalVars->tickcount;
+			}
+		}
+
+		break;
+	}
+
+	return true;
 }

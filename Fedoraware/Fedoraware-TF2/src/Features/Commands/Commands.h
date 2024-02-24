@@ -33,7 +33,7 @@ public:
     }\
 \
     auto retaddr = _ReturnAddress();\
-    if (returnAddresses.find(retaddr) == returnAddresses.end())\
+    if (!returnAddresses.contains(retaddr))\
     {\
         returnAddresses[retaddr] = true;\
     }\

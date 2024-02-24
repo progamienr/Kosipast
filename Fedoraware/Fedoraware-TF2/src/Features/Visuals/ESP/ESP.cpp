@@ -187,7 +187,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					}
 
 					if (Vars::ESP::Player.Value & 1 << 4)
-						g_Draw.String(fFontEsp, x + w + 4, y + h, Vars::Menu::Theme::Active.Value, ALIGN_TOPLEFT, L"%.f%%", pMedGun->m_flChargeLevel() * 100.f);
+						g_Draw.String(fFontEsp, x + w + 4, y + h, Vars::Menu::Theme::Active.Value, ALIGN_TOPLEFT, L"%.f%%", std::clamp(pMedGun->m_flChargeLevel() * 100.f, 0.f, 100.f));
 				}
 			}
 
@@ -343,7 +343,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				// Lagcomp cond, idea from nitro
 				if (Vars::ESP::Player.Value & 1 << 17 && !pPlayer->GetDormant() && pPlayer != pLocal)
 				{
-					if (F::Backtrack.mRecords[pPlayer].size() < 3)
+					if (F::Backtrack.mLagCompensation[pPlayer])
 					{
 						g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "LAGCOMP");
 						rOffset += fFontEsp.nTall;

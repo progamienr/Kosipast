@@ -13,11 +13,28 @@ void MenuHook::Unload()
 MAKE_HOOK(Direct3DDevice9_EndScene, Utils::GetVFuncPtr(I::DirectXDevice, 42), HRESULT, __stdcall,
 	LPDIRECT3DDEVICE9 pDevice)
 {
-	static void* fAddr = _ReturnAddress();
-	if (fAddr != _ReturnAddress())
+	static void* fRegularAddr = 0, *fOverlayAddr = 0;
+	if (!fRegularAddr || !fOverlayAddr)
+	{
+		MEMORY_BASIC_INFORMATION info;
+		VirtualQuery(_ReturnAddress(), &info, sizeof(MEMORY_BASIC_INFORMATION));
+
+		char mod[MAX_PATH];
+		GetModuleFileNameA((HMODULE)info.AllocationBase, mod, MAX_PATH);
+
+		if (strstr(mod, "bin\\shaderapidx9.dll"))
+			fRegularAddr = _ReturnAddress();
+		else
+			fOverlayAddr = _ReturnAddress();
+	}
+
+	// proof of concept, frankly would like to keep surface in use
+	//if (!Vars::Visuals::AntiOBS.Value ? (fRegularAddr && fRegularAddr != _ReturnAddress()) : (fOverlayAddr && fOverlayAddr != _ReturnAddress()))
+	if (fRegularAddr && fRegularAddr != _ReturnAddress())
 		return Hook.Original<FN>()(pDevice);
 
 	F::Menu.Render(pDevice);
+
 	return Hook.Original<FN>()(pDevice);
 }
 
@@ -35,7 +52,7 @@ LONG __stdcall WndProc::Func(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if (F::Menu.IsOpen)
 	{
 		ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam); // CRASH: seemingly random assert with imgui, if anyone is able to consistently replicate this lmk
-		if (!Utils::IsGameWindowInFocus() || ImGui::GetIO().WantTextInput || G::InKeybind)
+		if (ImGui::GetIO().WantTextInput || G::InKeybind)
 		{
 			I::InputSystem->ResetInputStateVFunc();
 			return 1;

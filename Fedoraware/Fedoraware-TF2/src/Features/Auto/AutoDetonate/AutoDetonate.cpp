@@ -31,9 +31,9 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 				continue;
 
 			const bool isPlayer = Vars::Auto::Detonate::DetonateTargets.Value & PLAYER && pTarget->IsPlayer();
-			const bool isSentry = Vars::Auto::Detonate::DetonateTargets.Value & SENTRY && pTarget->GetClassID() == ETFClassID::CObjectSentrygun;
-			const bool isDispenser = Vars::Auto::Detonate::DetonateTargets.Value & DISPENSER && pTarget->GetClassID() == ETFClassID::CObjectDispenser;
-			const bool isTeleporter = Vars::Auto::Detonate::DetonateTargets.Value & TELEPORTER && pTarget->GetClassID() == ETFClassID::CObjectTeleporter;
+			const bool isSentry = Vars::Auto::Detonate::DetonateTargets.Value & SENTRY && pTarget->IsSentrygun();
+			const bool isDispenser = Vars::Auto::Detonate::DetonateTargets.Value & DISPENSER && pTarget->IsDispenser();
+			const bool isTeleporter = Vars::Auto::Detonate::DetonateTargets.Value & TELEPORTER && pTarget->IsTeleporter();
 			const bool isNPC = Vars::Auto::Detonate::DetonateTargets.Value & NPC && pTarget->IsNPC();
 			const bool isBomb = Vars::Auto::Detonate::DetonateTargets.Value & BOMB && pTarget->IsBomb();
 			const bool isSticky = Vars::Auto::Detonate::DetonateTargets.Value & STICKY && pTarget->GetClassID() == ETFClassID::CTFGrenadePipebombProjectile && pTarget->m_iType() == TF_GL_MODE_REMOTE_DETONATE && (G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher || G::CurItemDefIndex == Demoman_s_TheScottishResistance);

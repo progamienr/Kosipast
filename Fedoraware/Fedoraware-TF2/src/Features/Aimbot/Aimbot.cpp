@@ -42,7 +42,6 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 		case TF_WEAPON_PDA_ENGINEER_DESTROY:
 		case TF_WEAPON_PDA_SPY:
 		case TF_WEAPON_PDA_SPY_BUILD:
-		case TF_WEAPON_BUILDER:
 		case TF_WEAPON_INVIS:
 		case TF_WEAPON_BUFF_ITEM:
 		case TF_WEAPON_GRAPPLINGHOOK:
@@ -88,7 +87,10 @@ bool CAimbot::Run(CUserCmd* pCmd)
 		case EWeaponType::MELEE:
 			F::AimbotMelee.Run(pLocal, pWeapon, pCmd); break;
 	}
-	if (!bAttacking && G::IsAttacking)
-		return true;
-	return false;
+	if (pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER || pWeapon->GetWeaponID() == TF_WEAPON_STICKY_BALL_LAUNCHER || pWeapon->GetWeaponID() == TF_WEAPON_GRENADE_STICKY_BALL || pWeapon->GetWeaponID() == TF_WEAPON_CANNON)
+	{
+		if (!(G::Buttons & IN_ATTACK) && pCmd->buttons & IN_ATTACK)
+			return true;
+	}
+	return bAttacking != G::IsAttacking;
 }

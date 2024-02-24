@@ -28,7 +28,7 @@ public:
 
 	void DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool bClear = true);
 	void DrawBulletLines();
-	void DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators = false, bool bZBuffer = false);
+	void DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators = false, bool bZBuffer = false, float flTime = 0.f);
 	void DrawSimLines();
 	void DrawBoxes();
 	void RevealSimLines();
@@ -36,7 +36,7 @@ public:
 	void RevealBoxes();
 	void ClearBulletLines();
 	void DrawServerHitboxes();
-	void RenderLine(const Vec3& v1, const Vec3& v2, Color_t c, bool bZBuffer = false);
+	void RenderLine(const Vec3& vStart, const Vec3& vEnd, Color_t cLine, bool bZBuffer = false);
 	void RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace, bool bZBuffer = false);
 
 	void FOV(CViewSetup* pView);

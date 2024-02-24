@@ -28,8 +28,8 @@ void CCritHack::Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const boo
 	static int previousCrit = 0;
 	static int starting_num = pCmd->command_number;
 
-	if (bAttacking && G::WeaponCanAttack/* || pCmd->buttons & IN_ATTACK*/)
-		return;
+	//if (bAttacking && G::CanPrimaryAttack/* || pCmd->buttons & IN_ATTACK*/)
+	//	return;
 
 	if (prev_weapon != pWeapon->GetIndex())
 	{
@@ -159,7 +159,7 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 			flDamage = BucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
 	}
 
-	float flMult = slot == SLOT_MELEE ? 0.5f : Math::RemapValClamped((float)(pWeapon->GetCritSeedRequests() + 1) / (float)(pWeapon->GetCritChecks() + 1), 0.1f, 1.f, 1.f, 3.f);
+	float flMult = slot == SLOT_MELEE ? 0.5f : Math::RemapValClamped((float)(pWeapon->CritSeedRequests() + 1) / (float)(pWeapon->CritChecks() + 1), 0.1f, 1.f, 1.f, 3.f);
 	Storage[slot].Cost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER * flMult;
 
 	if (BucketCap)
@@ -167,8 +167,8 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 
 	int iCrits = 0;
 	{
-		int shots = pWeapon->GetCritChecks(), crits = pWeapon->GetCritSeedRequests();
-		float bucket = pWeapon->GetCritTokenBucket(), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
+		int shots = pWeapon->CritChecks(), crits = pWeapon->CritSeedRequests();
+		float bucket = pWeapon->CritTokenBucket(), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
 		const int iAttempts = std::min(Storage[slot].PotentialCrits + 1, 100);
 		for (int i = 0; i < iAttempts; i++)
 		{
@@ -187,8 +187,8 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	{
 		iCrits = 0;
 
-		int shots = pWeapon->GetCritChecks() + 1, crits = pWeapon->GetCritSeedRequests() + 1;
-		float bucket = std::min(pWeapon->GetCritTokenBucket() + Storage[slot].Damage, BucketCap), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
+		int shots = pWeapon->CritChecks() + 1, crits = pWeapon->CritSeedRequests() + 1;
+		float bucket = std::min(pWeapon->CritTokenBucket() + Storage[slot].Damage, BucketCap), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
 		for (int i = 0; i < 100; i++)
 		{
 			iCrits--;
@@ -319,7 +319,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 
 	const auto& pLocal = g_EntityCache.GetLocal();
 	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon || !pLocal->IsAlive() || pLocal->InCond(TF_COND_CRITBOOSTED) || !WeaponCanCrit(pWeapon))
+	if (!pLocal || !pWeapon || !pLocal->IsAlive() || pLocal->IsCritBoosted() || !WeaponCanCrit(pWeapon))
 		return;
 
 	ResetWeapon(pWeapon);
@@ -329,9 +329,9 @@ void CCritHack::Run(CUserCmd* pCmd)
 	bool bAttacking = G::IsAttacking;
 	if (G::CurWeaponType == EWeaponType::MELEE)
 	{
-		bAttacking = G::WeaponCanAttack && pCmd->buttons & IN_ATTACK;
+		bAttacking = G::CanPrimaryAttack && pCmd->buttons & IN_ATTACK;
 		if (!bAttacking && pWeapon->GetWeaponID() == TF_WEAPON_FISTS)
-			bAttacking = G::WeaponCanAttack && pCmd->buttons & IN_ATTACK2;
+			bAttacking = G::CanPrimaryAttack && pCmd->buttons & IN_ATTACK2;
 	}
 	if (pWeapon->GetWeaponID() == TF_WEAPON_PIPEBOMBLAUNCHER || pWeapon->GetWeaponID() == TF_WEAPON_STICKY_BALL_LAUNCHER || pWeapon->GetWeaponID() == TF_WEAPON_GRENADE_STICKY_BALL
 		|| pWeapon->GetWeaponID() == TF_WEAPON_CANNON)
@@ -360,7 +360,7 @@ void CCritHack::Run(CUserCmd* pCmd)
 	const bool bPressed = F::KeyHandler.Down(Vars::CritHack::CritKey.Value) || Vars::CritHack::AlwaysMelee.Value && pWeapon->GetSlot() == SLOT_MELEE;
 	if (bAttacking && !pWeapon->IsInReload())
 	{
-		const bool bWait = pWeapon->IsRapidFire() && pWeapon->GetLastRapidfireCritCheckTime() + 1.f > I::GlobalVars->interval_per_tick * pLocal->m_nTickBase();
+		const bool bWait = pWeapon->IsRapidFire() && pWeapon->LastRapidfireCritCheckTime() + 1.f > I::GlobalVars->interval_per_tick * pLocal->m_nTickBase();
 
 		if (bPressed && Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && closestCrit >= 0 && !bWait)
 			pCmd->command_number = closestCrit;
@@ -423,7 +423,7 @@ void CCritHack::Event(CGameEvent* pEvent, FNV1A_t uNameHash)
 		if (attacker == pLocal->GetIndex() && attacked != attacker)
 		{
 			const auto& pWeapon = g_EntityCache.GetWeapon();
-			if (!pWeapon || pWeapon->GetWeaponID() == weaponid && pWeapon->GetSlot() == SLOT_MELEE || pLocal->InCond(TF_COND_CRITBOOSTED))
+			if (!pWeapon || pWeapon->GetWeaponID() == weapon_id && pWeapon->GetSlot() == SLOT_MELEE || pLocal->InCond(TF_COND_CRITBOOSTED))
 				return;
 
 			AllDamage += damage;
@@ -490,19 +490,19 @@ void CCritHack::Draw()
 		{
 			if (pLocal->IsCritBoosted())
 				g_Draw.String(fFont, x, y, { 100, 255, 255, 255 }, align, "Crit Boosted");
-			else if (pWeapon->GetCritTime() > I::GlobalVars->interval_per_tick * pLocal->m_nTickBase())
+			else if (pWeapon->CritTime() > I::GlobalVars->interval_per_tick * pLocal->m_nTickBase())
 			{
-				const float time = pWeapon->GetCritTime() - I::GlobalVars->interval_per_tick * pLocal->m_nTickBase();
+				const float time = pWeapon->CritTime() - I::GlobalVars->interval_per_tick * pLocal->m_nTickBase();
 				g_Draw.String(fFont, x, y, { 100, 255, 255, 255 }, align, std::format("Streaming crits {:.1f}s", time).c_str());
 			}
 			else if (!CritBanned)
 			{
 				if (Storage[slot].AvailableCrits > 0)
 				{
-					if (bRapidFire && pWeapon->GetLastRapidfireCritCheckTime() + 1.f > I::GlobalVars->interval_per_tick * pLocal->m_nTickBase())
+					if (bRapidFire && pWeapon->LastRapidfireCritCheckTime() + 1.f > I::GlobalVars->interval_per_tick * pLocal->m_nTickBase())
 					{
 						//const float time = std::max((TICKS_TO_TIME(Storage[slot].StreamWait - pLocal->m_nTickBase())), 0.f);
-						const float time = pWeapon->GetLastRapidfireCritCheckTime() + 1.f - I::GlobalVars->interval_per_tick * pLocal->m_nTickBase();
+						const float time = pWeapon->LastRapidfireCritCheckTime() + 1.f - I::GlobalVars->interval_per_tick * pLocal->m_nTickBase();
 						g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, std::format("Wait {:.1f}s", time).c_str());
 					}
 					else
@@ -525,14 +525,14 @@ void CCritHack::Draw()
 		if (Vars::Debug::Info.Value)
 		{
 			g_Draw.String(fFont, x, y + fFont.nTall * 3, { 255, 255, 255, 255 }, align, std::format("AllDamage: {}, CritDamage: {}", AllDamage, CritDamage).c_str());
-			g_Draw.String(fFont, x, y + fFont.nTall * 4, { 255, 255, 255, 255 }, align, std::format("Bucket: {}", pWeapon->GetCritTokenBucket()).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 4, { 255, 255, 255, 255 }, align, std::format("Bucket: {}", pWeapon->CritTokenBucket()).c_str());
 			g_Draw.String(fFont, x, y + fFont.nTall * 5, { 255, 255, 255, 255 }, align, std::format("Damage: {}, Cost: {}", Storage[slot].Damage, Storage[slot].Cost).c_str());
-			g_Draw.String(fFont, x, y + fFont.nTall * 6, { 255, 255, 255, 255 }, align, std::format("CritChecks: {}, CritSeedRequests: {}", pWeapon->GetCritChecks(), pWeapon->GetCritSeedRequests()).c_str());
+			g_Draw.String(fFont, x, y + fFont.nTall * 6, { 255, 255, 255, 255 }, align, std::format("CritChecks: {}, CritSeedRequests: {}", pWeapon->CritChecks(), pWeapon->CritSeedRequests()).c_str());
 			g_Draw.String(fFont, x, y + fFont.nTall * 7, { 255, 255, 255, 255 }, align, std::format("CritBanned: {}, DamageTilUnban: {}", CritBanned, DamageTilUnban).c_str());
 			g_Draw.String(fFont, x, y + fFont.nTall * 8, { 255, 255, 255, 255 }, align, std::format("CritChance: {:.2f}", CritChance).c_str());
 			g_Draw.String(fFont, x, y + fFont.nTall * 9, { 255, 255, 255, 255 }, align, std::format("Force: {}, Skip: {}", ForceCmds.size(), SkipCmds.size()).c_str());
 
-			g_Draw.String(fFont, x, y + fFont.nTall * 11, { 255, 255, 255, 255 }, align, L"G::WeaponCanAttack %d (%d)", G::WeaponCanAttack, I::GlobalVars->tickcount % 66);
+			g_Draw.String(fFont, x, y + fFont.nTall * 11, { 255, 255, 255, 255 }, align, L"G::WeaponCanAttack %d (%d)", G::CanPrimaryAttack, I::GlobalVars->tickcount % 66);
 			g_Draw.String(fFont, x, y + fFont.nTall * 12, { 255, 255, 255, 255 }, align, L"G::IsAttacking %d", G::IsAttacking);
 		}
 	}

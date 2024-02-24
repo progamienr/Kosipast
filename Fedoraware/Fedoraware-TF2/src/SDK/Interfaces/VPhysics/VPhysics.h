@@ -1,10 +1,10 @@
 #pragma once
 #include "../../Includes/Includes.h"
 #include "../IAppSystem/IAppSystem.h"
-#define k_flMaxVelocity 2000.0f;
-#define k_flMaxAngularVelocity 360.0f * 10.0f;
-#define DEFAULT_MIN_FRICTION_MASS 10.0f;
-#define DEFAULT_MAX_FRICTION_MASS 2500.0f;
+#define k_flMaxVelocity 2000.0f
+#define k_flMaxAngularVelocity 360.0f * 10.0f
+#define DEFAULT_MIN_FRICTION_MASS 10.0f
+#define DEFAULT_MAX_FRICTION_MASS 2500.0f
 
 struct vcollide_t;
 

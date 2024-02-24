@@ -30,13 +30,6 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 
 					if (!(nCurFlags & FL_ONGROUND) && !(nOldFlags & FL_ONGROUND))
 					{
-						if ((nCurFlags & FL_DUCKING) && !(nOldFlags & FL_DUCKING))
-							vOldOrigin.z += 20.f;
-
-						if (!(nCurFlags & FL_DUCKING) && (nOldFlags & FL_DUCKING))
-							vOldOrigin.z -= 20.f;
-
-						/*
 						bool bCorrected = false;
 
 						if ((nCurFlags & FL_DUCKING) && !(nOldFlags & FL_DUCKING))
@@ -57,10 +50,7 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 							vNewVelocity.z = (pBasePlayer->m_vecOrigin().z - vOldOrigin.z) / flSimTimeDelta;
 							Hook.Original<FN>()(ecx, edx, vNewVelocity);
 						}
-						*/
 					}
-
-					return Hook.Original<FN>()(ecx, edx, (pBasePlayer->m_vecOrigin() - vOldOrigin) / flSimTimeDelta);
 				}
 			}
 		}

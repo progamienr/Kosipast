@@ -38,7 +38,7 @@ private:
 	void GetDamageTilUnban(CBaseEntity* pLocal);
 	bool WeaponCanCrit(CBaseCombatWeapon* weapon);
 
-	void ResetWeapon(CBaseCombatWeapon* pWeapon);
+	void ResetWeapons(CBaseEntity* pLocal);
 	void Reset();
 
 	std::deque<int> ForceCmds{};

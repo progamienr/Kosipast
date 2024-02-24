@@ -4,10 +4,10 @@
 #include "../../../Hooks/Hooks.h"
 #include "../../../Hooks/HookManager.h"
 #include "../Materials/Materials.h"
-#include "../FakeAngleManager/FakeAng.h"
+#include "../FakeAngle/FakeAngle.h"
 #include "../../Backtrack/Backtrack.h"
 
-bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams, bool* bViewmodel)
+bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || pEntity->GetDormant() || !pEntity->ShouldDraw())
@@ -126,7 +126,7 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams, bool* bViewmodel)
 	if (const auto& pWeapon = reinterpret_cast<CBaseCombatWeapon*>(pEntity))
 	{
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pWeapon->m_hOwnerEntity());
-		if (!pOwner)
+		if (!pOwner || !pOwner->IsPlayer())
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
@@ -179,7 +179,7 @@ void CChams::StencilEnd(IMatRenderContext* pRenderContext, bool bTwoModels)
 	pRenderContext->DepthRange(0.f, 1.f);
 }
 
-void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* pRenderContext, bool bTwoModels, bool bViewmodel)
+void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* pRenderContext, bool bTwoModels)
 {
 	mEntities[pEntity->GetIndex()] = true;
 	bRendering = true;
@@ -236,8 +236,8 @@ void CChams::RenderMain()
 		if (!pEntity)
 			continue;
 
-		Chams_t chams = {}; bool bViewmodel = false;
-		const bool bShouldDraw = GetChams(pEntity, &chams, &bViewmodel);
+		Chams_t chams = {};
+		const bool bShouldDraw = GetChams(pEntity, &chams);
 
 		if (bShouldDraw)
 			DrawModel(pEntity, chams, pRenderContext);
@@ -315,46 +315,45 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 	auto& vMaterials = Vars::Chams::Backtrack::Chams.Value.VisibleMaterial;
 	auto& sColor = Vars::Chams::Backtrack::Chams.Value.VisibleColor;
 
+	const auto& pRecords = F::Backtrack.GetRecords(pEntity);
+	auto vRecords = F::Backtrack.GetValidRecords(pRecords, BacktrackMode::ALL);
+	if (!vRecords.size())
+		return;
+
 	switch (Vars::Chams::Backtrack::Draw.Value)
 	{
 	case 0: // last
 	{
-		std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
-		if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
+		auto vLastRec = vRecords.end() - 1;
+		if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
 			drawModel(vLastRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 		break;
 	}
 	case 1: // last + first
 	{
-		std::optional<TickRecord> vFirstRec = F::Backtrack.GetFirstRecord(pEntity);
-		if (vFirstRec && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) >= 0.1f)
+		auto vFirstRec = vRecords.begin();
+		if (vFirstRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) > 0.1f)
 			drawModel(vFirstRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
-		std::optional<TickRecord> vLastRec = F::Backtrack.GetLastRecord(pEntity);
-		if (vLastRec && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) >= 0.1f)
+		auto vLastRec = vRecords.end() - 1;
+		if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
 			drawModel(vLastRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 		break;
 	}
 	case 2: // all
 	{
-		const auto& vRecords = F::Backtrack.GetRecords(pEntity);
-		if (vRecords && !vRecords->empty())
+		for (auto& record : vRecords)
 		{
-			for (auto& record : *vRecords)
-			{
-				if (!F::Backtrack.WithinRewind(record))
-					continue;
-				if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) <= 0.1f)
-					continue;
+			if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) < 0.1f)
+				continue;
 
-				drawModel(record.vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
-			}
+			drawModel(record.vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
 		}
 	}
 	}
 }
 void CChams::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 {
-	if (!Vars::Chams::FakeAngle::Active.Value || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAng.DrawChams)
+	if (!Vars::Chams::FakeAngle::Active.Value || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAngle.DrawChams || !F::FakeAngle.BonesSetup)
 		return;
 
 	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
@@ -372,7 +371,7 @@ void CChams::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderIn
 
 		F::Materials.SetColor(material, sColor, it + 1 == vMaterials.end());
 		I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
-		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, reinterpret_cast<matrix3x4*>(&F::FakeAng.BoneMatrix));
+		ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, F::FakeAngle.BoneMatrix);
 	}
 
 	I::RenderView->SetColorModulation(1.f, 1.f, 1.f);

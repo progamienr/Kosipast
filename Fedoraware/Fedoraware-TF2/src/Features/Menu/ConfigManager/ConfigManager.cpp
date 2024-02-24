@@ -238,7 +238,7 @@ void CConfigManager::LoadJson(const char* name, Chams_t& val)
 				// remove invalid materials
 				for (auto it = val.begin(); it != val.end();)
 				{
-					if (*it == "None" || *it != "Original" && F::Materials.mChamMaterials.find(*it) == F::Materials.mChamMaterials.end())
+					if (*it == "None" || *it != "Original" && !F::Materials.mChamMaterials.contains(*it))
 						it = val.erase(it);
 					else
 						++it;

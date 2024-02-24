@@ -123,9 +123,9 @@ public:
 	{
 		return GetVFunc<void(__thiscall*)(PVOID, int&, int&)>(this, 20)(this, x, y);
 	}
-	void DrawPrintText(const wchar_t* text, int text_len, FontDrawType_t drawType = FONT_DRAW_DEFAULT)
+	void DrawPrintText(const std::wstring_view text, FontDrawType_t drawType = FONT_DRAW_DEFAULT)
 	{
-		return GetVFunc<void(__thiscall*)(PVOID, const wchar_t*, int, int)>(this, 22)(this, text, text_len, 0);
+		return GetVFunc<void(__thiscall*)(PVOID, const wchar_t*, int, int)>(this, 22)(this, text.data(), text.length(), 0);
 	}
 	void DrawUnicodeChar(wchar_t wch, FontDrawType_t drawType = FONT_DRAW_DEFAULT)
 	{

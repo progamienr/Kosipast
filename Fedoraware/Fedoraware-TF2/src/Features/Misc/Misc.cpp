@@ -39,8 +39,8 @@ void CMisc::RunPost(CUserCmd* pCmd, bool* pSendPacket)
 	{
 		TauntKartControl(pCmd, pSendPacket);
 		FastStop(pCmd, pLocal);
-		FastAccel(pCmd, pLocal, pSendPacket);
-		FastStrafe(pCmd, pSendPacket);
+		FastAccel(pCmd, pLocal);
+		FastStrafe(pCmd);
 		InstaStop(pCmd, pSendPacket);
 		StopMovement(pCmd, pLocal);
 		LegJitter(pCmd, pLocal);
@@ -313,17 +313,10 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 void CMisc::AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	G::AvoidingBackstab = false;
-	Vec3 vTargetPos;
-
-	if (!pLocal->IsAlive() || pLocal->IsStunned() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !Vars::Misc::AntiBackstab.Value)
+	if (!Vars::Misc::AntiBackstab.Value || G::IsAttacking || !pLocal->IsAlive() || pLocal->IsStunned() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !Vars::Misc::AntiBackstab.Value)
 		return;
 
-	if (G::IsAttacking)
-		return;
-
-	const Vec3 vLocalPos = pLocal->GetWorldSpaceCenter();
-	CBaseEntity* target = nullptr;
-
+	std::vector<Vec3> vTargets = {};
 	for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
 		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->m_iClass() != CLASS_SPY || pEnemy->IsCloaked() || pEnemy->IsAGhost() || pEnemy->m_bFeignDeathReady())
@@ -339,28 +332,25 @@ void CMisc::AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal)
 		if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pi) && F::PlayerUtils.IsIgnored(pi.friendsID))
 			continue;
 
-		Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
-		if (!Utils::VisPos(pLocal, pEnemy, vLocalPos, vEnemyPos))
+		Vec3 vTargetPos = pEnemy->m_vecOrigin() + pEnemy->m_vecVelocity() * F::Backtrack.GetReal();
+		if (pLocal->m_vecOrigin().DistTo(vTargetPos) > 200.f || !Utils::VisPos(pLocal, pEnemy, pLocal->m_vecOrigin(), vTargetPos))
 			continue;
-		if (!target && vLocalPos.DistTo(vEnemyPos) < 150.f)
-		{
-			target = pEnemy;
-			vTargetPos = target->GetWorldSpaceCenter();
-		}
-		else if (vLocalPos.DistTo(vEnemyPos) < vLocalPos.DistTo(vTargetPos) && vLocalPos.DistTo(vEnemyPos) < 150.f)
-		{
-			target = pEnemy;
-			vTargetPos = target->GetWorldSpaceCenter();
-		}
+
+		vTargets.push_back(vTargetPos);
 	}
 
-	if (target)
+	std::sort(vTargets.begin(), vTargets.end(), [&](const auto& a, const auto& b) -> bool
+		{
+			return pLocal->m_vecOrigin().DistTo(a) < pLocal->m_vecOrigin().DistTo(b);
+		});
+
+	auto vTargetPos = vTargets.begin();
+	if (vTargetPos != vTargets.end())
 	{
-		vTargetPos = target->GetWorldSpaceCenter();
-		const Vec3 vAngleToSpy = Math::CalcAngle(vLocalPos, vTargetPos);
+		const Vec3 vAngleTo = Math::CalcAngle(pLocal->m_vecOrigin(), *vTargetPos);
 		G::AvoidingBackstab = true;
-		Utils::FixMovement(pCmd, vAngleToSpy);
-		pCmd->viewangles = vAngleToSpy;
+		Utils::FixMovement(pCmd, vAngleTo);
+		pCmd->viewangles.y = vAngleTo.y;
 	}
 }
 
@@ -420,13 +410,9 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 void CMisc::AntiAFK(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	static Timer afkTimer{};
-	static int lastButtons = 0;
 
-	if (pCmd->buttons != lastButtons || !pLocal->IsAlive())
-	{
+	if (pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK) || !pLocal->IsAlive())
 		afkTimer.Update();
-		lastButtons = pCmd->buttons;
-	}
 	// Trigger 10 seconds before kick
 	else if (Vars::Misc::AntiAFK.Value && g_ConVars.mp_idledealmethod->GetInt() && afkTimer.Check(g_ConVars.mp_idlemaxtime->GetFloat() * 60 * 1000 - 10000))
 		pCmd->buttons |= pCmd->command_number % 2 ? IN_FORWARD : IN_BACK;
@@ -580,7 +566,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
+void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	bFastAccel = false;
 
@@ -615,12 +601,11 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal, bool* pSendPacket)
 		pCmd->viewangles.y = fmodf(pCmd->viewangles.y - angMoveReverse.y, 360.0f);
 		pCmd->viewangles.z = 270.f;
 		bFastAccel = true;
-		G::SilentAngles = true;
-		*pSendPacket = false;
+		G::PSilentAngles = true;
 	}
 }
 
-void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket)
+void CMisc::FastStrafe(CUserCmd* pCmd)
 {
 	if (!Vars::Misc::FastStrafe.Value || bFastAccel)
 		return;
@@ -642,8 +627,7 @@ void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket)
 			bChanged = true;
 
 			bMovementScuffed = true;
-			G::SilentAngles = true;
-			*pSendPacket = false;
+			G::PSilentAngles = true;
 		}
 
 		// "why is dis one in anoda place doe" because if you're moving forward and you stop pressing the button foe 1 tick it no work :D
@@ -662,8 +646,7 @@ void CMisc::FastStrafe(CUserCmd* pCmd, bool* pSendPacket)
 			bChanged = true;
 
 			bMovementScuffed = true;
-			G::SilentAngles = true;
-			*pSendPacket = false;
+			G::PSilentAngles = true;
 		}
 
 		// "why dont u weset it outside of dis doe" because if the user stop press buton foe 1 tick it no work :D
@@ -678,6 +661,7 @@ void CMisc::InstaStop(CUserCmd* pCmd, bool* pSendPacket)
 {
 	if (!G::ShouldStop)
 		return;
+
 	Utils::StopMovement(pCmd);
 	if (G::ShouldStop)
 		return;
@@ -690,26 +674,36 @@ void CMisc::InstaStop(CUserCmd* pCmd, bool* pSendPacket)
 
 void CMisc::StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
-	if (pLocal && G::AntiWarp && pLocal->IsAlive() && !pLocal->IsAGhost() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned())
+	if (pLocal && pLocal->IsAlive() && !pLocal->IsAGhost() && !pLocal->IsCharging() && !pLocal->IsTaunting() && !pLocal->IsStunned())
 	{
-		const int iDoubletapTicks = F::Ticks.GetTicks(pLocal);
-		if (iDoubletapTicks > std::max(Vars::CL_Move::DoubleTap::TickLimit.Value - 7, 3))
+		static Vec3 vVelocity = {};
+		if (G::AntiWarp)
 		{
-			Vec3 angles = {}, forward = {};
+			const int iDoubletapTicks = F::Ticks.GetTicks(pLocal);
 
-			Math::VectorAngles(pLocal->m_vecVelocity(), angles);
+			Vec3 angles = {}; Math::VectorAngles(vVelocity, angles);
 			angles.y = pCmd->viewangles.y - angles.y;
-			Math::AngleVectors(angles, &forward);
-			forward *= pLocal->m_vecVelocity().Length();
+			Vec3 forward = {}; Math::AngleVectors(angles, &forward);
+			forward *= vVelocity.Length();
 
-			pCmd->forwardmove = -forward.x;
-			pCmd->sidemove = -forward.y;
+			if (iDoubletapTicks > std::max(Vars::CL_Move::DoubleTap::TickLimit.Value - 7, 3))
+			{
+				pCmd->forwardmove = -forward.x;
+				pCmd->sidemove = -forward.y;
+			}
+			else if (iDoubletapTicks > 3)
+			{
+				pCmd->forwardmove = pCmd->sidemove = 0.f;
+				pCmd->buttons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
+			}
+			else
+			{
+				pCmd->forwardmove = forward.x;
+				pCmd->sidemove = forward.y;
+			}
 		}
-		else if (iDoubletapTicks > 3)
-		{
-			pCmd->forwardmove = pCmd->sidemove = 0.0f;
-			pCmd->buttons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
-		}
+		else
+			vVelocity = pLocal->m_vecVelocity();
 	}
 }
 
@@ -723,7 +717,7 @@ void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	static bool pos = true;
 	const float scale = pLocal->IsDucking() ? 14.f : 1.0f;
-	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->m_vecVelocity().Length2D() < 10.f && (F::AntiAim.bSendingReal)) // force leg jitter if we are sending our real.
+	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->m_vecVelocity().Length2D() < 10.f && F::AntiAim.bSendingReal) // force leg jitter if we are sending our real.
 	{
 		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;
 		pos ? pCmd->sidemove = scale : pCmd->sidemove = -scale;
@@ -733,14 +727,10 @@ void CMisc::LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
 {
-	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!iNetChan)
-		return;
-
 	if (G::DoubleTap || G::Teleport)
 	{
 		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
-		if ((G::DoubleTap || pCmd->buttons & IN_ATTACK) && iNetChan->m_nChokedPackets >= 21)
+		if ((G::DoubleTap || pCmd->buttons & IN_ATTACK) && I::ClientState->chokedcommands >= 21)
 			*pSendPacket = true;
 	}
 }
@@ -771,9 +761,6 @@ void CMisc::TauntKartControl(CUserCmd* pCmd, bool* pSendPacket)
 
 			if (!(pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK)))
 				pCmd->viewangles.x = 90.0f;
-				
-			if (G::Buttons & IN_DUCK)
-				pCmd->buttons |= IN_DUCK;
 
 			Vec3 vAngle = I::EngineClient->GetViewAngles();
 			pCmd->viewangles.y = vAngle.y;
@@ -810,14 +797,13 @@ void CMisc::TauntKartControl(CUserCmd* pCmd, bool* pSendPacket)
 					pCmd->sidemove = 0.0f;
 					pCmd->viewangles.y = fmodf(pCmd->viewangles.y - angMoveReverse.y, 360.0f);
 					pCmd->viewangles.z = 270.f;
-					*pSendPacket = false;
+
+					if (G::ShiftedTicks != G::MaxShift)
+						*pSendPacket = false;
 				}
 			}
 			else
 				pCmd->viewangles.x = 90.0f;
-				
-			if (G::Buttons & IN_DUCK)
-				pCmd->buttons |= IN_DUCK;
 
 			G::SilentAngles = true;
 		}

@@ -49,7 +49,7 @@
     <ClCompile Include="src\Features\TickHandler\TickHandler.cpp" />
     <ClCompile Include="src\Features\Visuals\Chams\Chams.cpp" />
     <ClCompile Include="src\Features\Visuals\ESP\ESP.cpp" />
-    <ClCompile Include="src\Features\Visuals\FakeAngleManager\FakeAng.cpp" />
+    <ClCompile Include="src\Features\Visuals\FakeAngle\FakeAngle.cpp" />
     <ClCompile Include="src\Features\Visuals\Glow\Glow.cpp" />
     <ClCompile Include="src\Features\Visuals\LocalConditions\LocalConditions.cpp" />
     <ClCompile Include="src\Features\Visuals\PlayerArrows\PlayerArrows.cpp" />
@@ -275,7 +275,7 @@
     <ClInclude Include="src\Features\Vars.h" />
     <ClInclude Include="src\Features\Visuals\Chams\Chams.h" />
     <ClInclude Include="src\Features\Visuals\ESP\ESP.h" />
-    <ClInclude Include="src\Features\Visuals\FakeAngleManager\FakeAng.h" />
+    <ClInclude Include="src\Features\Visuals\FakeAngle\FakeAngle.h" />
     <ClInclude Include="src\Features\Visuals\Glow\Glow.h" />
     <ClInclude Include="src\Features\Visuals\LocalConditions\LocalConditions.h" />
     <ClInclude Include="src\Features\Visuals\PlayerArrows\PlayerArrows.h" />

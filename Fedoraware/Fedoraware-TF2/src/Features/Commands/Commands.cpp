@@ -8,9 +8,10 @@
 
 bool CCommands::Run(const std::string& cmd, const std::deque<std::string>& args)
 {
-	if (CommandMap.find(cmd) == CommandMap.end()) { return false; }
-	CommandMap[cmd](args);
+	if (!CommandMap.contains(cmd))
+		return false;
 
+	CommandMap[cmd](args);
 	return true;
 }
 

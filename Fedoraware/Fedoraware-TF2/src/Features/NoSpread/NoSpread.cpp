@@ -27,7 +27,7 @@ bool CNoSpread::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUser
 		return false;
 	}
 
-	return G::IsAttacking;//Utils::IsAttacking(pCmd, pWeapon);
+	return G::IsAttacking;
 }
 
 void CNoSpread::Run(CUserCmd* pCmd)
@@ -48,11 +48,13 @@ void CNoSpread::Run(CUserCmd* pCmd)
 		// don't let the _local_ syringes fool you (is there a way to fix or sync them?)
 		pCmd->viewangles.x -= Utils::RandomFloat(-1.5f, 1.5f);
 		pCmd->viewangles.y -= Utils::RandomFloat(-1.5f, 1.5f);
+
+		G::PSilentAngles = true;
 		break;
 	}
 	case TF_WEAPON_COMPOUND_BOW:
 	{
-		//ShouldRun huntsman
+		// ShouldRun huntsman
 		if (pWeapon->m_flChargeBeginTime() > 0.f && I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() <= 5.0f)
 			return;
 
@@ -60,12 +62,16 @@ void CNoSpread::Run(CUserCmd* pCmd)
 		pCmd->viewangles.x -= -6 + flRand * 12.f;
 		flRand = (float)Utils::RandomInt(0, 0x7fff) / 0x7fff;
 		pCmd->viewangles.y -= -6 + flRand * 12.f;
+
+		G::PSilentAngles = true;
 		break;
 	}
-	default:
-		pCmd->viewangles -= pWeapon->GetSpreadAngles() - I::EngineClient->GetViewAngles();
-		break;
 	}
 
-	G::PSilentAngles = true;
+	if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
+	{
+		pCmd->viewangles -= pWeapon->GetSpreadAngles() - I::EngineClient->GetViewAngles();
+
+		G::PSilentAngles = true;
+	}
 }

@@ -147,7 +147,7 @@ MAKE_HOOK(C_BaseEntity_FireBullets, S::CBaseEntity_FireBullets(), void, __fastca
 		const int iAttachment = pWeapon->LookupAttachment("muzzle");
 		pWeapon->GetAttachment(iAttachment, trace.vStartPos);
 
-		const bool bCrit = nDamageType & DMG_CRITICAL || pLocal->IsCritBoosted(); // crithack mayb does something to nDamageType
+		const bool bCrit = nDamageType & DMG_CRITICAL || pLocal->IsCritBoosted();
 		const int iTeam = pLocal->m_iTeamNum();
 
 		auto& string = bCrit ? Vars::Visuals::Tracers::ParticleTracerCrits.Value : Vars::Visuals::Tracers::ParticleTracer.Value;

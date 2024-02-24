@@ -39,9 +39,8 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 				respawnTime = pResource->GetNextRespawnTime(pTeammate->GetIndex());
 				respawnIn = std::max(int(respawnTime - I::GlobalVars->curtime), 0);
 			}
-			bool respawnTimeIncreased = false;
-			// theoretically the respawn times could change without extendfreeze but oh well
-			if (RespawnCache.find(pTeammate->GetIndex()) == RespawnCache.end())
+			bool respawnTimeIncreased = false; // theoretically the respawn times could change without extendfreeze but oh well
+			if (!RespawnCache.contains(pTeammate->GetIndex()))
 				RespawnCache[pTeammate->GetIndex()] = respawnTime;
 			if (RespawnCache[pTeammate->GetIndex()] + 4.9f < respawnTime)
 			{
@@ -109,7 +108,7 @@ void CSpectatorList::Run()
 		g_Draw.String(fFont, x, y, Vars::Menu::Theme::Accent.Value, align, L"Spectating You:");
 		for (const auto& Spectator : Spectators)
 		{
-			y += fFont.nTall;
+			y += fFont.nTall + 3;
 
 			/*
 			if (Vars::Visuals::SpectatorAvatars.Value)

@@ -11,9 +11,7 @@
 MAKE_HOOK(ViewRender_LevelInit, Utils::GetVFuncPtr(I::ViewRender, 1), void, __fastcall,
 	void* ecx, void* edx)
 {
-	F::Visuals.StoreMaterialHandles();
-	F::Visuals.OverrideWorldTextures();
-	
+	G::ShouldUpdateMaterialCache = true;
 	F::Materials.ReloadMaterials();
 
 	F::Backtrack.Restart();
@@ -21,6 +19,4 @@ MAKE_HOOK(ViewRender_LevelInit, Utils::GetVFuncPtr(I::ViewRender, 1), void, __fa
 	F::BadActors.OnLoad();
 
 	Hook.Original<FN>()(ecx, edx);
-
-	F::Visuals.ModulateWorld();
 }

@@ -2,27 +2,23 @@
 #pragma warning (disable : 4018)
 #pragma warning (disable : 4552)
 
-IPhysicsEnvironment* env = nullptr;
-IPhysicsObject* obj = nullptr;
-
 bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick, float flCharge) // possibly refine values and magic numbers
 {
 	if (!pPlayer || !pPlayer->IsAlive() || pPlayer->IsAGhost() || pPlayer->IsTaunting() || !pWeapon)
 		return false;
 
-	ConVar* cl_flipviewmodels = g_ConVars.cl_flipviewmodels;
-	if (!cl_flipviewmodels)
-		return false;
+	auto* cl_flipviewmodels = g_ConVars.cl_flipviewmodels, *sv_gravity = g_ConVars.sv_gravity;
 
 	const bool bDucking = pPlayer->m_fFlags() & FL_DUCKING;
-	const bool bFlipped = cl_flipviewmodels->GetBool();
+	const bool bFlipped = cl_flipviewmodels ? cl_flipviewmodels->GetBool() : false;
+	const float flGravity = sv_gravity ? sv_gravity->GetFloat() : 800.f;
 
 	Vec3 pos, ang;
 
 	if (Vars::Visuals::PTOverwrite.Value)
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { Vars::Visuals::PTOffX.Value, Vars::Visuals::PTOffY.Value, Vars::Visuals::PTOffZ.Value }, pos, ang, Vars::Visuals::PTPipes.Value, bQuick);
-		out = { static_cast<ETFProjectileType>(Vars::Visuals::PTType.Value), pos, ang, { Vars::Visuals::PTHull.Value, Vars::Visuals::PTHull.Value, Vars::Visuals::PTHull.Value }, Vars::Visuals::PTSpeed.Value, Vars::Visuals::PTGravity.Value, Vars::Visuals::PTNoSpin.Value, Vars::Visuals::PTLifeTime.Value };
+		out = { TF_PROJECTILE_NONE, pos, ang, { Vars::Visuals::PTHull.Value, Vars::Visuals::PTHull.Value, Vars::Visuals::PTHull.Value }, Vars::Visuals::PTSpeed.Value, Vars::Visuals::PTGravity.Value, Vars::Visuals::PTNoSpin.Value, Vars::Visuals::PTLifeTime.Value };
 		return true;
 	}
 
@@ -52,7 +48,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		out = { TF_PROJECTILE_ENERGY_RING, pos, ang, { 1.f, 1.f, 1.f }, bQuick ? 1081344.f : speed, 0.f, true };
 		return true;
 	}
-	case TF_WEAPON_GRENADELAUNCHER:
+	case TF_WEAPON_GRENADELAUNCHER: // vphysics projectiles affected by server start gravity
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
 		float speed = Utils::ATTRIB_HOOK_FLOAT(1200.f, "mult_projectile_speed", pWeapon);
@@ -79,23 +75,21 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
 		float speed = 1454.f;
 		if (pPlayer->IsPrecisionRune())
-			speed *= 2.5f;
-		float lifetime = pWeapon->m_flDetonateTime() - I::GlobalVars->curtime;
-		if (pWeapon->m_flDetonateTime() <= 0.f)
-			lifetime = 1.06f;
+			speed = 3000.f;
+		float lifetime = pWeapon->m_flDetonateTime() > 0.f ? pWeapon->m_flDetonateTime() - I::GlobalVars->curtime : lifetime = 1.06f;
 		out = { TF_PROJECTILE_CANNONBALL, pos, ang, { 5.f, 5.f, 5.f }, speed, 1.f, false, lifetime };
 		return true;
 	}
 	case TF_WEAPON_FLAREGUN:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, Utils::ATTRIB_HOOK_FLOAT(2000.f, "mult_projectile_speed", pWeapon), 0.3f, true };
+		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, Utils::ATTRIB_HOOK_FLOAT(2000.f, "mult_projectile_speed", pWeapon), 0.000375f * flGravity /*0.3*/, true};
 		return true;
 	}
 	case TF_WEAPON_RAYGUN_REVENGE:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 12.f, bDucking ? 8.f : -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, 3000.f, 0.45f, true };
+		out = { TF_PROJECTILE_FLARE, pos, ang, { 1.f, 1.f, 1.f }, 3000.f, 0.0005625f * flGravity /*0.45*/, true };
 		return true;
 	}
 	case TF_WEAPON_COMPOUND_BOW:
@@ -103,7 +97,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
 		const float charge = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
 		const float speed = Math::RemapValClamped(charge, 0.f, 1.f, 1800.f, 2600.f);
-		const float gravity = Math::RemapValClamped(charge, 0.f, 1.f, 0.5f, 0.1f);
+		const float gravity = Math::RemapValClamped(charge, 0.f, 1.f, 0.000625f, 0.000125f) * flGravity /*0.5, 0.1*/;
 		out = { TF_PROJECTILE_ARROW, pos, ang, { 1.f, 1.f, 1.f }, speed, gravity, true };
 		return true;
 	}
@@ -111,31 +105,34 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 23.5f, 8.f, -3.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_ARROW, pos, ang, pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW ? Vec3(3.f, 3.f, 3.f) : Vec3(1.f, 1.f, 1.f), 2400.f, 0.2f, true };
+		out = { TF_PROJECTILE_ARROW, pos, ang, pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW ? Vec3(3.f, 3.f, 3.f) : Vec3(1.f, 1.f, 1.f), 2400.f, 0.00025f * flGravity /*0.2*/, true };
 		return true;
 	}
 	case TF_WEAPON_SYRINGEGUN_MEDIC:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 6.f, -8.f }, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_SYRINGE, pos, ang, { 1.f, 1.f, 1.f }, 1000.f, 0.3f, true };
+		out = { TF_PROJECTILE_SYRINGE, pos, ang, { 1.f, 1.f, 1.f }, 1000.f, 0.000375f * flGravity /*0.3*/, true };
 		return true;
 	}
-	case TF_WEAPON_FLAMETHROWER:
+	case TF_WEAPON_FLAMETHROWER: // this inherits player velocity, possibly account for
 	{
+		static auto tf_flamethrower_boxsize = I::Cvar->FindVar("tf_flamethrower_boxsize");
+		const float flHull = tf_flamethrower_boxsize ? tf_flamethrower_boxsize->GetFloat() : 12.f;
+
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 40.f, bFlipped ? -5.f : 5.f /*doesn't flip*/, 0.f}, pos, ang, true, bQuick);
-		out = { TF_PROJECTILE_FLAME_ROCKET, pos, ang, { 12.f, 12.f, 12.f }, 1000.f, 0.f, true, 0.33f };
+		out = { TF_PROJECTILE_FLAME_ROCKET, pos, ang, { flHull, flHull, flHull }, 1000.f, 0.f, true, 0.33f };
 		return true;
 	}
 	case TF_WEAPON_FLAME_BALL:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 70.f, bFlipped ? -7.f : 7.f /*doesn't flip*/, -9.f}, pos, ang, false, bQuick);
-		out = { TF_PROJECTILE_BALLOFFIRE, pos, ang, { 1.f, 1.f, 1.f /*damaging hull much bigger, shouldn't matter here*/ }, 3000.f, 0.f, true, 0.2f};
+		out = { TF_PROJECTILE_BALLOFFIRE, pos, ang, { 1.f, 1.f, 1.f /*damaging hull much bigger, shouldn't matter here*/ }, 3000.f, 0.f, true, 0.2f };
 		return true;
 	}
 	case TF_WEAPON_CLEAVER:
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 16.f, 8.f, -6.f }, pos, ang, true, bQuick);
-		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.f, 1.f, 10.f /*weird, probably still inaccurate*/ }, 3000.f, 2.f, false};
+		out = { TF_PROJECTILE_CLEAVER, pos, ang, { 1.f, 1.f, 10.f /*weird, probably still inaccurate*/ }, 3000.f, 2.f, false };
 		return true;
 	}
 	case TF_WEAPON_BAT_WOOD:
@@ -145,10 +142,12 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 		if (!pLocal)
 			return false;
 
+		const bool bWrapAssassin = pWeapon->GetWeaponID() == TF_WEAPON_BAT_GIFTWRAP;
+		
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 0.f, 0.f, 0.f }, pos, ang, true, bQuick);
 		Vec3 forward; Math::AngleVectors(ang, &forward);
 		pos = (bQuick ? pLocal->GetAbsOrigin() : pLocal->m_vecOrigin()) + (Vec3(0, 0, 50) + forward * 32.f) * pLocal->m_flModelScale(); // why?
-		out = { TF_PROJECTILE_THROWABLE, pos, ang, { 3.f, 3.f, 3.f }, 2000.f, 1.f, false };
+		out = { bWrapAssassin ? TF_PROJECTILE_FESTIVE_ARROW : TF_PROJECTILE_THROWABLE, pos, ang, { 3.f, 3.f, 3.f }, 2000.f, 1.f, false, bWrapAssassin ? 2.3f : 100.f };
 		return true;
 	}
 	case TF_WEAPON_JAR:
@@ -177,7 +176,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	{
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 0.f, 0.f, -8.f }, pos, ang, true, bQuick);
 		ang -= Vec3(10, 0, 0);
-		out = { TF_PROJECTILE_NONE, pos, ang, bQuick ? Vec3( 4.f, 4.f, 4.f ) : Vec3( 17.f, 17.f, 17.f ), 500.f, 1.f, false, 10.f };
+		out = { TF_PROJECTILE_NONE, pos, ang, bQuick ? Vec3( 4.f, 4.f, 4.f ) : Vec3( 17.f, 17.f, 17.f ), 500.f, 0.00125f * flGravity /*1*/, false};
 		return true;
 	}
 	}
@@ -274,6 +273,7 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 				break;
 			}
 			case TF_PROJECTILE_THROWABLE:
+			case TF_PROJECTILE_FESTIVE_ARROW:
 			{
 				// CTFBat_Wood::GetBallDynamics
 				vel += up * 200.f;
@@ -355,7 +355,15 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 			{
 				// guesstimate
 				drag = 1.f;
-				drag_basis = { 0.010500f, 0.f, 0.f };
+				drag_basis = { 0.011500f, 0.f, 0.f };
+
+				break;
+			}
+			case TF_PROJECTILE_FESTIVE_ARROW:
+			{
+				// guesstimate
+				drag = 1.f;
+				drag_basis = { 0.018150f, 0.f, 0.f };
 
 				break;
 			}
@@ -363,7 +371,7 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 			{
 				// guesstimate (there are different drags for different models, though shouldn't matter here)
 				drag = 1.f;
-				drag_basis = { 0.003902f, 0.f, 0.f };
+				drag_basis = { 0.005500f, 0.005000f, 0.f };
 
 				break;
 			}
@@ -400,11 +408,13 @@ bool CProjectileSimulation::Initialize(const ProjectileInfo& info)
 		{
 			max_vel = k_flMaxVelocity;
 			max_ang_vel = k_flMaxAngularVelocity;
+		}
+		}
 
-			break;
-		}
-		default: break;
-		}
+		if (Vars::Visuals::MaxVelocity.Value)
+			max_vel = Vars::Visuals::MaxVelocity.Value;
+		if (Vars::Visuals::MaxAngularVelocity.Value)
+			max_ang_vel = Vars::Visuals::MaxAngularVelocity.Value;
 
 		physics_performanceparams_t params{};
 		params.Defaults();
@@ -438,9 +448,7 @@ Vec3 CProjectileSimulation::GetOrigin()
 		return {};
 
 	Vec3 out;
-
 	obj->GetPosition(&out, nullptr);
-
 	return out;
 }
 
@@ -450,8 +458,6 @@ Vec3 CProjectileSimulation::GetVelocity()
 		return {};
 
 	Vec3 out;
-
 	obj->GetVelocity(&out, nullptr);
-
 	return out;
 }
