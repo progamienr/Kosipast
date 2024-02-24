@@ -56,7 +56,7 @@ void CEntityCache::Fill()
 				if (I::EngineClient->Time() - lastUpdate > Vars::ESP::DormantTime.Value)
 					continue;
 
-				pEntity->GetAbsOrigin() = dormantData.Location;
+				pEntity->SetAbsOrigin(dormantData.Location);
 				pEntity->m_vecOrigin() = dormantData.Location;
 
 				pEntity->m_lifeState() = LIFE_ALIVE;
