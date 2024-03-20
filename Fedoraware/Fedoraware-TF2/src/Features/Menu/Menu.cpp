@@ -130,7 +130,7 @@ void CMenu::MenuAimbot()
 				FToggle("Autoshoot", &Vars::Aimbot::Global::AutoShoot.Value, FToggle_Middle);
 				FKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value);
 				FDropdown("Target", &Vars::Aimbot::Global::AimAt.Value, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Ignore", &Vars::Aimbot::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Dead Ringer", "Friends", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
+				FDropdown("Ignore", &Vars::Aimbot::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Dead Ringer", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
 				bTransparent = !(Vars::Aimbot::Global::IgnoreOptions.Value & 1 << 1);
 					FSlider("Ignore cloak", &Vars::Aimbot::Global::IgnoreCloakPercentage.Value, 0, 100, 10, "%d%%", FSlider_Clamp);
 				bTransparent = false;
