@@ -68,8 +68,8 @@ void CInterfaces::Init()
 	VGuiPanel = g_Interface.Get<CPanel*>(VGUI2_DLL, VGUI_PANEL_INTERFACE_VERSION);
 	VALIDATE(VGuiPanel);
 
-	VGuiSurface = g_Interface.Get<CSurface*>(MATSURFACE_DLL, VGUI_SURFACE_INTERFACE_VERSION);
-	VALIDATE(VGuiSurface);
+	MatSystemSurface = g_Interface.Get<IMatSystemSurface*>(MATSURFACE_DLL, VGUI_SURFACE_INTERFACE_VERSION);
+	VALIDATE(MatSystemSurface);
 
 	Cvar = g_Interface.Get<ICvar*>(VSTDLIB_DLL, VENGINE_CVAR_INTERFACE_VERSION);
 	VALIDATE(Cvar);
@@ -101,7 +101,7 @@ void CInterfaces::Init()
 	ModelRender = g_Interface.Get<CModelRender*>(ENGINE_DLL, VENGINE_MODELRENDER_INTERFACE);
 	VALIDATE(ModelRender);
 
-	MaterialSystem = g_Interface.Get<CMaterialSystem*>(MATSYSTEM_DLL, VMATERIALSYSTEM_INTERFACE);
+	MaterialSystem = g_Interface.Get<IMaterialSystem*>(MATSYSTEM_DLL, VMATERIALSYSTEM_INTERFACE);
 	VALIDATE(MaterialSystem);
 
 	TFGCClientSystem = *S::TFGCClientSystem_Interface.As<CTFGCClientSystem**>();

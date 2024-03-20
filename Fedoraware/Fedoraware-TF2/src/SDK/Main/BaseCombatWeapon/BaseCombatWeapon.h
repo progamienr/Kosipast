@@ -68,6 +68,7 @@ public: //Netvars
 	NETVAR(m_nKillComboCount, int, "CTFWeaponBase", "m_nKillComboCount")
 	NETVAR(m_flInspectAnimEndTime, float, "CTFWeaponBase", "m_flInspectAnimEndTime")
 	NETVAR(m_nInspectStage, int, "CTFWeaponBase", "m_nInspectStage")
+	NETVAR_OFF(m_flSmackTime, float, "CTFWeaponBase", "m_nInspectStage", 0x1C)
 	NETVAR(m_iConsecutiveShots, int, "CTFWeaponBase", "m_iConsecutiveShots")
 
 	OFFSET(CritTokenBucket, float, 0xA54)
@@ -100,10 +101,10 @@ public: //Netvars
 				return false;
 
 			//Invis
-			static float flTimer = 0.0f;
+			static float flTimer = 0.f;
 			if (pOwner->IsCloaked())
 			{
-				flTimer = 0.0f;
+				flTimer = 0.f;
 				return false;
 			}
 			else
@@ -112,9 +113,9 @@ public: //Netvars
 					flTimer = I::GlobalVars->curtime;
 
 				if (flTimer > I::GlobalVars->curtime)
-					flTimer = 0.0f;
+					flTimer = 0.f;
 
-				if ((I::GlobalVars->curtime - flTimer) < 2.0f)
+				if ((I::GlobalVars->curtime - flTimer) < 2.f)
 					return false;
 			}
 		}
@@ -152,7 +153,7 @@ public: //Netvars
 			return false;
 
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return pLocal->TankPressure() >= 100.0f;
+			return pLocal->m_flTankPressure() >= 100.f;
 
 		return CanPrimaryAttack(pLocal);
 	}
@@ -162,7 +163,7 @@ public: //Netvars
 			return false;
 
 		if (GetWeaponID() == TF_WEAPON_FLAME_BALL)
-			return pLocal->TankPressure() >= 100.0f;
+			return pLocal->m_flTankPressure() >= 100.f;
 
 		return CanSecondaryAttack(pLocal);
 	}
@@ -170,8 +171,7 @@ public: //Netvars
 	{
 		static int nOffset = GetNetVar("CBaseCombatWeapon", "m_flNextPrimaryAttack");
 		bool m_bInReload = *reinterpret_cast<bool*>(reinterpret_cast<DWORD>(this) + nOffset + 0xC);
-		int m_iReloadMode = *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + 0xB28);
-		return (m_bInReload || m_iReloadMode != 0);
+		return (m_bInReload || m_iReloadMode() != 0);
 	}
 	__inline float GetFireRate()
 	{
@@ -221,12 +221,7 @@ public: //Netvars
 	}
 	__inline float GetSwingRangeSimple()
 	{
-		return GetWeaponID() == TF_WEAPON_SWORD ? 72.0f : 48.0f;
-	}
-	__inline float& m_flSmackTime()
-	{	//credits to KGB
-		static int nOffset = GetNetVar("CTFWeaponBase", "m_nInspectStage") + 0x1C;
-		return *reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
+		return GetWeaponID() == TF_WEAPON_SWORD ? 72.f : 48.f;
 	}
 	__inline CTFWeaponInfo* GetTFWeaponInfo()
 	{
@@ -256,7 +251,7 @@ public: //Netvars
 	__inline bool HasPrimaryAmmoForShot()
 	{
 		if (IsEnergyWeapon())
-			return m_flEnergy() > 0.0f;
+			return m_flEnergy() > 0.f;
 
 		int nClip1 = m_iClip1();
 

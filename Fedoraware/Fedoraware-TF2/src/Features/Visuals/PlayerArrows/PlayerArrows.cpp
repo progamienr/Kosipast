@@ -71,7 +71,7 @@ void CPlayerArrows::DrawArrowTo(const Vec3& vecFromPos, const Vec3& vecToPos, Co
 		t2.Init({ cx + p2.x * _cos - p2.y * _sin, cy + p2.y * _cos + p2.x * _sin });
 		t3.Init({ cx + p3.x * _cos - p3.y * _sin, cy + p3.y * _cos + p3.x * _sin });
 	std::array<Vertex_t, 3> verts{ t1, t2, t3 };
-	g_Draw.DrawTexturedPolygon(3, verts.data(), color);
+	g_Draw.Polygon(3, verts.data(), color);
 }
 
 void CPlayerArrows::Run()

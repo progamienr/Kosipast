@@ -116,13 +116,6 @@ void CMovementSimulation::Reset(PlayerStorage& playerStorage)
 
 void CMovementSimulation::FillVelocities()
 {
-	const auto pLocal = g_EntityCache.GetLocal();
-	if (!pLocal)
-	{
-		mVelocities.clear();
-		return;
-	}
-
 	if (Vars::Aimbot::Projectile::StrafePrediction.Value)
 	{
 		auto FillVelocity = [this](CBaseEntity* pEntity, Vec3 vVelocity)
@@ -139,18 +132,14 @@ void CMovementSimulation::FillVelocities()
 				if (TIME_TO_TICKS(flSimTime - flOldSimTime) <= 0)
 					return;
 
-				mVelocities[iEntIndex].push_front(vVelocity);
+				mVelocities[iEntIndex].push_front({ vVelocity, flSimTime });
 
 				if (mVelocities[iEntIndex].size() > 66)
 					mVelocities[iEntIndex].pop_back();
 			};
 
 		for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
-		{
-			if (pEntity && pEntity != pLocal) // only appears when in thirdperson
-				FillVelocity(pEntity, pEntity->m_vecVelocity());
-		}
-		FillVelocity(pLocal, pLocal->m_vecVelocity());
+			FillVelocity(pEntity, pEntity->m_vecVelocity());
 	}
 	else
 		mVelocities.clear();
@@ -160,21 +149,16 @@ void CMovementSimulation::FillVelocities()
 
 bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& playerStorageOut, bool useHitchance, bool cancelStrafe)
 {
-	if (!pPlayer || !pPlayer->IsPlayer() || pPlayer->deadflag())
+	if (!pPlayer || !pPlayer->IsPlayer() || !pPlayer->IsAlive())
 	{
 		playerStorageOut.m_bInitFailed = playerStorageOut.m_bFailed = true;
 		return false;
 	}
 
-	G::MoveLines.clear();
-
-	//set player
 	playerStorageOut.m_pPlayer = pPlayer;
-
-	//set current command
 	playerStorageOut.m_pPlayer->SetCurrentCmd(&DummyCmd);
 
-	//store player's data
+	// store player restore data
 	Store(playerStorageOut);
 
 	// store vars
@@ -198,7 +182,10 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			pPlayer->m_hGroundEntity() = -1; // fix for velocity.z being set to 0 even if in air
 
 		if (pPlayer->IsOnGround())
+		{
 			pPlayer->m_vecOrigin().z += 0.03125f; // to prevent getting stuck in the ground
+			pPlayer->m_vecVelocity().z = std::min(pPlayer->m_vecVelocity().z, 0.f); // step fix
+		}
 
 		pPlayer->m_flModelScale() -= 0.03125f; // fixes issues with corners
 
@@ -207,9 +194,6 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			pPlayer->m_vecVelocity().x = 0.015f;
 		if (fabsf(pPlayer->m_vecVelocity().y) < 0.01f)
 			pPlayer->m_vecVelocity().y = 0.015f;
-
-		if (pPlayer->OnSolid())
-			pPlayer->m_vecVelocity().z = 0.f; // step fix
 
 		pPlayer->m_vecBaseVelocity() = Vec3(); // i think residual basevelocity causes issues
 	}
@@ -227,18 +211,25 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	bool bCalculated = cancelStrafe ? false : StrafePrediction(playerStorageOut, iStrafeSamples);
 
 	// really hope this doesn't work like shit
-	if (useHitchance && bCalculated && !pPlayer->m_vecVelocity().IsZero())
+	if (useHitchance && bCalculated && !pPlayer->m_vecVelocity().IsZero() && Vars::Aimbot::Projectile::StrafePredictionHitchance.Value)
 	{
 		const auto& mVelocityRecords = mVelocities[playerStorageOut.m_pPlayer->GetIndex()];
 		const int iSamples = mVelocityRecords.size();
 
-		float flCurrentChance = 1.f, flAverageYaw = 0.f, flCompareYaw = Math::VelocityToAngles(playerStorageOut.m_PlayerData.m_vecVelocity).y;
+		float flCurrentChance = 1.f, flAverageYaw = 0.f;
 		for (int i = 0; i < iSamples; i++)
 		{
-			const float flRecordYaw = Math::VelocityToAngles(mVelocityRecords[i]).y;
+			if (mVelocityRecords.size() <= i + 2)
+				break;
 
-			const float flDelta = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flCompareYaw), DEG2RAD(flRecordYaw)));
-			flAverageYaw += flDelta;
+			const auto& pRecord1 = mVelocityRecords[i], &pRecord2 = mVelocityRecords[i + 1];
+			const float flYaw1 = Math::VelocityToAngles(pRecord1.first).y, flYaw2 = Math::VelocityToAngles(pRecord2.first).y;
+			const float flTime1 = pRecord1.second, flTime2 = pRecord2.second;
+
+			float flYaw = (flYaw1 - flYaw2) / TIME_TO_TICKS(flTime1 - flTime2);
+			flYaw = fmodf(flYaw + 180.f, 360.f);
+			flYaw += flYaw < 0 ? 180.f : -180.f;
+			flAverageYaw += flYaw;
 
 			if ((i + 1) % iStrafeSamples == 0 || i == iSamples - 1)
 			{
@@ -247,11 +238,9 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 					flCurrentChance -= 1.f / ((iSamples - 1) / float(iStrafeSamples) + 1);
 				flAverageYaw = 0.f;
 			}
-
-			flCompareYaw = flRecordYaw;
 		}
 
-		if (flCurrentChance + 0.001f < float(Vars::Aimbot::Projectile::StrafePredictionHitchance.Value) / 100)
+		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100)
 		{
 			Utils::ConLog("MovementSimulation", std::format("Hitchance ({}% < {}%)", flCurrentChance * 100, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value).c_str(), { 125, 255, 83, 255 }, Vars::Debug::Logging.Value);
 
@@ -300,24 +289,27 @@ bool CMovementSimulation::SetupMoveData(PlayerStorage& playerStorage)
 	return true;
 }
 
-bool CMovementSimulation::GetYawDifference(const std::deque<Vec3>& mVelocityRecords, const int iTime, float* flYaw)
+bool CMovementSimulation::GetYawDifference(const std::deque<std::pair<Vec3, float>>& mVelocityRecords, const int i, float* flYaw)
 {
-	if (mVelocityRecords.size() <= iTime + 2)
+	if (mVelocityRecords.size() <= i + 2)
 		return false;
 
-	const float flRecordYaw1 = Math::VelocityToAngles(mVelocityRecords[iTime]).y;
-	const float flRecordYaw2 = Math::VelocityToAngles(mVelocityRecords[iTime + 1]).y;
+	const auto& pRecord1 = mVelocityRecords[i], &pRecord2 = mVelocityRecords[i + 1];
+	const float flYaw1 = Math::VelocityToAngles(pRecord1.first).y, flYaw2 = Math::VelocityToAngles(pRecord2.first).y;
+	const float flTime1 = pRecord1.second, flTime2 = pRecord2.second;
 
-	*flYaw = fmodf(flRecordYaw1 - flRecordYaw2 + 180.f, 360.f);
+	const int iTicks = std::max(TIME_TO_TICKS(flTime1 - flTime2), 1);
+	*flYaw = (flYaw1 - flYaw2) / iTicks;
+	*flYaw = fmodf(*flYaw + 180.f, 360.f);
 	*flYaw += *flYaw < 0 ? 180.f : -180.f;
-
+	
 	static int iSign = 0;
 	const int iLastSign = iSign;
 	const int iCurSign = iSign = *flYaw > 0 ? 1 : -1;
-	if (fabsf(*flYaw) < 640.f / mVelocityRecords[iTime].Length2D()) // dumb way to get straight bool
+	if (fabsf(*flYaw) < 640.f / pRecord1.first.Length2D() / iTicks) // dumb way to get straight bool
 		return false;
 
-	return !iTime || iLastSign == iCurSign ? true : false;
+	return !i || iLastSign == iCurSign ? true : false;
 }
 
 float CMovementSimulation::GetAverageYaw(const int iIndex, const int iSamples)

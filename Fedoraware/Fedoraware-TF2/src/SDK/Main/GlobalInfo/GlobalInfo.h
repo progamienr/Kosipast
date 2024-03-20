@@ -5,7 +5,7 @@ constexpr auto DT_WAIT_CALLS = 26;
 
 struct VelFixRecord {
 	Vec3 m_vecOrigin;
-	int m_nFlags;
+	float m_flHeight;
 	float m_flSimulationTime;
 };
 
@@ -38,7 +38,6 @@ struct DrawLine {
 
 struct DrawBox {
 	Vec3 m_vecPos;
-	//Vec3 m_vecSize;
 	Vec3 m_vecMins;
 	Vec3 m_vecMaxs;
 	Vec3 m_vecOrientation;
@@ -79,6 +78,7 @@ namespace G
 	inline int ChokeGoal = 0; // How many ticks should be choked
 	inline int AnticipatedChoke = 0; // what the choke is expected to be (backtrack)
 	inline bool UpdatingAnims = false;
+	inline bool AnimateKart = false;
 
 	/* Aimbot */
 	inline bool IsAttacking = false;
@@ -93,24 +93,19 @@ namespace G
 
 	/* Thirdperson Antiaim */
 	inline bool Choking = false;
-	inline std::vector<Vec3> ChokedAngles;
 
 	/* Bullets */
 	inline std::vector<DrawBullet> BulletsStorage;
 
 	/* Prediction */
-	inline Vec3 LinearPredLine = {};
-	inline std::deque<std::pair<Vec3, Vec3>> MoveLines;
-	inline std::deque<std::pair<Vec3, Vec3>> ProjLines;
 	inline std::vector<DrawLine> LinesStorage;
 
 	/* Boxes */
 	inline std::vector<DrawBox> BoxesStorage;
 
-	inline CUserCmd* CurrentUserCmd{nullptr}; // Unreliable! Only use this if you really have to.
-	inline CUserCmd* LastUserCmd{nullptr};
+	inline CUserCmd* CurrentUserCmd = nullptr; // Unreliable! Only use this if you really have to.
+	inline CUserCmd* LastUserCmd = nullptr;
 	inline int Buttons = 0;
-	inline bool AnimateKart = false;
 	
 	inline EWeaponType CurWeaponType = {};
 	inline std::unordered_map<int, DormantData> DormantPlayerESP; // <Index, DormantData>
@@ -122,5 +117,4 @@ namespace G
 
 	inline bool InKeybind = false;
 	inline bool DrawingStaticProps = false;
-	inline bool ShouldUpdateMaterialCache = true;
 };

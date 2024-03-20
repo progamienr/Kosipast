@@ -18,7 +18,7 @@ bool CAuto::ShouldRun(CBaseEntity* pLocal)
 	if (!Vars::Auto::Global::Active.Value || (!F::AutoGlobal.IsKeyDown() && Vars::Auto::Global::AutoKey.Value))
 		return false;
 
-	if (I::EngineVGui->IsGameUIVisible() || I::VGuiSurface->IsCursorVisible())
+	if (I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
 		return false;
 
 	if (G::DoubleTap)
@@ -38,14 +38,12 @@ void CAuto::Run(CUserCmd* pCmd)
 
 	const auto pLocal = g_EntityCache.GetLocal();
 	const auto pWeapon = g_EntityCache.GetWeapon();
-	if (pLocal && pWeapon)
+
+	if (pLocal && pWeapon && ShouldRun(pLocal))
 	{
-		if (ShouldRun(pLocal))
-		{
-			F::AutoDetonate.Run(pLocal, pWeapon, pCmd);
-			F::AutoAirblast.Run(pLocal, pWeapon, pCmd);
-			F::AutoUber.Run(pLocal, pWeapon, pCmd);
-		}
-		F::AutoJump.Run(pLocal, pWeapon, pCmd);
+		F::AutoDetonate.Run(pLocal, pWeapon, pCmd);
+		F::AutoAirblast.Run(pLocal, pWeapon, pCmd);
+		F::AutoUber.Run(pLocal, pWeapon, pCmd);
 	}
+	F::AutoJump.Run(pLocal, pWeapon, pCmd);
 }

@@ -55,7 +55,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	if (!G::LastUserCmd)
 		G::LastUserCmd = pCmd;
 
-	F::Backtrack.iTickCount = pCmd->tick_count;
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Visuals::RemoveInterpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
 
@@ -78,16 +77,16 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			if (pWeapon->IsInReload())
 				G::CanPrimaryAttack = pWeapon->HasPrimaryAmmoForShot();
 
-			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN &&
-				pWeapon->GetMinigunState() != AC_STATE_FIRING && pWeapon->GetMinigunState() != AC_STATE_SPINNING)
-			{
+			if (pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() != AC_STATE_FIRING && pWeapon->GetMinigunState() != AC_STATE_SPINNING)
 				G::CanPrimaryAttack = false;
-			}
+
+			if (pWeapon->GetWeaponID() == TF_WEAPON_RAYGUN_REVENGE && pCmd->buttons & IN_ATTACK2)
+				G::CanPrimaryAttack = false;
+
+			if (pWeapon->IsEnergyWeapon() && !pWeapon->m_flEnergy())
+				G::CanPrimaryAttack = false;
 
 			if (G::CurItemDefIndex != Soldier_m_TheBeggarsBazooka && pWeapon->m_iClip1() == 0)
-				G::CanPrimaryAttack = false;
-
-			if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
 				G::CanPrimaryAttack = false;
 		}
 		G::CanHeadShot = pWeapon->CanWeaponHeadShot();
@@ -120,7 +119,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	F::NoSpread.Run(pCmd);
 	F::Misc.RunPost(pCmd, pSendPacket);
 	F::Resolver.CreateMove();
-	F::FakeAngle.ShouldRun = *pSendPacket;
+	if (*pSendPacket)
+		F::FakeAngle.Run();
 
 	if (!G::DoubleTap)
 	{
@@ -141,7 +141,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	G::LastUserCmd = pCmd;
 
 	G::Choking = !*pSendPacket;
-	G::ChokedAngles.push_back(pCmd->viewangles);
 
 	F::EnginePrediction.Simulate(pCmd);
 

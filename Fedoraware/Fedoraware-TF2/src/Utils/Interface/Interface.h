@@ -5,8 +5,7 @@
 class CInterface
 {
 private:
-	typedef void*(*InstantiateInterface)();
-
+	typedef void* (*InstantiateInterface)();
 	struct Interface_t
 	{
 		InstantiateInterface Interface;

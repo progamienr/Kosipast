@@ -26,7 +26,7 @@ public:
 	void DrawAntiAim(CBaseEntity* pLocal);
 	void DrawDebugInfo(CBaseEntity* pLocal);
 
-	void DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool bClear = true);
+	std::vector<DrawBox> GetHitboxes(matrix3x4 bones[128], CBaseEntity* pEntity, const int iHitbox = -1);
 	void DrawBulletLines();
 	void DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Color, bool bSeparators = false, bool bZBuffer = false, float flTime = 0.f);
 	void DrawSimLines();
@@ -34,7 +34,6 @@ public:
 	void RevealSimLines();
 	void RevealBulletLines();
 	void RevealBoxes();
-	void ClearBulletLines();
 	void DrawServerHitboxes();
 	void RenderLine(const Vec3& vStart, const Vec3& vEnd, Color_t cLine, bool bZBuffer = false);
 	void RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace, bool bZBuffer = false);
@@ -58,7 +57,7 @@ public:
 	std::vector<PickupData> PickupDatas;
 
 	void OverrideWorldTextures();
-	void ModulateWorld();
+	void Modulate();
 	void SkyboxChanger();
 	void RestoreWorldModulation();
 
@@ -78,10 +77,6 @@ public:
 		EMatGroupType	 GroupType;
 		bool			 ShouldOverrideTextures;
 	};
-	std::vector<MaterialHandleData> MaterialHandleDatas;
-
-	void StoreMaterialHandles();
-	void ClearMaterialHandles();
 };
 
 ADD_FEATURE(CVisuals, Visuals)

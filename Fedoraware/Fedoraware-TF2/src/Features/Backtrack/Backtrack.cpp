@@ -27,13 +27,15 @@ float CBacktrack::GetFake()
 }
 
 // Returns the current real latency
-float CBacktrack::GetReal()
+float CBacktrack::GetReal(int iFlow)
 {
 	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
 	if (!iNetChan)
 		return 0.f;
 
-	return iNetChan->GetLatency(FLOW_INCOMING) + iNetChan->GetLatency(FLOW_OUTGOING) - GetFake();
+	if (iFlow)
+		return iNetChan->GetLatency(iFlow) - (iFlow == FLOW_INCOMING ? GetFake() : 0.f);
+	return iNetChan->GetLatency(FLOW_INCOMING) - GetFake() + iNetChan->GetLatency(FLOW_OUTGOING);
 }
 
 void CBacktrack::SendLerp()
@@ -111,57 +113,18 @@ std::deque<TickRecord>* CBacktrack::GetRecords(CBaseEntity* pEntity)
 	return &mRecords[pEntity];
 }
 
-std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pRecords, BacktrackMode iMode, CBaseEntity* pLocal, bool bDistance)
+std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pRecords, CBaseEntity* pLocal, bool bDistance)
 {
 	std::deque<TickRecord> validRecords = {};
 	if (!pRecords)
 		return validRecords;
 
-	switch (iMode)
+	for (auto& pTick : *pRecords)
 	{
-	case BacktrackMode::ALL:
-		for (auto& pTick : *pRecords)
-		{
-			if (!WithinRewind(pTick))
-				continue;
+		if (!WithinRewind(pTick))
+			continue;
 
-			validRecords.push_back(pTick);
-		}
-
-		break;
-
-	case BacktrackMode::LAST:
-		for (auto pTick = pRecords->rbegin(); pTick != pRecords->rend(); ++pTick)
-		{
-			if (!WithinRewind(*pTick))
-				continue;
-			
-			validRecords.push_back(*pTick);
-			break;
-		}
-
-		break;
-
-	case BacktrackMode::PREFERONSHOT:
-		std::deque<TickRecord> frontRecords, backRecords;
-
-		for (auto& pTick : *pRecords)
-		{
-			if (!WithinRewind(pTick))
-				continue;
-
-			if (pTick.bOnShot)
-				frontRecords.push_back(pTick);
-			else
-				backRecords.push_back(pTick);
-		}
-
-		for (auto& pTick : frontRecords)
-			validRecords.push_back(pTick);
-		for (auto& pTick : backRecords)
-			validRecords.push_back(pTick);
-
-		break;
+		validRecords.push_back(pTick);
 	}
 
 	if (pLocal)
@@ -169,6 +132,9 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pReco
 		if (bDistance)
 			std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
 				{
+					if (Vars::Backtrack::PreferOnShot.Value && a.bOnShot != b.bOnShot)
+						return a.bOnShot > b.bOnShot;
+
 					return pLocal->m_vecOrigin().DistTo(a.vOrigin) < pLocal->m_vecOrigin().DistTo(b.vOrigin);
 				});
 		else
@@ -182,6 +148,9 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pReco
 
 			std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
 				{
+					if (Vars::Backtrack::PreferOnShot.Value && a.bOnShot != b.bOnShot)
+						return a.bOnShot > b.bOnShot;
+
 					const float flADelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(a.flSimTime));
 					const float flBDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(b.flSimTime));
 					return fabsf(flADelta) < fabsf(flBDelta);
@@ -267,9 +236,8 @@ void CBacktrack::MakeRecords()
 		if (!mRecords[pEntity].empty()) // check for lagcomp breaking here
 		{
 			const Vec3 vDelta = curRecord.vOrigin - mRecords[pEntity].front().vOrigin;
-
-			static auto sv_lagcompensation_teleport_dist = I::Cvar->FindVar("sv_lagcompensation_teleport_dist");
-			const float flDist = sv_lagcompensation_teleport_dist ? powf(sv_lagcompensation_teleport_dist->GetFloat(), 2.f) : 4096.f;
+			
+			const float flDist = powf(I::Cvar->FindVar("sv_lagcompensation_teleport_dist")->GetFloat(), 2.f);
 			if (vDelta.Length2DSqr() > flDist)
 			{
 				bLagComp = true;
@@ -277,7 +245,7 @@ void CBacktrack::MakeRecords()
 					pRecord.bInvalid = true;
 			}
 
-			for (auto& pRecord : mRecords[pEntity]) // worse results with higher ping, possibly implement prediction based on ping?
+			for (auto& pRecord : mRecords[pEntity])
 			{
 				if (!pRecord.bInvalid)
 					continue;
@@ -414,14 +382,6 @@ std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crossh
 	return std::nullopt;
 }
 
-void CBacktrack::PlayerHurt(CGameEvent* pEvent)
-{
-	//const int iIndex = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-	//if (CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(iIndex)){
-	//	mRecords[pEntity].clear();	//	bone cache has gone to poop for this entity, they must be cleansed in holy fire :smiling_imp:
-	//}
-}
-
 void CBacktrack::ResolverUpdate(CBaseEntity* pEntity)
 {
 	mRecords[pEntity].clear();	//	TODO: eventually remake records and rotate them or smthn idk, maybe just rotate them
@@ -430,8 +390,9 @@ void CBacktrack::ResolverUpdate(CBaseEntity* pEntity)
 void CBacktrack::ReportShot(int iIndex)
 {
 	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(iIndex);
-	if (!pEntity)
+	if (!pEntity || Utils::GetWeaponType(pEntity->GetActiveWeapon()) != EWeaponType::HITSCAN)
 		return;
+
 	mDidShoot[pEntity->GetIndex()] = true;
 }
 

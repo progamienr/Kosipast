@@ -1,144 +1,107 @@
 #include "TraceFilters.h"
+#include "../../SDK.h"
 
 bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
 {
-	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
-	CBaseEntity* pLocal = this->pSkip;
+	auto pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
+	if (!pEntity || pEntityHandle == pSkip)
+		return false;
 
-	switch (pEntity->GetClassID())
-	{
-		case ETFClassID::CFuncAreaPortalWindow:
-		case ETFClassID::CFuncRespawnRoomVisualizer:
-		case ETFClassID::CSniperDot:
-		case ETFClassID::CTFMedigunShield:
-		case ETFClassID::CTFReviveMarker:
-			return false;
-	}
+	auto pLocal = g_EntityCache.GetLocal();
+	auto pWeapon = g_EntityCache.GetWeapon();
 
-	if (pLocal && pLocal->IsPlayer() && pLocal->m_iClass() == CLASS_SNIPER)
+	const int iTargetTeam = pEntity->m_iTeamNum(), iLocalTeam = pLocal ? pLocal->m_iTeamNum() : iTargetTeam;
+	bool bSniperRifle = false;
+	if (pLocal && pLocal == pSkip)
 	{
-		switch (pEntity->GetClassID())
+		switch (pWeapon->GetWeaponID())
 		{
-			case ETFClassID::CTFPlayer:
-			case ETFClassID::CObjectSentrygun:
-			case ETFClassID::CObjectDispenser:
-			case ETFClassID::CObjectTeleporter:
-				if (pLocal->m_iTeamNum() == pEntity->m_iTeamNum())
-					return false;
+		case TF_WEAPON_SNIPERRIFLE:
+		case TF_WEAPON_SNIPERRIFLE_CLASSIC:
+		case TF_WEAPON_SNIPERRIFLE_DECAP:
+			bSniperRifle = true;
 		}
 	}
 
-	return pEntityHandle != pSkip;
-}
+	switch (pEntity->GetClassID())
+	{
+	case ETFClassID::CTFAmmoPack:
+	case ETFClassID::CFuncAreaPortalWindow:
+	case ETFClassID::CFuncRespawnRoomVisualizer:
+	case ETFClassID::CSniperDot:
+	case ETFClassID::CTFReviveMarker: return false;
+	case ETFClassID::CTFMedigunShield:
+		if (iTargetTeam == iLocalTeam)
+			return false;
+		break;
+	case ETFClassID::CTFPlayer:
+	case ETFClassID::CObjectSentrygun:
+	case ETFClassID::CObjectDispenser:
+	case ETFClassID::CObjectTeleporter:
+		if (bSniperRifle && iTargetTeam == iLocalTeam)
+			return false;
+	}
 
+	return true;
+}
 ETraceType CTraceFilterHitscan::GetTraceType() const
 {
 	return TRACE_EVERYTHING;
 }
 
-
-
 bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
 {
-	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
-	CBaseEntity* pLocal = this->pSkip;
+	auto pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
+	if (!pEntity || pEntityHandle == pSkip)
+		return false;
+
+	auto pLocal = g_EntityCache.GetLocal();
+	auto pWeapon = g_EntityCache.GetWeapon();
+
+	const int iTargetTeam = pEntity->m_iTeamNum(), iLocalTeam = pLocal ? pLocal->m_iTeamNum() : iTargetTeam;
+	const bool bCrossbow = pLocal && pLocal == pSkip ? pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW : false;
 
 	switch (pEntity->GetClassID())
 	{
-		case ETFClassID::CFuncAreaPortalWindow:
-		case ETFClassID::CFuncRespawnRoomVisualizer:
-		case ETFClassID::CSniperDot:
-		case ETFClassID::CTFReviveMarker:
-		case ETFClassID::CTFProjectile_ThrowableBreadMonster:
-		case ETFClassID::CTFProjectile_ThrowableBrick:
-		case ETFClassID::CTFProjectile_ThrowableRepel:
-		case ETFClassID::CTFProjectile_Throwable:
-		case ETFClassID::CTFThrowable:
-		case ETFClassID::CTFProjectile_MechanicalArmOrb:
-		case ETFClassID::CTFProjectile_JarGas:
-		case ETFClassID::CTFProjectile_Cleaver:
-		case ETFClassID::CTFProjectile_JarMilk:
-		case ETFClassID::CTFProjectile_Jar:
-		case ETFClassID::CTFGrenadePipebombProjectile:
-		case ETFClassID::CTFBall_Ornament:
-		case ETFClassID::CTFStunBall:
-		case ETFClassID::CTFProjectile_EnergyRing:
-		case ETFClassID::CTFProjectile_Rocket:
-		case ETFClassID::CTFProjectile_Flare:
-		case ETFClassID::CTFProjectile_EnergyBall:
-		case ETFClassID::CTFProjectile_GrapplingHook:
-		case ETFClassID::CTFProjectile_HealingBolt:
-		case ETFClassID::CTFProjectile_Arrow:
-		case ETFClassID::CTFProjectile_SpellKartBats:
-		case ETFClassID::CTFProjectile_SpellKartOrb:
-		case ETFClassID::CTFProjectile_SpellLightningOrb:
-		case ETFClassID::CTFProjectile_SpellTransposeTeleport:
-		case ETFClassID::CTFProjectile_SpellMeteorShower:
-		case ETFClassID::CTFProjectile_SpellSpawnBoss:
-		case ETFClassID::CTFProjectile_SpellMirv:
-		case ETFClassID::CTFProjectile_SpellPumpkin:
-		case ETFClassID::CTFProjectile_SpellSpawnHorde:
-		case ETFClassID::CTFProjectile_SpellSpawnZombie:
-		case ETFClassID::CTFProjectile_SpellBats:
-		case ETFClassID::CTFProjectile_SpellFireball:
-		case ETFClassID::CTFProjectile_BallOfFire:
-		case ETFClassID::CTFProjectile_SentryRocket:
-			return false;
+	case ETFClassID::CBaseEntity:
+	case ETFClassID::CBaseDoor:
+	case ETFClassID::CDynamicProp:
+	case ETFClassID::CPhysicsProp:
+	case ETFClassID::CObjectCartDispenser:
+	case ETFClassID::CFuncTrackTrain:
+	case ETFClassID::CFuncConveyor:
+	case ETFClassID::CObjectSentrygun:
+	case ETFClassID::CObjectDispenser:
+	case ETFClassID::CObjectTeleporter: return true;
+	case ETFClassID::CTFPlayer: return bCrossbow ? true : iTargetTeam != iLocalTeam;
 	}
 
-	if (pLocal && pLocal->IsPlayer() && pLocal->m_iClass() != CLASS_MEDIC)
-	{
-		if (pEntity->IsPlayer() && pLocal->m_iTeamNum() == pEntity->m_iTeamNum())
-			return false;
-	}
-
-	return pEntityHandle != pSkip;
+	return false;
 }
-
 ETraceType CTraceFilterProjectile::GetTraceType() const
 {
 	return TRACE_EVERYTHING;
 }
 
-
-
 bool CTraceFilterWorldAndPropsOnly::ShouldHitEntity(void* pEntityHandle, int nContentsMask)
 {
-	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
+	auto pEntity = reinterpret_cast<CBaseEntity*>(pEntityHandle);
+	if (!pEntity || pEntityHandle == pSkip)
+		return false;
 
 	switch (pEntity->GetClassID())
 	{
-		case ETFClassID::CFuncAreaPortalWindow:
-		case ETFClassID::CFuncRespawnRoomVisualizer:
-		case ETFClassID::CSniperDot:
-		case ETFClassID::CTFMedigunShield:
-		case ETFClassID::CTFReviveMarker:
-		case ETFClassID::CTFAmmoPack:
-		case ETFClassID::CTFProjectile_Arrow:
-		case ETFClassID::CTFProjectile_BallOfFire:
-		case ETFClassID::CTFProjectile_Cleaver:
-		case ETFClassID::CTFProjectile_Jar:
-		case ETFClassID::CTFProjectile_JarMilk:
-		case ETFClassID::CTFProjectile_EnergyBall:
-		case ETFClassID::CTFProjectile_EnergyRing:
-		case ETFClassID::CTFProjectile_Flare:
-		case ETFClassID::CTFProjectile_HealingBolt:
-		case ETFClassID::CTFProjectile_MechanicalArmOrb:
-		case ETFClassID::CTFProjectile_Rocket:
-		case ETFClassID::CTFProjectile_SentryRocket:
-		case ETFClassID::CTFGrenadePipebombProjectile:
-		case ETFClassID::CTFPlayer:
-		case ETFClassID::CMerasmus:
-		case ETFClassID::CMerasmusDancer:
-		case ETFClassID::CEyeballBoss:
-		case ETFClassID::CHeadlessHatman:
-		case ETFClassID::CZombie:
-			return false;
+	case ETFClassID::CBaseEntity:
+	case ETFClassID::CBaseDoor:
+	case ETFClassID::CDynamicProp:
+	case ETFClassID::CPhysicsProp:
+	case ETFClassID::CObjectCartDispenser:
+	case ETFClassID::CFuncTrackTrain:
+	case ETFClassID::CFuncConveyor: return true;
 	}
 
-	return pEntityHandle != pSkip;
+	return false;
 }
-
 ETraceType CTraceFilterWorldAndPropsOnly::GetTraceType() const
 {
 	return TRACE_EVERYTHING;

@@ -15,7 +15,7 @@ struct Material_t
 class CMaterials
 {
 public:
-	IMaterial* CreateNRef(char const* szName, void* pKV);
+	IMaterial* CreateNRef(char const* szName, KeyValues* pKV);
 
 	void ReloadMaterials();
 	void RemoveMaterials();

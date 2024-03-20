@@ -1,64 +1,58 @@
 #pragma once
 #include "../../Includes/Includes.h"
+#include "../IAppSystem/IAppSystem.h"
 
 #undef CreateFont
 #undef PlaySound
 
+typedef unsigned int VPANEL;
+typedef unsigned long HScheme;
+typedef unsigned long HTexture;
+typedef unsigned long HCursor;
+typedef unsigned long HPanel;
+typedef unsigned long HFont;
+class IHTML;
+class IHTMLEvents;
+class IVguiMatInfo;
+
 enum FontDrawType_t
 {
-	// Use the "additive" value from the scheme file
 	FONT_DRAW_DEFAULT = 0,
-
-	// Overrides
 	FONT_DRAW_NONADDITIVE,
 	FONT_DRAW_ADDITIVE,
-
 	FONT_DRAW_TYPE_COUNT = 2,
 };
 
-class IImage;
-class Image;
-class Point;
-class IHTML;
-class IHTMLEvents;
-class IVguiMatInfo
-{
-
-};
-
-
-using HCursor = unsigned long;
-using HTexture = unsigned long;
-using HFont = unsigned long;
-using VPANEL = unsigned int;
-
 struct CharRenderInfo
 {
-	int				x, y;
-	Vertex_t* verts;
-	int				textureId;
-	int				abcA;
-	int				abcB;
-	int				abcC;
-	int				fontTall;
-	HFont			currentFont;
-	FontDrawType_t	drawType;
-	wchar_t			ch;
-	bool			valid;
-	bool			shouldclip;
+	int x = 0, y = 0;
+	Vertex_t* verts = nullptr;
+	int textureId = 0;
+	int abcA = 0;
+	int abcB = 0;
+	int abcC = 0;
+	int fontTall = 0;
+	HFont currentFont = {};
+	FontDrawType_t drawType = {};
+	wchar_t ch = {};
+	bool valid = false;
+	bool shouldclip = false;
 };
-
-
-
 
 struct IntRect
 {
-	int x0;
-	int y0;
-	int x1;
-	int y1;
+	int x0 = 0;
+	int y0 = 0;
+	int x1 = 0;
+	int y1 = 0;
 };
 
+enum ETextureFormat
+{
+	eTextureFormat_RGBA,
+	eTextureFormat_BGRA,
+	eTextureFormat_BGRA_Opaque
+};
 
 enum SurfaceFeature_e
 {
@@ -71,578 +65,203 @@ enum SurfaceFeature_e
 	DIRECT_HWND_RENDER = 7,
 };
 
-class CSurface
+class ISurface : public IAppSystem
 {
 public:
-	// What the fuck goes before this one? Anything I add crashes me
-	void DrawSetColor(int r, int g, int b, int a)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 11)(this, r, g, b, a);
-	}
-	void DrawSetColor(Color_t col)
-	{
-		return DrawSetColor(col.r, col.g, col.b, col.a);
-	}
-	void DrawFilledRect(int x0, int y0, int x1, int y1)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 12)(this, x0, y0, x1, y1);
-	}
-	void DrawFilledRectArray(IntRect* pRects, int numRects)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, IntRect* pRects, int numRects)>(this, 13)(this, pRects, numRects);
-	}
-	void DrawOutlinedRect(int x0, int y0, int x1, int y1)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 14)(this, x0, y0, x1, y1);
-	}
-	void DrawLine(int x, int y, int x1, int y1)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 15)(this, x, y, x1, y1);
-	}
-	void DrawPolyLine(int* px, int* py, int numPoints)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int*, int*, int)>(this, 16)(this, px, py, numPoints);
-	}
-	void DrawSetTextFont(HFont font)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, HFont)>(this, 17)(this, font);
-	}
-	void DrawSetTextColor(int r, int g, int b, int a)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 19)(this, r, g, b, a);
-	}
-	void DrawSetTextColor(Color_t col)
-	{
-		DrawSetTextColor(col.r, col.g, col.b, col.a);
-	}
-	void DrawSetTextPos(int x, int y)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int)>(this, 20)(this, x, y);
-	}
-	void DrawGetTextPos(int& x, int& y)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int&, int&)>(this, 20)(this, x, y);
-	}
-	void DrawPrintText(const std::wstring_view text, FontDrawType_t drawType = FONT_DRAW_DEFAULT)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, const wchar_t*, int, int)>(this, 22)(this, text.data(), text.length(), 0);
-	}
-	void DrawUnicodeChar(wchar_t wch, FontDrawType_t drawType = FONT_DRAW_DEFAULT)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, wchar_t, FontDrawType_t)>(this, 23)(this, wch, drawType);
-	}
-	void DrawFlushText()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 24)(this);
-	}
-	IHTML* CreateHTMLWindow(IHTMLEvents* events, VPANEL context)
-	{
-		return GetVFunc<IHTML* (__thiscall*)(PVOID, IHTMLEvents* events, VPANEL context)>(this, 25)(this, events, context);
-	}
-	void PaintHTMLWindow(IHTML* htmlwin)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, IHTML* htmlwin)>(this, 26)(this, htmlwin);
-	}
-	void DeleteHTMLWindow(IHTML* htmlwin)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, IHTML* htmlwin)>(this, 27)(this, htmlwin);
-	}
-	int	DrawGetTextureId(char const* filename)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, char const*)>(this, 28)(this, filename);
-	}
-	bool DrawGetTextureFile(int id, char* filename, int maxlen)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, int, char*, int)>(this, 29)(this, id, filename, maxlen);
-	};
-	void DrawSetTextureFile(int id, const char* filename, int hardwareFilter, bool forceReload)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, const char*, int, bool)>(this, 30)(this, id, filename, hardwareFilter, forceReload);
-	};
-	void DrawSetTextureRGBA(int id, unsigned char const* rgba, int wide, int tall, int hardwareFilter = 0, bool forceReload = false)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, unsigned char const*, int, int, int, bool)>(this, 31)(this, id, rgba, wide, tall, hardwareFilter, forceReload);
-	}
-	void DrawSetTexture(int id)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int)>(this, 32)(this, id);
-	}
-	void DrawGetTextureSize(int id, int& wide, int& tall)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int&, int&)>(this, 33)(this, id, wide, tall);
-	};
-	void DrawTexturedRect(int x, int y, int w, int h)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 34)(this, x, y, x + w, y + h);
-	}
-	bool IsTextureIDValid(int id)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, int)>(this, 35)(this, id);
-	}
-	bool DeleteTextureByID(int id)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, int)>(this, 36)(this, id);
-	}
-	int CreateNewTextureID(bool procedural = true)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, bool)>(this, 37)(this, procedural);
-	}
-	void GetScreenSize(int& wide, int& tall)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int&, int&)>(this, 38)(this, wide, tall);
-	}
-	void SetAsTopMost(VPANEL panel, bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 39)(this, panel, state);
-	}
-	void BringToFront(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 40)(this, panel);
-	}
-	void SetForegroundWindow(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 41)(this, panel);
-	}
-	void SetPanelVisible(VPANEL panel, bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 42)(this, panel, state);
-	}
-	void SetMinimized(VPANEL panel, bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 43)(this, panel, state);
-	}
-	void IsMinimized(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 44)(this, panel);
-	}
-	void FlashWindow(VPANEL panel, bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 45)(this, panel, state);
-	}
-	void SetTitle(VPANEL panel, const wchar_t* title)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, const wchar_t*)>(this, 46)(this, panel, title);
-	}
-	void SetAsToolBar(VPANEL panel, bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 47)(this, panel, state);
-	}
-	void CreatePopup(VPANEL panel, bool minimised, bool showTaskbarIcon = true, bool disabled = false, bool mouseInput = true, bool kbInput = true)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool, bool, bool, bool, bool)>(this, 48)(this, panel, minimised, showTaskbarIcon, disabled, mouseInput, kbInput);
-	}
-	void SwapBuffers(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 49)(this, panel);
-	}
-	void Invalidate(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 50)(this, panel);
-	}
-	void SetCursor(HCursor cursor)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, HCursor)>(this, 51)(this, cursor);
-	}
-	void SetCursorAlwaysVisible(bool b)
-	{
-		GetVFunc<void(__thiscall*)(PVOID, bool)>(this, 52)(this, b);
-	}
-	bool IsCursorVisible()
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 53)(this);
-	}
-	void ApplyChanges()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 54)(this);
-	}
-	bool IsWithin(int x, int y)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, int, int)>(this, 55)(this, x, y);
-	}
-	bool HasFocus()
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 56)(this);
-	}
-	bool SupportsFeature(SurfaceFeature_e feature)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, SurfaceFeature_e)>(this, 57)(this, feature);
-	}
-	void RestrictPaintToSinglePanel(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 58)(this, panel);
-	}
-	void SetModalPanel(VPANEL)
-	{
-		// Source moment
-	}
-	VPANEL GetModalPanel()
-	{
-		return GetVFunc<VPANEL(__thiscall*)(PVOID)>(this, 60)(this);
-	}
-	void UnlockCursor()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 61)(this);
-	}
-	void LockCursor()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 62)(this);
-	}
-	void SetTranslateExtendedKeys(bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, bool)>(this, 63)(this, state);
-	}
-	VPANEL GetTopmostPopup()
-	{
-		return GetVFunc<VPANEL(__thiscall*)(PVOID)>(this, 64)(this);
-	}
-	void SetTopLevelFocus(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 65)(this, panel);
-	}
-	unsigned long CreateFont()
-	{
-		return GetVFunc<unsigned int(__thiscall*)(PVOID)>(this, 66)(this);
-	}
-	void SetFontGlyphSet(unsigned long& font, const char* windows_font_name, int tall, int weight, int blur, int scanlines, int flags)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, unsigned long, const char*, int, int, int, int, int, int, int)>(this, 67)(this, font, windows_font_name, tall, weight, blur, scanlines, flags, 0, 0);
-	}
-	bool AddCustomFontFile(const char* fontName, const char* fontFileName)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, const char*, const char*)>(this, 68)(this, fontName, fontFileName);
-	}
-	int GetFontTall(HFont font)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, HFont)>(this, 69)(this, font);
-	}
-	int GetFontTallRequested(HFont font)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, HFont)>(this, 70)(this, font);
-	}
-	int GetFontAscent(HFont font, wchar_t wch)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, HFont, wchar_t)>(this, 71)(this, font, wch);
-	}
-	bool IsFontAdditive(HFont font)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, HFont)>(this, 72)(this, font);
-	}
-	void GetCharABCwide(HFont font, int ch, int& a, int& b, int& c)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, HFont, int, int&, int&, int&)>(this, 73)(this, font, ch, a, b, c);
-	}
-	int GetCharacterWidth(HFont font, int ch)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, HFont, int)>(this, 74)(this, font, ch);
-	}
-	void GetTextSize(unsigned long font, const wchar_t* text, int& wide, int& tall)
-	{
-		GetVFunc<void(__thiscall*)(PVOID, unsigned long, const wchar_t*, int&, int&)>(this, 75)(this, font, text, wide, tall);
-	}
-	VPANEL GetNotifyPanel()
-	{
-		return GetVFunc<VPANEL(__thiscall*)(PVOID)>(this, 76)(this);
-	}
-	void SetNotifyIcon(VPANEL context, HTexture icon, VPANEL panelToReceiveMessages, const char* text)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, HTexture, VPANEL, const char*)>(this, 77)(this, context, icon, panelToReceiveMessages, text);
-	}
-	void PlaySound(const char* szFile)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, const char*)>(this, 78)(this, szFile);
-	}
-	int GetPopupCount()
-	{
-		return GetVFunc<int(__thiscall*)(PVOID)>(this, 79)(this);
-	}
-	VPANEL GetPopup(int index)
-	{
-		return GetVFunc<VPANEL(__thiscall*)(PVOID, int)>(this, 80)(this, index);
-	}
-	bool ShouldPaintChildPanel(VPANEL childPanel)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, VPANEL)>(this, 81)(this, childPanel);
-	}
-	bool RecreateContext(VPANEL panel)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, VPANEL)>(this, 82)(this, panel);
-	}
-	void AddPanel(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 83)(this, panel);
-	}
-	void ReleasePanel(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 84)(this, panel);
-	}
-	void MovePopupToFront(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 85)(this, panel);
-	}
-	void MovePopupToBack(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 86)(this, panel);
-	}
-	void SolveTraverse(VPANEL panel, bool forceApplySchemeSettings = false)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 87)(this, panel, forceApplySchemeSettings);
-	}
-	void PaintTraverse(VPANEL panel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 88)(this, panel);
-	}
-	void EnableMouseCapture(VPANEL panel, bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 89)(this, panel, state);
-	}
-	void GetWorkspaceBounds(int& x, int& y, int& wide, int& tall)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int&, int&, int&, int&)>(this, 90)(this, x, y, wide, tall);
-	}
-	void GetAbsoluteWindowBounds(int& x, int& y, int& wide, int& tall)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int&, int&, int&, int&)>(this, 91)(this, x, y, wide, tall);
-	}
-	void GetProportionalBase(int& width, int& height)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int&, int&)>(this, 92)(this, width, height);
-	}
-	void CalculateMouseVisible()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 93)(this);
-	}
-	bool NeedKBInput()
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 94)(this);
-	}
-	bool HasCursorPosFunctions()
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 95)(this);
-	}
-	void SurfaceGetCursorPos(int& x_out, int& y_out)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int&, int&)>(this, 96)(this, x_out, y_out);
-	}
-	void SurfaceSetCursorPos(int x, int y)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int)>(this, 97)(this, x, y);
-	}
-	void DrawTexturedLine(const Vertex_t& a, const Vertex_t& b)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, const Vertex_t&, const Vertex_t&)>(this, 98)(this, a, b);
-	}
-	void DrawOutlinedCircle(int x, int y, float radius, int segments)
-	{
-		GetVFunc<void(__thiscall*)(PVOID, int, int, float, int)>(this, 99)(this, x, y, radius, segments);
-	}
-	void DrawTexturedPolyLine(const Vertex_t* p, int n)
-	{
-		GetVFunc<void(__thiscall*)(PVOID, const Vertex_t* p, int n)>(this, 100)(this, p, n);
-	}
-	void DrawTexturedSubRect(int x0, int y0, int x1, int y1, float texs0, float text0, float texs1, float text1)
-	{
-		GetVFunc<void(__thiscall*)(PVOID, int, int, int, int, float, float, float, float)>(this, 101)(this, x0, y0, x1, y1, texs0, text0, texs1, text1);
-	}
-	void DrawTexturedPolygon(int n, Vertex_t* vertices, bool bClipVertices = true)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, Vertex_t*, bool)>(this, 102)(this, n, vertices, bClipVertices);
-	}
-	const wchar_t* GetTitle(VPANEL panel)
-	{
-		return GetVFunc<const wchar_t* (__thiscall*)(PVOID, VPANEL)>(this, 103)(this, panel);
-	}
-	bool IsCursorLocked(void)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 104)(this);
-	}
-	void SetWorkspaceInsets(int left, int top, int right, int bottom)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 105)(this, left, top, right, bottom);
-	}
-	bool DrawGetUnicodeCharRenderInfo(wchar_t ch, CharRenderInfo& info)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, wchar_t, CharRenderInfo&)>(this, 106)(this, ch, info);
-	}
-	void DrawRenderCharFromInfo(const CharRenderInfo& info)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, const CharRenderInfo&)>(this, 107)(this, info);
-	}
-	void DrawSetAlphaMultiplier(float alpha)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, float)>(this, 108)(this, alpha);
-	}
-	float DrawGetAlphaMultiplier()
-	{
-		return GetVFunc<float(__thiscall*)(PVOID)>(this, 109)(this);
-	}
-	void SetAllowHTMLJavaScript(bool state)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, bool)>(this, 110)(this, state);
-	}
-	void OnScreenSizeChanged(int nOldWidth, int nOldHeight)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int)>(this, 111)(this, nOldWidth, nOldHeight);
-	}
-	HCursor CreateCursorFromFile(char const* curOrAniFile, char const* pPathID = 0)
-	{
-		return GetVFunc<HCursor(__thiscall*)(PVOID, char const* curOrAniFile, char const* pPathID)>(this, 112)(this, curOrAniFile, pPathID);
-	}
-	IVguiMatInfo* DrawGetTextureMatInfoFactory(int id)
-	{
-		return GetVFunc<IVguiMatInfo*(__thiscall*)(PVOID, int)>(this, 113)(this, id);
-	}
-	void PaintTraverseEx(VPANEL panel, bool paintPopups = false)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL, bool)>(this, 114)(this, panel, paintPopups);
-	}
-	float GetZPos()
-	{
-		return GetVFunc<float(__thiscall*)(PVOID)>(this, 115)(this);
-	}
-	void SetPanelForInput(VPANEL vpanel)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, VPANEL)>(this, 116)(this, vpanel);
-	}
-	void DrawFilledRectFastFade(int x0, int y0, int x1, int y1, int fadeStartPt, int fadeEndPt, unsigned int alpha0, unsigned int alpha1, bool bHorizontal)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int, int, int, unsigned int, unsigned int, bool)>(this, 117)(this, x0, y0, x1, y1, fadeStartPt, fadeEndPt, alpha0, alpha1, bHorizontal);;
-	}
-	void DrawFilledRectFade(int x0, int y0, int x1, int y1, unsigned int alpha0, unsigned int alpha1, bool horizontal)
-	{
-		GetVFunc<void(__thiscall*)(PVOID, int, int, int, int, unsigned int, unsigned int, bool)>(this, 118)(this, x0, y0, x1, y1, alpha0, alpha1, horizontal);
-	}
-	void DrawSetTextureRGBAEx(int id, const unsigned char* rgba, int wide, int tall, ImageFormat imageFormat)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int id, const unsigned char* rgba, int wide, int tall, ImageFormat imageFormat)>(this, 119)(this, id, rgba, wide, tall, imageFormat);
-	}
-	void DrawSetTextScale(float sx, float sy)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, float, float)>(this, 120)(this, sx, sy);
-	}
-	bool SetBitmapFontGlyphSet(HFont font, const char* windowsFontName, float scalex, float scaley, int flags)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, HFont, const char*, float, float, int)>(this, 121)(this, font, windowsFontName, scalex, scaley, flags);
-	}
-	bool AddBitmapFontFile(const char* fontFileName)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, const char*)>(this, 122)(this, fontFileName);
-	}
-	void SetBitmapFontName(const char* pName, const char* pFontFilename)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, const char*, const char*)>(this, 123)(this, pName, pFontFilename);
-	}
-	const char* GetBitmapFontName(const char* pName)
-	{
-		return GetVFunc<const char* (__thiscall*)(PVOID, const char*)>(this, 124)(this, pName);
-	}
-	void ClearTemporaryFontCache(void)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 125)(this);
-	}
-	IImage* GetIconImageForFullPath(char const* pFullPath)
-	{
-		return GetVFunc<IImage* (__thiscall*)(PVOID, char const*)>(this, 126)(this, pFullPath);
-	}
-	void DrawUnicodeString(const wchar_t* pwString, FontDrawType_t drawType = FONT_DRAW_DEFAULT)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, const wchar_t*, FontDrawType_t)>(this, 127)(this, pwString, drawType);
-	}
-	void PrecacheFontCharacters(HFont font, const wchar_t* pCharacters)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, HFont, const wchar_t*)>(this, 128)(this, font, pCharacters);
-	}
-	const char* GetResolutionKey(void)
-	{
-		return GetVFunc<const char* (__thiscall*)(PVOID)>(this, 129)(this);
-	}
-	const char* GetFontName(HFont font)
-	{
-		return GetVFunc<const char* (__thiscall*)(PVOID, HFont)>(this, 130)(this, font);
-	}
-	const char* GetFontFamilyName(HFont font)
-	{
-		return GetVFunc<const char* (__thiscall*)(PVOID, HFont)>(this, 131)(this, font);
-	}
-	void GetKernedCharWidth(HFont font, wchar_t ch, wchar_t chBefore, wchar_t chAfter, float& wide, float& abcA)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, HFont, wchar_t, wchar_t, wchar_t, float&, float&)>(this, 132)(this, font, ch, chBefore, chAfter, wide, abcA);
-	}
-	bool ForceScreenSizeOverride(bool bState, int wide, int tall)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, bool, int, int)>(this, 133)(this, bState, wide, tall);
-	}
-	bool ForceScreenPosOffset(bool bState, int x, int y)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, bool, int, int)>(this, 134)(this, bState, x, y);
-	}
-	void OffsetAbsPos(int& x, int& y)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int)>(this, 135)(this, x, y);
-	}
-	void ResetFontCaches()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 136)(this);
-	}
-	int GetTextureNumFrames(int id)
-	{
-		return GetVFunc<int(__thiscall*)(PVOID, int)>(this, 137)(this, id);
-	}
-	void DrawSetTextureFrame(int id, int nFrame, unsigned int* pFrameCache)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, unsigned int*)>(this, 138)(this, id, nFrame, pFrameCache);
-	}
-	bool IsScreenSizeOverrideActive(void)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 139)(this);
-	}
-	bool IsScreenPosOverrideActive(void)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID)>(this, 140)(this);
-	}
-	void DestroyTextureID(int id)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int)>(this, 141)(this, id);
-	}
-	void DrawUpdateRegionTextureRGBA(int nTextureID, int x, int y, const unsigned char* pchData, int wide, int tall, ImageFormat imageFormat)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, const unsigned char*, int, int, ImageFormat)>(this, 142)(this, nTextureID, x, y, pchData, wide, tall, imageFormat);
-	}
-	bool BHTMLWindowNeedsPaint(IHTML* htmlwin)
-	{
-		return GetVFunc<bool(__thiscall*)(PVOID, IHTML*)>(this, 143)(this, htmlwin);
-	}
-	const char* GetWebkitHTMLUserAgentString()
-	{
-		return GetVFunc<const char* (__thiscall*)(PVOID)>(this, 144)(this);
-	}
-	void* Deprecated_AccessChromeHTMLController()
-	{
-		return GetVFunc<void* (__thiscall*)(PVOID)>(this, 145)(this);
-	}
-	void SetFullscreenViewport(int x, int y, int w, int h)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 146)(this, x, y, w, h);
-	}
-	void GetFullscreenViewport(int& x, int& y, int& w, int& h)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, int, int, int, int)>(this, 147)(this, x, y, w, h);
-	}
-	void PushFullscreenViewport()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 148)(this);
-	}
-	void PopFullscreenViewport()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 149)(this);
-	}
-	void SetSoftwareCursor(bool bUseSoftwareCursor)
-	{
-		return GetVFunc<void(__thiscall*)(PVOID, bool)>(this, 150)(this, bUseSoftwareCursor);
-	}
-	void PaintSoftwareCursor()
-	{
-		return GetVFunc<void(__thiscall*)(PVOID)>(this, 151)(this);
-	}
+	virtual void Shutdown() = 0;
+	virtual void RunFrame() = 0;
+	virtual VPANEL GetEmbeddedPanel() = 0;
+	virtual void SetEmbeddedPanel(VPANEL pPanel) = 0;
+	virtual void PushMakeCurrent(VPANEL panel, bool useInsets) = 0;
+	virtual void PopMakeCurrent(VPANEL panel) = 0;
+	virtual void DrawSetColor(int r, int g, int b, int a) = 0;
+	virtual void DrawSetColor(Color_t col) = 0;
+	virtual void DrawFilledRect(int x0, int y0, int x1, int y1) = 0;
+	virtual void DrawFilledRectArray(IntRect* pRects, int numRects) = 0;
+	virtual void DrawOutlinedRect(int x0, int y0, int x1, int y1) = 0;
+	virtual void DrawLine(int x0, int y0, int x1, int y1) = 0;
+	virtual void DrawPolyLine(int* px, int* py, int numPoints) = 0;
+	virtual void DrawSetTextFont(HFont font) = 0;
+	virtual void DrawSetTextColor(int r, int g, int b, int a) = 0;
+	virtual void DrawSetTextColor(Color_t col) = 0;
+	virtual void DrawSetTextPos(int x, int y) = 0;
+	virtual void DrawGetTextPos(int& x, int& y) = 0;
+	virtual void DrawPrintText(const wchar_t* text, int textLen, FontDrawType_t drawType = FONT_DRAW_DEFAULT) = 0;
+	virtual void DrawUnicodeChar(wchar_t wch, FontDrawType_t drawType = FONT_DRAW_DEFAULT) = 0;
+	virtual void DrawFlushText() = 0;
+	virtual IHTML* CreateHTMLWindow(IHTMLEvents* events, VPANEL context) = 0;
+	virtual void PaintHTMLWindow(IHTML* htmlwin) = 0;
+	virtual void DeleteHTMLWindow(IHTML* htmlwin) = 0;
+	virtual int	DrawGetTextureId(char const* filename) = 0;
+	virtual bool DrawGetTextureFile(int id, char* filename, int maxlen) = 0;
+	virtual void DrawSetTextureFile(int id, const char* filename, int hardwareFilter, bool forceReload) = 0;
+	virtual void DrawSetTextureRGBA(int id, const unsigned char* rgba, int wide, int tall, int hardwareFilter, bool forceReload) = 0;
+	virtual void DrawSetTexture(int id) = 0;
+	virtual void DrawGetTextureSize(int id, int& wide, int& tall) = 0;
+	virtual void DrawTexturedRect(int x0, int y0, int x1, int y1) = 0;
+	virtual bool IsTextureIDValid(int id) = 0;
+	virtual bool DeleteTextureByID(int id) = 0;
+	virtual int CreateNewTextureID(bool procedural = false) = 0;
+	virtual void GetScreenSize(int& wide, int& tall) = 0;
+	virtual void SetAsTopMost(VPANEL panel, bool state) = 0;
+	virtual void BringToFront(VPANEL panel) = 0;
+	virtual void SetForegroundWindow(VPANEL panel) = 0;
+	virtual void SetPanelVisible(VPANEL panel, bool state) = 0;
+	virtual void SetMinimized(VPANEL panel, bool state) = 0;
+	virtual bool IsMinimized(VPANEL panel) = 0;
+	virtual void FlashWindow(VPANEL panel, bool state) = 0;
+	virtual void SetTitle(VPANEL panel, const wchar_t* title) = 0;
+	virtual void SetAsToolBar(VPANEL panel, bool state) = 0;
+	virtual void CreatePopup(VPANEL panel, bool minimised, bool showTaskbarIcon = true, bool disabled = false, bool mouseInput = true, bool kbInput = true) = 0;
+	virtual void SwapBuffers(VPANEL panel) = 0;
+	virtual void Invalidate(VPANEL panel) = 0;
+	virtual void SetCursor(HCursor cursor) = 0;
+	virtual void SetCursorAlwaysVisible(bool visible) = 0;
+	virtual bool IsCursorVisible() = 0;
+	virtual void ApplyChanges() = 0;
+	virtual bool IsWithin(int x, int y) = 0;
+	virtual bool HasFocus() = 0;
+	virtual bool SupportsFeature(SurfaceFeature_e feature) = 0;
+	virtual void RestrictPaintToSinglePanel(VPANEL panel) = 0;
+	virtual void SetModalPanel(VPANEL) = 0;
+	virtual VPANEL GetModalPanel() = 0;
+	virtual void UnlockCursor() = 0;
+	virtual void LockCursor() = 0;
+	virtual void SetTranslateExtendedKeys(bool state) = 0;
+	virtual VPANEL GetTopmostPopup() = 0;
+	virtual void SetTopLevelFocus(VPANEL panel) = 0;
+	virtual HFont CreateFont() = 0;
+	virtual bool SetFontGlyphSet(HFont font, const char* windowsFontName, int tall, int weight, int blur, int scanlines, int flags, int nRangeMin = 0, int nRangeMax = 0) = 0;
+	virtual bool AddCustomFontFile(const char* fontName, const char* fontFileName) = 0;
+	virtual int GetFontTall(HFont font) = 0;
+	virtual int GetFontTallRequested(HFont font) = 0;
+	virtual int GetFontAscent(HFont font, wchar_t wch) = 0;
+	virtual bool IsFontAdditive(HFont font) = 0;
+	virtual void GetCharABCwide(HFont font, int ch, int& a, int& b, int& c) = 0;
+	virtual int GetCharacterWidth(HFont font, int ch) = 0;
+	virtual void GetTextSize(HFont font, const wchar_t* text, int& wide, int& tall) = 0;
+	virtual VPANEL GetNotifyPanel() = 0;
+	virtual void SetNotifyIcon(VPANEL context, HTexture icon, VPANEL panelToReceiveMessages, const char* text) = 0;
+	virtual void PlaySound(const char* fileName) = 0;
+	virtual int GetPopupCount() = 0;
+	virtual VPANEL GetPopup(int index) = 0;
+	virtual bool ShouldPaintChildPanel(VPANEL childPanel) = 0;
+	virtual bool RecreateContext(VPANEL panel) = 0;
+	virtual void AddPanel(VPANEL panel) = 0;
+	virtual void ReleasePanel(VPANEL panel) = 0;
+	virtual void MovePopupToFront(VPANEL panel) = 0;
+	virtual void MovePopupToBack(VPANEL panel) = 0;
+	virtual void SolveTraverse(VPANEL panel, bool forceApplySchemeSettings = false) = 0;
+	virtual void PaintTraverse(VPANEL panel) = 0;
+	virtual void EnableMouseCapture(VPANEL panel, bool state) = 0;
+	virtual void GetWorkspaceBounds(int& x, int& y, int& wide, int& tall) = 0;
+	virtual void GetAbsoluteWindowBounds(int& x, int& y, int& wide, int& tall) = 0;
+	virtual void GetProportionalBase(int& width, int& height) = 0;
+	virtual void CalculateMouseVisible() = 0;
+	virtual bool NeedKBInput() = 0;
+	virtual bool HasCursorPosFunctions() = 0;
+	virtual void SurfaceGetCursorPos(int& x, int& y) = 0;
+	virtual void SurfaceSetCursorPos(int x, int y) = 0;
+	virtual void DrawTexturedLine(const Vertex_t& a, const Vertex_t& b) = 0;
+	virtual void DrawOutlinedCircle(int x, int y, int radius, int segments) = 0;
+	virtual void DrawTexturedPolyLine(const Vertex_t* p, int n) = 0;
+	virtual void DrawTexturedSubRect(int x0, int y0, int x1, int y1, float texs0, float text0, float texs1, float text1) = 0;
+	virtual void DrawTexturedPolygon(int n, Vertex_t* pVertice, bool bClipVertices = true) = 0;
+	virtual const wchar_t* GetTitle(VPANEL panel) = 0;
+	virtual bool IsCursorLocked(void) const = 0;
+	virtual void SetWorkspaceInsets(int left, int top, int right, int bottom) = 0;
+	virtual bool DrawGetUnicodeCharRenderInfo(wchar_t ch, CharRenderInfo& info) = 0;
+	virtual void DrawRenderCharFromInfo(const CharRenderInfo& info) = 0;
+	virtual void DrawSetAlphaMultiplier(float alpha) = 0;
+	virtual float DrawGetAlphaMultiplier() = 0;
+	virtual void SetAllowHTMLJavaScript(bool state) = 0;
+	virtual void OnScreenSizeChanged(int nOldWidth, int nOldHeight) = 0;
+	virtual HCursor CreateCursorFromFile(char const* curOrAniFile, char const* pPathID = 0) = 0;
+	virtual IVguiMatInfo* DrawGetTextureMatInfoFactory(int id) = 0;
+	virtual void PaintTraverseEx(VPANEL panel, bool paintPopups = false) = 0;
+	virtual float GetZPos() const = 0;
+	virtual void SetPanelForInput(VPANEL vpanel) = 0;
+	virtual void DrawFilledRectFastFade(int x0, int y0, int x1, int y1, int fadeStartPt, int fadeEndPt, unsigned int alpha0, unsigned int alpha1, bool bHorizontal) = 0;
+	virtual void DrawFilledRectFade(int x0, int y0, int x1, int y1, unsigned int alpha0, unsigned int alpha1, bool bHorizontal) = 0;
+	virtual void DrawSetTextureRGBAEx(int id, const unsigned char* rgba, int wide, int tall, ImageFormat imageFormat) = 0;
+	virtual void DrawSetTextScale(float sx, float sy) = 0;
+	virtual bool SetBitmapFontGlyphSet(HFont font, const char* windowsFontName, float scalex, float scaley, int flags) = 0;
+	virtual bool AddBitmapFontFile(const char* fontFileName) = 0;
+	virtual void SetBitmapFontName(const char* pName, const char* pFontFilename) = 0;
+	virtual const char* GetBitmapFontName(const char* pName) = 0;
+	virtual void ClearTemporaryFontCache(void) = 0;
+	virtual IImage* GetIconImageForFullPath(char const* pFullPath) = 0;
+	virtual void DrawUnicodeString(const wchar_t* pwString, FontDrawType_t drawType = FONT_DRAW_DEFAULT) = 0;
+	virtual void PrecacheFontCharacters(HFont font, const wchar_t* pCharacters) = 0;
+	virtual const char* GetResolutionKey(void) const = 0;
+	virtual const char* GetFontName(HFont font) = 0;
+	virtual const char* GetFontFamilyName(HFont font) = 0;
+	virtual void GetKernedCharWidth(HFont font, wchar_t ch, wchar_t chBefore, wchar_t chAfter, float& wide, float& abcA) = 0;
+	virtual bool ForceScreenSizeOverride(bool bState, int wide, int tall) = 0;
+	virtual bool ForceScreenPosOffset(bool bState, int x, int y) = 0;
+	virtual void OffsetAbsPos(int& x, int& y) = 0;
+	virtual void ResetFontCaches() = 0;
+	virtual int GetTextureNumFrames(int id) = 0;
+	virtual void DrawSetTextureFrame(int id, int nFrame, unsigned int* pFrameCache) = 0;
+	virtual bool IsScreenSizeOverrideActive(void) = 0;
+	virtual bool IsScreenPosOverrideActive(void) = 0;
+	virtual void DestroyTextureID(int id) = 0;
+	virtual void DrawUpdateRegionTextureRGBA(int nTextureID, int x, int y, const unsigned char* pchData, int wide, int tall, ImageFormat imageFormat) = 0;
+	virtual bool BHTMLWindowNeedsPaint(IHTML* htmlwin) = 0;
+	virtual const char* GetWebkitHTMLUserAgentString() = 0;
+	virtual void* Deprecated_AccessChromeHTMLController() = 0;
+	virtual void SetFullscreenViewport(int x, int y, int w, int h) = 0;
+	virtual void GetFullscreenViewport(int& x, int& y, int& w, int& h) = 0;
+	virtual void PushFullscreenViewport() = 0;
+	virtual void PopFullscreenViewport() = 0;
+	virtual void SetSoftwareCursor(bool bUseSoftwareCursor) = 0;
+	virtual void PaintSoftwareCursor() = 0;
+
+	void StartDrawing()
+	{
+		reinterpret_cast<void(__thiscall*)(void*)>(S::CMatSystemSurface_StartDrawing())(this);
+	}
+
+	void FinishDrawing()
+	{
+		reinterpret_cast<void(__thiscall*)(void*)>(S::CMatSystemSurface_FinishDrawing())(this);
+	}
+};
+
+struct InputEvent_t;
+typedef void (*GetMouseCallback_t)(int& x, int& y);
+typedef void (*SetMouseCallback_t)(int x, int y);
+typedef void (*PlaySoundFunc_t)(const char* pFileName);
+
+class IMatSystemSurface : public ISurface
+{
+public:
+	virtual void AttachToWindow(void* hwnd, bool bLetAppDriveInput = false) = 0;
+	virtual void EnableWindowsMessages(bool bEnable) = 0;
+	virtual void Begin3DPaint(int iLeft, int iTop, int iRight, int iBottom, bool bRenderToTexture = true) = 0;
+	virtual void End3DPaint() = 0;
+	virtual void DisableClipping(bool bDisable) = 0;
+	virtual void GetClippingRect(int& left, int& top, int& right, int& bottom, bool& bClippingDisabled) = 0;
+	virtual void SetClippingRect(int left, int top, int right, int bottom) = 0;
+	virtual bool IsCursorLocked() const = 0;
+	virtual void SetMouseCallbacks(GetMouseCallback_t getFunc, SetMouseCallback_t setFunc) = 0;
+	virtual void InstallPlaySoundFunc(PlaySoundFunc_t soundFunc) = 0;
+	virtual void DrawColoredCircle(int centerx, int centery, float radius, int r, int g, int b, int a) = 0;
+	virtual int DrawColoredText(HFont font, int x, int y, int r, int g, int b, int a, const char* fmt, ...) = 0;
+	virtual void DrawColoredTextRect(HFont font, int x, int y, int w, int h, int r, int g, int b, int a, const char* fmt, ...) = 0;
+	virtual void DrawTextHeight(HFont font, int w, int& h, const char* fmt, ...) = 0;
+	virtual int	DrawTextLen(HFont font, const char* fmt, ...) = 0;
+	virtual void DrawPanelIn3DSpace(VPANEL pRootPanel, const VMatrix& panelCenterToWorld, int nPixelWidth, int nPixelHeight, float flWorldWidth, float flWorldHeight) = 0;
+	virtual void DrawSetTextureMaterial(int id, IMaterial* pMaterial) = 0;
+	virtual bool HandleInputEvent(const InputEvent_t& event) = 0;
+	virtual void Set3DPaintTempRenderTarget(const char* pRenderTargetName) = 0;
+	virtual void Reset3DPaintTempRenderTarget(void) = 0;
+	virtual IMaterial* DrawGetTextureMaterial(int id) = 0;
+	virtual void GetFullscreenViewportAndRenderTarget(int& x, int& y, int& w, int& h, ITexture** ppRenderTarget) = 0;
+	virtual void SetFullscreenViewportAndRenderTarget(int x, int y, int w, int h, ITexture* pRenderTarget) = 0;
+	virtual int  DrawGetTextureId(ITexture* pTexture) = 0;
+	virtual void BeginSkinCompositionPainting() = 0;
+	virtual void EndSkinCompositionPainting() = 0;
 };
 
 #define VGUI_SURFACE_INTERFACE_VERSION "VGUI_Surface030"

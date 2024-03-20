@@ -98,15 +98,22 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 	case ETFClassID::CMerasmus:
 	case ETFClassID::CZombie:
 	case ETFClassID::CEyeballBoss:
-		// pickup glow
-	case ETFClassID::CHalloweenGiftPickup:
 		*glow = Vars::Glow::World::Glow.Value;
-		*color = Vars::Colors::Gargoyle.Value;
-		return Vars::Glow::World::Pickups.Value;
+		*color = Vars::Colors::NPC.Value;
+		return Vars::Glow::World::NPCs.Value;
+	// pickup glow
 	case ETFClassID::CTFAmmoPack:
 		*glow = Vars::Glow::World::Glow.Value;
 		*color = Vars::Colors::Ammo.Value;
 		return Vars::Glow::World::Pickups.Value;
+	case ETFClassID::CCurrencyPack:
+		*glow = Vars::Glow::World::Glow.Value;
+		*color = Vars::Colors::Money.Value;
+		return Vars::Glow::World::Pickups.Value;
+	case ETFClassID::CHalloweenGiftPickup:
+		*glow = Vars::Glow::World::Glow.Value;
+		*color = Vars::Colors::Halloween.Value;
+		return Vars::Glow::World::Halloween.Value;
 	case ETFClassID::CBaseAnimating:
 	{
 		const auto szName = pEntity->GetModelName();
@@ -125,8 +132,8 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 		if (Hash::IsSpell(szName))
 		{
 			*glow = Vars::Glow::World::Glow.Value;
-			*color = Vars::Colors::Spellbook.Value;
-			return Vars::Glow::World::Pickups.Value;
+			*color = Vars::Colors::Halloween.Value;
+			return Vars::Glow::World::Halloween.Value;
 		}
 		break;
 	}
@@ -380,7 +387,7 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 				I::RenderView->SetBlend(0.f);
 
 			const auto& pRecords = F::Backtrack.GetRecords(pEntity);
-			auto vRecords = F::Backtrack.GetValidRecords(pRecords, BacktrackMode::ALL);
+			auto vRecords = F::Backtrack.GetValidRecords(pRecords);
 			if (!vRecords.size())
 				return;
 
@@ -582,7 +589,7 @@ void CGlow::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInf
 		};
 
 
-
+	
 	SetupBegin(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurY);
 	drawModel(true);
 

@@ -103,15 +103,21 @@ int CAimbotGlobal::GetPriority(int targetIdx)
 bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal)
+	if (!pLocal || G::CurWeaponType == EWeaponType::PROJECTILE)
 		return false;
 
+	const Vec3 vOrigin = pBomb->m_vecOrigin();
+
 	CBaseEntity* pTarget;
-	for (CEntitySphereQuery sphere(pBomb->m_vecOrigin(), 250.f);
+	for (CEntitySphereQuery sphere(vOrigin, 300.f);
 		(pTarget = sphere.GetCurrentEntity()) != nullptr;
 		sphere.NextEntity())
 	{
 		if (!pTarget || !pTarget->IsAlive() || pTarget->IsPlayer() && pTarget->IsAGhost() || pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
+			continue;
+
+		Vec3 vPos = {}; pTarget->GetCollision()->CalcNearestPoint(vOrigin, &vPos);
+		if (vOrigin.DistTo(vPos) > 300.f)
 			continue;
 
 		const bool isPlayer = Vars::Aimbot::Global::AimAt.Value & PLAYER && pTarget->IsPlayer();
@@ -119,13 +125,12 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 		const bool isDispenser = Vars::Aimbot::Global::AimAt.Value & DISPENSER && pTarget->IsDispenser();
 		const bool isTeleporter = Vars::Aimbot::Global::AimAt.Value & TELEPORTER && pTarget->IsTeleporter();
 		const bool isNPC = Vars::Aimbot::Global::AimAt.Value & NPC && pTarget->IsNPC();
-
 		if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC)
 		{
 			if (isPlayer && F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
-			if (!Utils::VisPos(pBomb, pTarget, pBomb->m_vecOrigin(), isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SOLID))
+			if (!Utils::VisPosProjectile(pBomb, pTarget, vOrigin, isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SHOT))
 				continue;
 
 			return true;

@@ -17,14 +17,11 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
 			// Remove punch effect
-			G::PunchAngles = pLocal->PunchAngles(); // use in aimbot 
+			G::PunchAngles = pLocal->m_vecPunchAngle(); // use in aimbot 
 			if (Vars::Visuals::RemovePunch.Value)
 				pLocal->ClearPunchAngle(); // visual no-recoil
 			F::Resolver.FrameStageNotify(pLocal);
 		}
-		F::Visuals.SkyboxChanger();
-
-		break;
 	}
 
 	Hook.Original<FN>()(ecx, edx, curStage);
@@ -38,24 +35,22 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 	case EClientFrameStage::FRAME_NET_UPDATE_END:
 		g_EntityCache.Fill();
 		F::PlayerUtils.UpdatePlayers();
-		for (auto pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 		{
-			if (!pEntity || pEntity == g_EntityCache.GetLocal() || pEntity->IsTaunting() && !Vars::Visuals::RemoveInterpolation.Value)
+			CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+			if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer())
 				continue; // local player managed in CPrediction_RunCommand
 
-			if (auto nDifference = std::clamp(TIME_TO_TICKS(pEntity->m_flSimulationTime() - pEntity->m_flOldSimulationTime()), 0, 22))
+			if (auto iDifference = std::min(TIME_TO_TICKS(pEntity->m_flSimulationTime() - pEntity->m_flOldSimulationTime()), g_ConVars.sv_maxusrcmdprocessticks->GetInt()))
 			{
 				float flOldFrameTime = I::GlobalVars->frametime;
-
 				I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.f : TICK_INTERVAL;
-
-				for (int n = 0; n < nDifference; n++)
+				for (int i = 0; i < iDifference; i++)
 				{
 					G::UpdatingAnims = true;
 					pEntity->UpdateClientSideAnimation();
 					G::UpdatingAnims = false;
 				}
-
 				I::GlobalVars->frametime = flOldFrameTime;
 			}
 		}
@@ -65,22 +60,16 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		F::Visuals.FillSightlines();
 		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 		{
-			if (const auto& player = I::ClientEntityList->GetClientEntity(n))
-			{
-				const VelFixRecord record = { player->m_vecOrigin(), player->m_fFlags(), player->m_flSimulationTime() };
-				G::VelFixRecords[player] = record;
-			}
+			if (const auto& pPlayer = I::ClientEntityList->GetClientEntity(n))
+				G::VelFixRecords[pPlayer] = { pPlayer->m_vecOrigin(), pPlayer->m_vecMaxs().z - pPlayer->m_vecMins().z, pPlayer->m_flSimulationTime() };
 		}
-
-		F::FakeAngle.Run();
 
 		break;
 	case EClientFrameStage::FRAME_RENDER_START:
 		if (!G::UnloadWndProcHook)
 		{
-			F::Visuals.ModulateWorld();
+			F::Visuals.SkyboxChanger();
+			F::Visuals.Modulate();
 		}
-
-		break;
 	}
 }

@@ -14,6 +14,9 @@
 #include "worldsize.h"
 
 #include <deque>
+
+typedef void* (*CreateInterfaceFn)(const char* pName, int* pReturnCode);
+
 using Vector = Vec3;
 using QAngle = Vec3;
 class IRefCounted

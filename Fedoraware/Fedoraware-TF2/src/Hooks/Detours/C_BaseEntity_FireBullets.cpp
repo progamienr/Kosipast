@@ -89,90 +89,49 @@ void DrawBeam(const Vector& source, const Vector& end)
 		I::ViewRenderBeams->DrawBeam(coolBeam);
 }
 
-//C_BaseCombatWeapon_ItemPostFrame L"client.dll", L"E8 ? ? ? ? 80 BE ? ? ? ? ? 74 07 8B CE E8 ? ? ? ? 8B 06"
-//C_TFWeaponBaseGun_PrimaryAttack L"client.dll", L"E8 ? ? ? ? A1 ? ? ? ? 8D 4D F0"
-//C_TFWeaponBaseGun_FireProjectile L"client.dll", L"E8 ? ? ? ? 8B 8F ? ? ? ? 8B F0 33 C0"
-//C_TFWeaponBaseGun_FireBullet L"client.dll", L"55 8B EC 83 EC 20 53 8B D9 56 57 89 5D FC"
-
-bool FireBulletsHandler(CBaseCombatWeapon* pWeapon)
-{
-	static int nLastTickCount = 0;
-	static int nLastBulletAmount = 0;
-	static int nShotCount = 0;
-	if (!pWeapon || pWeapon != g_EntityCache.GetWeapon() || !I::Prediction->m_bFirstTimePredicted)
-	{
-		nShotCount = 0;
-		return false;
-	}
-
-	const int nBulletAmount = pWeapon->GetBulletAmount();
-
-	if (nBulletAmount != nLastBulletAmount)
-	{
-		nShotCount = 0;
-		nLastBulletAmount = nBulletAmount;
-		return true;
-	}
-
-	if (nLastTickCount == I::GlobalVars->tickcount)
-	{
-		nShotCount++;
-		if (nShotCount > nBulletAmount)
-			return false;
-	}
-	nShotCount = 0;
-	nLastTickCount = I::GlobalVars->tickcount;
-
-	return true;
-}
-
 MAKE_HOOK(C_BaseEntity_FireBullets, S::CBaseEntity_FireBullets(), void, __fastcall,
 	void* ecx, void* edx, CBaseCombatWeapon* pWeapon, const FireBulletsInfo_t& info, bool bDoEffects, int nDamageType, int nCustomDamageType)
 {
-	if (!FireBulletsHandler(pWeapon))
-		return;
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto& pPlayer = reinterpret_cast<CBaseEntity*>(ecx);
+	if (!pLocal || pPlayer != pLocal)
+		return Hook.Original<FN>()(ecx, edx, pWeapon, info, bDoEffects, nDamageType, nCustomDamageType);
 
-	if (const auto& pLocal = g_EntityCache.GetLocal())
-	{
-		if (!pLocal->IsInValidTeam())
-			return;
+	const Vec3 vStart = info.m_vecSrc;
+	const Vec3 vEnd = vStart + info.m_vecDirShooting * info.m_flDistance;
+	CGameTrace trace = {};
+	CTraceFilterHitscan filter = {};
+	filter.pSkip = pLocal;
+	Utils::Trace(vStart, vEnd, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 
-		const Vec3 vStart = info.m_vecSrc;
-		const Vec3 vEnd = vStart + info.m_vecDirShooting * info.m_flDistance;
-		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
-		filter.pSkip = pLocal;
-		Utils::Trace(vStart, vEnd, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
+	const int iAttachment = pWeapon->LookupAttachment("muzzle");
+	pWeapon->GetAttachment(iAttachment, trace.vStartPos);
 
-		const int iAttachment = pWeapon->LookupAttachment("muzzle");
-		pWeapon->GetAttachment(iAttachment, trace.vStartPos);
+	const bool bCrit = nDamageType & DMG_CRITICAL || pLocal->IsCritBoosted();
+	const int iTeam = pLocal->m_iTeamNum();
 
-		const bool bCrit = nDamageType & DMG_CRITICAL || pLocal->IsCritBoosted();
-		const int iTeam = pLocal->m_iTeamNum();
+	auto& string = bCrit ? Vars::Visuals::Tracers::ParticleTracerCrits.Value : Vars::Visuals::Tracers::ParticleTracer.Value;
+	if (!pLocal->IsInValidTeam() || string == "Off" || string == "Default")
+		Hook.Original<FN>()(ecx, edx, pWeapon, info, bDoEffects, nDamageType, nCustomDamageType);
+	else if (string == "Machina")
+		Particles::ParticleTracer(iTeam == TEAM_RED ? "dxhr_sniper_rail_red" : "dxhr_sniper_rail_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "C.A.P.P.E.R")
+		Particles::ParticleTracer(iTeam == TEAM_RED ? "bullet_tracer_raygun_red" : "bullet_tracer_raygun_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "Short Circuit")
+		Particles::ParticleTracer(iTeam == TEAM_RED ? "dxhr_lightningball_hit_zap_red" : "dxhr_lightningball_hit_zap_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "Merasmus ZAP")
+		Particles::ParticleTracer("merasmus_zap", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "Merasmus ZAP 2")
+		Particles::ParticleTracer("merasmus_zap_beam02", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "Big Nasty")
+		Particles::ParticleTracer(iTeam == TEAM_RED ? "bullet_bignasty_tracer01_blue" : "bullet_bignasty_tracer01_red", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "Distortion Trail")
+		Particles::ParticleTracer("tfc_sniper_distortion_trail", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else if (string == "Black Ink")
+		Particles::ParticleTracer("merasmus_zap_beam01", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
+	else
+		Particles::ParticleTracer(string.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 
-		auto& string = bCrit ? Vars::Visuals::Tracers::ParticleTracerCrits.Value : Vars::Visuals::Tracers::ParticleTracer.Value;
-		if (string == "Off" || string == "Default")
-			Hook.Original<FN>()(ecx, edx, pWeapon, info, bDoEffects, nDamageType, nCustomDamageType);
-		else if (string == "Machina")
-			Particles::ParticleTracer(iTeam == TEAM_RED ? "dxhr_sniper_rail_red" : "dxhr_sniper_rail_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "C.A.P.P.E.R")
-			Particles::ParticleTracer(iTeam == TEAM_RED ? "bullet_tracer_raygun_red" : "bullet_tracer_raygun_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Short Circuit")
-			Particles::ParticleTracer(iTeam == TEAM_RED ? "dxhr_lightningball_hit_zap_red" : "dxhr_lightningball_hit_zap_blue", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Merasmus ZAP")
-			Particles::ParticleTracer("merasmus_zap", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Merasmus ZAP 2")
-			Particles::ParticleTracer("merasmus_zap_beam02", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Big Nasty")
-			Particles::ParticleTracer(iTeam == TEAM_RED ? "bullet_bignasty_tracer01_blue" : "bullet_bignasty_tracer01_red", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Distortion Trail")
-			Particles::ParticleTracer("tfc_sniper_distortion_trail", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else if (string == "Black Ink")
-			Particles::ParticleTracer("merasmus_zap_beam01", trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-		else
-			Particles::ParticleTracer(string.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
-
-		if (Vars::Visuals::Beans::Active.Value)
-			DrawBeam(trace.vStartPos, trace.vEndPos);
-	}
+	if (Vars::Visuals::Beans::Active.Value)
+		DrawBeam(trace.vStartPos, trace.vEndPos);
 }

@@ -22,10 +22,10 @@ class CMisc
 	void DetectChoke();
 	void WeaponSway();
 
-	void TauntKartControl(CUserCmd* pCmd, bool* pSendPacket);
+	void TauntKartControl(CUserCmd* pCmd, bool* pSendPacket, CBaseEntity* pLocal);
 	void FastStop(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void FastStrafe(CUserCmd* pCmd);
+	void FastStrafe(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void InstaStop(CUserCmd* pCmd, bool* pSendPacket);
 	void StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal);

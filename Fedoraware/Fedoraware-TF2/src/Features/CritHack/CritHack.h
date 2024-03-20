@@ -18,7 +18,11 @@ struct WeaponStorage
 	int StreamWait = -1;
 	int StreamEnd = -1;
 
+	int EntIndex = -1;
 	int DefIndex = -1;
+
+	std::deque<int> CritCommands = {};
+	std::deque<int> SkipCommands = {};
 };
 
 class CCritHack
@@ -26,27 +30,19 @@ class CCritHack
 private:
 	bool IsEnabled();
 
-	void Fill(CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const bool bAttacking, int n = 10);
-	int LastGoodCritTick(const CUserCmd* pCmd);
-	int LastGoodSkipTick(const CUserCmd* pCmd);
+	void Fill(CBaseEntity* pLocal, const CUserCmd* pCmd, int n = 10);
+	int FirstGoodCommand(std::deque<int>& vCommands, const CUserCmd* pCmd);
 
-	bool IsCritCommand(const i32 command_number, const bool crit = true);
-	u32 DecryptOrEncryptSeed(CBaseCombatWeapon* pWeapon, const u32 seed);
+	bool IsCritCommand(int iSlot, int iIndex, const i32 command_number, const bool bCrit = true);
+	u32 DecryptOrEncryptSeed(int iSlot, int iIndex, const u32 uSeed);
 
 	void GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	void CanFireCriticalShotHandler(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
+	void CanFireCritical(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	void GetDamageTilUnban(CBaseEntity* pLocal);
 	bool WeaponCanCrit(CBaseCombatWeapon* weapon);
 
 	void ResetWeapons(CBaseEntity* pLocal);
 	void Reset();
-
-	std::deque<int> ForceCmds{};
-	std::deque<int> SkipCmds{};
-
-	float BucketDefault = 300.f;
-	float BucketBottom = -250.f;
-	float BucketCap = 1000.f;
 
 	float CritDamage = 0;
 	float AllDamage = 0;
@@ -55,6 +51,10 @@ private:
 	int DamageTilUnban = 0;
 	float CritChance = 0.f;
 	int WishRandomSeed = 0;
+
+	float BucketDefault = 300.f;
+	float BucketBottom = -250.f;
+	float BucketCap = 1000.f;
 
 public:
 

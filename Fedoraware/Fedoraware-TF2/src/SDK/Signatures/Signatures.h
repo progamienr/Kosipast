@@ -51,6 +51,7 @@ namespace S
 	MAKE_SIGNATURE(CBaseCombatWeapon_IsAllowedToWithdrawFromCritBucket, CLIENT_DLL, "55 8B EC 56 8B F1 0F B7 86", 0x0);
 	MAKE_SIGNATURE(CBaseEntity_FireBullets, CLIENT_DLL, "55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 8B 5D", 0x0);
 	MAKE_SIGNATURE(CBaseEntity_Interpolate, CLIENT_DLL, "55 8B EC 83 EC ? 53 57 8D 45", 0x0);
+	MAKE_SIGNATURE(CBaseEntity_InterpolateServerEntities, CLIENT_DLL, "55 8B EC 83 EC 30 8B 0D ? ? ? ? 53 33 DB 89 5D DC 89 5D E0 8B 41 08 89 5D E4 89 5D E8 85 C0 74 41 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 53 53", 0x0);
 	MAKE_SIGNATURE(CBaseEntity_ResetLatched, CLIENT_DLL, "53 8B D9 8B 03 8B 80 ? ? ? ? FF D0 84 C0 75 25 57 8B 7B 20", 0x0);
 	MAKE_SIGNATURE(CBaseEntity_SetAbsVelocity, CLIENT_DLL, "55 8B EC 83 EC ? 56 57 8B 7D ? 8B F1 F3 0F", 0x0);
 	MAKE_SIGNATURE(CBasePlayer_CalcViewModelView, CLIENT_DLL, "55 8B EC 83 EC ? 8B 55 ? 53 8B 5D ? 89 4D ? 8B 02", 0x0);
@@ -117,6 +118,8 @@ namespace S
 	// Functions
 	MAKE_SIGNATURE(CMatchInviteNotification_AcceptMatch, CLIENT_DLL, "55 8B EC 83 EC 10 56 8B F1 8B 86 ? ? ? ? 83 E8 00", 0x0);
 	MAKE_SIGNATURE(CTFKnife_IsBehindAndFacingTarget, CLIENT_DLL, "53 8B DC 83 EC ? 83 E4 ? 83 C4 ? 55 8B 6B ? 89 6C 24 ? 8B EC 83 EC ? 56 57 E8 ? ? ? ? 8B F0", 0x0);
+	MAKE_SIGNATURE(CMatSystemSurface_StartDrawing, MATSURFACE_DLL, "55 8B EC 64 A1 ? ? ? ? 6A FF 68 ? ? ? ? 50 64 89 25 ? ? ? ? 83 EC 14", 0x0);
+	MAKE_SIGNATURE(CMatSystemSurface_FinishDrawing, MATSURFACE_DLL, "55 8B EC 6A FF 68 ? ? ? ? 64 A1 ? ? ? ? 50 64 89 25 ? ? ? ? 51 56 6A 00", 0x0);
 
 	// Values
 	MAKE_SIGNATURE(RandomSeed, CLIENT_DLL, "C7 05 ? ? ? ? ? ? ? ? 5D C3 8B 40 34", 0x2);

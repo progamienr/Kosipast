@@ -11,7 +11,6 @@ public:
 	matrix3x4 BoneMatrix[128];
 	bool BonesSetup = false;
 
-	bool ShouldRun = false;
 	bool DrawChams = false;
 };
 

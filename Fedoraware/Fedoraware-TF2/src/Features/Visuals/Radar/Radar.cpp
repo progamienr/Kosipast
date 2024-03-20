@@ -3,129 +3,197 @@
 #include "../../Vars.h"
 #include "../../Color.h"
 
-#include "../../Menu/Menu.h"
-
-constexpr Color_t clrBlack = { 0, 0, 0, 255 };
-constexpr Color_t clrWhite = { 255, 255, 255, 255 };
-
-void CRadar::Run()
+bool CRadar::GetDrawPosition(CBaseEntity* pLocal, CBaseEntity* pEntity, int& x, int& y, int& z)
 {
-	if (!ShouldRun())
-		return;
+	const float flRange = Vars::Radar::Main::Range.Value;
+	const float flYaw = I::EngineClient->GetViewAngles().y * (PI / 180.f);
+	const float flCos = cosf(flYaw), flSin = sinf(flYaw);
 
-	//Draw background, handle input.
-	DrawRadar();
+	const Vec3 vDelta = pEntity->GetAbsOrigin() - pLocal->GetAbsOrigin();
+	auto vPos = Vec2((vDelta.y * (-flCos) + vDelta.x * flSin), (vDelta.x * (-flCos) - vDelta.y * flSin));
+	z = vDelta.z;
 
-	if (const auto& pLocal = g_EntityCache.GetLocal())
-		DrawPoints(pLocal);
-}
+	switch (Vars::Radar::Main::Style.Value)
+	{
+	case 0:
+	{
+		const float flDist = vDelta.Length2D();
+		if (flDist > flRange)
+		{
+			if (!Vars::Radar::Main::AlwaysDraw.Value)
+				return false;
 
-bool CRadar::ShouldRun()
-{
-	if (!Vars::Radar::Main::Active.Value)
-		return false;
+			vPos *= flRange / flDist;
+		}
+		break;
+	}
+	case 1:
+		if (fabs(vPos.x) > flRange || fabs(vPos.y) > flRange)
+		{
+			if (!Vars::Radar::Main::AlwaysDraw.Value)
+				return false;
+
+			if (vPos.y > vPos.x)
+			{
+				if (vPos.y > -vPos.x)
+					vPos.x = flRange * vPos.x / vPos.y, vPos.y = flRange;
+				else
+					vPos.y = -flRange * vPos.y / vPos.x, vPos.x = -flRange;
+			}
+			else
+			{
+				if (vPos.y > -vPos.x)
+					vPos.y = flRange * vPos.y / vPos.x, vPos.x = flRange;
+				else
+					vPos.x = -flRange * vPos.x / vPos.y, vPos.y = -flRange;
+			}
+		}
+	}
+
+	const WindowBox_t& info = Vars::Radar::Main::Window.Value;
+	x = info.x + vPos.x / flRange * info.w / 2 + float(info.w) / 2;
+	y = info.y + vPos.y / flRange * info.w / 2 + float(info.w) / 2;
 
 	return true;
 }
 
-void CRadar::DrawRadar()
+void CRadar::DrawBackground()
 {
-	//Build the bg color with the wanted alpha.
-	const Color_t clrBack = { 36, 36, 36, static_cast<byte>(Vars::Radar::Main::BackAlpha.Value) };
-
 	const WindowBox_t& info = Vars::Radar::Main::Window.Value;
+	const auto& themeBack = Vars::Menu::Theme::Background.Value;
+	const auto& themeAccent = Vars::Menu::Theme::Accent.Value;
+	const Color_t backgroundColor = { themeBack.r, themeBack.g, themeBack.b, static_cast<byte>(Vars::Radar::Main::BackAlpha.Value) };
+	const Color_t accentColor = { themeAccent.r, themeAccent.g, themeAccent.b, static_cast<byte>(Vars::Radar::Main::LineAlpha.Value) };
 
-	//Background
-	g_Draw.FillRect(info.x, info.y, info.w, info.w, clrBack);
-
-	//Outline
-	g_Draw.LineRect(info.x, info.y, info.w, info.w, { 43, 43, 45, static_cast<byte>(Vars::Radar::Main::LineAlpha.Value) });
-
-	//Center lines
-	g_Draw.Line(info.x + info.w / 2, info.y, info.x + info.w / 2, info.y + info.w, { 43, 43, 45, static_cast<byte>(Vars::Radar::Main::LineAlpha.Value) });
-	g_Draw.Line(info.x, info.y + info.w / 2, info.x + info.w, info.y + info.w / 2, { 43, 43, 45, static_cast<byte>(Vars::Radar::Main::LineAlpha.Value) });
-}
-
-bool CRadar::GetDrawPosition(int& x, int& y, int& z, CBaseEntity* pEntity)
-{
-	//Calculate the delta and initial position of the entity
-	const Vec3 vDelta = pEntity->GetAbsOrigin() - LocalOrigin;
-	auto vPos = Vec2((vDelta.y * (-LocalCos) + vDelta.x * LocalSin), (vDelta.x * (-LocalCos) - vDelta.y * LocalSin));
-
-	//Range, keep in bounds
-	//Credits are due to whoever wrote this, does what I want and is fast so idc. Code probably older than Jesus.
-	//Found it in my 2015 CSGO pasta so I am sure it is made by someone else than me.
-	if (Vars::Radar::Main::AlwaysDraw.Value && (fabs(vPos.x) > Range || fabs(vPos.y) > Range))
+	switch (Vars::Radar::Main::Style.Value)
 	{
-		if (vPos.y > vPos.x)
-		{
-			if (vPos.y > -vPos.x)
-				vPos.x = Range * vPos.x / vPos.y, vPos.y = Range;
-			else
-				vPos.y = -Range * vPos.y / vPos.x, vPos.x = -Range;
-		}
-		else
-		{
-			if (vPos.y > -vPos.x)
-				vPos.y = Range * vPos.y / vPos.x, vPos.x = Range;
-			else
-				vPos.x = -Range * vPos.x / vPos.y, vPos.y = -Range;
-		}
+	case 0:
+	{
+		const float flRadius = float(info.w) / 2;
+		g_Draw.FillCircle(info.x + flRadius, info.y + flRadius, flRadius, 100, backgroundColor);
+		g_Draw.LineCircle(info.x + flRadius, info.y + flRadius, flRadius, 100, accentColor);
+		break;
+	}
+	case 1:
+		g_Draw.FillRect(info.x, info.y, info.w, info.w, backgroundColor);
+		g_Draw.LineRect(info.x, info.y, info.w, info.w, accentColor);
 	}
 
-	const WindowBox_t& info = Vars::Radar::Main::Window.Value;
-
-	x = info.x + vPos.x / Range * info.w / 2 + float(info.w) / 2;
-	y = info.y + vPos.y / Range * info.w / 2 + float(info.w) / 2;
-	z = vDelta.z;
-
-	if (!Vars::Radar::Main::AlwaysDraw.Value)
-	{
-		if (x < info.x || info.x + info.w < x)
-			x = -1;
-		if (y < info.y || info.y + info.w < y)
-			y = -1;
-	}
-
-	//Just confirm that they were both set.
-	return (x != -1 && y != -1);
+	g_Draw.Line(info.x + info.w / 2, info.y, info.x + info.w / 2, info.y + info.w, accentColor);
+	g_Draw.Line(info.x, info.y + info.w / 2, info.x + info.w, info.y + info.w / 2, accentColor);
 }
 
-void CRadar::DrawPoints(CBaseEntity* pLocal)
+void CRadar::DrawPoints()
 {
-	//Update members that we use calculating the draw position in "GetDrawPosition()"
-	LocalOrigin = pLocal->GetAbsOrigin();
-	LocalYaw = I::EngineClient->GetViewAngles().y * (PI / 180.f);
-	Range = static_cast<float>(Vars::Radar::Main::Range.Value);
-	LocalCos = cos(LocalYaw), LocalSin = sin(LocalYaw);
+	const auto& pLocal = g_EntityCache.GetLocal();
+	if (!pLocal)
+		return;
 
-	// Draw Ammo & Health
+	// Ammo & Health
 	if (Vars::Radar::World::Active.Value)
 	{
-		const int nSize = Vars::Radar::World::IconSize.Value;
+		const int iSize = Vars::Radar::World::IconSize.Value;
 
-		if (Vars::Radar::World::Ammo.Value)
+		if (Vars::Radar::World::Draw.Value & 1 << 4)
 		{
-			for (const auto& ammo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
+			for (const auto& pBook : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
 			{
-				int nX = -1, nY = -1, nZ = 0;
-				if (GetDrawPosition(nX, nY, nZ, ammo))
+				int x, y, z;
+				if (GetDrawPosition(pLocal, pBook, x, y, z))
 				{
-					nX -= (nSize / 2), nY -= (nSize / 2);
-					g_Draw.Texture(nX, nY, nSize, nSize, clrWhite, 55);
+					if (Vars::Radar::World::Background.Value)
+					{
+						const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+						g_Draw.FillCircle(x, y, flRadius, 20, Vars::Colors::Halloween.Value);
+					}
+
+					g_Draw.Texture(x, y, iSize, iSize, 38);
+				}
+			}
+			for (const auto& pBook : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
+			{
+				int x, y, z;
+				if (GetDrawPosition(pLocal, pBook, x, y, z))
+				{
+					if (Vars::Radar::World::Background.Value)
+					{
+						const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+						g_Draw.FillCircle(x, y, flRadius, 20, Vars::Colors::Halloween.Value);
+					}
+
+					g_Draw.Texture(x, y, iSize, iSize, 37);
 				}
 			}
 		}
 
-		if (Vars::Radar::World::Health.Value)
+		if (Vars::Radar::World::Draw.Value & 1 << 3)
 		{
-			for (const auto& health : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
+			for (const auto& bBomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
 			{
-				int nX = -1, nY = -1, nZ = 0;
-				if (GetDrawPosition(nX, nY, nZ, health))
+				int x, y, z;
+				if (GetDrawPosition(pLocal, bBomb, x, y, z))
 				{
-					nX -= (nSize / 2), nY -= (nSize / 2);
-					g_Draw.Texture(nX, nY, nSize, nSize, clrWhite, 50);
+					if (Vars::Radar::World::Background.Value)
+					{
+						const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+						g_Draw.FillCircle(x, y, flRadius, 20, Vars::Colors::Bomb.Value);
+					}
+
+					g_Draw.Texture(x, y, iSize, iSize, 36);
+				}
+			}
+		}
+
+		if (Vars::Radar::World::Draw.Value & 1 << 2)
+		{
+			for (const auto& pBook : g_EntityCache.GetGroup(EGroupType::WORLD_MONEY))
+			{
+				int x, y, z;
+				if (GetDrawPosition(pLocal, pBook, x, y, z))
+				{
+					if (Vars::Radar::World::Background.Value)
+					{
+						const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+						g_Draw.FillCircle(x, y, flRadius, 20, Vars::Colors::Money.Value);
+					}
+
+					g_Draw.Texture(x, y, iSize, iSize, 35);
+				}
+			}
+		}
+
+		if (Vars::Radar::World::Draw.Value & 1 << 1)
+		{
+			for (const auto& pAmmo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
+			{
+				int x, y, z;
+				if (GetDrawPosition(pLocal, pAmmo, x, y, z))
+				{
+					if (Vars::Radar::World::Background.Value)
+					{
+						const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+						g_Draw.FillCircle(x, y, flRadius, 20, Vars::Colors::Ammo.Value);
+					}
+
+					g_Draw.Texture(x, y, iSize, iSize, 34);
+				}
+			}
+		}
+
+		if (Vars::Radar::World::Draw.Value & 1 << 0)
+		{
+			for (const auto& pHealth : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
+			{
+				int x, y, z;
+				if (GetDrawPosition(pLocal, pHealth, x, y, z))
+				{
+					if (Vars::Radar::World::Background.Value)
+					{
+						const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+						g_Draw.FillCircle(x, y, flRadius, 20, Vars::Colors::Health.Value);
+					}
+
+					g_Draw.Texture(x, y, iSize, iSize, 33);
 				}
 			}
 		}
@@ -134,72 +202,75 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 	// Draw buildings
 	if (Vars::Radar::Buildings::Active.Value)
 	{
+		const int iSize = Vars::Radar::Buildings::IconSize.Value;
 
-		for (const auto& pBuilding : g_EntityCache.GetGroup(Vars::Radar::Buildings::IgnoreTeam.Value ? EGroupType::BUILDINGS_ENEMIES : EGroupType::BUILDINGS_ALL))
+		for (const auto& pBuilding : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL))
 		{
 			if (!pBuilding->IsAlive())
 				continue;
 
-			int nX = -1, nY = -1, nZ = 0;
-			if (GetDrawPosition(nX, nY, nZ, pBuilding))
+			if (!pBuilding->m_bWasMapPlaced())
 			{
-				Color_t clrDraw = GetEntityDrawColor(pBuilding, Vars::Colors::Relative.Value);
+				const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pBuilding->m_hBuilder());
+				if (pOwner)
+				{
+					const int nIndex = pOwner->GetIndex();
+					if (nIndex != I::EngineClient->GetLocalPlayer() && pOwner != g_EntityCache.GetObservedTarget())
+					{
+						if (!(Vars::Radar::Buildings::Draw.Value & 1 << 3 && g_EntityCache.IsFriend(nIndex)))
+						{
+							if (!(Vars::Radar::Buildings::Draw.Value & 1 << 1) && pOwner->m_iTeamNum() != pLocal->m_iTeamNum())
+								continue;
+							if (!(Vars::Radar::Buildings::Draw.Value & 1 << 2) && pOwner->m_iTeamNum() == pLocal->m_iTeamNum())
+								continue;
+						}
+					}
+					else if (!(Vars::Radar::Buildings::Draw.Value & 1 << 0))
+						continue;
+				}
+			}
 
-				const int nSize = Vars::Radar::Buildings::IconSize.Value;
-				nX -= (nSize / 2), nY -= (nSize / 2);
+			int x, y, z;
+			if (GetDrawPosition(pLocal, pBuilding, x, y, z))
+			{
+				const Color_t drawColor = GetEntityDrawColor(pBuilding, Vars::Colors::Relative.Value);
+
+				int iBounds = iSize;
+				if (Vars::Radar::Buildings::Background.Value)
+				{
+					const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+					g_Draw.FillCircle(x, y, flRadius, 20, drawColor);
+					iBounds = flRadius * 2;
+				}
 
 				switch (pBuilding->GetClassID())
 				{
-					case ETFClassID::CObjectSentrygun:
-					{
-						int nTexture = (pBuilding->m_iUpgradeLevel() + 40);
-
-						if (Vars::Radar::Buildings::Outline.Value)
-							g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, nTexture);
-
-						g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture);
-						break;
-					}
-					case ETFClassID::CObjectDispenser:
-					{
-						if (Vars::Radar::Buildings::Outline.Value)
-							g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, 44);
-
-						g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, 44);
-						break;
-					}
-					case ETFClassID::CObjectTeleporter:
-					{
-						int nTexture = 46; //Exit texture ID
-
-						//If "YawToExit" is not zero, it most like is an entrance
-						if (pBuilding->YawToExit())
-							nTexture -= 1; //In that case, -1 from "nTexture" so we get entrace texture ID
-
-						if (Vars::Radar::Buildings::Outline.Value)
-							g_Draw.Texture(nX - 2, nY - 2, nSize + 4, nSize + 4, clrBlack, nTexture);
-
-						g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture);
-						break;
-					}
-					default: break;
+				case ETFClassID::CObjectSentrygun:
+					g_Draw.Texture(x, y, iSize, iSize, 26 + pBuilding->m_iUpgradeLevel());
+					break;
+				case ETFClassID::CObjectDispenser:
+					g_Draw.Texture(x, y, iSize, iSize, 30);
+					break;
+				case ETFClassID::CObjectTeleporter:
+					g_Draw.Texture(x, y, iSize, iSize, pBuilding->m_iObjectMode() ? 32 : 31);
+					break;
 				}
 
 				if (Vars::Radar::Buildings::Health.Value)
 				{
-					const int nHealth = pBuilding->m_iBOHealth();
-					const int nMaxHealth = pBuilding->m_iMaxHealth();
-					Color_t clrHealth = GetHealthColor(nHealth, nMaxHealth);
+					const int iMaxHealth = pBuilding->m_iMaxHealth(), iHealth = pBuilding->m_iBOHealth();
 
-					const auto flHealth = static_cast<float>(nHealth);
-					const auto flMaxHealth = static_cast<float>(nMaxHealth);
+					float flRatio = std::clamp(float(iHealth) / iMaxHealth, 0.f, 1.f);
+					Color_t cColor = Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, flRatio);
+					g_Draw.FillRectPercent(x - iBounds / 2, y - iBounds / 2, 2, iBounds, flRatio, cColor, { 0, 0, 0, 255 }, ALIGN_BOTTOM, true);
 
-					static constexpr int nW = 2;
-
-					const float flRatio = (flHealth / flMaxHealth);
-
-					g_Draw.FillRect(((nX - nW) - 1), nY, nW, nSize, { 0, 0, 0, 255 });
-					g_Draw.FillRect(((nX - nW) - 1), (nY + nSize - (nSize * flRatio)), nW, (nSize * flRatio), clrHealth);
+					if (iHealth > iMaxHealth)
+					{
+						const float flMaxOverheal = floorf(iMaxHealth / 10.f) * 5;
+						flRatio = std::clamp((iHealth - iMaxHealth) / flMaxOverheal, 0.f, 1.f);
+						cColor = Vars::Colors::Overheal.Value;
+						g_Draw.FillRectPercent(x - iBounds / 2, y - iBounds / 2, 2, iBounds, flRatio, cColor, { 0, 0, 0, 0 }, ALIGN_BOTTOM, true);
+					}
 				}
 			}
 		}
@@ -208,146 +279,101 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 	// Draw Players
 	if (Vars::Radar::Players::Active.Value)
 	{
-		for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+		const int iSize = Vars::Radar::Players::IconSize.Value;
+
+		for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 		{
-			if (!player->IsAlive() || player == g_EntityCache.GetObservedTarget() || player->IsAGhost() || player == pLocal)
+			if (!pPlayer->IsAlive() || pPlayer->IsAGhost())
 				continue;
 
-			const int nEntTeam = player->m_iTeamNum();
-			const int nLocalTeam = pLocal->m_iTeamNum();
-
-			switch (Vars::Radar::Players::IgnoreCloaked.Value)
+			const int nIndex = pPlayer->GetIndex();
+			if (nIndex != I::EngineClient->GetLocalPlayer() && pPlayer != g_EntityCache.GetObservedTarget())
 			{
-				case 0: break;
-				case 1:
+				if (!(Vars::Radar::Players::Draw.Value & 1 << 3 && g_EntityCache.IsFriend(nIndex)))
 				{
-					if (player->IsCloaked())
+					if (!(Vars::Radar::Players::Draw.Value & 1 << 1) && pPlayer->m_iTeamNum() != pLocal->m_iTeamNum())
 						continue;
-					break;
-				}
-				case 2:
-				{
-					if (player->IsCloaked() && nEntTeam != nLocalTeam)
+					if (!(Vars::Radar::Players::Draw.Value & 1 << 2) && pPlayer->m_iTeamNum() == pLocal->m_iTeamNum())
 						continue;
-					break;
 				}
 			}
+			else if (!(Vars::Radar::Players::Draw.Value & 1 << 0))
+				continue;
+			if (!(Vars::Radar::Players::Draw.Value & 1 << 4) && pPlayer->m_flInvisibility() >= 1.f)
+				continue;
 
-			const bool bIsFriend = g_EntityCache.IsFriend(player->GetIndex());
-
-			switch (Vars::Radar::Players::IgnoreTeam.Value)
+			int x, y, z;
+			if (GetDrawPosition(pLocal, pPlayer, x, y, z))
 			{
-				case 0: break;
-				case 1:
+				const Color_t drawColor = GetEntityDrawColor(pPlayer, Vars::Colors::Relative.Value);
+
+				int iBounds = iSize;
+				if (Vars::Radar::Players::Background.Value)
 				{
-					if (nEntTeam == nLocalTeam)
-						continue;
-					break;
+					const float flRadius = sqrtf(pow(iSize, 2) * 2) / 2;
+					g_Draw.FillCircle(x, y, flRadius, 20, drawColor);
+					iBounds = flRadius * 2;
 				}
+
+				switch (Vars::Radar::Players::IconType.Value)
+				{
 				case 2:
-				{
-					if (nEntTeam == nLocalTeam && !bIsFriend)
-						continue;
-					break;
-				}
-			}
-
-			int nX = -1, nY = -1, nZ = 0;
-			if (GetDrawPosition(nX, nY, nZ, player))
-			{
-				const int nSize = Vars::Radar::Players::IconSize.Value;
-				nX -= (nSize / 2), nY -= (nSize / 2);
-
-				Color_t clrDraw = GetEntityDrawColor(player, Vars::Colors::Relative.Value);
-
-				//Background
-				//Just a filled rect or a bit better looking texture RN
-				//TODO:
-				//Add circle background, and add outline for that
-				//I think I saw a nice circle texture actually, gonna try to find that again later.
-				if (Vars::Radar::Players::BackGroundType.Value)
-				{
-					int nTexture = 0;
-
-					if (Vars::Radar::Players::BackGroundType.Value == 2)
-						nTexture += (nEntTeam + 50);
-
-					nTexture
-						? g_Draw.Texture(nX, nY, nSize, nSize, clrDraw, nTexture)
-						: g_Draw.FillRect(nX, nY, nSize, nSize, clrDraw);
-				}
-
-				//Prepare the correct texture index for player icon, and draw it
 				{
 					PlayerInfo_t pi{};
-					if (Vars::Radar::Players::IconType.Value == 2 && I::EngineClient->GetPlayerInfo(player->GetIndex(), &pi) && !pi.fakeplayer) // Avatar
-						g_Draw.Avatar(nX, nY, nSize, nSize, pi.friendsID);
-					else
+					if (I::EngineClient->GetPlayerInfo(pPlayer->GetIndex(), &pi) && !pi.fakeplayer)
 					{
-						int nTexture = player->m_iClass();
-
-						// Portrait
-						if (Vars::Radar::Players::IconType.Value == 1)
-						{
-							nTexture += 10;
-							if (nEntTeam == 3)
-								nTexture += 10;
-						}
-
-						g_Draw.Texture(nX, nY, nSize, nSize, { 255, 255, 255, 255 }, nTexture);
+						g_Draw.Avatar(x, y, iSize, iSize, pi.friendsID);
+						break;
 					}
+					[[fallthrough]];
+				}
+				case 1:
+					if (pPlayer->IsInValidTeam())
+					{
+						g_Draw.Texture(x, y, iSize, iSize, pPlayer->m_iClass() + (pPlayer->m_iTeamNum() == TEAM_RED ? 9 : 18) - 1);
+						break;
+					}
+					[[fallthrough]];
+				case 0:
+					g_Draw.Texture(x, y, iSize, iSize, pPlayer->m_iClass() - 1);
+					break;
 				}
 
-				//TODO:
-				//Correct this for the circle once it's added.
-				if (Vars::Radar::Players::Outline.Value)
-				{
-					//idk if this is kinda slow
-					Color_t clrOutLine = Vars::Radar::Players::BackGroundType.Value == 1 ? clrBlack : clrDraw;
-					g_Draw.LineRect(nX, nY, nSize, nSize, clrOutLine);
-				}
-
-				//TODO:
-				//Make the healthbar toggleable from left side to bottom.
 				if (Vars::Radar::Players::Health.Value)
 				{
-					const int nHealth = player->m_iHealth();
-					const int nMaxHealth = player->GetMaxHealth();
-					Color_t clrHealth = GetHealthColor(nHealth, nMaxHealth);
+					const int iMaxHealth = pPlayer->GetMaxHealth(), iHealth = pPlayer->m_iHealth();
 
-					auto flHealth = static_cast<float>(nHealth);
-					const auto flMaxHealth = static_cast<float>(nMaxHealth);
-					float flOverHeal = 0.0f;
+					float flRatio = std::clamp(float(iHealth) / iMaxHealth, 0.f, 1.f);
+					Color_t cColor = Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, flRatio);
+					g_Draw.FillRectPercent(x - iBounds / 2, y - iBounds / 2, 2, iBounds, flRatio, cColor, { 0, 0, 0, 255 }, ALIGN_BOTTOM, true);
 
-					if (flHealth > flMaxHealth)
+					if (iHealth > iMaxHealth)
 					{
-						flOverHeal = fmod(flHealth, flMaxHealth);
-						flHealth = flMaxHealth;
-					}
-
-					static constexpr int nWidth = 2;
-
-					float flRatio = (flHealth / flMaxHealth);
-
-					g_Draw.FillRect(((nX - nWidth) - 1), nY, nWidth, nSize, { 0, 0, 0, 255 });
-					g_Draw.FillRect(((nX - nWidth) - 1), (nY + nSize - (nSize * flRatio)), nWidth, (nSize * flRatio), clrHealth);
-
-					if (flOverHeal > 0.0f)
-					{
-						flRatio = (flOverHeal / flMaxHealth);
-						g_Draw.FillRect(((nX - nWidth) - 1), (nY + (nSize + 1) - (nSize * flRatio)), nWidth, (nSize * flRatio), Vars::Colors::Overheal.Value);
+						const float flMaxOverheal = floorf(iMaxHealth / 10.f) * 5;
+						flRatio = std::clamp((iHealth - iMaxHealth) / flMaxOverheal, 0.f, 1.f);
+						cColor = Vars::Colors::Overheal.Value;
+						g_Draw.FillRectPercent(x - iBounds / 2, y - iBounds / 2, 2, iBounds, flRatio, cColor, { 0, 0, 0, 0 }, ALIGN_BOTTOM, true);
 					}
 				}
 
-				// Draw height indicator (higher / lower)
-				if (Vars::Radar::Players::Height.Value && std::abs(nZ) > 80.f)
+				if (Vars::Radar::Players::Height.Value && std::abs(z) > 80.f)
 				{
-					const int triOffset = nZ > 0 ? -5 : 5;
-					const int yPos = nZ > 0 ? nY : nY + nSize;
+					const int m = x - iSize / 2;
+					const int iOffset = z > 0 ? -5 : 5;
+					const int yPos = z > 0 ? y - iBounds / 2 - 2 : y + iBounds / 2 + 2;
 
-					g_Draw.DrawFillTriangle({ Vec2(nX, yPos), Vec2(nX + nSize * 0.5f, yPos + triOffset), Vec2(nX + nSize, yPos) }, clrDraw);
+					g_Draw.DrawFillTriangle({ Vec2(m, yPos), Vec2(m + iSize * 0.5f, yPos + iOffset), Vec2(m + iSize, yPos) }, drawColor);
 				}
 			}
 		}
 	}
+}
+
+void CRadar::Run()
+{
+	if (!Vars::Radar::Main::Active.Value)
+		return;
+
+	DrawBackground();
+	DrawPoints();
 }

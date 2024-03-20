@@ -49,7 +49,7 @@ public:
 	void String(const Font_t& font, int x, int y, const Color_t& clr, const EAlign& align, const wchar_t* str, ...);
 
 	void Line(int x, int y, int x1, int y1, const Color_t& clr);
-	void DrawTexturedPolygon(int count, Vertex_t* vertices, const Color_t& clr);
+	void Polygon(int count, Vertex_t* vertices, const Color_t& clr);
 
 	void DrawFillTriangle(const std::array<Vec2, 3>& points, const Color_t& clr);
 	void DrawLineTriangle(const std::array<Vec2, 3>& points, const Color_t& clr);
@@ -60,17 +60,17 @@ public:
 	void FillRectOutline(int x, int y, int w, int h, const Color_t& clr, const Color_t& out = { 0, 0, 0, 255 });
 	void LineRectOutline(int x, int y, int w, int h, const Color_t& clr, const Color_t& out = { 0, 0, 0, 255 }, bool inside = true);
 	void FillRectPercent(int x, int y, int w, int h, float t, const Color_t& clr, const Color_t& out = { 0, 0, 0, 255 }, const EAlign& align = ALIGN_LEFT, bool adjust = false);
-	void RoundRect(int x, int y, int w, int h, int radius, const Color_t& col);
+	void RoundRect(int x, int y, int w, int h, int radius, const Color_t& clr);
 
-	void FillCircle(int x, int y, int radius, int segments, Color_t clr);
+	void FillCircle(int x, int y, float radius, int segments, Color_t clr);
 	void LineCircle(int x, int y, float radius, int segments, const Color_t& clr);
 
-	void Texture(int x, int y, int w, int h, const Color_t& clr, int nIndex);
+	void Texture(int x, int y, int w, int h, int id, const EAlign& align = ALIGN_CENTER);
 	CHudTexture* GetIcon(const char* szIcon, int eIconFormat = 0);
 	int CreateTextureFromArray(const unsigned char* rgba, int w, int h);
 	void DrawHudTexture(float x0, float y0, float s0, const CHudTexture* texture, Color_t col0);
 	void DrawHudTextureByName(float x0, float y0, float s0, const char* textureName, Color_t col0);
-	void Avatar(int x, int y, int w, int h, uint32 nFriendID);
+	void Avatar(int x, int y, int w, int h, uint32 nFriendID, const EAlign& align = ALIGN_CENTER);
 	void ClearAvatarCache();
 
 	float EaseOut(float start, float end, float speed);

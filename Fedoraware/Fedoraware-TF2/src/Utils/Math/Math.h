@@ -5,10 +5,10 @@
 #include <cfloat>		//FLT_EPSILON
 #include <algorithm>	//std::min std::max
 
-#define M_RADPI		57.295779513082
-#define PI			3.14159265358979323846
-#define DEG2RAD(x)	((float)(x) * (float)((float)(PI) / 180.0f))
-#define RAD2DEG(x)	((float)(x) * (float)(180.0f / (float)(PI)))
+#define M_RADPI		57.295779513082f
+#define PI			3.14159265358979323846f
+#define DEG2RAD(x)	((float)(x) * (PI / 180.f))
+#define RAD2DEG(x)	((float)(x) * (180.f / PI))
 
 #pragma warning (disable : 26495)
 #pragma warning (disable : 26451)
@@ -24,7 +24,7 @@ class Vec2
 public:
 	Vec2(void)
 	{
-		x = y = 0.0f;
+		x = y = 0.f;
 	}
 
 	Vec2(float X, float Y)
@@ -142,7 +142,7 @@ public:
 		return Vec2(x / v, y / v);
 	}
 
-	void Set(float X = 0.0f, float Y = 0.0f)
+	void Set(float X = 0.f, float Y = 0.f)
 	{
 		x = X; y = Y;
 	}
@@ -198,7 +198,7 @@ class Vec3
 public:
 	Vec3(void)
 	{
-		x = y = z = 0.0f;
+		x = y = z = 0.f;
 	}
 
 	void Zero()
@@ -232,7 +232,7 @@ public:
 
 	Vec3(const Vec2& v)
 	{
-		x = v.x; y = v.y; z = 0.0f;
+		x = v.x; y = v.y; z = 0.f;
 	}
 
 	Vec3& operator=(const Vec3& v)
@@ -242,7 +242,7 @@ public:
 
 	Vec3& operator=(const Vec2& v)
 	{
-		x = v.x; y = v.y; z = 0.0f; return *this;
+		x = v.x; y = v.y; z = 0.f; return *this;
 	}
 
 	float& operator[](int i)
@@ -345,7 +345,7 @@ public:
 		return (x != v.x || y != v.y || z != v.z);
 	}
 
-	void Set(float X = 0.0f, float Y = 0.0f, float Z = 0.0f)
+	void Set(float X = 0.f, float Y = 0.f, float Z = 0.f)
 	{
 		x = X; y = Y; z = Z;
 	}
@@ -376,7 +376,7 @@ public:
 	{
 		return Vec3{ RAD2DEG(atan2(-z, hypot(x, y))),
 					 RAD2DEG(atan2(y, x)),
-					 0.0f };
+					 0.f };
 	}
 
 	float const* Base() const
@@ -446,9 +446,9 @@ public:
 
 	bool IsZero(void) const
 	{
-		return (x > -0.01f && x < 0.01f &&
-				y > -0.01f && y < 0.01f &&
-				z > -0.01f && z < 0.01f);
+		return (fabsf(x) < 0.001f &&
+				fabsf(y) < 0.001f &&
+				fabsf(z) < 0.001f);
 	}
 
 	Vec3 Scale(float fl)
@@ -552,14 +552,14 @@ namespace Math
 
 		float yaw, pitch;
 
-		if (direction.y == 0.0f && direction.x == 0.0f)
+		if (direction.y == 0.f && direction.x == 0.f)
 		{
-			yaw = 0.0f;
+			yaw = 0.f;
 
-			if (direction.z > 0.0f)
-				pitch = 270.0f;
+			if (direction.z > 0.f)
+				pitch = 270.f;
 
-			else pitch = 90.0f;
+			else pitch = 90.f;
 		}
 
 		else 
@@ -567,14 +567,14 @@ namespace Math
 			yaw = RAD2DEG(atan2f(direction.y, direction.x));
 			pitch = RAD2DEG(atan2f(-direction.z, Magnitude(Vec3(direction))));
 
-			if (yaw < 0.0f)
-				yaw += 360.0f;
+			if (yaw < 0.f)
+				yaw += 360.f;
 
-			if (pitch < 0.0f)
-				pitch += 360.0f;
+			if (pitch < 0.f)
+				pitch += 360.f;
 		}
 
-		return { pitch, yaw, 0.0f };
+		return { pitch, yaw, 0.f };
 	}
 
 	inline void ConcatTransforms(const matrix3x4 &in1, const matrix3x4 &in2, matrix3x4 &out)
@@ -644,9 +644,9 @@ namespace Math
 		matrix[1][2] = sp * crsy - srcy;
 		matrix[2][2] = cr * cp;
 
-		matrix[0][3] = 0.0f;
-		matrix[1][3] = 0.0f;
-		matrix[2][3] = 0.0f;
+		matrix[0][3] = 0.f;
+		matrix[1][3] = 0.f;
+		matrix[2][3] = 0.f;
 	}
 
 	inline void GetMatrixOrigin(const matrix3x4& source, Vec3& target) {
@@ -725,9 +725,9 @@ namespace Math
 	inline float NormalizeAngle(float ang)
 	{
 		if (!std::isfinite(ang))
-			return 0.0f;
+			return 0.f;
 
-		return std::remainder(ang, 360.0f);
+		return std::remainder(ang, 360.f);
 	}
 
 	inline float NormalizeYaw(float value)
@@ -742,9 +742,9 @@ namespace Math
 
 	inline void ClampAngles(Vec3& v)
 	{
-		v.x = std::max(-89.0f, std::min(89.0f, NormalizeAngle(v.x)));
+		v.x = std::max(-89.f, std::min(89.f, NormalizeAngle(v.x)));
 		v.y = NormalizeAngle(v.y);
-		v.z = 0.0f;
+		v.z = 0.f;
 	}
 
 	inline void VectorTransform(const Vec3& input, const matrix3x4& matrix, Vec3& output)
@@ -770,7 +770,6 @@ namespace Math
 	inline Vec3 AngleVector(const Vec3& angles)
 	{
 		float sp, sy, cp, cy;
-
 		SinCos(DEG2RAD(angles.x), &sp, &cp);
 		SinCos(DEG2RAD(angles.y), &sy, &cy);
 
@@ -780,7 +779,6 @@ namespace Math
 	inline void AngleVectors(const Vec3& angles, Vec3* forward)
 	{
 		float sp, sy, cp, cy;
-
 		SinCos(DEG2RAD(angles.x), &sp, &cp);
 		SinCos(DEG2RAD(angles.y), &sy, &cy);
 
@@ -794,7 +792,7 @@ namespace Math
 
 	inline void AngleVectors(const Vec3 &angles, Vec3 *forward, Vec3 *right, Vec3 *up)
 	{
-		float sr, sp, sy, cr, cp, cy;
+		float sp, sy, sr, cp, cy, cr;
 		SinCos(DEG2RAD(angles.x), &sp, &cp);
 		SinCos(DEG2RAD(angles.y), &sy, &cy);
 		SinCos(DEG2RAD(angles.z), &sr, &cr);
@@ -825,8 +823,8 @@ namespace Math
 	{
 		for (auto i = 0; i < 3; i++)
 		{
-			if (vector[i] < -180.0f) vector[i] += 360.0f;
-			if (vector[i] > 180.0f) vector[i] -= 360.0f;
+			if (vector[i] < -180.f) vector[i] += 360.f;
+			if (vector[i] > 180.f) vector[i] -= 360.f;
 		}
 	}
 
@@ -844,16 +842,16 @@ namespace Math
 
 	inline Vec3 CalcAngle(const Vec3& source, const Vec3& destination)
 	{
-		Vec3 angles = Vec3(0.0f, 0.0f, 0.0f);
+		Vec3 angles = Vec3(0.f, 0.f, 0.f);
 		Vec3 delta = (source - destination);
 		float fHyp = FastSqrt((delta.x * delta.x) + (delta.y * delta.y));
 
 		angles.x = (atanf(delta.z / fHyp) * M_RADPI);
 		angles.y = (atanf(delta.y / delta.x) * M_RADPI);
-		angles.z = 0.0f;
+		angles.z = 0.f;
 
-		if (delta.x >= 0.0f)
-			angles.y += 180.0f;
+		if (delta.x >= 0.f)
+			angles.y += 180.f;
 
 		return angles;
 	}
@@ -869,7 +867,7 @@ namespace Math
 		float result = RAD2DEG(acos(v_dst.Dot(v_src) / v_dst.LengthSqr()));
 
 		if (!isfinite(result) || isinf(result) || isnan(result))
-			result = 0.0f;
+			result = 0.f;
 
 		return result;
 	}
@@ -891,7 +889,7 @@ namespace Math
 	{
 		float tmp, yaw, pitch;
 
-		if (forward.y == 0 && forward.x == 0)
+		if (!forward.x && !forward.y)
 		{
 			yaw = 0;
 
@@ -900,7 +898,6 @@ namespace Math
 			else
 				pitch = 90;
 		}
-
 		else
 		{
 			yaw = RAD2DEG(atan2f(forward.y, forward.x));
@@ -963,7 +960,7 @@ namespace Math
 	}
 
 #define floatCompare(x, y) \
-	(fabsf(x - y) <= FLT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))))
+	(fabsf(x - y) <= FLT_EPSILON * fmaxf(1.f, fmaxf(fabsf(x), fabsf(y))))
 
 	//adapted from https://github.com/gszauer/GamePhysicsCookbook/blob/15810bbf902c1cc19064c176a7e0626eda3b83bd/Code/Geometry3D.cpp#L584
 	inline bool RayToOBB(const  Vec3& origin, const  Vec3& direction, const Vec3& position, const Vec3& min, const Vec3& max, const matrix3x4 orientation) {
@@ -986,7 +983,7 @@ namespace Math
 			Z.Dot(p)
 		);
 
-		float t[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+		float t[6] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
 		for (int i = 0; i < 3; ++i) {
 			if (floatCompare(f[i], 0)) {
 				if (-e[i] + min[i] > 0 || -e[i] + max[i] < 0) {
@@ -1023,7 +1020,7 @@ namespace Math
 
 	inline float NormalizeRad(float a) noexcept
 	{
-		return std::isfinite(a) ? std::remainder(a, PI * 2) : 0.0f;
+		return std::isfinite(a) ? std::remainder(a, PI * 2) : 0.f;
 	}
 
 	inline void VectorSubtract(const Vec3& a, const Vec3& b, Vec3& c)
@@ -1304,7 +1301,7 @@ namespace Math
 		// checks at the beginning of each block are designed to catch that case
 
 		// b1e1 x b2e1
-		if (absBox2ToBox1[0][0] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[0][0] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.y * absBox2ToBox1[2][0] + box1Size.z * absBox2ToBox1[1][0] +
@@ -1319,7 +1316,7 @@ namespace Math
 		}
 
 		// b1e1 x b2e2
-		if (absBox2ToBox1[0][1] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[0][1] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.y * absBox2ToBox1[2][1] + box1Size.z * absBox2ToBox1[1][1] +
@@ -1334,7 +1331,7 @@ namespace Math
 		}
 
 		// b1e1 x b2e3
-		if (absBox2ToBox1[0][2] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[0][2] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.y * absBox2ToBox1[2][2] + box1Size.z * absBox2ToBox1[1][2] +
@@ -1349,7 +1346,7 @@ namespace Math
 		}
 
 		// b1e2 x b2e1
-		if (absBox2ToBox1[1][0] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[1][0] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.x * absBox2ToBox1[2][0] + box1Size.z * absBox2ToBox1[0][0] +
@@ -1364,7 +1361,7 @@ namespace Math
 		}
 
 		// b1e2 x b2e2
-		if (absBox2ToBox1[1][1] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[1][1] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.x * absBox2ToBox1[2][1] + box1Size.z * absBox2ToBox1[0][1] +
@@ -1379,7 +1376,7 @@ namespace Math
 		}
 
 		// b1e2 x b2e3
-		if (absBox2ToBox1[1][2] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[1][2] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.x * absBox2ToBox1[2][2] + box1Size.z * absBox2ToBox1[0][2] +
@@ -1394,7 +1391,7 @@ namespace Math
 		}
 
 		// b1e3 x b2e1
-		if (absBox2ToBox1[2][0] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[2][0] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.x * absBox2ToBox1[1][0] + box1Size.y * absBox2ToBox1[0][0] +
@@ -1409,7 +1406,7 @@ namespace Math
 		}
 
 		// b1e3 x b2e2
-		if (absBox2ToBox1[2][1] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[2][1] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.x * absBox2ToBox1[1][1] + box1Size.y * absBox2ToBox1[0][1] +
@@ -1424,7 +1421,7 @@ namespace Math
 		}
 
 		// b1e3 x b2e3
-		if (absBox2ToBox1[2][2] < 1.0f - 1e-3f)
+		if (absBox2ToBox1[2][2] < 1.f - 1e-3f)
 		{
 			boxProjectionSum =
 				box1Size.x * absBox2ToBox1[1][2] + box1Size.y * absBox2ToBox1[0][2] +
@@ -1485,13 +1482,13 @@ namespace Math
 	inline float EaseInBack(float x)
 	{
 		const float c1 = 1.70158f;
-		const float c3 = c1 + 1.0f;
+		const float c3 = c1 + 1.f;
 		return c3 * x * x * x - c1 * x * x;
 	}
 
 	inline float EaseInOutSine(float x)
 	{
-		return -(cos(PI * x) - 1.0f) / 2.0f;
+		return -(cos(PI * x) - 1.f) / 2.f;
 	}
 
 	inline float MapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -1503,7 +1500,7 @@ namespace Math
 		if (A == B)
 			return val >= B ? D : C;
 		float cVal = (val - A) / (B - A);
-		cVal = std::clamp(cVal, 0.0f, 1.0f);
+		cVal = std::clamp(cVal, 0.f, 1.f);
 
 		return C + (D - C) * cVal;
 	}

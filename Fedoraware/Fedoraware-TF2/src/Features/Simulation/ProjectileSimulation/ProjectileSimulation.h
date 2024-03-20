@@ -4,25 +4,25 @@
 
 struct ProjectileInfo
 {
-	ETFProjectileType m_type{};
+	ETFProjectileType m_iType{};
 
-	Vec3 m_pos{};
-	Vec3 m_ang{};
-	Vec3 m_hull{};
+	Vec3 m_vPos = {};
+	Vec3 m_vAng = {};
+	Vec3 m_vHull = {};
 
-	float m_velocity{};
-	float m_gravity{};
+	float m_flVelocity = 0.f;
+	float m_flGravity = 0.f;
 
-	bool no_spin{};
+	bool m_bNoSpin = false;
 
-	float m_lifetime = 100.f;
+	float m_flLifetime = 100.f;
 
-	std::deque<std::pair<Vec3, Vec3>> PredictionLines;
+	std::deque<std::pair<Vec3, Vec3>> PredictionLines = {};
 };
 
 class CProjectileSimulation
 {
-	bool GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick, float flCharge);
+	bool GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bTrace, bool bQuick, float flCharge);
 
 	const objectparams_t g_PhysDefaultObjectParams =
 	{
@@ -40,8 +40,8 @@ class CProjectileSimulation
 	};
 
 public:
-	bool GetInfo(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bQuick = false, float flCharge = -1.f);
-	bool Initialize(const ProjectileInfo& info);
+	bool GetInfo(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bTrace = true, bool bQuick = false, float flCharge = -1.f);
+	bool Initialize(const ProjectileInfo& info, bool bSimulate = true);
 	void RunTick(ProjectileInfo& info);
 	Vec3 GetOrigin();
 	Vec3 GetVelocity();

@@ -9,13 +9,13 @@ void PResolver::UpdateSniperDots()
 	mSniperDots.clear();
 	for (int n = I::EngineClient->GetMaxClients() + 1; n <= I::ClientEntityList->GetHighestEntityIndex(); n++)
 	{
-		if (CBaseEntity* eTarget = I::ClientEntityList->GetClientEntity(n))
+		if (CBaseEntity* pDot = I::ClientEntityList->GetClientEntity(n))
 		{
-			if (eTarget->GetClassID() != ETFClassID::CSniperDot)
+			if (pDot->GetClassID() != ETFClassID::CSniperDot || pDot->GetDormant())
 				continue;
 
-			if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(eTarget->m_hOwnerEntity()))
-				mSniperDots[pOwner] = eTarget;
+			if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pDot->m_hOwnerEntity()))
+				mSniperDots[pOwner] = pDot;
 		}
 	}
 }
@@ -52,6 +52,7 @@ std::optional<float> PResolver::PredictBaseYaw(CBaseEntity* pEntity)
 	{
 		if (!pTarget || pTarget->IsAGhost() || !pTarget->IsAlive() || pTarget->m_iTeamNum() == pEntity->m_iTeamNum())
 			continue;
+
 		const Vec3 vAngleTo = Math::CalcAngle(pEntity->m_vecOrigin(), pTarget->m_vecOrigin());
 		const float flFOVTo = Math::CalcFov(mResolverData[pEntity].pLastFireAngles.second, vAngleTo);
 	

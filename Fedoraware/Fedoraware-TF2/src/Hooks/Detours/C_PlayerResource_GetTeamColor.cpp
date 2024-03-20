@@ -40,13 +40,8 @@ MAKE_HOOK(C_TFPlayer_Resource_GetPlayerConnectionState, S::CTFPlayer_Resource_Ge
 
     const auto result = Hook.Original<FN>()(ecx, edx, iIndex);
 
-    if (result != MM_WAITING_FOR_PLAYER)
-    {
-        if (dwRetAddr != dwCall)
-            return result;
-
+    if (result != MM_WAITING_FOR_PLAYER && dwRetAddr == dwCall)
         iCurPlayer = iIndex;
-    }
     else
         iCurPlayer = 0;
 
@@ -54,14 +49,14 @@ MAKE_HOOK(C_TFPlayer_Resource_GetPlayerConnectionState, S::CTFPlayer_Resource_Ge
 }
 
 MAKE_HOOK(C_PlayerResource_GetTeamColor, S::CPlayerResource_GetTeamColor(), unsigned char*, __fastcall,
-    void* ecx, void* edx, int index)
+    void* ecx, void* edx, int iIndex)
 {
-    if (index < 0 || index > I::EngineClient->GetMaxClients() || !iCurPlayer || !Vars::Visuals::ScoreboardColors.Value) // Vars::Visuals::CleanScreenshots.Value ineffective, doesn't update in time
-        return Hook.Original<FN>()(ecx, edx, index);
+    if (!Vars::Visuals::ScoreboardColors.Value || !iCurPlayer) // Vars::Visuals::CleanScreenshots.Value ineffective, doesn't update in time
+        return Hook.Original<FN>()(ecx, edx, iIndex);
 
     const Color_t cReturn = GetScoreboardColor(iCurPlayer, Vars::Colors::Relative.Value);
     if (!cReturn.a)
-        return Hook.Original<FN>()(ecx, edx, index);
+        return Hook.Original<FN>()(ecx, edx, iIndex);
 
     _color[0] = cReturn.r; _color[1] = cReturn.g; _color[2] = cReturn.b; _color[3] = 255; // force alpha
     return _color;

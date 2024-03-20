@@ -58,7 +58,7 @@ void CNotifications::Draw()
 
 		int w, h;
 
-		I::VGuiSurface->GetTextSize(FONT_INDICATORS, wc, w, h);
+		I::MatSystemSurface->GetTextSize(FONT_INDICATORS, wc, w, h);
 
 		delete[] wc; // Memory leak
 

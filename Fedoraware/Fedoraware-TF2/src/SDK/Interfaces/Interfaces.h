@@ -24,7 +24,7 @@
 #include "EngineVGui/EngineVGui.h"
 #include "NetChannel/NetChannel.h"
 #include "GameEvent/GameEvent.h"
-#include "Material/Material.h"
+#include "MaterialSystem/MaterialSystem.h"
 #include "ModelRender/ModelRender.h"
 #include "ViewRender/ViewRender.h"
 #include "RenderView/RenderView.h"
@@ -201,7 +201,7 @@ namespace I
 	inline CEngineClient* EngineClient = nullptr;
 	inline IVEngineEffects* EngineEffects = nullptr;
 	inline CPanel* VGuiPanel = nullptr;
-	inline CSurface* VGuiSurface = nullptr;
+	inline IMatSystemSurface* MatSystemSurface = nullptr;
 	inline CClientEntityList* ClientEntityList = nullptr;
 	inline IEffects* EffectsClient = nullptr;
 	inline CModelInfoClient* ModelInfoClient = nullptr;
@@ -220,7 +220,7 @@ namespace I
 	inline CDebugOverlay* DebugOverlay = nullptr;
 	inline CGameEventManager* GameEventManager = nullptr;
 	inline CModelRender* ModelRender = nullptr;
-	inline CMaterialSystem* MaterialSystem = nullptr;
+	inline IMaterialSystem* MaterialSystem = nullptr;
 	inline IInput* Input = nullptr;
 	inline IKeyValuesSystem* KeyValuesSystem = nullptr;
 	inline IUniformRandomStream* UniformRandomStream = nullptr;

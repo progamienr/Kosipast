@@ -13,12 +13,11 @@ MAKE_HOOK(ClientModeShared_DoPostScreenSpaceEffects, Utils::GetVFuncPtr(I::Clien
 	F::Chams.RenderMain();
 	F::Glow.RenderMain();
 
-	F::Visuals.ProjectileTrace();
+	F::Visuals.DrawBoxes();
 	F::Visuals.DrawBulletLines();
 	F::Visuals.DrawSimLines();
-	F::Visuals.DrawBoxes();
-
 	F::Visuals.DrawSightlines();
+	F::Visuals.ProjectileTrace();
 
 	return Hook.Original<FN>()(ecx, edx, pSetup);
 }

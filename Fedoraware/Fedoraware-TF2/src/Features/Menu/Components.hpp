@@ -1253,6 +1253,32 @@ namespace ImGui
 		return changed;
 	}
 
+	short iKeyPressed = 0;
+	__inline void KeyHandler()
+	{
+		static std::map<short, bool> mOldKeys = {};
+		std::map<short, bool> mNewKeys = {};
+
+		for (short iKey = 0; iKey < 255; iKey++)
+		{
+			if (iKey == VK_INSERT || iKey == VK_F3)
+				continue;
+
+			mNewKeys[iKey] = GetAsyncKeyState(iKey) & 0x8000;
+		}
+
+		iKeyPressed = 0;
+		for (auto& [iKey, bPressed] : mNewKeys)
+		{
+			if (bPressed && (!mOldKeys.contains(iKey) || !mOldKeys[iKey]))
+			{
+				iKeyPressed = iKey;
+				break;
+			}
+		}
+
+		mOldKeys = mNewKeys;
+	}
 	__inline bool FKeybind(const char* label, int& output, bool bAllowNone = true, int flags = 0) // placeholder, will be repurposed
 	{
 		auto VK2STR = [&](const short key) -> std::string
@@ -1342,20 +1368,25 @@ namespace ImGui
 			{
 				SetActiveID(id, GetCurrentWindow());
 
-				for (short key = 0; key < 255; key++)
+				if (iKeyPressed)
 				{
-					if (key == VK_INSERT || key == VK_F3)
-						continue;
-					if (bHovered && key == VK_LBUTTON)
-						continue;
-					if (!(GetAsyncKeyState(key) & 0x8000))
-						continue;
-
-					output = key;
-					if (bAllowNone && key == VK_ESCAPE)
-						output = 0x0;
+					switch (iKeyPressed)
+					{
+					case VK_LBUTTON:
+						if (!bHovered)
+							output = iKeyPressed;
+						break;
+					case VK_ESCAPE:
+						if (bAllowNone)
+						{
+							output = 0x0;
+							break;
+						}
+						[[fallthrough]];
+					default:
+						output = iKeyPressed;
+					}
 					ClearActiveID();
-					break;
 				}
 			}
 

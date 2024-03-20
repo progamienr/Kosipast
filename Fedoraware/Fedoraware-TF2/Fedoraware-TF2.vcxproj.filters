@@ -87,7 +87,6 @@
     <ClCompile Include="src\Hooks\Detours\CSequenceTransitioner_CheckForSequenceChange.cpp" />
     <ClCompile Include="src\Hooks\Detours\CSoundEmitterSystem_EmitSound.cpp" />
     <ClCompile Include="src\Hooks\Detours\CStaticPropMgr_ComputePropOpacity.cpp" />
-    <ClCompile Include="src\Hooks\Detours\CStaticPropMgr_DrawStaticProps.cpp" />
     <ClCompile Include="src\Hooks\Detours\CTFGCClientSystem_UpdateAssignedLobby.cpp" />
     <ClCompile Include="src\Hooks\Detours\CTFPartyClient_BCanRequestToJoinPlayer.cpp" />
     <ClCompile Include="src\Hooks\Detours\CTFPlayerInventory_GetMaxItemCount.cpp" />
@@ -128,7 +127,6 @@
     <ClCompile Include="src\Hooks\Detours\UTIL_TraceLine.cpp" />
     <ClCompile Include="src\Hooks\Detours\VGui_MenuBuilder_AddMenuItem.cpp" />
     <ClCompile Include="src\Hooks\Detours\ViewRender_LevelInit.cpp" />
-    <ClCompile Include="src\Hooks\Detours\ViewRender_LevelShutdown.cpp" />
     <ClCompile Include="src\Hooks\Detours\ViewRender_PerformScreenSpaceEffects.cpp" />
     <ClCompile Include="src\Hooks\Detours\ViewRender_RenderView.cpp" />
     <ClCompile Include="src\Hooks\HookManager.cpp" />
@@ -171,6 +169,7 @@
     <ClCompile Include="src\Hooks\Detours\CSkyboxView_Enable3dSkyboxFog.cpp" />
     <ClCompile Include="src\Features\Menu\Fonts\CascadiaMono.h" />
     <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
+    <ClCompile Include="src\Hooks\Detours\C_BaseEntity_InterpolateServerEntities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />
@@ -328,7 +327,7 @@
     <ClInclude Include="src\SDK\Interfaces\IOcclusionSystem\IOcclusionSystem.h" />
     <ClInclude Include="src\SDK\Interfaces\KeyValuesSystem\KeyValuesSystem.h" />
     <ClInclude Include="src\SDK\Interfaces\Localize\Localize.h" />
-    <ClInclude Include="src\SDK\Interfaces\Material\Material.h" />
+    <ClInclude Include="src\SDK\Interfaces\MaterialSystem\MaterialSystem.h" />
     <ClInclude Include="src\SDK\Interfaces\MatRenderContext\MatRenderContext.h" />
     <ClInclude Include="src\SDK\Interfaces\ModelInfo\ModelInfo.h" />
     <ClInclude Include="src\SDK\Interfaces\ModelRender\ModelRender.h" />

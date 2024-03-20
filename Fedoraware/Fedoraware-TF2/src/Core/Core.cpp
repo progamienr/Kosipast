@@ -17,20 +17,10 @@
 #include "../Utils/Events/Events.h"
 #include "../Utils/Minidump/Minidump.h"
 
-void LoadDefaultConfig()
-{
-	// Load default visuals
-	g_CFG.LoadConfig(g_CFG.GetCurrentConfig(), false);
-	//g_CFG.LoadVisual(g_CFG.GetCurrentVisuals(), false); // LoadConfig loads all vars
-
-	g_Draw.RemakeFonts();
-
-	F::Menu.ConfigLoaded = true;
-}
-
 void CCore::OnLoaded()
 {
-	LoadDefaultConfig();
+	g_CFG.LoadConfig(g_CFG.GetCurrentConfig(), false);
+	F::Menu.ConfigLoaded = true;
 
 	I::Cvar->ConsoleColorPrintf(Vars::Menu::Theme::Accent.Value, "%s Loaded!\n", Vars::Menu::CheatName.Value.c_str());
 	I::EngineClient->ClientCmd_Unrestricted("play vo/items/wheatley_sapper/wheatley_sapper_attached14.mp3");
@@ -48,11 +38,9 @@ void CCore::Load()
 	g_NetVars.Init();
 
 	// Initialize hooks & memory stuff
-	{
-		g_HookManager.Init();
-		g_PatchManager.Init();
-		F::NetHooks.Init();
-	}
+	g_HookManager.Init();
+	g_PatchManager.Init();
+	F::NetHooks.Init();
 
 	g_ConVars.Init();
 	F::Ticks.Reset();

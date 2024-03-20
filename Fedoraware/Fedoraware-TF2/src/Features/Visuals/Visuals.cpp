@@ -25,25 +25,23 @@ namespace S
 
 void CVisuals::DrawAimbotFOV(CBaseEntity* pLocal)
 {
+	if (!Vars::Aimbot::Global::Active.Value || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsTaunting() || pLocal->IsStunned() || pLocal->IsInBumperKart())
+		return;
+
 	float curFOV = 0.f;
-	if (Vars::Aimbot::Global::Active.Value)
+	switch (G::CurWeaponType)
 	{
-		switch (G::CurWeaponType)
-		{
-		case EWeaponType::HITSCAN:
-			if (Vars::Aimbot::Hitscan::Active.Value)
-				curFOV = Vars::Aimbot::Hitscan::AimFOV.Value;
-			break;
-		case EWeaponType::PROJECTILE:
-			if (Vars::Aimbot::Projectile::Active.Value)
-				curFOV = Vars::Aimbot::Projectile::AimFOV.Value;
-			break;
-		case EWeaponType::MELEE:
-			if (Vars::Aimbot::Melee::Active.Value)
-				curFOV = Vars::Aimbot::Melee::AimFOV.Value;
-			break;
-		default: curFOV = 0.f; break;
-		}
+	case EWeaponType::HITSCAN:
+		if (Vars::Aimbot::Hitscan::Active.Value)
+			curFOV = Vars::Aimbot::Hitscan::AimFOV.Value;
+		break;
+	case EWeaponType::PROJECTILE:
+		if (Vars::Aimbot::Projectile::Active.Value)
+			curFOV = Vars::Aimbot::Projectile::AimFOV.Value;
+		break;
+	case EWeaponType::MELEE:
+		if (Vars::Aimbot::Melee::Active.Value)
+			curFOV = Vars::Aimbot::Melee::AimFOV.Value;
 	}
 
 	//Current Active Aimbot FOV
@@ -108,7 +106,7 @@ void CVisuals::DrawTickbaseBars()
 
 void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
 {
-	if (!(Vars::Menu::Indicators.Value & (1 << 4)) || !pLocal->IsAlive() || pLocal->IsAGhost())
+	if (!(Vars::Menu::Indicators.Value & (1 << 4)) || !pLocal->IsAlive())
 		return;
 
 	int x = Vars::Menu::ConditionsDisplay.Value.x;
@@ -211,63 +209,66 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 		return;
 
 	ProjectileInfo projInfo = {};
-	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? float(Vars::Aimbot::Projectile::AutoRelease.Value) / 100 : -1.f)
+	if (!F::ProjSim.GetInfo(pLocal, pWeapon, bQuick ? I::EngineClient->GetViewAngles() : G::CurrentUserCmd->viewangles, projInfo, true, bQuick, (bQuick && Vars::Aimbot::Projectile::AutoRelease.Value) ? Vars::Aimbot::Projectile::AutoRelease.Value / 100 : -1.f)
 		|| !F::ProjSim.Initialize(projInfo))
 		return;
 
-	for (int n = 0; n < TIME_TO_TICKS(projInfo.m_lifetime); n++)
+	CGameTrace trace = {};
+	CTraceFilterProjectile filter = {};
+	filter.pSkip = pLocal;
+
+	for (int n = -1; n < TIME_TO_TICKS(projInfo.m_flLifetime); n++)
 	{
 		Vec3 Old = F::ProjSim.GetOrigin();
 		F::ProjSim.RunTick(projInfo);
 		Vec3 New = F::ProjSim.GetOrigin();
 
-		CGameTrace trace = {};
-		CTraceFilterProjectile filter = {};
-		filter.pSkip = pLocal;
-		Utils::TraceHull(Old, New, projInfo.m_hull * -1, projInfo.m_hull, MASK_SOLID, &filter, &trace);
+		Utils::TraceHull(Old, New, projInfo.m_vHull * -1, projInfo.m_vHull, MASK_SOLID, &filter, &trace);
 		if (trace.DidHit())
 		{
-			Vec3 angles;
-			Math::VectorAngles(trace.Plane.normal, angles);
-
-			const float flSize = std::max(projInfo.m_hull.x, 1.f);
+			const float flSize = std::max(projInfo.m_vHull.x, 1.f);
 			const Vec3 vSize = { 1.f, flSize, flSize };
+			Vec3 vAngles; Math::VectorAngles(trace.Plane.normal, vAngles);
 
 			if (bQuick)
 			{
-				RenderBox(trace.vEndPos, vSize * -1, vSize, angles, Vars::Colors::ProjectileColor.Value, { 0, 0, 0, 0 });
+				RenderBox(trace.vEndPos, vSize * -1, vSize, vAngles, Vars::Colors::ProjectileColor.Value, { 0, 0, 0, 0 });
 				if (Vars::Colors::ClippedColor.Value.a)
-					RenderBox(trace.vEndPos, vSize * -1, vSize, angles, Vars::Colors::ClippedColor.Value, { 0, 0, 0, 0 }, true);
-
-				projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
-
-				if (!I::EngineVGui->IsGameUIVisible() && Vars::Visuals::ProjectileCamera.Value && pLocal->m_vecOrigin().DistTo(trace.vEndPos) > 500.f)
-				{
-					auto vAngles = Math::CalcAngle(Old, trace.vEndPos);
-					Vec3 vForward = {}; Math::AngleVectors(vAngles, &vForward);
-					Utils::Trace(trace.vEndPos, trace.vEndPos - vForward * 500.f, MASK_SOLID, &filter, &trace);
-
-					F::CameraWindow.ShouldDraw = true;
-					F::CameraWindow.CameraOrigin = trace.vEndPos;
-					F::CameraWindow.CameraAngles = vAngles;
-				}
+					RenderBox(trace.vEndPos, vSize * -1, vSize, vAngles, Vars::Colors::ClippedColor.Value, { 0, 0, 0, 0 }, true);
 			}
 			else
 			{
-				G::ProjLines = projInfo.PredictionLines;
-				G::ProjLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
-
-				G::LinesStorage.push_back({ G::ProjLines, -1.f - F::Backtrack.GetReal(), Vars::Colors::ProjectileColor.Value });
-				G::BoxesStorage.push_back({ trace.vEndPos, vSize * -1, vSize, angles, I::GlobalVars->curtime + TICKS_TO_TIME(n) + F::Backtrack.GetReal(), Vars::Colors::ProjectileColor.Value});
+				G::BoxesStorage.clear();
+				G::BoxesStorage.push_back({ trace.vEndPos, vSize * -1, vSize, vAngles, I::GlobalVars->curtime + TICKS_TO_TIME(n) + F::Backtrack.GetReal(), Vars::Colors::ProjectileColor.Value});
 			}
-
 			break;
 		}
 	}
 
-	DrawSimLine(projInfo.PredictionLines, Vars::Colors::ProjectileColor.Value);
-	if (Vars::Colors::ClippedColor.Value.a)
-		DrawSimLine(projInfo.PredictionLines, Vars::Colors::ClippedColor.Value, false, true);
+	projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
+	
+	if (bQuick)
+	{
+		DrawSimLine(projInfo.PredictionLines, Vars::Colors::ProjectileColor.Value);
+		if (Vars::Colors::ClippedColor.Value.a)
+			DrawSimLine(projInfo.PredictionLines, Vars::Colors::ClippedColor.Value, false, true);
+
+		if (!I::EngineVGui->IsGameUIVisible() && Vars::Visuals::ProjectileCamera.Value && pLocal->m_vecOrigin().DistTo(trace.vEndPos) > 500.f)
+		{
+			auto vAngles = Math::CalcAngle(trace.vStartPos, trace.vEndPos);
+			Vec3 vForward = {}; Math::AngleVectors(vAngles, &vForward);
+			Utils::Trace(trace.vEndPos, trace.vEndPos - vForward * 500.f, MASK_SOLID, &filter, &trace);
+
+			F::CameraWindow.ShouldDraw = true;
+			F::CameraWindow.CameraOrigin = trace.vEndPos;
+			F::CameraWindow.CameraAngles = vAngles;
+		}
+	}
+	else
+	{
+		G::LinesStorage.clear();
+		G::LinesStorage.push_back({ projInfo.PredictionLines, -float(projInfo.PredictionLines.size()) - TIME_TO_TICKS(F::Backtrack.GetReal()), Vars::Colors::ProjectileColor.Value });
+	}
 }
 
 void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
@@ -303,40 +304,42 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 		int yoffset = 10, xoffset = 10;
 		const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
-		g_Draw.String(fFont, xoffset, yoffset += 15, Utils::Rainbow(), ALIGN_TOPLEFT, "Fedoraware");
+		g_Draw.String(fFont, xoffset, yoffset, Utils::Rainbow(), ALIGN_TOPLEFT, "Fedoraware");
 		{
 			Vec3 vec = pLocal->m_vecOrigin();
-			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Origin: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
+			g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Origin: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
 		}
 		{
 			Vec3 vec = pLocal->m_vecVelocity();
-			g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
+			g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
 		}
 
 		auto pCmd = G::LastUserCmd;
 		if (!pCmd)
 			return;
-		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
-		g_Draw.String(fFont, xoffset, yoffset += 15, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd buttons: %i", pCmd->buttons);
+		g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
+		g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd buttons: %i", pCmd->buttons);
 	}
 }
 
 
 
-void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool bClear)
+std::vector<DrawBox> CVisuals::GetHitboxes(matrix3x4 bones[128], CBaseEntity* pEntity, const int iHitbox)
 {
+	std::vector<DrawBox> vBoxes = {};
+
 	const model_t* pModel = pEntity->GetModel();
-	if (!pModel) return;
+	if (!pModel) return vBoxes;
 	const studiohdr_t* pHDR = I::ModelInfoClient->GetStudioModel(pModel);
-	if (!pHDR) return;
+	if (!pHDR) return vBoxes;
 	const mstudiohitboxset_t* pSet = pHDR->GetHitboxSet(pEntity->m_nHitboxSet());
-	if (!pSet) return;
+	if (!pSet) return vBoxes;
 
-	if (bClear)
-		G::BoxesStorage.clear();
-
-	for (int i = 0; i < pSet->numhitboxes; ++i)
+	for (int i = iHitbox != -1 ? iHitbox : 0; i < pSet->numhitboxes; ++i)
 	{
+		if (iHitbox != -1 && iHitbox != i)
+			break;
+
 		const mstudiobbox_t* bbox = pSet->hitbox(i);
 		if (!bbox) continue;
 
@@ -353,8 +356,10 @@ void CVisuals::DrawHitbox(matrix3x4 bones[128], CBaseEntity* pEntity, const bool
 		Vec3 matrixOrigin;
 		Math::GetMatrixOrigin(matrix, matrixOrigin);
 
-		G::BoxesStorage.push_back({ matrixOrigin, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + 5.f, Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value, true });
+		vBoxes.push_back({ matrixOrigin, bbox->bbmin, bbox->bbmax, bboxAngle, I::GlobalVars->curtime + 5.f, Vars::Colors::HitboxEdge.Value, Vars::Colors::HitboxFace.Value, true });
 	}
+
+	return vBoxes;
 }
 
 void CVisuals::DrawBulletLines()
@@ -427,19 +432,6 @@ void CVisuals::RevealBoxes()
 		Box.m_flTime = I::GlobalVars->curtime + 60.f;
 }
 
-void CVisuals::ClearBulletLines()
-{
-	// in the case of drawing multiple bullets
-	//for (auto& Line : G::BulletsStorage)
-	//{
-	//	if (Line.m_flTime + 0.01f < I::GlobalVars->curtime)
-	//	{
-	G::BulletsStorage.clear();
-	//		break;
-	//	}
-	//}
-}
-
 void CVisuals::DrawServerHitboxes()
 {
 	static int iOldTick = I::GlobalVars->tickcount;
@@ -500,9 +492,8 @@ void CVisuals::FOV(CViewSetup* pView)
 		if (!fov)
 			return;
 
-		pView->fov = static_cast<float>(fov);
-		if (pLocal->IsAlive())
-			pLocal->m_iFOV() = fov;
+		pView->fov = fov;
+		pLocal->m_iFOV() = fov;
 	}
 }
 
@@ -513,7 +504,7 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 		return I::Input->CAM_ToFirstPerson();
 	
 	// Toggle key
-	if (!I::EngineVGui->IsGameUIVisible() && !I::VGuiSurface->IsCursorVisible() && Vars::Visuals::ThirdPerson::Key.Value)
+	if (!I::EngineVGui->IsGameUIVisible() && !I::MatSystemSurface->IsCursorVisible() && Vars::Visuals::ThirdPerson::Key.Value)
 	{
 		if (F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
 			Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
@@ -585,7 +576,7 @@ void CVisuals::FillSightlines()
 		{
 			if (CBaseEntity* pDot = I::ClientEntityList->GetClientEntity(n))
 			{
-				if (pDot->GetClassID() != ETFClassID::CSniperDot)
+				if (pDot->GetClassID() != ETFClassID::CSniperDot || pDot->GetDormant())
 					continue;
 
 				if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pDot->m_hOwnerEntity()))
@@ -698,66 +689,48 @@ void CVisuals::OverrideWorldTextures()
 	if (!kv)
 		return;
 
-	for (const auto& data : MaterialHandleDatas)
+	for (auto h = I::MaterialSystem->FirstMaterial(); h != I::MaterialSystem->InvalidMaterial(); h = I::MaterialSystem->NextMaterial(h))
 	{
-		if (data.Material == nullptr)
+		const auto& pMaterial = I::MaterialSystem->GetMaterial(h);
+		if (!pMaterial || pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached() || pMaterial->IsTranslucent() || pMaterial->IsSpriteCard())
 			continue;
 
-		if (data.Material->IsTranslucent() || data.Material->IsSpriteCard() || data.GroupType != MaterialHandleData::EMatGroupType::GROUP_WORLD)
-			continue;
+		auto sGroup = std::string_view(pMaterial->GetTextureGroupName());
+		auto sName = std::string_view(pMaterial->GetName());
 
-		if (!data.ShouldOverrideTextures)
-			continue;
-
-		data.Material->SetShaderAndParams(kv);
-	}
-}
-
-void ApplyModulation(const Color_t& clr)
-{
-	if (F::Visuals.MaterialHandleDatas.empty())
-		return;
-
-	for (const auto& material : F::Visuals.MaterialHandleDatas)
-	{
-		if (material.Material)
+		if (!sGroup._Starts_with("World")
+			|| sName.find("water") != std::string_view::npos || sName.find("glass") != std::string_view::npos
+			|| sName.find("door") != std::string_view::npos || sName.find("tools") != std::string_view::npos
+			|| sName.find("player") != std::string_view::npos || sName.find("chicken") != std::string_view::npos
+			|| sName.find("wall28") != std::string_view::npos || sName.find("wall26") != std::string_view::npos
+			|| sName.find("decal") != std::string_view::npos || sName.find("overlay") != std::string_view::npos
+			|| sName.find("hay") != std::string_view::npos)
 		{
-			if (material.GroupType != CVisuals::MaterialHandleData::EMatGroupType::GROUP_WORLD)
-				continue;
-			if (material.Material->IsErrorMaterial() || !material.Material->IsPrecached())
-				continue;
-			material.Material->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
+			continue;
 		}
+
+		pMaterial->SetShaderAndParams(kv);
 	}
 }
 
-void ApplySkyboxModulation(const Color_t& clr)
+void ApplyModulation(const Color_t& clr, bool bSky = false)
 {
-	if (F::Visuals.MaterialHandleDatas.empty())
-		return;
-
-	for (const auto& material : F::Visuals.MaterialHandleDatas)
+	for (auto h = I::MaterialSystem->FirstMaterial(); h != I::MaterialSystem->InvalidMaterial(); h = I::MaterialSystem->NextMaterial(h))
 	{
-		if (material.Material)
-		{
-			if (material.GroupType != CVisuals::MaterialHandleData::EMatGroupType::GROUP_SKY)
-				continue;
-			if (material.Material->IsErrorMaterial() || !material.Material->IsPrecached())
-				continue;
-			material.Material->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
-		}
+		const auto& pMaterial = I::MaterialSystem->GetMaterial(h);
+		if (!pMaterial || pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached())
+			continue;
+
+		auto sGroup = std::string_view(pMaterial->GetTextureGroupName());
+		if (!bSky ? !sGroup._Starts_with("World") : !sGroup._Starts_with("SkyBox"))
+			continue;
+
+		pMaterial->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
 	}
 }
 
-void CVisuals::ModulateWorld()
+void CVisuals::Modulate()
 {
-	if (G::ShouldUpdateMaterialCache)
-	{
-		F::Visuals.ClearMaterialHandles();
-		F::Visuals.StoreMaterialHandles();
-		G::ShouldUpdateMaterialCache = false;
-	}
-
 	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 	const bool bWorldModulation = Vars::Visuals::World::Modulations.Value & 1 << 0 && !bScreenshot;
 	const bool bSkyModulation = Vars::Visuals::World::Modulations.Value & 1 << 1 && !bScreenshot;
@@ -766,8 +739,8 @@ void CVisuals::ModulateWorld()
 	const bool bCurrConnectionState = I::EngineClient->IsConnected() && I::EngineClient->IsInGame();
 	const bool bUnchanged = bLastConnectionState == bCurrConnectionState;
 
-	bool bSetChanged = false;
-	{	// check if modulation has been switched
+	bool bSetChanged, bColorChanged, bSkyChanged;
+	{
 		static auto oldW = bWorldModulation;
 		const auto curW = bWorldModulation;
 		static auto oldS = bSkyModulation;
@@ -778,9 +751,7 @@ void CVisuals::ModulateWorld()
 		oldW = curW;
 		oldS = curS;
 	}
-
-	bool bColorChanged = false;
-	{	// check if colours have been changed
+	{
 		static auto oldW = Vars::Colors::WorldModulation.Value;
 		static auto oldS = Vars::Colors::SkyModulation.Value;
 		const auto curW = Vars::Colors::WorldModulation.Value;
@@ -791,11 +762,19 @@ void CVisuals::ModulateWorld()
 		oldW = curW;
 		oldS = curS;
 	}
+	{
+		static auto oldS = Vars::Visuals::World::SkyboxChanger.Value;
+		const auto curS = Vars::Visuals::World::SkyboxChanger.Value;
 
-	if (bSetChanged || bColorChanged || !bUnchanged)
+		bSkyChanged = curS != oldS;
+	
+		oldS = curS;
+	}
+
+	if (bSetChanged || bColorChanged || bSkyChanged || !bUnchanged)
 	{
 		bWorldModulation ? ApplyModulation(Vars::Colors::WorldModulation.Value) : ApplyModulation({ 255, 255, 255, 255 });
-		bSkyModulation ? ApplySkyboxModulation(Vars::Colors::SkyModulation.Value) : ApplySkyboxModulation({ 255, 255, 255, 255 });
+		bSkyModulation ? ApplyModulation(Vars::Colors::SkyModulation.Value, true) : ApplyModulation({ 255, 255, 255, 255 }, true);
 		bLastConnectionState = bCurrConnectionState;
 	}
 }
@@ -803,7 +782,7 @@ void CVisuals::ModulateWorld()
 void CVisuals::RestoreWorldModulation() // keep this because its mentioned in @DLLMain.cpp if you find a better way to do this, remove it ig.
 {
 	ApplyModulation({ 255, 255, 255, 255 });
-	ApplySkyboxModulation({ 255, 255, 255, 255 });
+	ApplyModulation({ 255, 255, 255, 255 }, true);
 }
 
 void CVisuals::SkyboxChanger()
@@ -812,54 +791,8 @@ void CVisuals::SkyboxChanger()
 	static auto fnLoadSkys = S::LoadSkys.As<LoadNamedSkysFn>();
 	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 
-	if (Vars::Visuals::World::SkyboxChanger.Value != "Off" && Vars::Misc::BypassPure.Value && !bScreenshot)
+	if (Vars::Visuals::World::SkyboxChanger.Value != "Off" && !bScreenshot)
 		fnLoadSkys(Vars::Visuals::World::SkyboxChanger.Value.c_str());
 	else if (auto sv_skyname = I::Cvar->FindVar("sv_skyname"))
 		fnLoadSkys(sv_skyname->GetString());
-}
-
-void CVisuals::StoreMaterialHandles()
-{
-	for (MaterialHandle_t h = I::MaterialSystem->First(); h != I::MaterialSystem->Invalid(); h = I::MaterialSystem->Next(h))
-	{
-		if (const auto& pMaterial = I::MaterialSystem->Get(h))
-		{
-			if (pMaterial->IsErrorMaterial() || !pMaterial->IsPrecached())
-				continue;
-
-			MaterialHandleData data;
-			data.Handle = h;
-			data.Material = pMaterial;
-			auto sGroup = std::string_view(pMaterial->GetTextureGroupName());
-			data.Group = sGroup;
-			auto sName = std::string_view(pMaterial->GetName());
-			data.Name = sName;
-
-			if (sGroup._Starts_with("SkyBox"))
-				data.GroupType = MaterialHandleData::EMatGroupType::GROUP_SKY;
-			else if (sGroup._Starts_with("World"))
-				data.GroupType = MaterialHandleData::EMatGroupType::GROUP_WORLD;
-			else
-				data.GroupType = MaterialHandleData::EMatGroupType::GROUP_OTHER;
-
-			if (sName.find("water") != std::string_view::npos || sName.find("glass") != std::string_view::npos
-				|| sName.find("door") != std::string_view::npos || sName.find("tools") != std::string_view::npos
-				|| sName.find("player") != std::string_view::npos || sName.find("chicken") != std::string_view::npos
-				|| sName.find("wall28") != std::string_view::npos || sName.find("wall26") != std::string_view::npos
-				|| sName.find("decal") != std::string_view::npos || sName.find("overlay") != std::string_view::npos
-				|| sName.find("hay") != std::string_view::npos)
-			{
-				data.ShouldOverrideTextures = false;
-			}
-			else
-				data.ShouldOverrideTextures = true;
-
-			MaterialHandleDatas.push_back(data);
-		}
-	}
-}
-
-void CVisuals::ClearMaterialHandles()
-{
-	MaterialHandleDatas.clear();
 }

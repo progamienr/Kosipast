@@ -100,9 +100,12 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 	case ETFClassID::CMerasmus:
 	case ETFClassID::CZombie:
 	case ETFClassID::CEyeballBoss:
+		*pChams = Vars::Chams::World::Chams.Value;
+		return Vars::Chams::World::NPCs.Value;
 	// pickup chams
-	case ETFClassID::CHalloweenGiftPickup:
 	case ETFClassID::CTFAmmoPack:
+	case ETFClassID::CCurrencyPack:
+	case ETFClassID::CHalloweenGiftPickup:
 		*pChams = Vars::Chams::World::Chams.Value;
 		return Vars::Chams::World::Pickups.Value;
 	case ETFClassID::CBaseAnimating:
@@ -316,7 +319,7 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 	auto& sColor = Vars::Chams::Backtrack::Chams.Value.VisibleColor;
 
 	const auto& pRecords = F::Backtrack.GetRecords(pEntity);
-	auto vRecords = F::Backtrack.GetValidRecords(pRecords, BacktrackMode::ALL);
+	auto vRecords = F::Backtrack.GetValidRecords(pRecords);
 	if (!vRecords.size())
 		return;
 

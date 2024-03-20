@@ -19,15 +19,15 @@ int BulletDangerValue(CBaseEntity* pPatient)
 	bool anyEnemies = false;
 
 	// Find dangerous playes in other team
-	for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
+	for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!player->IsAlive() || player->IsAGhost())
+		if (!pPlayer->IsAlive() || pPlayer->IsAGhost())
 			continue;
 
-		if (player->GetDormant())
+		if (pPlayer->GetDormant())
 			continue;
 
-		switch (player->m_iClass())
+		switch (pPlayer->m_iClass())
 		{
 			case 1: if (!(Vars::Auto::Uber::ReactClasses.Value & 1 << 0)) continue;
 				  break; //	scout
@@ -46,10 +46,10 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			default: { continue; }
 		}
 
-		if (player->InCond(TF_COND_PHASE))
+		if (pPlayer->InCond(TF_COND_PHASE))
 			return false;
 
-		const auto& pWeapon = player->GetActiveWeapon();
+		const auto& pWeapon = pPlayer->GetActiveWeapon();
 
 		if (!pWeapon)
 			return 0;
@@ -61,38 +61,38 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			return false;
 
 		// Ignore ignored players
-		if (F::AutoGlobal.ShouldIgnore(player))
+		if (F::AutoGlobal.ShouldIgnore(pPlayer))
 			continue;
 
-		const Vec3 vAngleTo = Math::CalcAngle(player->GetEyePosition(), pPatient->GetWorldSpaceCenter());
-		const float flFOVTo = Math::CalcFov(player->GetEyeAngles(), vAngleTo);
+		const Vec3 vAngleTo = Math::CalcAngle(pPlayer->GetEyePosition(), pPatient->GetWorldSpaceCenter());
+		const float flFOVTo = Math::CalcFov(pPlayer->GetEyeAngles(), vAngleTo);
 
-		if (Vars::Auto::Uber::ReactFOV.Value && !F::PlayerUtils.HasTag(player->GetIndex(), "Cheater"))
+		if (Vars::Auto::Uber::ReactFOV.Value && !F::PlayerUtils.HasTag(pPlayer->GetIndex(), "Cheater"))
 		{
-			if (flFOVTo - (3.f * G::ChokeMap[player->GetIndex()]) > static_cast<float>(Vars::Auto::Uber::ReactFOV.Value))
+			if (flFOVTo - (3.f * G::ChokeMap[pPlayer->GetIndex()]) > static_cast<float>(Vars::Auto::Uber::ReactFOV.Value))
 				continue; // account for choking :D
 		}
 
-		if (player->InCond(TF_COND_AIMING))
+		if (pPlayer->InCond(TF_COND_AIMING))
 		{
 			anyZoomedSnipers = true;
-			if (Utils::VisPos(pPatient, player, pPatient->GetHitboxPos(HITBOX_HEAD), player->GetEyePosition()))
+			if (Utils::VisPos(pPatient, pPlayer, pPatient->GetHitboxPos(HITBOX_HEAD), pPlayer->GetEyePosition()))
 				return 2;
 		}
 
 
-		if (Utils::VisPos(pPatient, player, pPatient->GetHitboxPos(HITBOX_PELVIS),
-			player->GetEyePosition()))
+		if (Utils::VisPos(pPatient, pPlayer, pPatient->GetHitboxPos(HITBOX_PELVIS),
+			pPlayer->GetEyePosition()))
 		{
-			if (const auto& pWeapon = player->GetActiveWeapon())
+			if (const auto& pWeapon = pPlayer->GetActiveWeapon())
 			{
-				if (player->m_iClass() == CLASS_SPY && pWeapon->GetSlot() == SLOT_PRIMARY || player->m_iClass() == CLASS_SCOUT || player->m_iClass() == CLASS_HEAVY || player->m_iClass() ==
-					CLASS_MEDIC || player->m_iClass() == CLASS_SNIPER || player->m_iClass() == CLASS_ENGINEER)
+				if (pPlayer->m_iClass() == CLASS_SPY && pWeapon->GetSlot() == SLOT_PRIMARY || pPlayer->m_iClass() == CLASS_SCOUT || pPlayer->m_iClass() == CLASS_HEAVY || pPlayer->m_iClass() ==
+					CLASS_MEDIC || pPlayer->m_iClass() == CLASS_SNIPER || pPlayer->m_iClass() == CLASS_ENGINEER)
 				{
-					if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 350.f ||
-						(pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 600.f &&
-						(player->m_iClass() == CLASS_SPY || player->m_iClass() == CLASS_SCOUT || player->m_iClass() == CLASS_HEAVY || player->m_iClass() == CLASS_MEDIC || player->
-						m_iClass() == CLASS_SNIPER || player->m_iClass() == CLASS_ENGINEER)))
+					if (pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) < 350.f ||
+						(pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) < 600.f &&
+						(pPlayer->m_iClass() == CLASS_SPY || pPlayer->m_iClass() == CLASS_SCOUT || pPlayer->m_iClass() == CLASS_HEAVY || pPlayer->m_iClass() == CLASS_MEDIC || pPlayer->
+						m_iClass() == CLASS_SNIPER || pPlayer->m_iClass() == CLASS_ENGINEER)))
 					{
 						return 2;
 					}
@@ -101,16 +101,16 @@ int BulletDangerValue(CBaseEntity* pPatient)
 				if (pWeapon->GetClassID() == ETFClassID::CTFShotgun_Pyro || pWeapon->GetClassID() == ETFClassID::CTFShotgun_Soldier)
 				{
 					{
-						if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 50.f ||
-							(pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 250.f && (
-							(player->m_iClass() == CLASS_PYRO))))
+						if (pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) < 50.f ||
+							(pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) < 250.f && (
+							(pPlayer->m_iClass() == CLASS_PYRO))))
 						{
 							return 2;
 						}
 
-						if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 50.f ||
-							(pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) < 250.f && (
-							(player->m_iClass() == CLASS_SOLDIER))))
+						if (pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) < 50.f ||
+							(pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) < 250.f && (
+							(pPlayer->m_iClass() == CLASS_SOLDIER))))
 						{
 							return 2;
 						}
@@ -165,18 +165,18 @@ int FireDangerValue(CBaseEntity* pPatient)
 {
 	int shouldSwitch = 0;
 
-	for (const auto& player : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
+	for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!player->IsAlive())
+		if (!pPlayer->IsAlive())
 			continue;
 
-		if (player->m_iClass() != CLASS_PYRO) // Pyro only
+		if (pPlayer->m_iClass() != CLASS_PYRO) // Pyro only
 			continue;
 
-		if (pPatient->m_vecOrigin().DistTo(player->m_vecOrigin()) > 450.f)
+		if (pPatient->m_vecOrigin().DistTo(pPlayer->m_vecOrigin()) > 450.f)
 			continue;
 
-		const auto& pPlayerWeapon = player->GetActiveWeapon();
+		const auto& pPlayerWeapon = pPlayer->GetActiveWeapon();
 
 		if (!pPlayerWeapon)
 			return 0;
@@ -190,7 +190,7 @@ int FireDangerValue(CBaseEntity* pPatient)
 				return 2;
 			}
 
-			if (player->InCond(TFCondEx_PhlogUber))
+			if (pPlayer->InCond(TFCondEx_PhlogUber))
 				return 2;
 			shouldSwitch = 1;
 		}
@@ -234,7 +234,7 @@ int BlastDangerValue(CBaseEntity* pPatient)
 		if (pProjectile->GetVelocity().IsZero())
 			continue;
 
-		if (pProjectile->Touched()) // Ignore landed Stickies
+		if (pProjectile->m_bTouched()) // Ignore landed Stickies
 			continue;
 
 		if (pProjectile->m_iTeamNum() == pPatient->m_iTeamNum())

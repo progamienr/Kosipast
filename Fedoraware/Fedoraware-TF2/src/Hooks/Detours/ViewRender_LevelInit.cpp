@@ -11,7 +11,7 @@
 MAKE_HOOK(ViewRender_LevelInit, Utils::GetVFuncPtr(I::ViewRender, 1), void, __fastcall,
 	void* ecx, void* edx)
 {
-	G::ShouldUpdateMaterialCache = true;
+	F::Visuals.OverrideWorldTextures();
 	F::Materials.ReloadMaterials();
 
 	F::Backtrack.Restart();

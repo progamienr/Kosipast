@@ -798,8 +798,7 @@ public:
 class CEntitySphereQuery
 {
 public:
-	CEntitySphereQuery(const Vec3& center, const float radius, const int flagMask = 0,
-		const int partitionMask = PARTITION_CLIENT_NON_STATIC_EDICTS)
+	CEntitySphereQuery(const Vec3& center, const float radius, const int flagMask = 0, const int partitionMask = PARTITION_CLIENT_NON_STATIC_EDICTS)
 	{
 		static DWORD dwAddress = S::CEntitySphereQuery();
 		reinterpret_cast<void(__thiscall*)(void*, const Vec3&, float, int, int)>(dwAddress)(this, center, radius, flagMask, partitionMask);

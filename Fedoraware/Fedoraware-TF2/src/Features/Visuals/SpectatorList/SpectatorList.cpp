@@ -115,7 +115,7 @@ void CSpectatorList::Run()
 			{
 				int w, h;
 
-				I::VGuiSurface->GetTextSize(g_Draw.GetFont(FONT_MENU).dwFont,
+				I::MatSystemSurface->GetTextSize(g_Draw.GetFont(FONT_MENU).dwFont,
 					(Spectator.Name + Spectator.Mode + std::to_wstring(Spectator.RespawnIn) + std::wstring{L" -  (respawn s)"}).c_str(), w, h);
 				switch (align)
 				{

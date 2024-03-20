@@ -6,12 +6,12 @@
 void CCameraWindow::Init()
 {
 	// Create camera texture
-	CameraTex = I::MaterialSystem->CreateFullFrameRenderTarget("mirrorcam_rt");
+	CameraTex = I::MaterialSystem->CreateNamedRenderTargetTextureEx("mirrorcam_rt", 1, 1, RT_SIZE_FULL_FRAME_BUFFER, IMAGE_FORMAT_RGB888, MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, CREATERENDERTARGETFLAGS_HDR);
 
 	// Create camera material
 	static auto* kv = new KeyValues("UnlitGeneric");
 	kv->SetString("$basetexture", "mirrorcam_rt");
-	CameraMat = I::MaterialSystem->Create("m_cameraMat", kv);
+	CameraMat = I::MaterialSystem->CreateMaterial("m_cameraMat", kv);
 }
 
 // Draws camera to the screen

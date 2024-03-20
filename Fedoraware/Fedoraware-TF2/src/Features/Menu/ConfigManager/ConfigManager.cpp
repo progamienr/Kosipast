@@ -385,6 +385,8 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 			else LoadT(WindowBox_t)
 		}
 
+		g_Draw.RemakeFonts();
+
 		CurrentConfig = configName; CurrentVisuals = "";
 		if (bNotify)
 			F::Notifications.Add("Config " + configName + " loaded");

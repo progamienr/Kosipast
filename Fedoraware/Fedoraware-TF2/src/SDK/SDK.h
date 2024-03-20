@@ -295,18 +295,17 @@ namespace Utils
 		return true;
 	}
 
-	__inline void TraceHull(const Vec3& vecStart, const Vec3& vecEnd, const Vec3& vecHullMin, const Vec3& vecHullMax,
-		unsigned int nMask, CTraceFilter* pFilter, CGameTrace* pTrace)
-	{
-		Ray_t ray;
-		ray.Init(vecStart, vecEnd, vecHullMin, vecHullMax);
-		I::EngineTrace->TraceRay(ray, nMask, pFilter, pTrace);
-	}
-
 	__inline void Trace(const Vec3& vecStart, const Vec3& vecEnd, unsigned int nMask, CTraceFilter* pFilter, CGameTrace* pTrace)
 	{
 		Ray_t ray;
 		ray.Init(vecStart, vecEnd);
+		I::EngineTrace->TraceRay(ray, nMask, pFilter, pTrace);
+	}
+
+	__inline void TraceHull(const Vec3& vecStart, const Vec3& vecEnd, const Vec3& vecHullMin, const Vec3& vecHullMax, unsigned int nMask, CTraceFilter* pFilter, CGameTrace* pTrace)
+	{
+		Ray_t ray;
+		ray.Init(vecStart, vecEnd, vecHullMin, vecHullMax);
 		I::EngineTrace->TraceRay(ray, nMask, pFilter, pTrace);
 	}
 
@@ -425,39 +424,25 @@ namespace Utils
 			return trace.entity && trace.entity == pEntity;
 		return true;
 	}
-
-	__inline bool VisPosHitboxId(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, int nHitbox)
+	__inline bool VisPosProjectile(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, unsigned int nMask = MASK_SHOT | CONTENTS_GRATE)
 	{
 		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
+		CTraceFilterProjectile filter = {};
 		filter.pSkip = pSkip;
-		Trace(from, to, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
-		return (trace.entity && trace.entity == pEntity && trace.hitbox == nHitbox);
+		Trace(from, to, nMask, &filter, &trace);
+		if (trace.DidHit())
+			return trace.entity && trace.entity == pEntity;
+		return true;
 	}
-
-	__inline bool VisPosHitboxIdOut(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, int& nHitboxOut)
+	__inline bool VisPosWorld(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, unsigned int nMask = MASK_SHOT | CONTENTS_GRATE)
 	{
 		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
+		CTraceFilterWorldAndPropsOnly filter = {};
 		filter.pSkip = pSkip;
-		Trace(from, to, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
-
-		if (trace.entity && trace.entity == pEntity)
-		{
-			nHitboxOut = trace.hitbox;
-			return true;
-		}
-
-		return false;
-	}
-
-	__inline bool VisPosFraction(CBaseEntity* pSkip, const Vec3& from, const Vec3& to)
-	{
-		CGameTrace trace = {};
-		CTraceFilterHitscan filter = {};
-		filter.pSkip = pSkip;
-		Trace(from, to, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
-		return (trace.flFraction > 0.99f);
+		Trace(from, to, nMask, &filter, &trace);
+		if (trace.DidHit())
+			return trace.entity && trace.entity == pEntity;
+		return true;
 	}
 
 	__inline EWeaponType GetWeaponType(CBaseCombatWeapon* pWeapon)
@@ -489,6 +474,7 @@ namespace Utils
 		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		case TF_WEAPON_JAR:
 		case TF_WEAPON_JAR_MILK:
+		case TF_WEAPON_LUNCHBOX:
 			return EWeaponType::PROJECTILE;
 		default:
 		{
@@ -501,46 +487,30 @@ namespace Utils
 		}
 		}
 
-		if (G::CurItemDefIndex == Heavy_s_RoboSandvich ||
-			G::CurItemDefIndex == Heavy_s_Sandvich ||
-			G::CurItemDefIndex == Heavy_s_FestiveSandvich ||
-			G::CurItemDefIndex == Heavy_s_Fishcake ||
-			G::CurItemDefIndex == Heavy_s_TheDalokohsBar ||
-			G::CurItemDefIndex == Heavy_s_SecondBanana)
-		{
-			return EWeaponType::PROJECTILE;
-		}
-
 		return EWeaponType::UNKNOWN;
 	}
 
 	__inline void GetProjectileFireSetup(CBaseEntity* pPlayer, const Vec3& vAngIn, Vec3 vOffset, Vec3& vPosOut, Vec3& vAngOut, bool bPipes = false, bool bInterp = false)
 	{
-		ConVar* cl_flipviewmodels = g_ConVars.cl_flipviewmodels;
-
-		if (!cl_flipviewmodels)
-			return;
-
-		if (cl_flipviewmodels->GetBool())
-			vOffset.y *= -1.0f;
-
-		Vec3 forward, right, up;
-		Math::AngleVectors(vAngIn, &forward, &right, &up);
+		if (g_ConVars.cl_flipviewmodels->GetBool())
+			vOffset.y *= -1.f;
 
 		const Vec3 vShootPos = bInterp ? pPlayer->GetEyePosition() : pPlayer->GetShootPos();
 
+		Vec3 forward, right, up;
+		Math::AngleVectors(vAngIn, &forward, &right, &up);
 		vPosOut = vShootPos + (forward * vOffset.x) + (right * vOffset.y) + (up * vOffset.z);
 
 		if (bPipes)
 			vAngOut = vAngIn;
 		else
 		{
-			Vec3 vEndPos = vShootPos + (forward * 2000.0f);
+			Vec3 vEndPos = vShootPos + (forward * 2000.f);
 
 			CGameTrace trace = {};
 			CTraceFilterHitscan filter = {};
 			filter.pSkip = pPlayer;
-			Trace(vShootPos, vEndPos, MASK_SHOT, &filter, &trace);
+			Trace(vShootPos, vEndPos, MASK_SOLID, &filter, &trace);
 			if (trace.DidHit() && trace.flFraction > 0.1f)
 				vEndPos = trace.vEndPos;
 
@@ -548,9 +518,20 @@ namespace Utils
 		}
 	}
 
-	__inline uintptr_t GetVirtual(void* pBaseClass, unsigned int nIndex)
+	__inline void GetProjectileFireSetupAirblast(CBaseEntity* pPlayer, const Vec3& vAngIn, Vec3 vPosIn, Vec3& vAngOut, bool bInterp = false)
 	{
-		return static_cast<uintptr_t>((*static_cast<int**>(pBaseClass))[nIndex]);
+		const Vec3 vShootPos = bInterp ? pPlayer->GetEyePosition() : pPlayer->GetShootPos();
+
+		Vec3 forward;
+		Math::AngleVectors(vAngIn, &forward);
+
+		Vec3 vEndPos = vShootPos + (forward * MAX_TRACE_LENGTH);
+		CGameTrace trace = {};
+		CTraceFilterWorldAndPropsOnly filter = {};
+		filter.pSkip = pPlayer;
+		Trace(vShootPos, vEndPos, MASK_SOLID, &filter, &trace);
+
+		Math::VectorAngles(trace.vEndPos - vPosIn, vAngOut);
 	}
 
 	__inline bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
@@ -680,9 +661,7 @@ namespace Utils
 		if (!G::IsAttacking)
 		{
 			const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
-			pCmd->viewangles.x = -90;
-			pCmd->viewangles.y = direction;
-			pCmd->viewangles.z = 0;
+			pCmd->viewangles = { -90, direction, 0 };
 			pCmd->sidemove = 0; pCmd->forwardmove = 0;
 			G::ShouldStop = false;
 		}

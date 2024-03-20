@@ -90,15 +90,6 @@ public:
 class CBaseEntity
 {
 public:
-	OFFSET(PipebombPulsed, bool, 0x908)	//	this is incredibly fucking lazy.	//	16
-	OFFSET(Touched, bool, 0x8FC)													//	0
-	OFFSET(CreationTime, float, 0x900)	// type + 8
-	OFFSET(PunchAngles, Vec3, 0xE8C)
-	OFFSET(WaterJumpTime, float, 0x10FC)
-	OFFSET(SurfaceFriction, float, 0x12D4)
-	OFFSET(TankPressure, float, 0x1B40)
-
-public:
 	// thanks litebase this is just better ngl
 	NETVAR(m_flAnimTime, float, "CBaseEntity", "m_flAnimTime")
 	NETVAR(m_flSimulationTime, float, "CBaseEntity", "m_flSimulationTime")
@@ -141,7 +132,6 @@ public:
 	NETVAR(m_bAlternateSorting, bool, "CBaseEntity", "m_bAlternateSorting")
 	NETVAR(m_nModelIndexOverrides, void*, "CBaseEntity", "m_nModelIndexOverrides")
 	NETVAR(movetype, int, "CBaseEntity", "movetype")
-
 	VIRTUAL(AbsOrigin, Vec3&, this, Vec3& (__thiscall*)(void*), 0x9)
 	VIRTUAL(AbsAngles, Vec3&, this, Vec3& (__thiscall*)(void*), 0xa)
 	__inline CCollisionProperty* GetCollision()
@@ -414,7 +404,6 @@ public:
 	NETVAR(m_hObserverTarget, int /*EHANDLE*/, "CBasePlayer", "m_hObserverTarget")
 	NETVAR(m_hViewModel, int /*EHANDLE*/, "CBasePlayer", "m_hViewModel[0]")
 	NETVAR(m_szLastPlaceName, const char*, "CBasePlayer", "m_szLastPlaceName")
-
 	__inline bool IsAlive()
 	{
 		return m_lifeState() == LIFE_ALIVE;
@@ -479,7 +468,6 @@ public:
 	NETVAR(m_hActiveWeapon, int /*EHANDLE*/, "CBaseCombatCharacter", "m_hActiveWeapon")
 	NETVAR(m_hMyWeapons, int /*EHANDLE*/, "CBaseCombatCharacter", "m_hMyWeapons")
 	NETVAR(m_bGlowEnabled, bool, "CBaseCombatCharacter", "m_bGlowEnabled")
-
 	__inline CBaseCombatWeapon* GetActiveWeapon()
 	{
 		return reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(m_hActiveWeapon()));
@@ -656,7 +644,6 @@ public:
 	NETVAR(m_iCampaignMedals, int, "CTFPlayer", "m_iCampaignMedals")
 	NETVAR(m_iPlayerSkinOverride, int, "CTFPlayer", "m_iPlayerSkinOverride")
 	NETVAR(m_bViewingCYOAPDA, bool, "CTFPlayer", "m_bViewingCYOAPDA")
-
 	CONDGET(OnGround, m_fFlags(), FL_ONGROUND)
 	CONDGET(InWater, m_fFlags(), FL_INWATER)
 	CONDGET(Ducking, m_fFlags(), FL_DUCKING)
@@ -697,7 +684,6 @@ public:
 	CONDGET(BlastResist, m_nPlayerCondEx(), TFCondEx_ExplosiveCharge)
 	CONDGET(BulletResist, m_nPlayerCondEx(), TFCondEx_BulletCharge)
 	CONDGET(FireResist, m_nPlayerCondEx(), TFCondEx_FireCharge)
-
 	OFFSET(MoveType, MoveType_t, 0x1A4)
 	VIRTUAL(MaxHealth, int, this, int(__thiscall*)(void*), 0x6b)
 	__inline Vec3 GetShootPos()
@@ -1165,10 +1151,10 @@ public:
 		if (vCenter) Math::VectorTransform(((pBox->bbmin + pBox->bbmax) * 0.5f), matrix[pBox->bone], *vCenter);
 		return true;
 	}
-	__inline std::array<float, 24>& m_flPoseParameter()
+	__inline std::array<float, MAXSTUDIOPOSEPARAM>& m_flPoseParameter()
 	{
 		static int nOffset = GetNetVar("CBaseAnimating", "m_flPoseParameter");
-		return *reinterpret_cast<std::array<float, 24>*>(reinterpret_cast<DWORD>(this) + nOffset);
+		return *reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline CUtlVector<matrix3x4>* GetCachedBoneData()
 	{
@@ -1194,16 +1180,6 @@ public:
 	__inline void GetBonePosition(int iBone, Vector& origin, QAngle& angles)
 	{
 		S::CBaseAnimating_GetBonePosition.As<void(__thiscall*)(void*, int, Vector&, QAngle&)>()(this, iBone, origin, angles);
-	}
-	__inline std::array<float, MAXSTUDIOPOSEPARAM> GetPoseParam()
-	{
-		static DWORD dwOff = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
-		return *reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOff);
-	}
-	__inline void SetPoseParam(std::array<float, MAXSTUDIOPOSEPARAM> param)
-	{
-		static DWORD dwOff = g_NetVars.get_offset("DT_BaseAnimating", "m_flPoseParameter");
-		*reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(this + dwOff) = param;
 	}
 	__inline bool GetAttachment(int number, Vec3& origin)
 	{
@@ -1340,17 +1316,17 @@ public:
 public:
 	NETVAR(m_bTouched, bool, "CTFGrenadePipebombProjectile", "m_bTouched")
 	NETVAR(m_iType, int, "CTFGrenadePipebombProjectile", "m_iType")
+	NETVAR_OFF(m_flCreationTime, float, "CTFGrenadePipebombProjectile", "m_iType", 4)
 	NETVAR(m_hPBLauncher, int/*EHANDLE*/, "CTFGrenadePipebombProjectile", "m_hLauncher")
 	NETVAR(m_bDefensiveBomb, int, "CTFGrenadePipebombProjectile", "m_bDefensiveBomb")
+	OFFSET(m_bPulsed, bool, 0x908)
 	bool HasStickyEffects()
 	{
 		return m_iType() == TF_GL_MODE_REMOTE_DETONATE || m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE;
 	}
-	float m_flCreationTime()
-	{
-		static int nOffset = GetNetVar("CTFGrenadePipebombProjectile", "m_iType") + 4;
-		return *reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
-	}
+
+public:
+	OFFSET(m_flTankPressure, float, 0x1B40)
 
 public:
 	NETVAR(m_hTargetPlayer, int, "CHalloweenGiftPickup", "m_hTargetPlayer")

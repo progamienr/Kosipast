@@ -29,7 +29,6 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 
 		for (const auto& pTarget : g_EntityCache.GetGroup(groupType))
 		{
-			// Is the target valid and alive?
 			if (!pTarget->IsAlive() || pTarget->IsAGhost() || pTarget == pLocal)
 				continue;
 
@@ -44,7 +43,6 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (bIsMedigun && pLocal->GetWorldSpaceCenter().DistTo(pTarget->GetWorldSpaceCenter()) > 472.f)
 				continue;
 
-			// Should we ignore the target?
 			if (F::AimbotGlobal.ShouldIgnore(pTarget, bIsMedigun))
 				continue;
 
@@ -88,7 +86,6 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 				continue;
 
-			// The target is valid! Add it to the target vector.
 			const float flDistTo = vLocalPos.DistTo(vPos);
 			validTargets.push_back({ pBuilding, isSentry ? ETargetType::SENTRY : (isDispenser ? ETargetType::DISPENSER : ETargetType::TELEPORTER), vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -99,15 +96,11 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 	{
 		for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 		{
-			// Is the projectile a sticky?
-			if (pProjectile->m_iType() == TF_GL_MODE_REMOTE_DETONATE_PRACTICE)
+			if (pProjectile->GetClassID() != ETFClassID::CTFGrenadePipebombProjectile || pProjectile->m_iType() != TF_GL_MODE_REMOTE_DETONATE || !pProjectile->m_bTouched())
 				continue;
 
 			const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pProjectile->m_hThrower());
-			if (!pOwner)
-				continue;
-
-			if ((!pProjectile->Touched()) || (pOwner->m_iTeamNum() == pLocal->m_iTeamNum()))
+			if (!pOwner || pOwner->m_iTeamNum() == pLocal->m_iTeamNum())
 				continue;
 
 			Vec3 vPos = pProjectile->GetWorldSpaceCenter();
@@ -117,7 +110,6 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 				continue;
 
-			// The target is valid! Add it to the target vector.
 			const float flDistTo = vLocalPos.DistTo(vPos);
 			validTargets.push_back({ pProjectile, ETargetType::STICKY, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -135,7 +127,6 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 				continue;
 
-			// The target is valid! Add it to the target vector.
 			const float flDistTo = vLocalPos.DistTo(vPos);
 			validTargets.push_back({ pNPC, ETargetType::NPC, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
@@ -158,12 +149,10 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (!F::AimbotGlobal.ValidBomb(pBomb))
 				continue;
 
-			// The target is valid! Add it to the target vector.
 			validTargets.push_back({ pBomb, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });
 		}
 	}
 
-	// Did we find at least one target?
 	return validTargets;
 }
 
@@ -173,7 +162,6 @@ std::vector<Target_t> CAimbotHitscan::SortTargets(CBaseEntity* pLocal, CBaseComb
 
 	const auto& sortMethod = static_cast<ESortMethod>(Vars::Aimbot::Hitscan::SortMethod.Value);
 	F::AimbotGlobal.SortTargets(&validTargets, sortMethod);
-	F::AimbotGlobal.SortPriority(&validTargets);
 
 	std::vector<Target_t> sortedTargets = {};
 	int i = 0; for (auto& target : validTargets)
@@ -182,6 +170,8 @@ std::vector<Target_t> CAimbotHitscan::SortTargets(CBaseEntity* pLocal, CBaseComb
 
 		sortedTargets.push_back(target);
 	}
+
+	F::AimbotGlobal.SortPriority(&sortedTargets);
 
 	return sortedTargets;
 }
@@ -306,7 +296,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 		const auto& pRecords = F::Backtrack.GetRecords(target.m_pEntity);
 		if (pRecords && target.m_TargetType == ETargetType::PLAYER)
 		{
-			vRecords = F::Backtrack.GetValidRecords(pRecords, (BacktrackMode)Vars::Backtrack::Method.Value, pLocal);
+			vRecords = F::Backtrack.GetValidRecords(pRecords, pLocal);
 			if (!Vars::Backtrack::Enabled.Value && !vRecords.empty())
 				vRecords = { vRecords.front() };
 		}
@@ -390,7 +380,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 
 			for (auto& pair : hitboxes)
 			{
-				const float flScale = float(Vars::Aimbot::Hitscan::PointScale.Value) / 100;
+				const float flScale = Vars::Aimbot::Hitscan::PointScale.Value / 100;
 				const Vec3 vMins = pair.first->bbmin, vMinsS = vMins * flScale;
 				const Vec3 vMaxs = pair.first->bbmax, vMaxsS = vMaxs * flScale;
 
@@ -452,7 +442,7 @@ int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWea
 		}
 		else
 		{
-			const float flScale = float(Vars::Aimbot::Hitscan::PointScale.Value) / 100;
+			const float flScale = Vars::Aimbot::Hitscan::PointScale.Value / 100;
 			const Vec3 vMins = target.m_pEntity->m_vecMins(), vMinsS = vMins * flScale;
 			const Vec3 vMaxs = target.m_pEntity->m_vecMaxs(), vMaxsS = vMaxs * flScale;
 
@@ -612,6 +602,10 @@ Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 
 	switch (iMethod)
 	{
+	case 0: // Plain
+	case 2: // Silent
+		vReturn = vToAngle;
+		break;
 	case 1: //Smooth
 	{
 		auto shortDist = [](const float flAngleA, const float flAngleB)
@@ -619,17 +613,11 @@ Vec3 CAimbotHitscan::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 				const float flDelta = fmodf((flAngleA - flAngleB), 360.f);
 				return fmodf(2 * flDelta, 360.f) - flDelta;
 			};
-		const float t = 1.f - (float)Vars::Aimbot::Hitscan::SmoothingAmount.Value / 100.f;
+		const float t = 1.f - Vars::Aimbot::Hitscan::SmoothingAmount.Value / 100.f;
 		vReturn.x = vCurAngle.x - shortDist(vCurAngle.x, vToAngle.x) * t;
 		vReturn.y = vCurAngle.y - shortDist(vCurAngle.y, vToAngle.y) * t;
 		break;
 	}
-	case 0: // Plain
-	case 2: // Silent
-		vReturn = vToAngle;
-		break;
-
-	default: break;
 	}
 
 	return vReturn;
@@ -644,7 +632,7 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 	if (!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Hitscan::Active.Value || !G::CanPrimaryAttack && Vars::Aimbot::Hitscan::AimMethod.Value == 2/* && !G::DoubleTap*/)
 	{
 		bLastTickHeld = false;
-		if (pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && pWeapon->GetMinigunState() != AC_STATE_IDLE)
+		if (pWeapon->GetWeaponID() != TF_WEAPON_MINIGUN || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN && (pWeapon->GetMinigunState() == AC_STATE_FIRING || pWeapon->GetMinigunState() == AC_STATE_SPINNING))
 			return;
 	}
 
@@ -700,7 +688,6 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 
 		G::CurrentTarget = { target.m_pEntity->GetIndex(), I::GlobalVars->tickcount };
 		G::SilentAngles = Vars::Aimbot::Hitscan::AimMethod.Value == 2;
-
 		if (G::SilentAngles)
 			G::AimPos = target.m_vPos;
 
@@ -766,11 +753,15 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 				{
 					if (Vars::Visuals::BulletTracer.Value)
 					{
-						F::Visuals.ClearBulletLines();
+						G::BulletsStorage.clear();
 						G::BulletsStorage.push_back({ {pLocal->GetShootPos(), target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value, true });
 					}
 					if (Vars::Visuals::ShowHitboxes.Value)
-						F::Visuals.DrawHitbox((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
+					{
+						G::BoxesStorage.clear();
+						auto vBoxes = F::Visuals.GetHitboxes((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
+						G::BoxesStorage.insert(G::BoxesStorage.end(), vBoxes.begin(), vBoxes.end());
+					}
 				}
 			}
 		}

@@ -3,9 +3,10 @@
 
 class CAutoAirblast
 {
+	bool CanAirblastEntity(CBaseEntity* pLocal, CBaseEntity* pEntity, Vec3& vAngle, Vec3& vPos);
+
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
-	int id;
 };
 
 ADD_FEATURE(CAutoAirblast, AutoAirblast)

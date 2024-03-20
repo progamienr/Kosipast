@@ -3,153 +3,116 @@
 #include "../../Vars.h"
 #include "../AutoGlobal/AutoGlobal.h"
 
+bool CAutoAirblast::CanAirblastEntity(CBaseEntity* pLocal, CBaseEntity* pEntity, Vec3& vAngle, Vec3& vPos)
+{
+	Vec3 vForward = {}; Math::AngleVectors(vAngle, &vForward);
+	const Vec3 vOrigin = pLocal->GetShootPos() + (vForward * 128.f);
+
+	CBaseEntity* pTarget;
+	for (CEntitySphereQuery sphere(vOrigin, 128.f);
+		(pTarget = sphere.GetCurrentEntity()) != nullptr;
+		sphere.NextEntity())
+	{
+		if (pTarget == pEntity)
+			break;
+	}
+
+	return pTarget == pEntity && Utils::VisPos(pLocal, pEntity, pLocal->GetShootPos(), vPos);
+}
+
 void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Auto::Airblast::Active.Value || !G::CanSecondaryAttack)
+	if (!Vars::Auto::Airblast::Active.Value || !G::CanSecondaryAttack || Vars::Auto::Airblast::DisableOnAttack.Value && pCmd->buttons & IN_ATTACK)
 		return;
 
-	id = pWeapon->GetWeaponID();
-
-	if (id != TF_WEAPON_FLAMETHROWER && id != TF_WEAPON_FLAME_BALL)
+	const int iWeaponID = pWeapon->GetWeaponID();
+	if (iWeaponID != TF_WEAPON_FLAMETHROWER && iWeaponID != TF_WEAPON_FLAME_BALL || G::CurItemDefIndex == Pyro_m_ThePhlogistinator)
 		return;
 
-	if (G::CurItemDefIndex == Pyro_m_ThePhlogistinator)
-		return;
+	const auto& pNet = I::EngineClient->GetNetChannelInfo();
+	const float flLatency = pNet ? pNet->GetLatency(FLOW_INCOMING) + pNet->GetLatency(FLOW_OUTGOING) : 0.f;
 
-	if (const auto& pNet = I::EngineClient->GetNetChannelInfo())
+	const Vec3 vEyePos = pLocal->GetShootPos();
+	bool bShouldBlast = false;
+
+	for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
 	{
-		const Vec3 vEyePos = pLocal->GetEyePosition();
-		const float flLatency = (pNet->GetLatency(FLOW_INCOMING) + pNet->GetLatency(FLOW_OUTGOING));
-		// pretty sure the game shows the predicted position of projectiles so accounting for incoming ping seems useless.
-		bool bShouldBlast = false;
+		if (pProjectile->m_iTeamNum() == pLocal->m_iTeamNum())
+			continue;
 
-		for (const auto& pProjectile : g_EntityCache.GetGroup(EGroupType::WORLD_PROJECTILES))
+		switch (pProjectile->GetClassID())
 		{
-			if (pProjectile->m_iTeamNum() == pLocal->m_iTeamNum())
-				continue; //Ignore team's projectiles
+		case ETFClassID::CTFGrenadePipebombProjectile:
+		case ETFClassID::CTFStunBall:
+		{
+			if (pProjectile->m_bTouched())
+				continue; // Ignore landed stickies and sandman balls
+			break;
+		}
+		case ETFClassID::CTFProjectile_Arrow:
+		{
+			if (pProjectile->GetVelocity().IsZero())
+				continue; // Ignore arrows with no velocity / not moving
+		}
+		}
 
-			switch (pProjectile->GetClassID())
+		Vec3 vPos = pProjectile->m_vecOrigin();
+		if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPos) > Vars::Auto::Airblast::FOV.Value)
+			continue;
+
+		if (CanAirblastEntity(pLocal, pProjectile, pCmd->viewangles, vPos))
+		{
+			bShouldBlast = true;
+			break;
+		}
+		if (!bShouldBlast && Vars::Auto::Airblast::Rage.Value) // possibly implement proj aimbot somehow ?
+		{
+			Vec3 vAngle = Math::CalcAngle(vEyePos, vPos);
+			if (CanAirblastEntity(pLocal, pProjectile, vAngle, vPos))
 			{
-			case ETFClassID::CTFGrenadePipebombProjectile:
-			case ETFClassID::CTFStunBall:
-			{
-				if (pProjectile->Touched())
-					continue; //Ignore landed stickies and sandman balls
+				Utils::FixMovement(pCmd, vAngle);
+				pCmd->viewangles = vAngle;
+				G::PSilentAngles = true;
+				bShouldBlast = true;
 				break;
 			}
-			case ETFClassID::CTFProjectile_Arrow:
+		}
+	}
+
+	if (!bShouldBlast && Vars::Auto::Airblast::ExtinguishPlayers.Value)
+	{
+		for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
+		{
+			if (!pPlayer->IsOnFire() || !pPlayer->IsAlive() || pPlayer->IsAGhost())
+				continue;
+
+			Vec3 vPos = pPlayer->m_vecOrigin() + pPlayer->GetViewOffset(); // this seems to like to overpredict ?
+			if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPos) > Vars::Auto::Airblast::FOV.Value)
+				continue;
+
+			if (CanAirblastEntity(pLocal, pPlayer, pCmd->viewangles, vPos))
 			{
-				if (pProjectile->GetVelocity().IsZero())
-					continue; //Ignore arrows with no velocity / not moving
+				bShouldBlast = true;
 				break;
 			}
-			}
-
-			Vec3 vPredicted = (pProjectile->GetAbsOrigin() + pProjectile->GetVelocity().Scale(flLatency / 1000.f));
-			CGameTrace trace = {};
-			static CTraceFilterWorldAndPropsOnly traceFilter = {};
-			Utils::TraceHull(pProjectile->GetAbsOrigin(), vPredicted, pProjectile->m_vecMins(), pProjectile->m_vecMaxs() * -1.f, MASK_SHOT_HULL, &traceFilter, &trace);
-			if (trace.flFraction < 0.98f && !trace.entity) { continue; }
-
-			if (Vars::Auto::Airblast::Rage.Value) //possibly implement proj aimbot somehow ?
+			if (!bShouldBlast && Vars::Auto::Airblast::Rage.Value)
 			{
-				{ //see if it is possible to reflect with existing viewangles
-					Vec3 vForward = {};
-					Math::AngleVectors(pCmd->viewangles, &vForward);
-					const Vec3 bBoxOrigin = pLocal->GetShootPos() + (vForward * 128.f);
-
-					if (std::abs(bBoxOrigin.x - vPredicted.x) <= 128.0f &&
-						std::abs(bBoxOrigin.y - vPredicted.y) <= 128.0f &&
-						std::abs(bBoxOrigin.z - vPredicted.z) <= 128.0f &&
-						Utils::VisPos(pLocal, pProjectile, vEyePos, vPredicted))
-					{
-						bShouldBlast = true;
-						break;
-					}
-				}
-				{ //if not then manipulate viewangles
-					Vec3 pAngle = Math::CalcAngle(vEyePos, vPredicted);
-					Vec3 vForward = {};
-					Math::AngleVectors(pAngle, &vForward);
-					const Vec3 bBoxOrigin = pLocal->GetShootPos() + (vForward * 128.f);
-
-					if (std::abs(bBoxOrigin.x - vPredicted.x) <= 128.0f &&
-						std::abs(bBoxOrigin.y - vPredicted.y) <= 128.0f &&
-						std::abs(bBoxOrigin.z - vPredicted.z) <= 128.0f &&
-						Utils::VisPos(pLocal, pProjectile, vEyePos, vPredicted))
-					{
-						pCmd->viewangles = pAngle;
-						bShouldBlast = true;
-						break;
-					}
-				}
-			}
-			if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPredicted) <= Vars::Auto::Airblast::Fov.Value)
-			{
-				Vec3 vForward = {};
-				Math::AngleVectors(pCmd->viewangles, &vForward);
-				const Vec3 bBoxOrigin = pLocal->GetShootPos() + (vForward * 128.f);
-
-				if (std::abs(bBoxOrigin.x - vPredicted.x) <= 128.0f &&
-					std::abs(bBoxOrigin.y - vPredicted.y) <= 128.0f &&
-					std::abs(bBoxOrigin.z - vPredicted.z) <= 128.0f &&
-					Utils::VisPos(pLocal, pProjectile, vEyePos, vPredicted))
+				Vec3 vAngle = Math::CalcAngle(vEyePos, pPlayer->GetWorldSpaceCenter());
+				if (CanAirblastEntity(pLocal, pPlayer, vAngle, vPos))
 				{
+					Utils::FixMovement(pCmd, vAngle);
+					pCmd->viewangles = vAngle;
+					G::PSilentAngles = true;
 					bShouldBlast = true;
 					break;
 				}
 			}
 		}
+	}
 
-		if (Vars::Auto::Airblast::ExtinguishPlayers.Value)
-		{
-			for (const auto& pBurningPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
-			{
-				if (!pBurningPlayer->IsOnFire() || !pBurningPlayer->IsAlive() || pBurningPlayer->IsAGhost())
-					continue;
-
-				if (Vars::Auto::Airblast::Rage.Value)
-				{
-					Vec3 pAngle = Math::CalcAngle(vEyePos, pBurningPlayer->m_vecOrigin());
-					Vec3 vForward = {};
-					Math::AngleVectors(pAngle, &vForward);
-					const Vec3 bBoxOrigin = pLocal->GetShootPos() + (vForward * 128.f);
-
-					if (std::abs(bBoxOrigin.x - pBurningPlayer->m_vecOrigin().x) <= 128.0f && // in reality is an intersection check, but should work fine here
-						std::abs(bBoxOrigin.y - pBurningPlayer->m_vecOrigin().y) <= 128.0f &&
-						std::abs(bBoxOrigin.z - pBurningPlayer->m_vecOrigin().z) <= 128.0f &&
-						Utils::VisPos(pLocal, pBurningPlayer, vEyePos, pBurningPlayer->m_vecOrigin()))
-					{
-						pCmd->viewangles = pAngle;
-						bShouldBlast = true;
-						break;
-					}
-				}
-				if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, pBurningPlayer->m_vecOrigin()) <= Vars::Auto::Airblast::Fov.Value)
-				{
-					Vec3 vForward = {};
-					Math::AngleVectors(pCmd->viewangles, &vForward);
-					const Vec3 bBoxOrigin = pLocal->GetShootPos() + (vForward * 128.f);
-
-					if (std::abs(bBoxOrigin.x - pBurningPlayer->m_vecOrigin().x) <= 128.0f &&
-						std::abs(bBoxOrigin.y - pBurningPlayer->m_vecOrigin().y) <= 128.0f &&
-						std::abs(bBoxOrigin.z - pBurningPlayer->m_vecOrigin().z) <= 128.0f &&
-						Utils::VisPos(pLocal, pBurningPlayer, vEyePos, pBurningPlayer->m_vecOrigin()))
-					{
-						bShouldBlast = true;
-						break;
-					}
-				}
-			}
-		}
-
-		if (bShouldBlast)
-		{
-			if (Vars::Auto::Airblast::Rage.Value || Vars::Auto::Airblast::Fov.Value == 0 && Vars::Auto::Airblast::Silent.Value)
-				G::PSilentAngles = true;
-
-			G::IsAttacking = true;
-			pCmd->buttons |= IN_ATTACK2;
-		}
+	if (bShouldBlast)
+	{
+		G::IsAttacking = true;
+		pCmd->buttons |= IN_ATTACK2;
 	}
 }

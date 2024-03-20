@@ -3,6 +3,7 @@
 #include "../../Hooks/HookManager.h"
 #include "../../Hooks/Hooks.h"
 #include "../NetworkFix/NetworkFix.h"
+#include "../Backtrack/Backtrack.h"
 
 void CTickshiftHandler::Reset()
 {
@@ -210,15 +211,8 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 			iDeficit = 0;
 
 		G::Teleport = G::DoubleTap = false;
-		return;
 	}
-	else if (G::ShiftedTicks < G::ShiftedGoal) // recharge
-	{
-		CBaseEntity* pLocal = g_EntityCache.GetLocal();
-		if (pLocal)
-			Recharge(G::LastUserCmd, pLocal);
-		return;
-	}
+	// else recharge
 }
 
 void CTickshiftHandler::MovePre()
@@ -248,6 +242,7 @@ void CTickshiftHandler::MovePost(CUserCmd* pCmd)
 void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 {
 	F::NetworkFix.FixInputDelay(bFinalTick);
+	F::Backtrack.iTickCount = I::GlobalVars->tickcount;
 
 	MovePre();
 	MoveMain(accumulated_extra_samples, bFinalTick);

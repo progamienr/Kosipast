@@ -12,7 +12,7 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	//if (!Vars::Aimbot::Global::Active.Value) { return false; }
 
 	// Don't run in menus
-	if (I::EngineVGui->IsGameUIVisible() || I::VGuiSurface->IsCursorVisible())
+	if (I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
 		return false;
 
 	// Don't run if we are frozen in place.
@@ -73,9 +73,6 @@ bool CAimbot::Run(CUserCmd* pCmd)
 
 	if (!ShouldRun(pLocal, pWeapon))
 		return false;
-
-	if (F::AimbotGlobal.IsSandvich())
-		G::CurWeaponType = EWeaponType::PROJECTILE;
 
 	const bool bAttacking = G::IsAttacking;
 	switch (G::CurWeaponType)

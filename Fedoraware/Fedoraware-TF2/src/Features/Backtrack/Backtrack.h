@@ -35,13 +35,6 @@ struct TickRecord
 	bool bInvalid = false;
 };
 
-enum class BacktrackMode
-{
-	ALL, //	iterates through every tick (slow probably)
-	LAST, // last
-	PREFERONSHOT, // prefers on shot records, last
-};
-
 class CBacktrack
 {
 	// logic
@@ -68,15 +61,14 @@ class CBacktrack
 public:
 	float GetLerp();
 	float GetFake();
-	float GetReal();
+	float GetReal(int iFlow = 0);
 
 	std::deque<TickRecord>* GetRecords(CBaseEntity* pEntity);
-	std::deque<TickRecord> GetValidRecords(std::deque<TickRecord>* pRecords, BacktrackMode iMode = BacktrackMode::ALL, CBaseEntity* pLocal = nullptr, bool bDistance = false);
+	std::deque<TickRecord> GetValidRecords(std::deque<TickRecord>* pRecords, CBaseEntity* pLocal = nullptr, bool bDistance = false);
 
 	void Restart();
 	void FrameStageNotify();
 	std::optional<TickRecord> Run(CUserCmd* pCmd);
-	void PlayerHurt(CGameEvent* pEvent);
 	void SetLerp(CGameEvent* pEvent);
 	void ResolverUpdate(CBaseEntity* pEntity);
 	void ReportShot(int iIndex);

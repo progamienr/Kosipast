@@ -127,10 +127,10 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					continue;
 			}
 		}
-		else if (!(Vars::ESP::Draw.Value & 1 << 3))
+		else if (!(Vars::ESP::Draw.Value & 1 << 3) || !I::Input->CAM_IsThirdPerson())
 			continue;
 
-		I::VGuiSurface->DrawSetAlphaMultiplier((pPlayer->GetDormant() ? Vars::ESP::DormantAlpha.Value : Vars::ESP::ActiveAlpha.Value) / 255.f);
+		I::MatSystemSurface->DrawSetAlphaMultiplier((pPlayer->GetDormant() ? Vars::ESP::DormantAlpha.Value : Vars::ESP::ActiveAlpha.Value) / 255.f);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		if (GetDrawBounds(pPlayer, x, y, w, h))
@@ -139,7 +139,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_NAME);
 
 			const Color_t drawColor = GetEntityDrawColor(pPlayer, Vars::Colors::Relative.Value); //GetTeamColor(pPlayer->m_iTeamNum(), Vars::Colors::Relative.Value);
-			const int nMaxHealth = pPlayer->GetMaxHealth(), nHealth = pPlayer->m_iHealth(), nClassNum = pPlayer->m_iClass();
+			const int iMaxHealth = pPlayer->GetMaxHealth(), iHealth = pPlayer->m_iHealth(), iClassNum = pPlayer->m_iClass();
 
 			// Bones
 			if (Vars::ESP::Player.Value & 1 << 11)
@@ -158,20 +158,27 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			// Health bar
 			if (Vars::ESP::Player.Value & 1 << 1)
 			{
-				const float ratio = float(std::min(nHealth, nMaxHealth)) / nMaxHealth;
-				Color_t cColor = nHealth > nMaxHealth ? Vars::Colors::Overheal.Value : Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, ratio);
+				float flRatio = std::clamp(float(iHealth) / iMaxHealth, 0.f, 1.f);
+				Color_t cColor = Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, flRatio);
+				g_Draw.FillRectPercent(x - 6, y, 2, h, flRatio, cColor, { 0, 0, 0, 255 }, ALIGN_BOTTOM, true);
 
-				g_Draw.FillRectPercent(x - 6, y, 2, h, ratio, cColor, { 0, 0, 0, 255 }, ALIGN_BOTTOM, true);
+				if (iHealth > iMaxHealth)
+				{
+					const float flMaxOverheal = floorf(iMaxHealth / 10.f) * 5;
+					flRatio = std::clamp((iHealth - iMaxHealth) / flMaxOverheal, 0.f, 1.f);
+					cColor = Vars::Colors::Overheal.Value;
+					g_Draw.FillRectPercent(x - 6, y, 2, h, flRatio, cColor, { 0, 0, 0, 0 }, ALIGN_BOTTOM, true);
+				}
 
 				lOffset += 5;
 			}
 
 			// Health text
 			if (Vars::ESP::Player.Value & 1 << 2)
-				g_Draw.String(fFontEsp, x - 5 - lOffset, y + h - h * (float(std::min(nHealth, nMaxHealth)) / nMaxHealth) - 2, nHealth > nMaxHealth ? Vars::Colors::Overheal.Value : Vars::Menu::Theme::Active.Value, ALIGN_TOPRIGHT, "%d", nHealth);
+				g_Draw.String(fFontEsp, x - 5 - lOffset, y + h - h * (float(std::min(iHealth, iMaxHealth)) / iMaxHealth) - 2, iHealth > iMaxHealth ? Vars::Colors::Overheal.Value : Vars::Menu::Theme::Active.Value, ALIGN_TOPRIGHT, "%d", iHealth);
 
 			// Ubercharge bar/text
-			if (nClassNum == CLASS_MEDIC)
+			if (iClassNum == CLASS_MEDIC)
 			{
 				if (const auto& pMedGun = pPlayer->GetWeaponFromSlot(SLOT_SECONDARY))
 				{
@@ -252,13 +259,13 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			if (Vars::ESP::Player.Value & 1 << 5)
 			{
 				const int size = 18 * Vars::Menu::DPI.Value;
-				g_Draw.Texture(x + w / 2 - size / 2, y - tOffset - size, size, size, { 255, 255, 255, 255 }, nClassNum);
+				g_Draw.Texture(x + w / 2, y - tOffset, size, size, iClassNum - 1, ALIGN_BOTTOM);
 			}
 
 			// Class text
 			if (Vars::ESP::Player.Value & 1 << 6)
 			{
-				g_Draw.String(fFontEsp, x + w + 4, y + rOffset, Vars::Menu::Theme::Active.Value, ALIGN_TOPLEFT, L"%ls", GetPlayerClass(nClassNum));
+				g_Draw.String(fFontEsp, x + w + 4, y + rOffset, Vars::Menu::Theme::Active.Value, ALIGN_TOPLEFT, L"%ls", GetPlayerClass(iClassNum));
 				rOffset += fFontEsp.nTall;
 			}
 
@@ -529,7 +536,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 		}
 	}
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(1.f);
+	I::MatSystemSurface->DrawSetAlphaMultiplier(1.f);
 }
 
 void CESP::DrawBuildings(CBaseEntity* pLocal) const
@@ -537,7 +544,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 	if (!Vars::ESP::Building.Value)
 		return;
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::ActiveAlpha.Value);
+	I::MatSystemSurface->DrawSetAlphaMultiplier(Vars::ESP::ActiveAlpha.Value);
 
 	for (const auto& pBuilding : g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL))
 	{
@@ -576,7 +583,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_NAME);
 
 			const Color_t drawColor = GetEntityDrawColor(pOwner ? pOwner : pBuilding, Vars::Colors::Relative.Value); //GetTeamColor(pBuilding->m_iTeamNum(), Vars::ESP::Main::Relative.Value);
-			const int nMaxHealth = pBuilding->GetMaxHealth(), nHealth = std::min(pBuilding->m_iBOHealth(), nMaxHealth);
+			const int iMaxHealth = pBuilding->GetMaxHealth(), iHealth = std::min(pBuilding->m_iBOHealth(), iMaxHealth);
 
 			const auto nType = static_cast<EBuildingType>(pBuilding->m_iObjectType());
 			const bool bIsMini = pBuilding->m_bMiniBuilding();
@@ -588,17 +595,16 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 			// Health bar
 			if (Vars::ESP::Building.Value & 1 << 1)
 			{
-				const float ratio = float(nHealth) / nMaxHealth;
-				Color_t cColor = Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, ratio);
+				const float flRatio = float(iHealth) / iMaxHealth;
+				Color_t cColor = Vars::Colors::HealthBar.Value.StartColor.lerp(Vars::Colors::HealthBar.Value.EndColor, flRatio);
+				g_Draw.FillRectPercent(x - 6, y, 2, h, flRatio, cColor, { 0, 0, 0, 255 }, ALIGN_BOTTOM, true);
 
-				g_Draw.FillRectPercent(x - 6, y, 2, h, ratio, cColor, { 0, 0, 0, 255 }, ALIGN_BOTTOM, true);
-
-				lOffset += 8;
+				lOffset += 5;
 			}
 
 			// Health text
 			if (Vars::ESP::Building.Value & 1 << 2)
-				g_Draw.String(fFontEsp, x - 2 - lOffset, (y + h) - (float(nHealth) / nMaxHealth * h) - 2, nHealth > nMaxHealth ? Vars::Colors::Overheal.Value : Vars::Menu::Theme::Active.Value, ALIGN_TOPRIGHT, "%d", nHealth);
+				g_Draw.String(fFontEsp, x - 5 - lOffset, y + h - h * (float(iHealth) / iMaxHealth) - 2, Vars::Menu::Theme::Active.Value, ALIGN_TOPRIGHT, "%d", iHealth);
 
 			// Name
 			if (Vars::ESP::Building.Value & 1 << 0)
@@ -697,22 +703,23 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 		}
 	}
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(1.f);
+	I::MatSystemSurface->DrawSetAlphaMultiplier(1.f);
 }
 
 void CESP::DrawWorld() const
 {
 	Vec3 vScreen = {};
 	const auto& fFont = g_Draw.GetFont(FONT_NAME);
+	const int nTextTopOffset = fFont.nTall * (5 / 4);
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::ActiveAlpha.Value);
+	I::MatSystemSurface->DrawSetAlphaMultiplier(Vars::ESP::ActiveAlpha.Value);
 
 	if (Vars::ESP::Draw.Value & 1 << 4)
 	{
 		for (const auto& NPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 		{
 			int x = 0, y = 0, w = 0, h = 0;
-			if (GetDrawBounds(NPC, x, y, w, h) && Utils::W2S(NPC->m_vecOrigin(), vScreen))
+			if (GetDrawBounds(NPC, x, y, w, h))
 			{
 				const wchar_t* szName;
 				switch (NPC->GetClassID())
@@ -731,7 +738,6 @@ void CESP::DrawWorld() const
 					szName = L"Unknown"; break;
 				}
 
-				const int nTextTopOffset = fFont.nTall * (5 / 4);
 				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::NPC.Value, ALIGN_TOP, szName);
 			}
 		}
@@ -739,33 +745,45 @@ void CESP::DrawWorld() const
 
 	if (Vars::ESP::Draw.Value & 1 << 5)
 	{
-		for (const auto& health : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
+		for (const auto& pHealth : g_EntityCache.GetGroup(EGroupType::WORLD_HEALTH))
 		{
 			int x = 0, y = 0, w = 0, h = 0;
-			if (GetDrawBounds(health, x, y, w, h) && Utils::W2S(health->m_vecOrigin(), vScreen))
-				g_Draw.String(fFont, vScreen.x, y, Vars::Colors::Health.Value, ALIGN_CENTER, L"Health");
+			if (GetDrawBounds(pHealth, x, y, w, h))
+				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Health.Value, ALIGN_CENTER, L"Health");
 		}
 	}
 
 	if (Vars::ESP::Draw.Value & 1 << 6)
 	{
-		for (const auto& ammo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
+		for (const auto& pAmmo : g_EntityCache.GetGroup(EGroupType::WORLD_AMMO))
 		{
 			int x = 0, y = 0, w = 0, h = 0;
-			if (GetDrawBounds(ammo, x, y, w, h) && Utils::W2S(ammo->m_vecOrigin(), vScreen))
-				g_Draw.String(fFont, vScreen.x, y, Vars::Colors::Ammo.Value, ALIGN_CENTER, L"Ammo");
+			if (GetDrawBounds(pAmmo, x, y, w, h))
+				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Ammo.Value, ALIGN_CENTER, L"Ammo");
 		}
 	}
 
 	if (Vars::ESP::Draw.Value & 1 << 7)
 	{
-		for (const auto& Bomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
+		for (const auto& pCash : g_EntityCache.GetGroup(EGroupType::WORLD_MONEY))
 		{
 			int x = 0, y = 0, w = 0, h = 0;
-			if (GetDrawBounds(Bomb, x, y, w, h))
+			if (GetDrawBounds(pCash, x, y, w, h))
+			{
+				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Money.Value, ALIGN_TOP, L"Money");
+			}
+		}
+	}
+
+	if (Vars::ESP::Draw.Value & 1 << 8)
+	{
+		for (const auto& pBomb : g_EntityCache.GetGroup(EGroupType::WORLD_BOMBS))
+		{
+			int x = 0, y = 0, w = 0, h = 0;
+			if (GetDrawBounds(pBomb, x, y, w, h))
 			{
 				const wchar_t* szName;
-				switch (Bomb->GetClassID())
+				switch (pBomb->GetClassID())
 				{
 				case ETFClassID::CTFPumpkinBomb:
 					szName = L"Pumpkin Bomb"; break;
@@ -775,49 +793,46 @@ void CESP::DrawWorld() const
 					szName = L"Unknown"; break;
 				}
 
-				const int nTextTopOffset = fFont.nTall * (5 / 4);
 				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Bomb.Value, ALIGN_TOP, szName);
-			}
-		}
-	}
-
-	if (Vars::ESP::Draw.Value & 1 << 8)
-	{
-		for (const auto& Book : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
-		{
-			int x = 0, y = 0, w = 0, h = 0;
-			if (GetDrawBounds(Book, x, y, w, h))
-			{
-				const int nTextTopOffset = fFont.nTall * (5 / 4);
-				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Spellbook.Value, ALIGN_TOP, L"Spellbook");
 			}
 		}
 	}
 
 	if (Vars::ESP::Draw.Value & 1 << 9)
 	{
-		for (const auto& Gargy : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
+		for (const auto& pBook : g_EntityCache.GetGroup(EGroupType::WORLD_SPELLBOOK))
 		{
 			int x = 0, y = 0, w = 0, h = 0;
-			if (GetDrawBounds(Gargy, x, y, w, h))
+			if (GetDrawBounds(pBook, x, y, w, h))
 			{
-				const int nTextTopOffset = fFont.nTall * (5 / 4);
-				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Gargoyle.Value, ALIGN_TOP, L"Gargoyle");
+				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Halloween.Value, ALIGN_TOP, L"Spellbook");
 			}
 		}
 	}
 
-	I::VGuiSurface->DrawSetAlphaMultiplier(1.f);
+	if (Vars::ESP::Draw.Value & 1 << 10)
+	{
+		for (const auto& pGargy : g_EntityCache.GetGroup(EGroupType::WORLD_GARGOYLE))
+		{
+			int x = 0, y = 0, w = 0, h = 0;
+			if (GetDrawBounds(pGargy, x, y, w, h))
+			{
+				g_Draw.String(fFont, x + w / 2, y - nTextTopOffset, Vars::Colors::Halloween.Value, ALIGN_TOP, L"Gargoyle");
+			}
+		}
+	}
+
+	I::MatSystemSurface->DrawSetAlphaMultiplier(1.f);
 }
 
-const wchar_t* CESP::GetPlayerClass(int nClassNum)
+const wchar_t* CESP::GetPlayerClass(int iClassNum)
 {
 	static const wchar_t* szClasses[] = {
 		L"Unknown", L"Scout", L"Sniper", L"Soldier", L"Demoman",
 		L"Medic", L"Heavy", L"Pyro", L"Spy", L"Engineer"
 	};
 
-	return nClassNum < 10 && nClassNum > 0 ? szClasses[nClassNum] : szClasses[0];
+	return iClassNum < 10 && iClassNum > 0 ? szClasses[iClassNum] : szClasses[0];
 }
 
 void CESP::DrawBones(CBaseEntity* pPlayer, const std::vector<int>& vecBones, Color_t clr)
@@ -832,7 +847,6 @@ void CESP::DrawBones(CBaseEntity* pPlayer, const std::vector<int>& vecBones, Col
 		const auto vParent = pPlayer->GetHitboxPos(vecBones[n + 1]);
 
 		Vec3 vScreenBone, vScreenParent;
-
 		if (Utils::W2S(vBone, vScreenBone) && Utils::W2S(vParent, vScreenParent))
 			g_Draw.Line(vScreenBone.x, vScreenBone.y, vScreenParent.x, vScreenParent.y, clr);
 	}

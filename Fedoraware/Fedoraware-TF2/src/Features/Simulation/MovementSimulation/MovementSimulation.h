@@ -74,7 +74,7 @@ private:
 	void Reset(PlayerStorage& playerStorage);
 
 	bool SetupMoveData(PlayerStorage& playerStorage);
-	bool GetYawDifference(const std::deque<Vec3>& mPositionRecords, const int iTime, float* flYaw);
+	bool GetYawDifference(const std::deque<std::pair<Vec3, float>>& mPositionRecords, const int i, float* flYaw);
 	float GetAverageYaw(const int iIndex, const int iSamples);
 	bool StrafePrediction(PlayerStorage& playerStorage, const int iSamples);
 
@@ -82,7 +82,7 @@ private:
 	bool m_bOldFirstTimePredicted = false;
 	float m_flOldFrametime = 0.f;
 
-	std::map<int, std::deque<Vec3>> mVelocities;
+	std::map<int, std::deque<std::pair<Vec3, float>>> mVelocities;
 
 public:
 	void FillVelocities();

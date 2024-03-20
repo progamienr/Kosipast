@@ -149,7 +149,7 @@ void CMenu::MenuAimbot()
 			if (Section("Backtrack"))
 			{
 				FToggle("Active", &Vars::Backtrack::Enabled.Value);
-				FDropdown("Method", &Vars::Backtrack::Method.Value, { "All", "Last", "Prefer OnShot" });
+				FToggle("Prefer on shot", &Vars::Backtrack::PreferOnShot.Value, FToggle_Middle);
 				FSlider("Fake latency", &Vars::Backtrack::Latency.Value, 0, F::Backtrack.flMaxUnlag * 1000, 5, "%d", FSlider_Clamp); // unreliable above 900
 				FSlider("Fake interp", &Vars::Backtrack::Interp.Value, 0, F::Backtrack.flMaxUnlag * 1000, 5, "%d", FSlider_Clamp);
 				FSlider("Window", &Vars::Backtrack::Window.Value, 1, 200, 5, "%d", FSlider_Clamp);
@@ -162,7 +162,7 @@ void CMenu::MenuAimbot()
 				} EndSection();
 			}
 
-			/* Column 2 */ // reduce this column some
+			/* Column 2 */
 			TableNextColumn();
 			if (Section("Hitscan"))
 			{
@@ -170,12 +170,12 @@ void CMenu::MenuAimbot()
 				FSlider("Aim FOV## Hitscan", &Vars::Aimbot::Hitscan::AimFOV.Value, 1.f, 180.f, 1.f, "%.0f", FSlider_Right | FSlider_Clamp);
 				FDropdown("Aim type", &Vars::Aimbot::Hitscan::AimMethod.Value, { "Plain", "Smooth", "Silent" }, {}, FDropdown_Left);
 				FDropdown("Target selection", &Vars::Aimbot::Hitscan::SortMethod.Value, { "FOV", "Distance" }, {}, FDropdown_Right);
-				FDropdown("Hitboxes", &Vars::Aimbot::Hitscan::Hitboxes.Value, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi);
-				FDropdown("Modifiers", &Vars::Aimbot::Hitscan::Modifiers.Value, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi);
+				FDropdown("Hitboxes", &Vars::Aimbot::Hitscan::Hitboxes.Value, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Modifiers", &Vars::Aimbot::Hitscan::Modifiers.Value, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi | FDropdown_Right);
 				bTransparent = Vars::Aimbot::Hitscan::AimMethod.Value != 1;
-					FSlider("Smooth factor## Hitscan", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
+					FSlider("Smooth factor## Hitscan", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0.f, 100.f, 1.f, "%.0f", FSlider_Clamp);
 				bTransparent = false;
-				FSlider("Point scale", &Vars::Aimbot::Hitscan::PointScale.Value, 0, 100, 5, "%d%%", FSlider_Clamp | FSlider_Precision);
+				FSlider("Point scale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
 				bTransparent = !(Vars::Aimbot::Hitscan::Modifiers.Value & 1 << 0);
 					FSlider("Tapfire distance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, 50.f, "%.0f", FSlider_Clamp | FSlider_Precision);
 				bTransparent = false;
@@ -186,19 +186,19 @@ void CMenu::MenuAimbot()
 				FSlider("Aim FOV## Projectile", &Vars::Aimbot::Projectile::AimFOV.Value, 1.f, 180.f, 1.f, "%1.f", FSlider_Right | FSlider_Clamp);
 				FDropdown("Aim type", &Vars::Aimbot::Projectile::AimMethod.Value, { "Plain", "Smooth", "Silent" }, {}, FDropdown_Left);
 				FDropdown("Target selection", &Vars::Aimbot::Projectile::SortMethod.Value, { "FOV", "Distance" }, {}, FDropdown_Right);
-				FDropdown("Predict", &Vars::Aimbot::Projectile::StrafePrediction.Value, { "Air strafing", "Ground strafing" }, {}, FDropdown_Multi);
+				FDropdown("Predict", &Vars::Aimbot::Projectile::StrafePrediction.Value, { "Air strafing", "Ground strafing" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Splash", &Vars::Aimbot::Projectile::SplashPrediction.Value, { "Off", "Include", "Prefer", "Only" }, {}, FDropdown_Right);
 				bTransparent = Vars::Aimbot::Projectile::AimMethod.Value != 1;
-					FSlider("Smooth factor## Projectile", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
+					FSlider("Smooth factor## Projectile", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0.f, 100.f, 1.f, "%.0f", FSlider_Clamp);
 				bTransparent = !Vars::Aimbot::Projectile::StrafePrediction.Value;
-					FSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0, 100, 5, "%d%%", FSlider_Clamp | FSlider_Precision);
+					FSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
 				bTransparent = false;
 				FSlider("Max simulation time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, 0.1f, "%.1fs");
 				bTransparent = !Vars::Aimbot::Projectile::AutoRelease.Value;
-					FSlider("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value, 0, 100, 5, "%d%%", FSlider_Clamp | FSlider_Precision);
+					FSlider("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
 				bTransparent = false;
-				FToggle("Splash prediction", &Vars::Aimbot::Projectile::SplashPrediction.Value);
-				FToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value, FToggle_Middle);
-				FToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value);
+				FToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value);
+				FToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value, FToggle_Middle);
 			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
@@ -207,17 +207,13 @@ void CMenu::MenuAimbot()
 					FSlider("ground samples", &Vars::Aimbot::Projectile::iGroundSamples.Value, 3, 66, 1, "%d", FSlider_Left);
 					FSlider("air samples", &Vars::Aimbot::Projectile::iAirSamples.Value, 3, 66, 1, "%d", FSlider_Right);
 					FSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, 0.5f, "%.1f", FSlider_Left);
-					FSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -3.f, 3.f, 0.1f, "%.1f", FSlider_Right);
-					FSlider("physic offset", &Vars::Aimbot::Projectile::PhyOff.Value, -3.f, 3.f, 0.1f, "%.1f", FSlider_Left);
+					FSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Right);
+					FSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -1.f, 1.f, 0.1f, "%.1f", FSlider_Left);
 					FSlider("hull inc", &Vars::Aimbot::Projectile::HullInc.Value, 0.f, 3.f, 0.5f, "%.1f", FSlider_Right);
 					FSlider("drag override", &Vars::Aimbot::Projectile::DragOverride.Value, 0.f, 1.f, 0.001f, "%.3f", FSlider_Left);
 					FSlider("time override", &Vars::Aimbot::Projectile::TimeOverride.Value, 0.f, 1.f, 0.001f, "%.3f", FSlider_Right);
-					FDropdown("hunterman mode", &Vars::Aimbot::Projectile::HuntermanMode.Value, { "center", "shift head", "shift up", "from top", "lerp to top" });
-					bTransparent = Vars::Aimbot::Projectile::HuntermanMode.Value != 1 && Vars::Aimbot::Projectile::HuntermanMode.Value != 2;
-						FSlider("hunterman shift", &Vars::Aimbot::Projectile::HuntermanShift.Value, 0.f, 10.f, 0.5f, "%.1f", FSlider_Left);
-					bTransparent = Vars::Aimbot::Projectile::HuntermanMode.Value != 5;
-						FSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Right);
-					bTransparent = false;
+					FSlider("splash points", &Vars::Aimbot::Projectile::SplashPoints.Value, 0, 100, 1, "%d", FSlider_Left);
+					FSlider("splash count", &Vars::Aimbot::Projectile::SplashCount.Value, 1, 5, 1, "%d", FSlider_Right);
 				} EndSection();
 			}
 			if (Section("Melee"))
@@ -226,7 +222,7 @@ void CMenu::MenuAimbot()
 				FSlider("Aim FOV## Melee", &Vars::Aimbot::Melee::AimFOV.Value, 1.f, 180.f, 1.f, "%1.f", FSlider_Right | FSlider_Clamp);
 				FDropdown("Aim type", &Vars::Aimbot::Melee::AimMethod.Value, { "Plain", "Smooth", "Silent" });
 				bTransparent = Vars::Aimbot::Melee::AimMethod.Value != 1;
-					FSlider("Smooth factor## Melee", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0, 100, 1, "%d", FSlider_Clamp);
+					FSlider("Smooth factor## Melee", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0.f, 100.f, 1.f, "%.0f", FSlider_Clamp);
 				bTransparent = false;
 				FToggle("Auto backstab", &Vars::Aimbot::Melee::AutoBackstab.Value);
 				FToggle("Ignore razorback", &Vars::Aimbot::Melee::IgnoreRazorback.Value, FToggle_Middle);
@@ -379,7 +375,7 @@ void CMenu::MenuAimbot()
 				FToggle("Preserve self", &Vars::Auto::Uber::PopLocal.Value, FToggle_Middle);
 				FDropdown("Auto vaccinator", &Vars::Auto::Uber::AutoVaccinator.Value, { "Bullet", "Blast", "Fire" }, {}, FDropdown_Multi | FDropdown_Left);
 				FDropdown("Bullet react classes", &Vars::Auto::Uber::ReactClasses.Value, { "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, FDropdown_Multi | FDropdown_Right);
-				FSlider("Health left", &Vars::Auto::Uber::HealthLeft.Value, 1.f, 99.f, 1.f, "%.0f%%", FSlider_Clamp | FSlider_Left);
+				FSlider("Health left", &Vars::Auto::Uber::HealthLeft.Value, 1.f, 99.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Left);
 				FSlider("Reaction FOV", &Vars::Auto::Uber::ReactFOV.Value, 0, 90, 1, "%d", FSlider_Clamp | FSlider_Right);
 			} EndSection();
 			if (Section("Auto Jump"))
@@ -403,18 +399,17 @@ void CMenu::MenuAimbot()
 			{
 				FToggle("Active", &Vars::Auto::Detonate::Active.Value);
 				FDropdown("Target", &Vars::Auto::Detonate::DetonateTargets.Value, { "Players", "Sentry", "Dispenser", "Teleporter", "NPCs", "Bombs", "Stickies" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 }, FDropdown_Multi);
+				FSlider("Detonation radius", &Vars::Auto::Detonate::RadiusScale.Value, 10.f, 100.f, 1.f, "%.0f%%", FSlider_Clamp);
 				FToggle("Stickies", &Vars::Auto::Detonate::Stickies.Value);
 				FToggle("Flares", &Vars::Auto::Detonate::Flares.Value, FToggle_Middle);
-				FSlider("Detonation radius", &Vars::Auto::Detonate::RadiusScale.Value, 0, 100, 1, "%d%%", FSlider_Clamp);
 			} EndSection();
 			if (Section("Autoblast"))
 			{
 				FToggle("Active", &Vars::Auto::Airblast::Active.Value);
-				FToggle("Rage", &Vars::Auto::Airblast::Rage.Value);
-				FToggle("Silent", &Vars::Auto::Airblast::Silent.Value);
+				FToggle("Rage", &Vars::Auto::Airblast::Rage.Value, FToggle_Middle);
 				FToggle("Extinguish players", &Vars::Auto::Airblast::ExtinguishPlayers.Value);
-				FToggle("Disable on attack", &Vars::Auto::Airblast::DisableOnAttack.Value);
-				FSlider("FOV", &Vars::Auto::Airblast::Fov.Value, 0, 90, 1, "%d", FSlider_Clamp);
+				FToggle("Disable on attack", &Vars::Auto::Airblast::DisableOnAttack.Value, FToggle_Middle);
+				FSlider("FOV", &Vars::Auto::Airblast::FOV.Value, 1.f, 180.f, 1.f, "%.0f", FSlider_Clamp);
 			} EndSection();
 
 			EndTable();
@@ -437,7 +432,7 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("ESP"))
 			{
-				FDropdown("Draw", &Vars::ESP::Draw.Value, { "Enemy", "Team", "Friends", "Local", "NPCs", "Health", "Ammo", "Bombs", "Spellbook", "Gargoyle" }, {}, FDropdown_Multi);
+				FDropdown("Draw", &Vars::ESP::Draw.Value, { "Enemy", "Team", "Friends", "Local", "NPCs", "Health", "Ammo", "Money", "Bombs", "Spellbook", "Gargoyle" }, {}, FDropdown_Multi);
 				FDropdown("Player", &Vars::ESP::Player.Value, { "Name", "Health bar", "Health text", "Uber bar", "Uber text", "Class icon", "Class text", "Weapon icon", "Weapon text", "Distance", "Box", "Bones", "Priority", "Labels", "Buffs", "Debuffs", "Misc", "Lag compensation", "Ping", "KDR" }, {}, FDropdown_Multi);
 				FDropdown("Building", &Vars::ESP::Building.Value, { "Name", "Health bar", "Health text", "Distance", "Box", "Owner", "Level", "Conditions" }, {}, FDropdown_Multi);
 			} EndSection();
@@ -471,8 +466,8 @@ void CMenu::MenuVisuals()
 				FColorPicker("Ammopack color", &Vars::Colors::Ammo.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
 				FColorPicker("NPC color", &Vars::Colors::NPC.Value, 0, FColorPicker_Left);
 				FColorPicker("Bomb color", &Vars::Colors::Bomb.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("Spellbook color", &Vars::Colors::Spellbook.Value, 0, FColorPicker_Left);
-				FColorPicker("Gargoyle color", &Vars::Colors::Gargoyle.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Money color", &Vars::Colors::Money.Value, 0, FColorPicker_Left);
+				FColorPicker("Halloween color", &Vars::Colors::Halloween.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
 
 				FSlider("Active alpha", &Vars::ESP::ActiveAlpha.Value, 0, 255, 5, "%d", FSlider_Clamp);
 				FSlider("Dormant alpha", &Vars::ESP::DormantAlpha.Value, 0, 255, 5, "%d", FSlider_Clamp);
@@ -518,6 +513,7 @@ void CMenu::MenuVisuals()
 				FToggle("NPCs", &Vars::Chams::World::NPCs.Value);
 				FToggle("Pickups", &Vars::Chams::World::Pickups.Value, FToggle_Middle);
 				FToggle("Bombs", &Vars::Chams::World::Bombs.Value);
+				FToggle("Halloween", &Vars::Chams::World::Halloween.Value, FToggle_Middle);
 
 				FMDropdown("Visible material", &Vars::Chams::World::Chams.Value.VisibleMaterial, FDropdown_Left, 1);
 				FColorPicker("Visible color", &Vars::Chams::World::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
@@ -598,6 +594,7 @@ void CMenu::MenuVisuals()
 				FToggle("NPCs", &Vars::Glow::World::NPCs.Value);
 				FToggle("Pickups", &Vars::Glow::World::Pickups.Value, FToggle_Middle);
 				FToggle("Bombs", &Vars::Glow::World::Bombs.Value);
+				FToggle("Halloween", &Vars::Glow::World::Halloween.Value, FToggle_Middle);
 				Dummy({ 0, 8 });
 
 				FToggle("Stencil", &Vars::Glow::World::Glow.Value.Stencil);
@@ -693,9 +690,9 @@ void CMenu::MenuVisuals()
 			{
 				FToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
 				FToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value, FToggle_Middle);
-				FSlider("Offset X", &Vars::Visuals::VMOffsetX.Value, -45, 45, 5, "%d", FSlider_Clamp | FSlider_Precision);
-				FSlider("Offset Y", &Vars::Visuals::VMOffsetY.Value, -45, 45, 5, "%d", FSlider_Clamp | FSlider_Precision);
-				FSlider("Offset Z", &Vars::Visuals::VMOffsetZ.Value, -45, 45, 5, "%d", FSlider_Clamp | FSlider_Precision);
+				FSlider("Offset X", &Vars::Visuals::VMOffsetX.Value, -45, 45, 5, "%d", FSlider_Precision);
+				FSlider("Offset Y", &Vars::Visuals::VMOffsetY.Value, -45, 45, 5, "%d", FSlider_Precision);
+				FSlider("Offset Z", &Vars::Visuals::VMOffsetZ.Value, -45, 45, 5, "%d", FSlider_Precision);
 				FSlider("Roll", &Vars::Visuals::VMRoll.Value, -180, 180, 5, "%d", FSlider_Clamp | FSlider_Precision);
 				FToggle("Sway", &Vars::Visuals::ViewmodelSway.Value);
 				bTransparent = !Vars::Visuals::ViewmodelSway.Value;
@@ -771,8 +768,8 @@ void CMenu::MenuVisuals()
 					FSlider("ang drag x", &Vars::Visuals::PTAngDragBasisX.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
 					FSlider("ang drag y", &Vars::Visuals::PTAngDragBasisY.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
 					FSlider("ang drag z", &Vars::Visuals::PTAngDragBasisZ.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("max vel", &Vars::Visuals::MaxVelocity.Value, 0.f, 4000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("max ang vel", &Vars::Visuals::MaxAngularVelocity.Value, 0.f, 7200.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("max vel", &Vars::Visuals::PTMaxVelocity.Value, 0.f, 4000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("max ang vel", &Vars::Visuals::PTMaxAngularVelocity.Value, 0.f, 7200.f, 50.f, "%.0f", FSlider_Precision);
 				} EndSection();
 			}
 			if (Section("Hitbox"))
@@ -798,7 +795,7 @@ void CMenu::MenuVisuals()
 			if (Section("World"))
 			{
 				FSDropdown("World texture", &Vars::Visuals::World::WorldTexture.Value, { "Default", "Dev", "Camo", "Black", "White", "Flat" }, FSDropdown_Custom);
-				bool bUpdate = FDropdown("Modulations", &Vars::Visuals::World::Modulations.Value, { "World", "Sky", "Prop", "Particle", "Fog" }, { }, FDropdown_Left | FDropdown_Multi);
+				FDropdown("Modulations", &Vars::Visuals::World::Modulations.Value, { "World", "Sky", "Prop", "Particle", "Fog" }, { }, FDropdown_Left | FDropdown_Multi);
 				static std::vector skyNames = {
 					"Off", "sky_tf2_04", "sky_upward", "sky_dustbowl_01", "sky_goldrush_01", "sky_granary_01", "sky_well_01", "sky_gravel_01", "sky_badlands_01",
 					"sky_hydro_01", "sky_night_01", "sky_nightfall_01", "sky_trainyard_01", "sky_stormfront_01", "sky_morningsnow_01","sky_alpinestorm_01",
@@ -816,12 +813,8 @@ void CMenu::MenuVisuals()
 				bTransparent = !(Vars::Visuals::World::Modulations.Value & 1 << 4);
 					FColorPicker("Fog modulation", &Vars::Colors::FogModulation.Value, 0, FColorPicker_Left);
 				bTransparent = false;
-				FToggle("Near prop fade", &Vars::Visuals::World::NearPropFade.Value, FToggle_Middle);
-				FToggle("Prop wireframe", &Vars::Visuals::World::PropWireframe.Value);
+				FToggle("Near prop fade", &Vars::Visuals::World::NearPropFade.Value);
 				FToggle("No prop fade", &Vars::Visuals::World::NoPropFade.Value, FToggle_Middle);
-
-				if (bUpdate && Vars::Debug::Info.Value)
-					G::ShouldUpdateMaterialCache = true;
 			} EndSection();
 
 			EndTable();
@@ -836,20 +829,19 @@ void CMenu::MenuVisuals()
 			if (Section("Main"))
 			{
 				FToggle("Active", &Vars::Radar::Main::Active.Value);
+				FToggle("Draw out of range", &Vars::Radar::Main::AlwaysDraw.Value, FToggle_Middle);
+				FDropdown("Style", &Vars::Radar::Main::Style.Value, { "Circle", "Rectangle" });
 				FSlider("Range", &Vars::Radar::Main::Range.Value, 50, 3000, 50, "%d", FSlider_Precision);
 				FSlider("Background alpha", &Vars::Radar::Main::BackAlpha.Value, 0, 255, 1, "%d", FSlider_Clamp);
 				FSlider("Line alpha", &Vars::Radar::Main::LineAlpha.Value, 0, 255, 1, "%d", FSlider_Clamp);
-				FToggle("Draw out of range", &Vars::Radar::Main::AlwaysDraw.Value);
 			} EndSection();
 			if (Section("Player"))
 			{
 				FToggle("Active", &Vars::Radar::Players::Active.Value);
-				FDropdown("Icon", &Vars::Radar::Players::IconType.Value, { "Scoreboard", "Portraits", "Avatar" }, {}, FDropdown_Left);
-				FDropdown("Background", &Vars::Radar::Players::BackGroundType.Value, { "Off", "Rectangle", "Texture" }, {}, FDropdown_Right);
-				FToggle("Outline", &Vars::Radar::Players::Outline.Value);
-				FDropdown("Ignore teammates", &Vars::Radar::Players::IgnoreTeam.Value, { "Off", "All", "Keep friends" }, {}, FDropdown_Left);
-				FDropdown("Ignore cloaked", &Vars::Radar::Players::IgnoreCloaked.Value, { "Off", "All", "Keep friends" }, {}, FDropdown_Right);
-				FSlider("Icon size## Player", &Vars::Radar::Players::IconSize.Value, 12, 30);
+				FToggle("Background", &Vars::Radar::Players::Background.Value, FToggle_Middle);
+				FDropdown("Draw", &Vars::Radar::Players::Draw.Value, { "Local", "Enemy", "Team", "Friends", "Cloaked" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Icon", &Vars::Radar::Players::IconType.Value, { "Icons", "Portraits", "Avatar" }, {}, FDropdown_Right);
+				FSlider("Icon size## Player", &Vars::Radar::Players::IconSize.Value, 12, 30, 2);
 				FToggle("Health bar", &Vars::Radar::Players::Health.Value);
 				FToggle("Height indicator", &Vars::Radar::Players::Height.Value, FToggle_Middle);
 			} EndSection();
@@ -859,17 +851,17 @@ void CMenu::MenuVisuals()
 			if (Section("Building"))
 			{
 				FToggle("Active", &Vars::Radar::Buildings::Active.Value);
-				FToggle("Ignore team", &Vars::Radar::Buildings::IgnoreTeam.Value);
-				FToggle("Outline", &Vars::Radar::Buildings::Outline.Value);
-				FToggle("Health bar", &Vars::Radar::Buildings::Health.Value, FToggle_Middle);
-				FSlider("Icon size## Building", &Vars::Radar::Buildings::IconSize.Value, 12, 30);
+				FToggle("Background", &Vars::Radar::Buildings::Background.Value, FToggle_Middle);
+				FDropdown("Draw", &Vars::Radar::Buildings::Draw.Value, { "Local", "Enemy", "Team", "Friends" }, {}, FDropdown_Multi);
+				FSlider("Icon size## Building", &Vars::Radar::Buildings::IconSize.Value, 12, 30, 2);
+				FToggle("Health bar", &Vars::Radar::Buildings::Health.Value);
 			} EndSection();
 			if (Section("World"))
 			{
 				FToggle("Active", &Vars::Radar::World::Active.Value);
-				FToggle("Health", &Vars::Radar::World::Health.Value);
-				FToggle("Ammo", &Vars::Radar::World::Ammo.Value, FToggle_Middle);
-				FSlider("Icon size## World", &Vars::Radar::World::IconSize.Value, 12, 30);
+				FToggle("Background", &Vars::Radar::World::Background.Value, FToggle_Middle);
+				FDropdown("Draw", &Vars::Radar::World::Draw.Value, { "Health", "Ammo", "Money", "Bombs", "Halloween" }, {}, FDropdown_Multi);
+				FSlider("Icon size## World", &Vars::Radar::World::IconSize.Value, 12, 30, 2);
 			} EndSection();
 
 			EndTable();
@@ -2074,7 +2066,7 @@ void CMenu::DrawRadar()
 	ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorToVec(Vars::Menu::Theme::Active.Value));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
-	ImGui::SetNextWindowSizeConstraints({ 100.f, 100.f }, { 400.f, 400.f }, SquareConstraints);
+	ImGui::SetNextWindowSizeConstraints({ 100.f, 100.f }, { 1000.f, 1000.f }, SquareConstraints);
 	if (ImGui::Begin("Radar", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
 		const ImVec2 winPos = ImGui::GetWindowPos();
@@ -2114,7 +2106,7 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 
 	// Toggle menu (defaults are 'insert' and 'F3', another can be added in menu)
 	if (Utils::IsGameWindowInFocus() && (F::KeyHandler.Pressed(VK_INSERT) || F::KeyHandler.Pressed(VK_F3) || F::KeyHandler.Pressed(Vars::Menu::MenuKey.Value)))
-		I::VGuiSurface->SetCursorAlwaysVisible(IsOpen = !IsOpen);
+		I::MatSystemSurface->SetCursorAlwaysVisible(IsOpen = !IsOpen);
 
 	// Begin current frame
 	ImGui_ImplDX9_NewFrame();
@@ -2130,6 +2122,8 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 
 	if (IsOpen)
 	{
+		ImGui::KeyHandler();
+
 		DrawMenu();
 
 		DrawCameraWindow();
@@ -2138,11 +2132,13 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 		AddDraggable("Ticks", Vars::Menu::TicksDisplay.Value, Vars::Menu::Indicators.Value & (1 << 0));
 		AddDraggable("Crit hack", Vars::Menu::CritsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 1));
 		AddDraggable("Spectators", Vars::Menu::SpectatorsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 2));
-		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 3));
-		AddDraggable("Ping", Vars::Menu::PingDisplay.Value, Vars::Menu::Indicators.Value & (1 << 4));
+		AddDraggable("Ping", Vars::Menu::PingDisplay.Value, Vars::Menu::Indicators.Value & (1 << 3));
+		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 4));
 
 		Cursor = ImGui::GetMouseCursor();
 	}
+	else
+		ImGui::mActives.clear();
 
 	// End frame and render
 	ImGui::PopFont();

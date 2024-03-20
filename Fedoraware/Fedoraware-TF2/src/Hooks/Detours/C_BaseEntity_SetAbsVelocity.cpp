@@ -1,5 +1,6 @@
 #include "../Hooks.h"
 #include <intrin.h>
+#include "../../Features/Backtrack/Backtrack.h"
 
 namespace S
 {
@@ -14,45 +15,24 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 
 	if (dwRetAddr == dwSetAbsVelocityCall)
 	{
-		if (const auto pBasePlayer = static_cast<CBaseEntity*>(ecx))
+		const auto pPlayer = static_cast<CBaseEntity*>(ecx);
+		if (pPlayer && G::VelFixRecords.contains(pPlayer))
 		{
-			if (G::VelFixRecords.contains(pBasePlayer))
+			const auto newRecord = VelFixRecord(pPlayer->m_vecOrigin(), pPlayer->m_vecMaxs().z - pPlayer->m_vecMins().z, pPlayer->m_flSimulationTime());
+			const auto& oldRecord = G::VelFixRecords[pPlayer];
+
+			const float flDelta = newRecord.m_flSimulationTime - oldRecord.m_flSimulationTime;
+			const Vec3 vDelta = newRecord.m_vecOrigin - oldRecord.m_vecOrigin;
+
+			const float flDist = powf(I::Cvar->FindVar("sv_lagcompensation_teleport_dist")->GetFloat(), 2.f) * TIME_TO_TICKS(flDelta);
+			if (flDelta > 0.f && vDelta.Length2DSqr() < flDist)
 			{
-				const auto& record = G::VelFixRecords[pBasePlayer];
-
-				const float flSimTimeDelta = pBasePlayer->m_flSimulationTime() - record.m_flSimulationTime;
-				if (flSimTimeDelta > 0.f)
-				{
-					Vec3 vOldOrigin = record.m_vecOrigin;
-
-					const int nCurFlags = pBasePlayer->m_fFlags();
-					const int nOldFlags = record.m_nFlags;
-
-					if (!(nCurFlags & FL_ONGROUND) && !(nOldFlags & FL_ONGROUND))
-					{
-						bool bCorrected = false;
-
-						if ((nCurFlags & FL_DUCKING) && !(nOldFlags & FL_DUCKING))
-						{
-							vOldOrigin.z += 20.0f;
-							bCorrected = true;
-						}
-
-						if (!(nCurFlags & FL_DUCKING) && (nOldFlags & FL_DUCKING))
-						{
-							vOldOrigin.z -= 20.0f;
-							bCorrected = true;
-						}
-
-						if (bCorrected)
-						{
-							Vec3 vNewVelocity = vecAbsVelocity;
-							vNewVelocity.z = (pBasePlayer->m_vecOrigin().z - vOldOrigin.z) / flSimTimeDelta;
-							Hook.Original<FN>()(ecx, edx, vNewVelocity);
-						}
-					}
-				}
+				Vec3 vOldOrigin = oldRecord.m_vecOrigin;
+				if (!pPlayer->IsOnGround())
+					vOldOrigin.z += oldRecord.m_flHeight - newRecord.m_flHeight;
+				Hook.Original<FN>()(ecx, edx, (newRecord.m_vecOrigin - vOldOrigin) / flDelta);
 			}
+			return;
 		}
 	}
 

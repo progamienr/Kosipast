@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Includes/Includes.h"
 #include "../IAppSystem/IAppSystem.h"
+
 #define k_flMaxVelocity 2000.0f
 #define k_flMaxAngularVelocity 360.0f * 10.0f
 #define DEFAULT_MIN_FRICTION_MASS 10.0f
@@ -794,7 +795,7 @@ class IPhysicsEnvironment
 public:
 	virtual ~IPhysicsEnvironment(void) {}
 
-	virtual void SetDebugOverlay(/*CreateInterfaceFn*/void* debugOverlayFactory) = 0;
+	virtual void SetDebugOverlay(CreateInterfaceFn debugOverlayFactory) = 0;
 	virtual IVPhysicsDebugOverlay* GetDebugOverlay(void) = 0;
 
 	// gravity is a 3-vector in in/s^2

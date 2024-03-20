@@ -5,9 +5,9 @@
 
 #include "../../Menu/ConfigManager/ConfigManager.h"
 
-IMaterial* CMaterials::CreateNRef(char const* szName, void* pKV)
+IMaterial* CMaterials::CreateNRef(char const* szName, KeyValues* pKV)
 {
-	IMaterial* returnMaterial = I::MaterialSystem->Create(szName, pKV);
+	IMaterial* returnMaterial = I::MaterialSystem->CreateMaterial(szName, pKV);
 	returnMaterial->IncrementReferenceCount();
 	vMatList.push_back(returnMaterial);
 	return returnMaterial;
@@ -181,7 +181,7 @@ void CMaterials::ReloadMaterials()
 	{
 		Material_t mat = {}; // GlowColor
 
-		mat.pMaterial = I::MaterialSystem->Find("dev/glow_color", TEXTURE_GROUP_OTHER);
+		mat.pMaterial = I::MaterialSystem->FindMaterial("dev/glow_color", TEXTURE_GROUP_OTHER);
 		mat.pMaterial->IncrementReferenceCount();
 
 		mGlowMaterials["GlowColor"] = mat;
