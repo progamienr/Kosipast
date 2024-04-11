@@ -3,7 +3,7 @@
 MAKE_HOOK(CL_LoadWhitelist, S::CL_LoadWhitelist(), void*, __cdecl,
 	void* table, const char* name)
 {
-	if (Vars::Misc::BypassPure.Value)
+	if (Vars::Misc::Exploits::BypassPure.Value)
 	{
 		return nullptr;
 	}

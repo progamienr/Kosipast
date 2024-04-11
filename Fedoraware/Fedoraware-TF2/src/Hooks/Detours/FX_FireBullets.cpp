@@ -1,7 +1,8 @@
 #include "../Hooks.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Resolver/Resolver.h"
-#include "../../Features/AntiHack/CheaterDetection.h"
+#include "../../Features/CheaterDetection/CheaterDetection.h"
+#include"../../Features/NoSpread/NoSpreadHitscan/NoSpreadHitscan.h"
 
 namespace S
 {
@@ -19,11 +20,14 @@ MAKE_HOOK(FX_FireBullets, S::FX_FireBullets(), void, __cdecl,
 		//Utils::ConLog("FX_FireBullets", tfm::format("%d {%.1f, %.1f, %.1f}", iPlayer, vecAngles.x, vecAngles.y, vecAngles.z).c_str(), {0, 222, 255, 255});
 		F::Backtrack.ReportShot(iPlayer);
 		F::Resolver.FXFireBullet(iPlayer, vecAngles);
-		F::BadActors.ReportShot(iPlayer);
+		F::CheaterDetection.ReportShot(iPlayer);
 	}
 
 	if (dwRetAddr != dwFireBulletCall)
 		return;
+
+	if (Vars::Aimbot::General::NoSpread.Value)
+		iSeed = F::NoSpreadHitscan.iSeed;
 
 	return Hook.Original<FN>()(pWpn, iPlayer, vecOrigin, vecAngles, iWeapon, iMode, iSeed, flSpread, flDamage, bCritical);
 }

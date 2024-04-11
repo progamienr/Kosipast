@@ -30,7 +30,7 @@ public:
 	virtual bool IsVolumeTexture() const = 0;
 	virtual int GetMappingDepth() const = 0;
 	virtual int GetActualDepth() const = 0;
-	virtual ImageFormat GetImageFormat() const = 0;
+	virtual EImageFormat GetImageFormat() const = 0;
 	virtual NormalDecodeMode_t GetNormalDecodeMode() const = 0;
 	virtual bool IsRenderTarget() const = 0;
 	virtual bool IsCubeMap() const = 0;

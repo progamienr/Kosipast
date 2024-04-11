@@ -143,10 +143,10 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	auto& weaponData = tfWeaponInfo->GetWeaponData(0);
 
 	float flDamage = weaponData.m_nDamage;
-	flDamage = Utils::ATTRIB_HOOK_FLOAT(flDamage, "mult_dmg", pWeapon);
+	flDamage = Utils::AttribHookValue(flDamage, "mult_dmg", pWeapon);
 	int nProjectilesPerShot = weaponData.m_nBulletsPerShot;
 	if (nProjectilesPerShot >= 1)
-		nProjectilesPerShot = Utils::ATTRIB_HOOK_FLOAT(nProjectilesPerShot, "mult_bullets_per_shot", pWeapon);
+		nProjectilesPerShot = Utils::AttribHookValue(nProjectilesPerShot, "mult_bullets_per_shot", pWeapon);
 	else
 		nProjectilesPerShot = 1;
 	Storage[slot].Damage = flDamage *= nProjectilesPerShot;
@@ -240,7 +240,7 @@ void CCritHack::GetDamageTilUnban(CBaseEntity* pLocal)
 
 bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 {
-	if (Utils::ATTRIB_HOOK_FLOAT(1.f, "mult_crit_chance", pWeapon) <= 0.f)
+	if (Utils::AttribHookValue(1.f, "mult_crit_chance", pWeapon) <= 0.f)
 		return false;
 
 	switch (pWeapon->GetWeaponID())
@@ -339,8 +339,8 @@ void CCritHack::Run(CUserCmd* pCmd)
 		const float flChargeS = pWeapon->m_flChargeBeginTime() > 0.f ? I::GlobalVars->curtime - pWeapon->m_flChargeBeginTime() : 0.f;
 		const float flChargeC = pWeapon->m_flDetonateTime() > 0.f ? pWeapon->m_flDetonateTime() - I::GlobalVars->curtime : 1.f;
 		const float flAmount = pWeapon->GetWeaponID() != TF_WEAPON_CANNON
-			? Math::RemapValClamped(flChargeS, 0.f, Utils::ATTRIB_HOOK_FLOAT(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f)
-			: 1.f - Math::RemapValClamped(flChargeC, 0.f, Utils::ATTRIB_HOOK_FLOAT(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
+			? Math::RemapValClamped(flChargeS, 0.f, Utils::AttribHookValue(4.f, "stickybomb_charge_rate", pWeapon), 0.f, 1.f)
+			: 1.f - Math::RemapValClamped(flChargeC, 0.f, Utils::AttribHookValue(0.f, "grenade_launcher_mortar_mode", pWeapon), 0.f, 1.f);
 
 		const bool bUnheld = !(pCmd->buttons & IN_ATTACK) && flAmount > 0.f;
 		const bool bSwapping = pCmd->weaponselect;

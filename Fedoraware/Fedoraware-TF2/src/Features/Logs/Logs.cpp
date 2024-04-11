@@ -203,7 +203,7 @@ void CLogs::TagsOnJoin(std::string name, uint32_t friendsID)
 	std::vector<std::pair<std::string, std::string>> vColorsTags = {};
 	for (auto& sTag : vTags)
 	{
-		PriorityLabel lbTag;
+		PriorityLabel_t lbTag;
 		if (!F::PlayerUtils.GetTag(sTag, &lbTag))
 			continue;
 		vColorsTags.push_back({ lbTag.Color.to_hex_alpha(), sTag });

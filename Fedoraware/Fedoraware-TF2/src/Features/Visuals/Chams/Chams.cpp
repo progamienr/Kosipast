@@ -7,6 +7,16 @@
 #include "../FakeAngle/FakeAngle.h"
 #include "../../Backtrack/Backtrack.h"
 
+Chams_t CChams::GetStruct(std::vector<std::string> VisibleMaterial, std::vector<std::string> OccludedMaterial, Color_t VisibleColor, Color_t OccludedColor)
+{
+	return Chams_t{
+		VisibleMaterial,
+		OccludedMaterial,
+		VisibleColor,
+		OccludedColor
+	};
+}
+
 bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
@@ -23,7 +33,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 	case ETFClassID::CTFPlayer:
 	{
 		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly ? Vars::Chams::Friendly::Chams.Value : Vars::Chams::Enemy::Chams.Value;
+		*pChams = bFriendly
+			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
 		return bFriendly ? Vars::Chams::Friendly::Players.Value : Vars::Chams::Enemy::Players.Value;
 	}
 	case ETFClassID::CTFWearable:
@@ -33,7 +45,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly ? Vars::Chams::Friendly::Chams.Value : Vars::Chams::Enemy::Chams.Value;
+		*pChams = bFriendly
+			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
 		return bFriendly ? Vars::Chams::Friendly::Players.Value : Vars::Chams::Enemy::Players.Value;
 	}
 	// building chams
@@ -42,7 +56,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 	case ETFClassID::CObjectTeleporter:
 	{
 		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly ? Vars::Chams::Friendly::Chams.Value : Vars::Chams::Enemy::Chams.Value;
+		*pChams = bFriendly
+			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
 		return bFriendly ? Vars::Chams::Friendly::Buildings.Value : Vars::Chams::Enemy::Buildings.Value;
 	}
 	// ragdoll chams
@@ -65,7 +81,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 			return false;
 		
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly ? Vars::Chams::Friendly::Chams.Value : Vars::Chams::Enemy::Chams.Value;
+		*pChams = bFriendly
+			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
 		return bFriendly ? Vars::Chams::Friendly::Ragdolls.Value : Vars::Chams::Enemy::Ragdolls.Value;
 	}
 	// projectile chams
@@ -91,7 +109,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly ? Vars::Chams::Friendly::Chams.Value : Vars::Chams::Enemy::Chams.Value;
+		*pChams = bFriendly
+			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
 		return bFriendly ? Vars::Chams::Friendly::Projectiles.Value : Vars::Chams::Enemy::Projectiles.Value;
 	}
 	// npc chams
@@ -100,20 +120,20 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 	case ETFClassID::CMerasmus:
 	case ETFClassID::CZombie:
 	case ETFClassID::CEyeballBoss:
-		*pChams = Vars::Chams::World::Chams.Value;
+		*pChams = GetStruct(Vars::Chams::World::VisibleMaterial.Value, Vars::Chams::World::OccludedMaterial.Value, Vars::Chams::World::VisibleColor.Value, Vars::Chams::World::OccludedColor.Value);
 		return Vars::Chams::World::NPCs.Value;
 	// pickup chams
 	case ETFClassID::CTFAmmoPack:
 	case ETFClassID::CCurrencyPack:
 	case ETFClassID::CHalloweenGiftPickup:
-		*pChams = Vars::Chams::World::Chams.Value;
+		*pChams = GetStruct(Vars::Chams::World::VisibleMaterial.Value, Vars::Chams::World::OccludedMaterial.Value, Vars::Chams::World::VisibleColor.Value, Vars::Chams::World::OccludedColor.Value);
 		return Vars::Chams::World::Pickups.Value;
 	case ETFClassID::CBaseAnimating:
 	{
 		const auto szName = pEntity->GetModelName();
 		if (Hash::IsAmmo(szName) || Hash::IsHealth(szName) || Hash::IsSpell(szName))
 		{
-			*pChams = Vars::Chams::World::Chams.Value;
+			*pChams = GetStruct(Vars::Chams::World::VisibleMaterial.Value, Vars::Chams::World::OccludedMaterial.Value, Vars::Chams::World::VisibleColor.Value, Vars::Chams::World::OccludedColor.Value);
 			return Vars::Chams::World::Pickups.Value;
 		}
 		break;
@@ -121,7 +141,7 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 	// bomb chams
 	case ETFClassID::CTFPumpkinBomb:
 	case ETFClassID::CTFGenericBomb:
-		*pChams = Vars::Chams::World::Chams.Value;
+		*pChams = GetStruct(Vars::Chams::World::VisibleMaterial.Value, Vars::Chams::World::OccludedMaterial.Value, Vars::Chams::World::VisibleColor.Value, Vars::Chams::World::OccludedColor.Value);
 		return Vars::Chams::World::Bombs.Value;
 	}
 
@@ -133,7 +153,9 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly ? Vars::Chams::Friendly::Chams.Value : Vars::Chams::Enemy::Chams.Value;
+		*pChams = bFriendly
+			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
 		return bFriendly ? Vars::Chams::Friendly::Players.Value : Vars::Chams::Enemy::Players.Value;
 	}
 	
@@ -315,8 +337,8 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 
 
 
-	auto& vMaterials = Vars::Chams::Backtrack::Chams.Value.VisibleMaterial;
-	auto& sColor = Vars::Chams::Backtrack::Chams.Value.VisibleColor;
+	auto& vMaterials = Vars::Chams::Backtrack::VisibleMaterial.Value;
+	auto& sColor = Vars::Chams::Backtrack::VisibleColor.Value;
 
 	const auto& pRecords = F::Backtrack.GetRecords(pEntity);
 	auto vRecords = F::Backtrack.GetValidRecords(pRecords);
@@ -365,8 +387,8 @@ void CChams::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderIn
 
 
 
-	auto& vMaterials = Vars::Chams::FakeAngle::Chams.Value.VisibleMaterial;
-	auto& sColor = Vars::Chams::FakeAngle::Chams.Value.VisibleColor;
+	auto& vMaterials = Vars::Chams::FakeAngle::VisibleMaterial.Value;
+	auto& sColor = Vars::Chams::FakeAngle::VisibleColor.Value;
 
 	for (auto it = vMaterials.begin(); it != vMaterials.end(); it++)
 	{
@@ -406,8 +428,8 @@ bool CChams::RenderViewmodel(void* ecx, int flags, int* iReturn)
 
 
 
-	auto& vMaterials = Vars::Chams::Viewmodel::Chams.Value.VisibleMaterial;
-	auto& sColor = Vars::Chams::Viewmodel::Chams.Value.VisibleColor;
+	auto& vMaterials = Vars::Chams::Viewmodel::VisibleMaterial.Value;
+	auto& sColor = Vars::Chams::Viewmodel::VisibleColor.Value;
 
 	for (auto it = vMaterials.begin(); it != vMaterials.end(); it++)
 	{
@@ -435,8 +457,8 @@ bool CChams::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderIn
 
 
 
-	auto& vMaterials = Vars::Chams::Viewmodel::Chams.Value.VisibleMaterial;
-	auto& sColor = Vars::Chams::Viewmodel::Chams.Value.VisibleColor;
+	auto& vMaterials = Vars::Chams::Viewmodel::VisibleMaterial.Value;
+	auto& sColor = Vars::Chams::Viewmodel::VisibleColor.Value;
 
 	for (auto it = vMaterials.begin(); it != vMaterials.end(); it++)
 	{

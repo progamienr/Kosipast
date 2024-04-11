@@ -19,11 +19,11 @@
 
 void CCore::OnLoaded()
 {
-	g_CFG.LoadConfig(g_CFG.GetCurrentConfig(), false);
+	F::ConfigManager.LoadConfig(F::ConfigManager.GetCurrentConfig(), false);
 	F::Menu.ConfigLoaded = true;
 
 	I::Cvar->ConsoleColorPrintf(Vars::Menu::Theme::Accent.Value, "%s Loaded!\n", Vars::Menu::CheatName.Value.c_str());
-	I::EngineClient->ClientCmd_Unrestricted("play vo/items/wheatley_sapper/wheatley_sapper_attached14.mp3");
+	I::MatSystemSurface->PlaySound("vo\\items\\wheatley_sapper\\wheatley_sapper_attached14.mp3");
 
 	// Check the DirectX version
 	const int dxLevel = g_ConVars.FindVar("mat_dxlevel")->GetInt();
@@ -35,7 +35,6 @@ void CCore::Load()
 {
 	g_SteamInterfaces.Init();
 	g_Interfaces.Init();
-	g_NetVars.Init();
 
 	// Initialize hooks & memory stuff
 	g_HookManager.Init();
@@ -57,12 +56,7 @@ void CCore::Load()
 
 void CCore::Unload()
 {
-	I::EngineClient->ClientCmd_Unrestricted("play vo/items/wheatley_sapper/wheatley_sapper_hacked02.mp3");
-
-	if (ConVar* cl_wpn_sway_interp = g_ConVars.FindVar("cl_wpn_sway_interp"))
-		cl_wpn_sway_interp->SetValue(0.0f);
-	if (ConVar* cl_wpn_sway_scale = g_ConVars.FindVar("cl_wpn_sway_scale"))
-		cl_wpn_sway_scale->SetValue(0.0f);
+	I::MatSystemSurface->PlaySound("vo\\items\\wheatley_sapper\\wheatley_sapper_hacked02.mp3");
 
 	G::UnloadWndProcHook = true;
 	Vars::Visuals::World::SkyboxChanger.Value = "Off";
@@ -77,6 +71,11 @@ void CCore::Unload()
 	Sleep(100);
 
 	F::Visuals.RestoreWorldModulation(); //needs to do this after hooks are released cuz UpdateWorldMod in FSN will override it
+	if (auto cl_wpn_sway_interp = g_ConVars.FindVar("cl_wpn_sway_interp"))
+		cl_wpn_sway_interp->SetValue(0.f);
+	if (auto cl_wpn_sway_scale = g_ConVars.FindVar("cl_wpn_sway_scale"))
+		cl_wpn_sway_scale->SetValue(0.f);
+
 	I::Cvar->ConsoleColorPrintf(Vars::Menu::Theme::Accent.Value, "%s Unloaded!\n", Vars::Menu::CheatName.Value.c_str());
 }
 

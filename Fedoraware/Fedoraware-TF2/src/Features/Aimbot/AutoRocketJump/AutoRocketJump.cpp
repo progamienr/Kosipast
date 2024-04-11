@@ -1,9 +1,9 @@
-#include "AutoJump.h"
+#include "AutoRocketJump.h"
 
 #include "../../Simulation/ProjectileSimulation/ProjectileSimulation.h"
 #include "../../Simulation/MovementSimulation/MovementSimulation.h"
 
-void CAutoJump::ManageAngle(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Vec3& viewAngles)
+void CAutoRocketJump::ManageAngle(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Vec3& viewAngles)
 {
 	Vec3 wishVel = { pCmd->forwardmove, pCmd->sidemove, 0.f }, wishAng;
 	Math::VectorAngles(wishVel, wishAng);
@@ -25,9 +25,9 @@ void CAutoJump::ManageAngle(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Vec3& vi
 	viewAngles = { v_x, v_y, 0 };
 }
 
-void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
+void CAutoRocketJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!pLocal || !pWeapon || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
+	if (!pLocal || !pWeapon || !pCmd || !pLocal->IsAlive() || pLocal->IsAGhost() || I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
 	{
 		iFrame = -1;
 		return;
@@ -41,10 +41,8 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 		case TF_WEAPON_PARTICLE_CANNON: bValidWeapon = true;
 		}
-		if (bValidWeapon && pWeapon->m_iItemDefinitionIndex() == Soldier_m_TheBeggarsBazooka)
-			bValidWeapon = G::IsAttacking;
 	}
-	if (bValidWeapon && (Vars::Auto::Jump::JumpKey.Value == VK_RBUTTON || Vars::Auto::Jump::CTapKey.Value == VK_RBUTTON))
+	if (bValidWeapon && (Vars::Misc::Movement::AutoRocketJump.Value || Vars::Misc::Movement::AutoCTap.Value))
 		pCmd->buttons &= ~IN_ATTACK2; // fix for retarded issue
 	if (!bValidWeapon)
 	{
@@ -55,18 +53,15 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 	const bool bCurrGrounded = pLocal->OnSolid();
 
 	// doesn't seem 100% consistent, unsure if it's fps related, user error, or what
-	if (iFrame == -1 && G::CanPrimaryAttack)
+	if (iFrame == -1 && (pWeapon->m_iItemDefinitionIndex() == Soldier_m_TheBeggarsBazooka ? G::IsAttacking : G::CanPrimaryAttack))
 	{
-		const bool bJumpKey = F::KeyHandler.Down(Vars::Auto::Jump::JumpKey.Value);
-		const bool bCTapKey = F::KeyHandler.Down(Vars::Auto::Jump::CTapKey.Value);
 		const bool bReloading = pWeapon->IsInReload();
-
 		Vec3 viewAngles = pCmd->viewangles;
-		if (bJumpKey)
+		if (Vars::Misc::Movement::AutoRocketJump.Value)
 			ManageAngle(pWeapon, pCmd, viewAngles);
 
 		bool bWillHit = false;
-		if (bJumpKey || bCTapKey)
+		if (Vars::Misc::Movement::AutoRocketJump.Value || Vars::Misc::Movement::AutoCTap.Value)
 		{
 			PlayerStorage localStorage;
 			ProjectileInfo projInfo = {};
@@ -98,12 +93,12 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 							};
 
 						bWillHit = WillHit(pLocal, localStorage.m_MoveData.m_vecOrigin, trace.vEndPos);
-						iDelay = std::max(n + (n > Vars::Auto::Jump::ApplyAbove.Value ? Vars::Auto::Jump::TimingOffset.Value : 0), 0);
+						iDelay = std::max(n + (n > Vars::Misc::Movement::ApplyAbove.Value ? Vars::Misc::Movement::TimingOffset.Value : 0), 0);
 
 						if (bWillHit)
 						{
 							Utils::ConLog("Auto jump", std::format("Ticks to hit: {} ({})", iDelay, n).c_str(), { 255, 0, 0, 255 }, Vars::Debug::Logging.Value);
-							if (Vars::Debug::Info.Value && !bReloading)
+							if (Vars::Debug::Info.Value)
 							{
 								G::LinesStorage.clear(); G::BoxesStorage.clear();
 								G::LinesStorage.push_back({ {{ pLocal->GetShootPos(), {} }, { trace.vEndPos, {} }}, I::GlobalVars->curtime + 5.f, Vars::Colors::ProjectileColor.Value, true });
@@ -123,25 +118,27 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 		{
 			if (bCurrGrounded && bCurrGrounded == bLastGrounded && !pLocal->IsDucking())
 			{
-				if (bJumpKey)
+				if (Vars::Misc::Movement::AutoRocketJump.Value)
 				{
 					iFrame = 0;
 					bFull = true;
 				}
-				else if (bCTapKey)
+				else if (Vars::Misc::Movement::AutoCTap.Value)
 					iFrame = 0;
 			}
 			else if (!bCurrGrounded && pCmd->buttons & IN_DUCK)
 			{
-				pCmd->buttons |= IN_ATTACK;
-				if (bJumpKey && !bReloading)
+				if (pWeapon->m_iItemDefinitionIndex() != Soldier_m_TheBeggarsBazooka)
+					pCmd->buttons |= IN_ATTACK;
+
+				if (Vars::Misc::Movement::AutoRocketJump.Value && !bReloading)
 				{
 					G::SilentAngles = true; // would use G::PSilentAngles but that would mess with timing
 					pCmd->viewangles = viewAngles;
 				}
 			}
 
-			if (iFrame != -1 && bReloading)
+			if (iFrame != -1 && bReloading && pWeapon->m_iItemDefinitionIndex() != Soldier_m_TheBeggarsBazooka)
 			{
 				iFrame = -1;
 				bFull = false;
@@ -153,14 +150,17 @@ void CAutoJump::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* p
 			pCmd->buttons |= IN_ATTACK2;
 	}
 
+	G::RocketJumping = false;
 	if (iFrame != -1)
 	{
 		iFrame++;
-		G::IsAttacking = true; // even if we aren't attacking, prevent other stuff from messing with timing, e.g. antiaim
+		G::IsAttacking = G::RocketJumping = true; // even if we aren't attacking, prevent other stuff from messing with timing, e.g. antiaim
 
 		if (iFrame == 1)
 		{
-			pCmd->buttons |= IN_ATTACK;
+			if (pWeapon->m_iItemDefinitionIndex() != Soldier_m_TheBeggarsBazooka)
+				pCmd->buttons |= IN_ATTACK;
+
 			if (bFull)
 			{
 				G::SilentAngles = true; // would use G::PSilentAngles but that would mess with timing

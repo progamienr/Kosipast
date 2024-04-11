@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Feature.h"
 
-class CAutoJump
+class CAutoRocketJump
 {
 	void ManageAngle(CBaseCombatWeapon* pWeapon, CUserCmd* pCmd, Vec3& viewAngles);
 
@@ -16,4 +16,4 @@ public:
 	int iFrame = -1;
 };
 
-ADD_FEATURE(CAutoJump, AutoJump)
+ADD_FEATURE(CAutoRocketJump, AutoRocketJump)

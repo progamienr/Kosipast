@@ -5,12 +5,10 @@
 
 bool CCheaterDetection::ShouldScan()
 {
-	const int iProtFlags = Vars::CheaterDetection::Protections.Value;
-	const int iDetectFlags = Vars::CheaterDetection::Methods.Value;
-
-	if (!Vars::CheaterDetection::Enabled.Value || !iDetectFlags || I::EngineClient->IsPlayingTimeDemo())
+	if (!Vars::CheaterDetection::Methods.Value || I::EngineClient->IsPlayingTimeDemo())
 		return false;
 
+	const int iProtFlags = Vars::CheaterDetection::Protections.Value;
 	if (iLastScanTick == I::GlobalVars->tickcount && iProtFlags & (1 << 2))
 		return false;
 
@@ -27,7 +25,7 @@ bool CCheaterDetection::ShouldScan()
 	if (const INetChannel* NetChannel = I::EngineClient->GetNetChannelInfo())
 	{
 		const float flLastReceive = NetChannel->GetTimeSinceLastReceived();
-		const float flMaxReceive = I::GlobalVars->interval_per_tick * 2;
+		const float flMaxReceive = TICK_INTERVAL * 2;
 		const bool bIsTimeOut = NetChannel->IsTimingOut();
 		const bool bShouldSkip = (flLastReceive > flMaxReceive) || bIsTimeOut;
 		if (bShouldSkip && iProtFlags & (1 << 0))
@@ -403,7 +401,7 @@ void CCheaterDetection::OnTick()
 void CCheaterDetection::FillServerInfo()
 {
 	server.flAverageScorePerSecond = 0.f;
-	server.iTickRate = 1.f / I::GlobalVars->interval_per_tick;
+	server.iTickRate = 1.f / TICK_INTERVAL;
 	server.flMultiplier = 66.7 / server.iTickRate;
 	//Utils::ConLog("CheaterDetection[UTIL]", std::format("Calculated server tickrate & created appropriate multiplier {{{:.1f} / {:.1f}}}", server.iTickRate, server.flMultiplier).c_str(), { 224, 255, 131, 255 }, Vars::Debug::Logging.Value);
 }

@@ -17,7 +17,7 @@ __inline Color_t GetScoreboardColor(int iIndex, bool enableOtherColors)
     PlayerInfo_t pi{}; bool bTagColor = false; Color_t plTagColor;
     if (I::EngineClient->GetPlayerInfo(iIndex, &pi))
     {
-        std::string _; PriorityLabel plTag;
+        std::string _; PriorityLabel_t plTag;
         if (bTagColor = F::PlayerUtils.GetSignificantTag(pi.friendsID, &_, &plTag))
             plTagColor = plTag.Color;
     }
@@ -25,7 +25,7 @@ __inline Color_t GetScoreboardColor(int iIndex, bool enableOtherColors)
     if (iIndex == I::EngineClient->GetLocalPlayer())
         out = Vars::Colors::Local.Value;
     else if (g_EntityCache.IsFriend(iIndex))
-        out = F::PlayerUtils.vTags["Friend"].Color;
+        out = F::PlayerUtils.mTags["Friend"].Color;
     else if (bTagColor)
         out = plTagColor;
 
@@ -51,7 +51,7 @@ MAKE_HOOK(C_TFPlayer_Resource_GetPlayerConnectionState, S::CTFPlayer_Resource_Ge
 MAKE_HOOK(C_PlayerResource_GetTeamColor, S::CPlayerResource_GetTeamColor(), unsigned char*, __fastcall,
     void* ecx, void* edx, int iIndex)
 {
-    if (!Vars::Visuals::ScoreboardColors.Value || !iCurPlayer) // Vars::Visuals::CleanScreenshots.Value ineffective, doesn't update in time
+    if (!Vars::Visuals::UI::ScoreboardColors.Value || !iCurPlayer) // Vars::Visuals::UI::CleanScreenshots.Value ineffective, doesn't update in time
         return Hook.Original<FN>()(ecx, edx, iIndex);
 
     const Color_t cReturn = GetScoreboardColor(iCurPlayer, Vars::Colors::Relative.Value);

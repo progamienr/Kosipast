@@ -61,7 +61,6 @@ namespace G
 	inline bool ThirdSpectated = false; // currently unused
 	inline bool ShouldStop = false; // Stops our players movement, takes 1 tick.
 	inline bool UnloadWndProcHook = false;
-	inline bool Frozen = false;	//	angles & movement are frozen.
 
 	/* Double tap / Tick shift */
 	inline int ShiftedTicks = 0; // Amount of ticks that are shifted
@@ -69,7 +68,7 @@ namespace G
 	inline int WaitForShift = 0;
 	inline bool DoubleTap = false;
 	inline bool AntiWarp = false;
-	inline bool Teleport = false;
+	inline bool Warp = false;
 	inline bool Recharge = false; // Are we currently recharging?
 	inline int MaxShift = 24;
 
@@ -86,6 +85,7 @@ namespace G
 	inline bool SilentAngles = false;
 	inline Vec3 AimPos = {};
 	inline VMatrix WorldToProjection = {};
+	inline bool RocketJumping = false;
 
 	/* Angles */
 	inline Vec3 ViewAngles = {};
@@ -115,6 +115,6 @@ namespace G
 
 	inline std::unordered_map<uint32_t, std::vector<std::string>> PlayerTags; // This only contains tags, get priority through F::PlayerUtils
 
-	inline bool InKeybind = false;
+	inline bool InKeybind = false; // don't create conflicting/unintended inputs
 	inline bool DrawingStaticProps = false;
 };

@@ -4,7 +4,7 @@
 class CNoSpread
 {
 private:
-	bool ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+	bool ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 public:
 	void Run(CUserCmd* pCmd);

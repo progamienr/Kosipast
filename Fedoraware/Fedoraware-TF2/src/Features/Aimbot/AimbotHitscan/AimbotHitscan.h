@@ -10,10 +10,11 @@ class CAimbotHitscan
 
 	bool IsHitboxValid(int nHitbox);
 	int GetHitboxPriority(int nHitbox, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseEntity* pTarget);
+	float GetMaxRange(CBaseCombatWeapon* pWeapon);
 	int CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
-	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod = Vars::Aimbot::Hitscan::AimMethod.Value);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod = Vars::Aimbot::General::AimType.Value);
 	bool ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd, const Target_t& target);
 	bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon);
 

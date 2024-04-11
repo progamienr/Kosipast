@@ -22,35 +22,31 @@ class CMisc
 	void DetectChoke();
 	void WeaponSway();
 
-	void TauntKartControl(CUserCmd* pCmd, bool* pSendPacket, CBaseEntity* pLocal);
+	void TauntKartControl(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void FastStop(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal);
 	void FastStrafe(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void InstaStop(CUserCmd* pCmd, bool* pSendPacket);
+	void InstaStop(CUserCmd* pCmd);
 	void StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void LegJitter(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket);
+	void LegJitter(CUserCmd* pCmd, bool pSendPacket, CBaseEntity* pLocal);
 
-	bool SteamCleared = false;
-	bool bMovementScuffed = false;
+	bool bSteamCleared = false;
+	Vec3 vPeekReturnPos = {};
+
 public:
-#ifdef DEBUG
-	void DumpClassIDS();
-#endif
-
 	void RunPre(CUserCmd* pCmd);
-	void RunPost(CUserCmd* pCmd, bool* pSendPacket);
+	void RunPost(CUserCmd* pCmd, bool pSendPacket);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
 
 	void UnlockAchievements();
 	void LockAchievements();
 	void SteamRPC();
 
-	bool bAntiWarp = false;
-	bool bFastAccel = false;
-	bool bMovementStopped = false;
+	void DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket);
 
-	Vec3 PeekReturnPos;
+#ifdef DEBUG
+	void DumpClassIDS();
+#endif
 };
 
 ADD_FEATURE(CMisc, Misc)

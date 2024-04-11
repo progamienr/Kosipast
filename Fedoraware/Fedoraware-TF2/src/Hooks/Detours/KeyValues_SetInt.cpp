@@ -15,7 +15,7 @@ MAKE_HOOK(KeyValues_SetInt, S::KeyValues_SetInt(), void, __fastcall,
 
 	Hook.Original<FN>()(ecx, edx, szKeyName, iValue);
 
-	if (!Vars::Visuals::RevealScoreboard.Value) // Vars::Visuals::CleanScreenshots.Value ineffective, doesn't update in time
+	if (!Vars::Visuals::UI::RevealScoreboard.Value) // Vars::Visuals::UI::CleanScreenshots.Value ineffective, doesn't update in time
 		return;
 
 	/* Scoreboard class reveal */

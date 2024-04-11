@@ -7,8 +7,8 @@ MAKE_HOOK(ClientModeShared_OverrideView, Utils::GetVFuncPtr(I::ClientModeShared,
 {
 	if (const auto& pLocal = g_EntityCache.GetLocal())
 	{
-		if (pLocal->IsScoped() && Vars::Visuals::RemoveScope.Value &&
-			Vars::Visuals::ZoomFieldOfView.Value > 70 && !I::Input->CAM_IsThirdPerson())
+		if (pLocal->IsScoped() && Vars::Visuals::Removals::Scope.Value &&
+			Vars::Visuals::UI::ZoomFieldOfView.Value > 70 && !I::Input->CAM_IsThirdPerson())
 		{
 			return true;
 		}

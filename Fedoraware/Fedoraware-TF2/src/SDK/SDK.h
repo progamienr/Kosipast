@@ -69,7 +69,7 @@
 namespace S
 {
 	MAKE_SIGNATURE(InitKeyValue, CLIENT_DLL, "55 8B EC FF 15 ? ? ? ? FF 75 ? 8B C8 8B 10 FF 52 ? 5D C3 CC CC CC CC CC CC CC CC CC CC CC 55 8B EC 56", 0x0);
-	MAKE_SIGNATURE(ATTRIB_HOOK_FLOAT, CLIENT_DLL, "55 8B EC 83 EC 0C 8B 0D ? ? ? ? 53 56 57 33 F6 33 FF 89 75 F4 89 7D F8 8B 41 08 85 C0 74 38", 0x0);
+	MAKE_SIGNATURE(AttribHookValue, CLIENT_DLL, "55 8B EC 83 EC 0C 8B 0D ? ? ? ? 53 56 57 33 F6 33 FF 89 75 F4 89 7D F8 8B 41 08 85 C0 74 38", 0x0);
 	MAKE_SIGNATURE(CTE_DispatchEffect, CLIENT_DLL, "55 8B EC 83 EC ? 56 8D 4D ? E8 ? ? ? ? 8B 75", 0x0);
 	MAKE_SIGNATURE(GetParticleSystemIndex, CLIENT_DLL, "55 8B EC 56 8B 75 ? 85 F6 74 ? 8B 0D ? ? ? ? 56 8B 01 FF 50 ? 3D", 0x0);
 	MAKE_SIGNATURE(UTIL_ParticleTracer, CLIENT_DLL, "55 8B EC FF 75 08 E8 ? ? ? ? D9 EE 83", 0x0);
@@ -195,12 +195,181 @@ inline void ShaderStencilState_t::SetStencilState(IMatRenderContext* pRenderCont
 
 namespace Utils
 {
-	static std::random_device RandomDevice;
-	static std::mt19937 Engine{ RandomDevice() };
-	__inline float RandFloatRange(float min, float max)
+	__inline void ConLog(const char* cFunction, const char* cLog, Color_t cColour = { 255, 255, 255, 255 }, const bool bShouldPrint = true, const bool bDebugOutput = false)
 	{
+		if (bShouldPrint)
+		{
+			I::Cvar->ConsoleColorPrintf(cColour, "[%s] ", cFunction);
+			I::Cvar->ConsoleColorPrintf({ 255, 255, 255, 255 }, "%s\n", cLog);
+		}
+		if (bDebugOutput)
+			OutputDebugStringA(std::format("[{}] {}\n", cFunction, cLog).c_str());
+	}
+
+	__inline int UnicodeToUTF8(const wchar_t* unicode, char* ansi, int ansiBufferSize)
+	{
+		const int result = WideCharToMultiByte(CP_UTF8, 0, unicode, -1, ansi, ansiBufferSize, nullptr, nullptr);
+		ansi[ansiBufferSize - 1] = 0;
+		return result;
+	}
+
+	__inline int UTF8ToUnicode(const char* ansi, wchar_t* unicode, int unicodeBufferSizeInBytes)
+	{
+		const int chars = MultiByteToWideChar(CP_UTF8, 0, ansi, -1, unicode, unicodeBufferSizeInBytes / sizeof(wchar_t));
+		unicode[(unicodeBufferSizeInBytes / sizeof(wchar_t)) - 1] = 0;
+		return chars;
+	}
+
+	__inline std::wstring ConvertUtf8ToWide(const std::string_view& str)
+	{
+		const int count = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.length(), nullptr, 0);
+		std::wstring wstr(count, 0);
+		MultiByteToWideChar(CP_UTF8, 0, str.data(), str.length(), wstr.data(), count);
+		return wstr;
+	}
+
+	__inline double PlatFloatTime()
+	{
+		static auto fnPlatFloatTime = reinterpret_cast<double(*)()>(GetProcAddress(GetModuleHandleA(TIER0_DLL), "Plat_FloatTime"));
+		return fnPlatFloatTime();
+	}
+
+	__inline int SeedFileLineHash(int seedvalue, const char* sharedname, int additionalSeed)
+	{
+		CRC32_t retval;
+
+		CRC32_Init(&retval);
+
+		CRC32_ProcessBuffer(&retval, &seedvalue, sizeof(int));
+		CRC32_ProcessBuffer(&retval, &additionalSeed, sizeof(int));
+		CRC32_ProcessBuffer(&retval, sharedname, strlen(sharedname));
+
+		CRC32_Final(&retval);
+
+		return static_cast<int>(retval);
+	}
+
+	__inline float RandFloat(float min, float max)
+	{
+		static std::random_device RandomDevice;
+		static std::mt19937 Engine{ RandomDevice() };
+
 		std::uniform_real_distribution<float> Random(min, max);
 		return Random(Engine);
+	}
+
+	__inline int RandInt(int min, int max, bool bSimple = true)
+	{
+		if (bSimple)
+		{
+			std::random_device rd; std::mt19937 gen(rd()); std::uniform_int_distribution<> distr(min, max);
+			return distr(gen);
+		}
+		else
+		{
+			//This allows us to reach closer to true randoms generated
+			//I don't think we need to update the seed more than once
+			static const unsigned nSeed = std::chrono::system_clock::now().time_since_epoch().count();
+
+			std::default_random_engine gen(nSeed);
+			std::uniform_int_distribution distr(min, max);
+			return distr(gen);
+		}
+	}
+
+	__inline int SharedRandomInt(unsigned iseed, const char* sharedname, int iMinVal, int iMaxVal, int additionalSeed)
+	{
+		const int seed = SeedFileLineHash(iseed, sharedname, additionalSeed);
+		I::UniformRandomStream->SetSeed(seed);
+		return I::UniformRandomStream->RandomInt(iMinVal, iMaxVal);
+	}
+
+	__inline void RandomSeed(int iSeed)
+	{
+		static auto fnRandomSeed = reinterpret_cast<void(*)(uint32_t)>(GetProcAddress(GetModuleHandleA(VSTDLIB_DLL), "RandomSeed"));
+		fnRandomSeed(iSeed);
+	}
+
+	__inline int RandomInt(int iMinVal = 0, int iMaxVal = 0x7FFF)
+	{
+		static auto fnRandomInt = reinterpret_cast<int(*)(int, int)>(GetProcAddress(GetModuleHandleA(VSTDLIB_DLL), "RandomInt"));
+		return fnRandomInt(iMinVal, iMaxVal);
+	}
+
+	__inline float RandomFloat(float flMinVal = 0.f, float flMaxVal = 1.f)
+	{
+		static auto fnRandomFloat = reinterpret_cast<float(*)(float, float)>(GetProcAddress(GetModuleHandleA(VSTDLIB_DLL), "RandomFloat"));
+		return fnRandomFloat(flMinVal, flMaxVal);
+	}
+
+	__inline void* InitKeyValue()
+	{
+		using FN = PDWORD(__cdecl*)(int);
+		static FN fnInitKeyValue = S::InitKeyValue.As<FN>();
+		return fnInitKeyValue(32);
+	}
+
+	__inline bool IsGameWindowInFocus()
+	{
+		static HWND hwGame = nullptr;
+
+		while (!hwGame) {
+			hwGame = FindWindowA(nullptr, "Team Fortress 2");
+			if (!hwGame)
+			{
+				return false;
+			}
+		}
+
+		return (GetForegroundWindow() == hwGame);
+	}
+
+	__inline int GetPlayerForUserID(int userID)
+	{
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
+		{
+			PlayerInfo_t pi{};
+			if (!I::EngineClient->GetPlayerInfo(n, &pi))
+				continue;
+
+			// Found player
+			if (pi.userID == userID)
+				return n;
+		}
+		return 0;
+	}
+
+	__inline bool IsSteamFriend(uint32_t friendsID)
+	{
+		if (friendsID)
+		{
+			const CSteamID steamID{ friendsID, 1, k_EUniversePublic, k_EAccountTypeIndividual };
+			return g_SteamInterfaces.Friends->HasFriend(steamID, k_EFriendFlagImmediate);
+		}
+
+		return false;
+	}
+
+	__inline int HandleToIDX(int pHandle)
+	{
+		return pHandle & 0xFFF;
+	}
+
+	__inline const char* GetClassByIndex(const int nClass)
+	{
+		static const char* szClasses[] = { "unknown", "scout", "sniper", "soldier", "demoman",
+										   "medic",   "heavy", "pyro",   "spy",     "engineer" };
+
+		return (nClass < 10 && nClass > 0) ? szClasses[nClass] : szClasses[0];
+	}
+
+	__inline int GetRoundState()
+	{
+		const auto& pGameRules = I::TFGameRules->Get();
+		if (!pGameRules) return 0;
+		const auto& pGameRulesProxy = pGameRules->GetProxy();
+		if (!pGameRulesProxy) return 0;
+		return pGameRulesProxy->m_iRoundState();
 	}
 
 	__inline bool W2S(const Vec3& vOrigin, Vec3& m_vScreen)
@@ -221,61 +390,9 @@ namespace Utils
 		return false;
 	}
 
-	__inline Color_t Rainbow(float offset = 0.f)
-	{
-		return
-		{
-			static_cast<byte>(floor(sin(I::GlobalVars->curtime + offset + 0.0f) * 127.0f + 128.0f)),
-			static_cast<byte>(floor(sin(I::GlobalVars->curtime + offset + 2.0f) * 127.0f + 128.0f)),
-			static_cast<byte>(floor(sin(I::GlobalVars->curtime + offset + 4.0f) * 127.0f + 128.0f)),
-			255
-		};
-	};
-
-	__inline bool IsGameWindowInFocus()
-	{
-		static HWND hwGame = nullptr;
-
-		while (!hwGame) {
-			hwGame = FindWindowA(nullptr, "Team Fortress 2");
-			if (!hwGame)
-			{
-				return false;
-			}
-		}
-
-		return (GetForegroundWindow() == hwGame);
-	}
-
-	__inline void* InitKeyValue()
-	{
-		using FN = PDWORD(__cdecl*)(int);
-		static FN fnInitKeyValue = S::InitKeyValue.As<FN>();
-		return fnInitKeyValue(32);
-	}
-
-	__inline bool IsSteamFriend(uint32_t friendsID)
-	{
-		if (friendsID)
-		{
-			const CSteamID steamID{ friendsID, 1, k_EUniversePublic, k_EAccountTypeIndividual };
-			return g_SteamInterfaces.Friends->HasFriend(steamID, k_EFriendFlagImmediate);
-		}
-
-		return false;
-	}
-
-	__inline const char* GetClassByIndex(const int nClass)
-	{
-		static const char* szClasses[] = { "unknown", "scout", "sniper", "soldier", "demoman",
-										   "medic",   "heavy", "pyro",   "spy",     "engineer" };
-
-		return (nClass < 10 && nClass > 0) ? szClasses[nClass] : szClasses[0];
-	}
-
 	__inline bool IsOnScreen(CBaseEntity* pLocal, Vec3 vCenter)
 	{
-		if (vCenter.DistTo(pLocal->GetWorldSpaceCenter()) > 300.0f)
+		if (vCenter.DistTo(pLocal->GetWorldSpaceCenter()) > 300.f)
 		{
 			Vec3 vScreen = {};
 			if (W2S(vCenter, vScreen))
@@ -309,111 +426,6 @@ namespace Utils
 		I::EngineTrace->TraceRay(ray, nMask, pFilter, pTrace);
 	}
 
-	__inline int RandInt(int min, int max)
-	{
-		//This allows us to reach closer to true randoms generated
-		//I don't think we need to update the seed more than once
-		static const unsigned nSeed = std::chrono::system_clock::now().time_since_epoch().count();
-
-		std::default_random_engine gen(nSeed);
-		std::uniform_int_distribution distr(min, max);
-		return distr(gen);
-	}
-
-	__inline int RandIntSimple(int min, int max)
-	{
-		std::random_device rd; std::mt19937 gen(rd()); std::uniform_int_distribution<> distr(min, max);
-		return distr(gen);
-	}
-
-	__inline void FixMovement(CUserCmd* pCmd, const Vec3& vecTargetAngle)
-	{
-		const Vec3 vecMove(pCmd->forwardmove, pCmd->sidemove, pCmd->upmove);
-		Vec3 vecMoveAng = Vec3();
-
-		Math::VectorAngles(vecMove, vecMoveAng);
-
-		const float fSpeed = Math::FastSqrt(vecMove.x * vecMove.x + vecMove.y * vecMove.y);
-		const float fYaw = DEG2RAD(vecTargetAngle.y - pCmd->viewangles.y + vecMoveAng.y);
-
-		pCmd->forwardmove = (cos(fYaw) * fSpeed);
-		pCmd->sidemove = (sin(fYaw) * fSpeed);
-	}
-
-	__inline int UnicodeToUTF8(const wchar_t* unicode, char* ansi, int ansiBufferSize)
-	{
-		const int result = WideCharToMultiByte(CP_UTF8, 0, unicode, -1, ansi, ansiBufferSize, nullptr, nullptr);
-		ansi[ansiBufferSize - 1] = 0;
-		return result;
-	}
-
-	__inline int UTF8ToUnicode(const char* ansi, wchar_t* unicode, int unicodeBufferSizeInBytes)
-	{
-		const int chars = MultiByteToWideChar(CP_UTF8, 0, ansi, -1, unicode, unicodeBufferSizeInBytes / sizeof(wchar_t));
-		unicode[(unicodeBufferSizeInBytes / sizeof(wchar_t)) - 1] = 0;
-		return chars;
-	}
-
-	__inline std::wstring ConvertUtf8ToWide(const std::string_view& str)
-	{
-		const int count = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.length(), nullptr, 0);
-		std::wstring wstr(count, 0);
-		MultiByteToWideChar(CP_UTF8, 0, str.data(), str.length(), wstr.data(), count);
-		return wstr;
-	}
-
-	__inline float ATTRIB_HOOK_FLOAT(float baseValue, const char* searchString, CBaseEntity* ent, void* buffer = 0, bool isGlobalConstString = true)
-	{
-		static auto fn = S::ATTRIB_HOOK_FLOAT.As<float(__cdecl*)(float, const char*, CBaseEntity*, void*, bool)>();
-		return fn(baseValue, searchString, ent, buffer, isGlobalConstString);
-	}
-
-	__inline int SeedFileLineHash(int seedvalue, const char* sharedname, int additionalSeed)
-	{
-		CRC32_t retval;
-
-		CRC32_Init(&retval);
-
-		CRC32_ProcessBuffer(&retval, &seedvalue, sizeof(int));
-		CRC32_ProcessBuffer(&retval, &additionalSeed, sizeof(int));
-		CRC32_ProcessBuffer(&retval, sharedname, strlen(sharedname));
-
-		CRC32_Final(&retval);
-
-		return static_cast<int>(retval);
-	}
-
-	__inline int SharedRandomInt(unsigned iseed, const char* sharedname, int iMinVal, int iMaxVal, int additionalSeed)
-	{
-		const int seed = SeedFileLineHash(iseed, sharedname, additionalSeed);
-		I::UniformRandomStream->SetSeed(seed);
-		return I::UniformRandomStream->RandomInt(iMinVal, iMaxVal);
-	}
-
-	__inline void RandomSeed(int iSeed)
-	{
-		static auto fnRandomSeed = reinterpret_cast<void(*)(uint32_t)>(GetProcAddress(GetModuleHandleA(VSTDLIB_DLL), "RandomSeed"));
-		fnRandomSeed(iSeed);
-	}
-
-	__inline double PlatFloatTime()
-	{
-		static auto fnPlatFloatTime = reinterpret_cast<double(*)()>(GetProcAddress(GetModuleHandleA(TIER0_DLL), "Plat_FloatTime"));
-		return fnPlatFloatTime();
-	}
-
-	__inline int RandomInt(int iMinVal = 0, int iMaxVal = 0x7FFF)
-	{
-		static auto fnRandomInt = reinterpret_cast<int(*)(int, int)>(GetProcAddress(GetModuleHandleA(VSTDLIB_DLL), "RandomInt"));
-		return fnRandomInt(iMinVal, iMaxVal);
-	}
-
-	__inline float RandomFloat(float flMinVal = 0.0f, float flMaxVal = 1.0f)
-	{
-		static auto fnRandomFloat = reinterpret_cast<float(*)(float, float)>(GetProcAddress(GetModuleHandleA(VSTDLIB_DLL), "RandomFloat"));
-		return fnRandomFloat(flMinVal, flMaxVal);
-	}
-
 	__inline bool VisPos(CBaseEntity* pSkip, const CBaseEntity* pEntity, const Vec3& from, const Vec3& to, unsigned int nMask = MASK_SHOT | CONTENTS_GRATE)
 	{
 		CGameTrace trace = {};
@@ -445,54 +457,95 @@ namespace Utils
 		return true;
 	}
 
-	__inline EWeaponType GetWeaponType(CBaseCombatWeapon* pWeapon)
+	__inline void FixMovement(CUserCmd* pCmd, const Vec3& vecTargetAngle)
 	{
-		if (!pWeapon)
-			return EWeaponType::UNKNOWN;
+		const Vec3 vecMove(pCmd->forwardmove, pCmd->sidemove, pCmd->upmove);
+		Vec3 vecMoveAng = Vec3();
 
-		if (pWeapon->GetSlot() == EWeaponSlots::SLOT_MELEE || pWeapon->GetWeaponID() == TF_WEAPON_BUILDER)
-			return EWeaponType::MELEE;
+		Math::VectorAngles(vecMove, vecMoveAng);
 
-		switch (pWeapon->GetWeaponID())
+		const float fSpeed = Math::FastSqrt(vecMove.x * vecMove.x + vecMove.y * vecMove.y);
+		const float fYaw = DEG2RAD(vecTargetAngle.y - pCmd->viewangles.y + vecMoveAng.y);
+
+		pCmd->forwardmove = (cos(fYaw) * fSpeed);
+		pCmd->sidemove = (sin(fYaw) * fSpeed);
+	}
+
+	__inline void StopMovement(CUserCmd* pCmd)
+	{
+		const auto& pLocal = g_EntityCache.GetLocal();
+		if (!pLocal || pLocal->m_vecVelocity().IsZero())
 		{
-		case TF_WEAPON_ROCKETLAUNCHER:
-		case TF_WEAPON_FLAME_BALL:
-		case TF_WEAPON_GRENADELAUNCHER:
-		case TF_WEAPON_FLAREGUN:
-		case TF_WEAPON_COMPOUND_BOW:
-		case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
-		case TF_WEAPON_CROSSBOW:
-		case TF_WEAPON_PARTICLE_CANNON:
-		case TF_WEAPON_DRG_POMSON:
-		case TF_WEAPON_RAYGUN_REVENGE:
-		case TF_WEAPON_RAYGUN:
-		case TF_WEAPON_CANNON:
-		case TF_WEAPON_SYRINGEGUN_MEDIC:
-		case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
-		case TF_WEAPON_FLAMETHROWER:
-		case TF_WEAPON_CLEAVER:
-		case TF_WEAPON_PIPEBOMBLAUNCHER:
-		case TF_WEAPON_JAR:
-		case TF_WEAPON_JAR_MILK:
-		case TF_WEAPON_LUNCHBOX:
-			return EWeaponType::PROJECTILE;
-		default:
-		{
-			const int nDamageType = pWeapon->GetDamageType();
-
-			if (nDamageType & DMG_BULLET || nDamageType && DMG_BUCKSHOT)
-				return EWeaponType::HITSCAN;
-
-			break;
-		}
+			pCmd->forwardmove = 0.f;
+			pCmd->sidemove = 0.f;
+			return;
 		}
 
-		return EWeaponType::UNKNOWN;
+		if (!G::IsAttacking)
+		{
+			const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
+			pCmd->viewangles = { -90, direction, 0 };
+			pCmd->sidemove = 0; pCmd->forwardmove = 0;
+			G::ShouldStop = false;
+		}
+		else
+		{
+			Vec3 direction = pLocal->m_vecVelocity().toAngle();
+			direction.y = pCmd->viewangles.y - direction.y;
+			const Vec3 negatedDirection = direction.fromAngle() * -pLocal->m_vecVelocity().Length2D();
+			pCmd->forwardmove = negatedDirection.x;
+			pCmd->sidemove = negatedDirection.y;
+		}
+	}
+
+	__inline Vector ComputeMove(const CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& a, Vec3& b)
+	{
+		const Vec3 diff = (b - a);
+		if (diff.Length() == 0.f)
+			return { 0.f, 0.f, 0.f };
+
+		const float x = diff.x;
+		const float y = diff.y;
+		const Vec3 vSilent(x, y, 0);
+		Vec3 ang;
+		Math::VectorAngles(vSilent, ang);
+		const float yaw = DEG2RAD(ang.y - pCmd->viewangles.y);
+		const float pitch = DEG2RAD(ang.x - pCmd->viewangles.x);
+		Vec3 move = { cos(yaw) * 450.f, -sin(yaw) * 450.f, -cos(pitch) * 450.f };
+
+		// Only apply upmove in water
+		if (!(I::EngineTrace->GetPointContents(pLocal->GetEyePosition()) & CONTENTS_WATER))
+			move.z = pCmd->upmove;
+		return move;
+	}
+
+	__inline void WalkTo(CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& a, Vec3& b, float scale)
+	{
+		// Calculate how to get to a vector
+		const auto result = ComputeMove(pCmd, pLocal, a, b);
+
+		// Push our move to usercmd
+		pCmd->forwardmove = result.x * scale;
+		pCmd->sidemove = result.y * scale;
+		pCmd->upmove = result.z * scale;
+	}
+
+	__inline void WalkTo(CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& pDestination)
+	{
+		Vec3 localPos = pLocal->m_vecOrigin();
+		WalkTo(pCmd, pLocal, localPos, pDestination, 1.f);
+	}
+
+	__inline float AttribHookValue(float value, const char* name, void* ent, void* buffer = 0, bool isGlobalConstString = true)
+	{
+		static auto fn = S::AttribHookValue.As<float(__cdecl*)(float, const char*, void*, void*, bool)>();
+		return fn(value, name, ent, buffer, isGlobalConstString);
 	}
 
 	__inline void GetProjectileFireSetup(CBaseEntity* pPlayer, const Vec3& vAngIn, Vec3 vOffset, Vec3& vPosOut, Vec3& vAngOut, bool bPipes = false, bool bInterp = false)
 	{
-		if (g_ConVars.cl_flipviewmodels->GetBool())
+		static auto cl_flipviewmodels = g_ConVars.FindVar("cl_flipviewmodels");
+		if (cl_flipviewmodels ? cl_flipviewmodels->GetBool() : false)
 			vOffset.y *= -1.f;
 
 		const Vec3 vShootPos = bInterp ? pPlayer->GetEyePosition() : pPlayer->GetShootPos();
@@ -534,6 +587,64 @@ namespace Utils
 		Math::VectorAngles(trace.vEndPos - vPosIn, vAngOut);
 	}
 
+	__inline EWeaponType GetWeaponType(CBaseCombatWeapon* pWeapon)
+	{
+		if (!pWeapon)
+			return EWeaponType::UNKNOWN;
+
+		if (pWeapon->GetSlot() == EWeaponSlots::SLOT_MELEE || pWeapon->GetWeaponID() == TF_WEAPON_BUILDER)
+			return EWeaponType::MELEE;
+
+		switch (pWeapon->m_iItemDefinitionIndex())
+		{
+		case Soldier_s_TheBuffBanner:
+		case Soldier_s_FestiveBuffBanner:
+		case Soldier_s_TheBattalionsBackup:
+		case Soldier_s_TheConcheror:
+		case Scout_s_BonkAtomicPunch:
+		case Scout_s_CritaCola:
+			EWeaponType::UNKNOWN;
+		}
+
+		switch (pWeapon->GetWeaponID())
+		{
+		case TF_WEAPON_PDA:
+		case TF_WEAPON_PDA_ENGINEER_BUILD:
+		case TF_WEAPON_PDA_ENGINEER_DESTROY:
+		case TF_WEAPON_PDA_SPY:
+		case TF_WEAPON_PDA_SPY_BUILD:
+		case TF_WEAPON_INVIS:
+		case TF_WEAPON_BUFF_ITEM:
+		case TF_WEAPON_GRAPPLINGHOOK:
+		case TF_WEAPON_LASER_POINTER:
+		case TF_WEAPON_ROCKETPACK:
+			return EWeaponType::UNKNOWN;
+		case TF_WEAPON_ROCKETLAUNCHER:
+		case TF_WEAPON_FLAME_BALL:
+		case TF_WEAPON_GRENADELAUNCHER:
+		case TF_WEAPON_FLAREGUN:
+		case TF_WEAPON_COMPOUND_BOW:
+		case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
+		case TF_WEAPON_CROSSBOW:
+		case TF_WEAPON_PARTICLE_CANNON:
+		case TF_WEAPON_DRG_POMSON:
+		case TF_WEAPON_RAYGUN_REVENGE:
+		case TF_WEAPON_RAYGUN:
+		case TF_WEAPON_CANNON:
+		case TF_WEAPON_SYRINGEGUN_MEDIC:
+		case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
+		case TF_WEAPON_FLAMETHROWER:
+		case TF_WEAPON_CLEAVER:
+		case TF_WEAPON_PIPEBOMBLAUNCHER:
+		case TF_WEAPON_JAR:
+		case TF_WEAPON_JAR_MILK:
+		case TF_WEAPON_LUNCHBOX:
+			return EWeaponType::PROJECTILE;
+		}
+
+		return EWeaponType::HITSCAN;
+	}
+
 	__inline bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	{
 		//if (pWeapon->IsInReload())
@@ -547,7 +658,7 @@ namespace Utils
 			auto pLocal = g_EntityCache.GetLocal();
 			float flTime = pLocal ? TICKS_TO_TIME(pLocal->m_nTickBase() + 1) : I::GlobalVars->curtime;
 
-			return fabsf(pWeapon->m_flSmackTime() - flTime) < I::GlobalVars->interval_per_tick * 2.0f;
+			return fabsf(pWeapon->m_flSmackTime() - flTime) < TICK_INTERVAL * 2.f;
 		}
 
 		if (G::CurItemDefIndex == Soldier_m_TheBeggarsBazooka)
@@ -589,17 +700,36 @@ namespace Utils
 			case TF_WEAPON_GRENADE_JAR_GAS:
 			case TF_WEAPON_CLEAVER:
 			{
-				static float flThrowTime = 0.0f;
+				static float flThrowTime = 0.f;
 
 				if (pCmd->buttons & IN_ATTACK && G::CanPrimaryAttack && !flThrowTime)
-					flThrowTime = I::GlobalVars->curtime + I::GlobalVars->interval_per_tick;
+					flThrowTime = I::GlobalVars->curtime + TICK_INTERVAL;
 
 				if (flThrowTime && I::GlobalVars->curtime >= flThrowTime)
 				{
-					flThrowTime = 0.0f;
+					flThrowTime = 0.f;
 					return true;
 				}
 				break;
+			}
+			case TF_WEAPON_GRAPPLINGHOOK:
+			{
+				if (G::LastUserCmd->buttons & IN_ATTACK || !(pCmd->buttons & IN_ATTACK))
+					return false;
+
+				auto pLocal = g_EntityCache.GetLocal();
+				if (!pLocal || pLocal->InCond(TF_COND_GRAPPLINGHOOK))
+					return false;
+
+				Vec3 pos, ang; GetProjectileFireSetup(pLocal, pCmd->viewangles, { 23.5f, -8.f, -3.f }, pos, ang, false);
+				Vec3 forward; Math::AngleVectors(ang, &forward);
+
+				CGameTrace trace = {};
+				CTraceFilterHitscan filter = {}; filter.pSkip = pLocal;
+				static auto tf_grapplinghook_max_distance = g_ConVars.FindVar("tf_grapplinghook_max_distance");
+				const float flGrappleDistance = tf_grapplinghook_max_distance ? tf_grapplinghook_max_distance->GetFloat() : 2000.f;
+				Trace(pos, pos + forward * flGrappleDistance, MASK_SOLID, &filter, &trace);
+				return trace.DidHit() && !(trace.surface.flags & 0x0004) /*SURF_SKY*/;
 			}
 			case TF_WEAPON_MINIGUN:
 			{
@@ -616,189 +746,23 @@ namespace Utils
 		return false;
 	}
 
-	__inline Vector ComputeMove(const CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& a, Vec3& b)
-	{
-		const Vec3 diff = (b - a);
-		if (diff.Length() == 0.0f)
-			return { 0.0f, 0.0f, 0.0f };
-
-		const float x = diff.x;
-		const float y = diff.y;
-		const Vec3 vSilent(x, y, 0);
-		Vec3 ang;
-		Math::VectorAngles(vSilent, ang);
-		const float yaw = DEG2RAD(ang.y - pCmd->viewangles.y);
-		const float pitch = DEG2RAD(ang.x - pCmd->viewangles.x);
-		Vec3 move = { cos(yaw) * 450.0f, -sin(yaw) * 450.0f, -cos(pitch) * 450.0f };
-
-		// Only apply upmove in water
-		if (!(I::EngineTrace->GetPointContents(pLocal->GetEyePosition()) & CONTENTS_WATER))
-			move.z = pCmd->upmove;
-		return move;
-	}
-
-	__inline void WalkTo(CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& a, Vec3& b, float scale)
-	{
-		// Calculate how to get to a vector
-		const auto result = ComputeMove(pCmd, pLocal, a, b);
-
-		// Push our move to usercmd
-		pCmd->forwardmove = result.x * scale;
-		pCmd->sidemove = result.y * scale;
-		pCmd->upmove = result.z * scale;
-	}
-
-	__inline void StopMovement(CUserCmd* pCmd)
-	{
-		const auto& pLocal = g_EntityCache.GetLocal();
-		if (!pLocal || pLocal->m_vecVelocity().IsZero())
-		{
-			pCmd->forwardmove = 0.f;
-			pCmd->sidemove = 0.f;
-			return;
-		}
-
-		if (!G::IsAttacking)
-		{
-			const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
-			pCmd->viewangles = { -90, direction, 0 };
-			pCmd->sidemove = 0; pCmd->forwardmove = 0;
-			G::ShouldStop = false;
-		}
-		else
-		{
-			Vec3 direction = pLocal->m_vecVelocity().toAngle();
-			direction.y = pCmd->viewangles.y - direction.y;
-			const Vec3 negatedDirection = direction.fromAngle() * -pLocal->m_vecVelocity().Length2D();
-			pCmd->forwardmove = negatedDirection.x;
-			pCmd->sidemove = negatedDirection.y;
-		}
-	}
-
-	/*
-	__inline void StopMovement(CUserCmd* pCmd, bool safe = true)
-	{ //credits to fourteen
-		const auto& pLocal = g_EntityCache.GetLocal();
-		if (!pLocal || pLocal->m_vecVelocity().IsZero() || safe && G::IsAttacking)
-		{
-			pCmd->forwardmove = 0.f;
-			pCmd->sidemove = 0.f;
-			return;
-		}
-
-		QAngle direction;
-		Vector forward;
-
-		pCmd->viewangles.x = 90;
-		pCmd->viewangles.y = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
-
-		Math::VectorAngles(pLocal->GetVecVelocity(), direction);
-		direction.y = pCmd->viewangles.y - direction.y;
-		Math::AngleVectors(direction, &forward);
-
-		Vector negated_direction = forward * pLocal->GetVecVelocity().Length2D();
-		pCmd->forwardmove = negated_direction.x;
-		pCmd->sidemove = negated_direction.y;
-
-		G::ShouldStop = false;
-	}
-	*/
-
-	__inline void ConLog(const char* cFunction, const char* cLog, Color_t cColour = { 255, 255, 255, 255 }, const bool bShouldPrint = true, const bool bDebugOutput = false)
-	{
-		if (bShouldPrint)
-		{
-			I::Cvar->ConsoleColorPrintf(cColour, "[%s] ", cFunction);
-			I::Cvar->ConsoleColorPrintf({ 255, 255, 255, 255 }, "%s\n", cLog);
-		}
-		if (bDebugOutput)
-			OutputDebugStringA(std::format("[{}] {}\n", cFunction, cLog).c_str());
-	}
-
-	__inline void WalkTo(CUserCmd* pCmd, CBaseEntity* pLocal, Vec3& pDestination)
-	{
-		Vec3 localPos = pLocal->m_vecOrigin();
-		WalkTo(pCmd, pLocal, localPos, pDestination, 1.f);
-	}
-
-	__inline void BlockMovement(CUserCmd* pCmd)
-	{
-		pCmd->forwardmove = 0.f;
-		pCmd->sidemove = 0.f;
-		pCmd->upmove = 0.f;
-	}
-
-	__inline int HandleToIDX(int pHandle)
-	{
-		return pHandle & 0xFFF;
-	}
-
-	// A function to find a weapon by WeaponID
-	__inline int GetWeaponByID(CBaseEntity* pPlayer, int pWeaponID)
-	{
-		if (!pPlayer)
-			return -1;
-
-		const auto hWeapons = pPlayer->GetMyWeapons();
-		for (int i = 0; hWeapons[i]; i++) // Go through the handle array and search for the item
-		{
-			if (HandleToIDX(hWeapons[i]) < 0 || HandleToIDX(hWeapons[i]) >= 2048)
-				continue;
-			
-			auto* pWeapon = reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(HandleToIDX(hWeapons[i])));
-			if (pWeapon && pWeapon->GetWeaponID() == pWeaponID)
-				return pWeapon->GetIndex();
-		}
-
-		return -1;
-	}
-
-	// Returns the teleporter exit of a given owner
-	__inline bool GetTeleporterExit(int ownerIdx, Vec3* out)
-	{
-		const auto& buildings = g_EntityCache.GetGroup(EGroupType::BUILDINGS_ALL);
-
-		for (const auto& pBuilding : buildings)
-		{
-			if (!pBuilding->IsAlive())
-				continue;
-
-			const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pBuilding->m_hBuilder());
-			if (!pOwner)
-				continue;
-
-			const auto nType = static_cast<EBuildingType>(pBuilding->m_iObjectType());
-			if (nType == EBuildingType::TELEPORTER && pBuilding->m_iObjectMode() == 1 && pOwner->GetIndex() == ownerIdx)
-			{
-				*out = pBuilding->m_vecOrigin();
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	__inline int GetPlayerForUserID(int userID)
-	{
-		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
-		{
-			PlayerInfo_t pi{};
-			if (!I::EngineClient->GetPlayerInfo(n, &pi))
-				continue;
-
-			// Found player
-			if (pi.userID == userID)
-				return n;
-		}
-		return 0;
-	}
-
 	__inline Vec3 GetHeadOffset(CBaseEntity* pEntity, const Vec3 vOffset = {})
 	{
 		const Vec3 headPos = pEntity->GetHitboxPos(HITBOX_HEAD, vOffset);
 		const Vec3 entPos = pEntity->GetAbsOrigin();
 		return headPos - entPos;
 	}
+
+	__inline Color_t Rainbow(float offset = 0.f)
+	{
+		return
+		{
+			static_cast<byte>(floor(sin(I::GlobalVars->curtime + offset + 0.f) * 127.f + 128.f)),
+			static_cast<byte>(floor(sin(I::GlobalVars->curtime + offset + 2.f) * 127.f + 128.f)),
+			static_cast<byte>(floor(sin(I::GlobalVars->curtime + offset + 4.f) * 127.f + 128.f)),
+			255
+		};
+	};
 }
 
 namespace Particles {

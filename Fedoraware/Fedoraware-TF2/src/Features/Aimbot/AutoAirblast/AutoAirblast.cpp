@@ -1,7 +1,6 @@
-#include "AutoBlast.h"
+#include "AutoAirblast.h"
 
 #include "../../Vars.h"
-#include "../AutoGlobal/AutoGlobal.h"
 
 bool CAutoAirblast::CanAirblastEntity(CBaseEntity* pLocal, CBaseEntity* pEntity, Vec3& vAngle, Vec3& vPos)
 {
@@ -22,7 +21,7 @@ bool CAutoAirblast::CanAirblastEntity(CBaseEntity* pLocal, CBaseEntity* pEntity,
 
 void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Auto::Airblast::Active.Value || !G::CanSecondaryAttack || Vars::Auto::Airblast::DisableOnAttack.Value && pCmd->buttons & IN_ATTACK)
+	if (!Vars::Aimbot::Projectile::AutoAirblast.Value || !G::CanSecondaryAttack /*|| Vars::Auto::Airblast::DisableOnAttack.Value && pCmd->buttons & IN_ATTACK*/)
 		return;
 
 	const int iWeaponID = pWeapon->GetWeaponID();
@@ -57,7 +56,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 		}
 
 		Vec3 vPos = pProjectile->m_vecOrigin();
-		if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPos) > Vars::Auto::Airblast::FOV.Value)
+		if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPos) > Vars::Aimbot::General::AimFOV.Value)
 			continue;
 
 		if (CanAirblastEntity(pLocal, pProjectile, pCmd->viewangles, vPos))
@@ -65,7 +64,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 			bShouldBlast = true;
 			break;
 		}
-		if (!bShouldBlast && Vars::Auto::Airblast::Rage.Value) // possibly implement proj aimbot somehow ?
+		if (!bShouldBlast && Vars::Aimbot::Projectile::AutoAirblast.Value == 2) // possibly implement proj aimbot somehow ?
 		{
 			Vec3 vAngle = Math::CalcAngle(vEyePos, vPos);
 			if (CanAirblastEntity(pLocal, pProjectile, vAngle, vPos))
@@ -79,6 +78,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 		}
 	}
 
+	/*
 	if (!bShouldBlast && Vars::Auto::Airblast::ExtinguishPlayers.Value)
 	{
 		for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_TEAMMATES))
@@ -87,7 +87,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 				continue;
 
 			Vec3 vPos = pPlayer->m_vecOrigin() + pPlayer->GetViewOffset(); // this seems to like to overpredict ?
-			if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPos) > Vars::Auto::Airblast::FOV.Value)
+			if (Math::GetFov(I::EngineClient->GetViewAngles(), vEyePos, vPos) > Vars::Aimbot::General::AimFOV.Value)
 				continue;
 
 			if (CanAirblastEntity(pLocal, pPlayer, pCmd->viewangles, vPos))
@@ -95,7 +95,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 				bShouldBlast = true;
 				break;
 			}
-			if (!bShouldBlast && Vars::Auto::Airblast::Rage.Value)
+			if (!bShouldBlast && Vars::Aimbot::Projectile::AutoAirblast.Value == 2)
 			{
 				Vec3 vAngle = Math::CalcAngle(vEyePos, pPlayer->GetWorldSpaceCenter());
 				if (CanAirblastEntity(pLocal, pPlayer, vAngle, vPos))
@@ -109,6 +109,7 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 			}
 		}
 	}
+	*/
 
 	if (bShouldBlast)
 	{

@@ -18,8 +18,11 @@ class CKeyHandler
 	std::unordered_map<int, KeyStorage> StorageMap;
 
 public:
-	void StoreKey(int iKey)
+	void StoreKey(int iKey, KeyStorage* pStorage = nullptr)
 	{
+		if (!pStorage)
+			pStorage = &StorageMap[iKey];
+
 		// down
 		bool bDown = GetAsyncKeyState(iKey) & 0x8000;
 		if (bDown)
@@ -40,56 +43,69 @@ public:
 			bDown = false;
 
 		// pressed
-		const bool bPressed = bDown && !StorageMap[iKey].bIsDown;
+		const bool bPressed = bDown && !pStorage->bIsDown;
 
 		// double click
 		const int iEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		const bool bDouble = bPressed && iEpoch < StorageMap[iKey].iPressTime + 500;
+		const bool bDouble = bPressed && iEpoch < pStorage->iPressTime + 250;
 
 		// released
-		const bool bReleased = !bDown && StorageMap[iKey].bIsDown;
+		const bool bReleased = !bDown && pStorage->bIsDown;
 
-		StorageMap[iKey].bIsDown = bDown;
-		StorageMap[iKey].bIsPressed = bPressed;
-		StorageMap[iKey].bIsDouble = bDouble;
-		StorageMap[iKey].iPressTime = iEpoch;
-		StorageMap[iKey].bIsReleased = bReleased;
+		pStorage->bIsDown = bDown;
+		pStorage->bIsPressed = bPressed;
+		pStorage->bIsDouble = bDouble;
+		pStorage->bIsReleased = bReleased;
+		if (bPressed)
+			pStorage->iPressTime = iEpoch;
 	}
 
 	// Is the button currently down?
-	bool Down(int iKey, const bool bStore = true)
+	bool Down(int iKey, const bool bStore = true, KeyStorage* pStorage = nullptr)
 	{
+		if (!pStorage)
+			pStorage = &StorageMap[iKey];
+
 		if (bStore)
-			StoreKey(iKey);
+			StoreKey(iKey, pStorage);
 		
-		return StorageMap[iKey].bIsDown;
+		return pStorage->bIsDown;
 	}
 
 	// Was the button just pressed? This will only be true once.
-	bool Pressed(int iKey, const bool bStore = true)
+	bool Pressed(int iKey, const bool bStore = true, KeyStorage* pStorage = nullptr)
 	{
-		if (bStore)
-			StoreKey(iKey);
+		if (!pStorage)
+			pStorage = &StorageMap[iKey];
 
-		return StorageMap[iKey].bIsPressed;
+		if (bStore)
+			StoreKey(iKey, pStorage);
+
+		return pStorage->bIsPressed;
 	}
 
 	// Was the button double clicked? This will only be true once.
-	bool Double(int iKey, const bool bStore = true)
+	bool Double(int iKey, const bool bStore = true, KeyStorage* pStorage = nullptr)
 	{
-		if (bStore)
-			StoreKey(iKey);
+		if (!pStorage)
+			pStorage = &StorageMap[iKey];
 
-		return StorageMap[iKey].bIsDouble;
+		if (bStore)
+			StoreKey(iKey, pStorage);
+
+		return pStorage->bIsDouble;
 	}
 
 	// Was the button just released? This will only be true once.
-	bool Released(int iKey, const bool bStore = true)
+	bool Released(int iKey, const bool bStore = true, KeyStorage* pStorage = nullptr)
 	{
-		if (bStore)
-			StoreKey(iKey);
+		if (!pStorage)
+			pStorage = &StorageMap[iKey];
 
-		return StorageMap[iKey].bIsReleased;
+		if (bStore)
+			StoreKey(iKey, pStorage);
+
+		return pStorage->bIsReleased;
 	}
 };
 

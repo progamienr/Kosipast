@@ -2,7 +2,7 @@
 #include "../../Features/Logs/Logs.h"
 #include "../../Features/Resolver/Resolver.h"
 #include "../../Features/PacketManip/AntiAim/AntiAim.h"
-#include "../../Features/AntiHack/CheaterDetection.h"
+#include "../../Features/CheaterDetection/CheaterDetection.h"
 #include "../../Features/Visuals/Visuals.h"
 #include "../../Features/CritHack/CritHack.h"
 #include "../../Features/Backtrack/Backtrack.h"
@@ -40,13 +40,13 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 	if (uNameHash == FNV1A::HashConst("player_hurt"))
 	{
 		F::Resolver.OnPlayerHurt(pEvent);
-		F::BadActors.ReportDamage(pEvent);
+		F::CheaterDetection.ReportDamage(pEvent);
 	}
 
 	if (uNameHash == FNV1A::HashConst("player_spawn"))
 		F::Backtrack.SetLerp(pEvent);
 
-	if (Vars::Visuals::PickupTimers.Value && uNameHash == FNV1A::HashConst("item_pickup"))
+	if (Vars::Visuals::UI::PickupTimers.Value && uNameHash == FNV1A::HashConst("item_pickup"))
 	{
 		const auto itemName = pEvent->GetString("item");
 		if (const auto& pEntity = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"))))
@@ -58,7 +58,7 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 		}
 	}
 
-	if (Vars::Misc::InstantRevive.Value && uNameHash == FNV1A::HashConst("revive_player_notify"))
+	if (Vars::Misc::MannVsMachine::InstantRevive.Value && uNameHash == FNV1A::HashConst("revive_player_notify"))
 	{
 		if (pEvent->GetInt("entindex") == I::EngineClient->GetLocalPlayer())
 		{

@@ -1,7 +1,6 @@
 #include "AutoUber.h"
 
 #include "../../Vars.h"
-#include "../AutoGlobal/AutoGlobal.h"
 #include "../../Menu/Playerlist/PlayerUtils.h"
 
 // This code is terrible and unoptimized
@@ -61,7 +60,7 @@ int BulletDangerValue(CBaseEntity* pPatient)
 			return false;
 
 		// Ignore ignored players
-		if (F::AutoGlobal.ShouldIgnore(pPlayer))
+		if (F::AimbotGlobal.ShouldIgnore(pPlayer))
 			continue;
 
 		const Vec3 vAngleTo = Math::CalcAngle(pPlayer->GetEyePosition(), pPatient->GetWorldSpaceCenter());
@@ -190,7 +189,7 @@ int FireDangerValue(CBaseEntity* pPatient)
 				return 2;
 			}
 
-			if (pPlayer->InCond(TFCondEx_PhlogUber))
+			if (pPlayer->IsPhlogUbered())
 				return 2;
 			shouldSwitch = 1;
 		}
@@ -360,10 +359,13 @@ void DoResistSwitching(CUserCmd* pCmd)
 
 void CAutoUber::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	if (!Vars::Auto::Uber::Active.Value || //Not enabled, return
-		pWeapon->GetWeaponID() != TF_WEAPON_MEDIGUN || //Not medigun, return
-		G::CurItemDefIndex == Medic_s_TheKritzkrieg || //Kritzkrieg,  return
-		ChargeCount() < 1) //Not charged
+		if (!Vars::Auto::Global::Active.Value) // change me
+			return;
+
+	if (!Vars::Auto::Uber::Active.Value
+		|| pWeapon->GetWeaponID() != TF_WEAPON_MEDIGUN // not medigun, return
+		|| G::CurItemDefIndex == Medic_s_TheKritzkrieg // kritzkrieg,  return
+		|| ChargeCount() < 1) // not charged
 	{
 		return;
 	}

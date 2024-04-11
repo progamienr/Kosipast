@@ -187,7 +187,7 @@ struct ColorTexelsInfo_t
 	int m_nWidth;
 	int m_nHeight;
 	int m_nMipmapCount;
-	ImageFormat m_ImageFormat;
+	EImageFormat m_ImageFormat;
 	int m_nByteCount;
 	byte* m_pTexelData;
 };
@@ -310,7 +310,7 @@ public:
 
 	void SetColorModulation(Color_t clr)
 	{
-		float _clr[3] = { Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b) };
+		float _clr[3] = { float(clr.r) / 255.f, float(clr.g) / 255.f, float(clr.b) / 255.f };
 		SetColorModulation(_clr);
 	}
 };

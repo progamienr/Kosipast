@@ -59,16 +59,15 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 	m_fOldCurrentTime = I::GlobalVars->curtime;
 	m_fOldFrameTime = I::GlobalVars->frametime;
 
-	m_vOldOrigin = pLocal->m_vecOrigin();
-	m_vOldVelocity = pLocal->m_vecVelocity();
-
 	I::GlobalVars->tickcount = GetTickbase(pCmd, pLocal);
 	I::GlobalVars->curtime = TICKS_TO_TIME(I::GlobalVars->tickcount);
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.0f : TICK_INTERVAL;
 
-	if (F::Ticks.GetTicks(pLocal) && Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid())
+	bSimulated = false;
+	if (F::Ticks.GetTicks(pLocal) && Vars::CL_Move::Doubletap::AntiWarp.Value && pLocal->OnSolid())
 		return; // hopefully more accurate eyepos while dting
 
+	bSimulated = true;
 	Simulate(pCmd);
 }
 
@@ -88,6 +87,6 @@ void CEnginePrediction::End(CUserCmd* pCmd)
 
 	*I::RandomSeed = -1;
 
-	pLocal->m_vecOrigin() = m_vOldOrigin;
-	pLocal->m_vecVelocity() = m_vOldVelocity;
+	if (!bSimulated)
+		Simulate(pCmd);
 }

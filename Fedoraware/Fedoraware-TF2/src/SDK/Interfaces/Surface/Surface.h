@@ -183,7 +183,7 @@ public:
 	virtual void SetPanelForInput(VPANEL vpanel) = 0;
 	virtual void DrawFilledRectFastFade(int x0, int y0, int x1, int y1, int fadeStartPt, int fadeEndPt, unsigned int alpha0, unsigned int alpha1, bool bHorizontal) = 0;
 	virtual void DrawFilledRectFade(int x0, int y0, int x1, int y1, unsigned int alpha0, unsigned int alpha1, bool bHorizontal) = 0;
-	virtual void DrawSetTextureRGBAEx(int id, const unsigned char* rgba, int wide, int tall, ImageFormat imageFormat) = 0;
+	virtual void DrawSetTextureRGBAEx(int id, const unsigned char* rgba, int wide, int tall, EImageFormat imageFormat) = 0;
 	virtual void DrawSetTextScale(float sx, float sy) = 0;
 	virtual bool SetBitmapFontGlyphSet(HFont font, const char* windowsFontName, float scalex, float scaley, int flags) = 0;
 	virtual bool AddBitmapFontFile(const char* fontFileName) = 0;
@@ -206,7 +206,7 @@ public:
 	virtual bool IsScreenSizeOverrideActive(void) = 0;
 	virtual bool IsScreenPosOverrideActive(void) = 0;
 	virtual void DestroyTextureID(int id) = 0;
-	virtual void DrawUpdateRegionTextureRGBA(int nTextureID, int x, int y, const unsigned char* pchData, int wide, int tall, ImageFormat imageFormat) = 0;
+	virtual void DrawUpdateRegionTextureRGBA(int nTextureID, int x, int y, const unsigned char* pchData, int wide, int tall, EImageFormat imageFormat) = 0;
 	virtual bool BHTMLWindowNeedsPaint(IHTML* htmlwin) = 0;
 	virtual const char* GetWebkitHTMLUserAgentString() = 0;
 	virtual void* Deprecated_AccessChromeHTMLController() = 0;

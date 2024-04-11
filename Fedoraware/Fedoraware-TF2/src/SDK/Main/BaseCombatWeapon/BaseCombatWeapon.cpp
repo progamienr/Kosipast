@@ -12,7 +12,7 @@ int CBaseCombatWeapon::GetBulletAmount()
 	auto v8 = *(DWORD*)(this + 2852) << 6;
 	int bulletspershot = *(DWORD*)(v8 + v7 + 1788);
 	if (bulletspershot >= 1)
-		Utils::ATTRIB_HOOK_FLOAT(bulletspershot, "mult_bullets_per_shot", this);
+		Utils::AttribHookValue(bulletspershot, "mult_bullets_per_shot", this);
 	else
 		bulletspershot = 1;
 	return bulletspershot;
@@ -620,14 +620,12 @@ CHudTexture* CBaseCombatWeapon::GetWeaponIcon() // wow this is stupid
 
 int CBaseCombatWeapon::GetMedigunType()
 {
-	int iMode = 0;
-	iMode = static_cast<int>(Utils::ATTRIB_HOOK_FLOAT(static_cast<float>(iMode), "set_weapon_mode", this));
+	int iMode = static_cast<int>(Utils::AttribHookValue(0, "set_weapon_mode", this));
 	return iMode;
 }
 MedigunChargeTypes CBaseCombatWeapon::GetChargeType()
 {
-	int iTmp = MEDIGUN_CHARGE_INVULN;
-	iTmp = static_cast<int>(Utils::ATTRIB_HOOK_FLOAT(static_cast<float>(iTmp), "set_charge_type", this));
+	int iTmp = static_cast<int>(Utils::AttribHookValue(MEDIGUN_CHARGE_INVULN, "set_charge_type", this));
 
 	if (GetMedigunType() == MEDIGUN_RESIST)
 		iTmp += m_nChargeResistType();

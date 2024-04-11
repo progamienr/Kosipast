@@ -6,7 +6,35 @@
 
 #include "../Math/Math.h"
 
-#define DEVELOPER_BUILD
+struct IntRange_t
+{
+	int Min = 0, Max = 0;
+
+	bool operator==(IntRange_t other) const
+	{
+		return Min == other.Min && Max == other.Max;
+	}
+
+	bool operator!=(IntRange_t other) const
+	{
+		return Min != other.Min || Max != other.Max;
+	}
+};
+
+struct FloatRange_t
+{
+	float Min = 0, Max = 0;
+
+	bool operator==(FloatRange_t other) const
+	{
+		return Min == other.Min && Max == other.Max;
+	}
+
+	bool operator!=(FloatRange_t other) const
+	{
+		return Min != other.Min || Max != other.Max;
+	}
+};
 
 using byte = unsigned char;
 
@@ -16,7 +44,7 @@ struct Color_t
 
 	bool operator==(Color_t other) const
 	{
-		return (r == other.r && g == other.g && b == other.b && a == other.a);
+		return r == other.r && g == other.g && b == other.b && a == other.a;
 	}
 
 	bool operator!=(Color_t other) const
@@ -50,6 +78,16 @@ struct Gradient_t
 {
 	Color_t StartColor = { 0, 0, 0, 255 };
 	Color_t EndColor = { 0, 0, 0, 255 };
+
+	bool operator==(Gradient_t other) const
+	{
+		return StartColor == other.StartColor && EndColor == other.EndColor;
+	}
+
+	bool operator!=(Gradient_t other) const
+	{
+		return StartColor != other.StartColor || EndColor != other.EndColor;
+	}
 };
 
 struct Chams_t
@@ -69,7 +107,7 @@ struct Glow_t
 
 	bool operator==(const Glow_t& other) const
 	{
-		return (Stencil == other.Stencil && Blur == other.Blur && StencilScale == other.StencilScale && BlurScale == other.BlurScale);
+		return Stencil == other.Stencil && Blur == other.Blur && StencilScale == other.StencilScale && BlurScale == other.BlurScale;
 	}
 };
 
@@ -77,7 +115,16 @@ struct DragBox_t
 {
 	int x = 100;
 	int y = 100;
-	bool update = true;
+
+	bool operator==(DragBox_t other) const
+	{
+		return x == other.x && y == other.y;
+	}
+
+	bool operator!=(DragBox_t other) const
+	{
+		return x != other.x || y != other.y;
+	}
 };
 
 struct WindowBox_t
@@ -86,23 +133,14 @@ struct WindowBox_t
 	int y = 100;
 	int w = 200;
 	int h = 150;
-	bool update = true;
+
+	bool operator==(WindowBox_t other) const
+	{
+		return x == other.x && y == other.y && w == other.w && h == other.h;
+	}
+
+	bool operator!=(WindowBox_t other) const
+	{
+		return x != other.x || y != other.y || w != other.w || h != other.h;
+	}
 };
-
-namespace Color
-{
-	inline float TOFLOAT(byte x)
-	{
-		return (static_cast<float>(x) / 255.0f);
-	}
-
-	inline Vec3 TOVEC3(const Color_t& x)
-	{
-		return Vec3(TOFLOAT(x.r), TOFLOAT(x.g), TOFLOAT(x.b));
-	}
-
-	inline unsigned long TODWORD(const Color_t& x)
-	{
-		return (static_cast<unsigned long>(((x.r & 0xFF) << 24) | ((x.g & 0xFF) << 16) | ((x.b & 0xFF) << 8) | (x.a & 0xFF)));
-	}
-}

@@ -8,7 +8,7 @@
 MAKE_HOOK(IsLocalPlayerUsingVisionFilterFlags, S::IsLocalPlayerUsingVisionFilterFlags(), bool, __cdecl,
 	int nFlags, bool bWeaponsCheck)
 {
-	if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value) { return Hook.Original<FN>()(nFlags, bWeaponsCheck); }
+	if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::UI::CleanScreenshots.Value) { return Hook.Original<FN>()(nFlags, bWeaponsCheck); }
 	switch (Vars::Visuals::VisionModifier.Value)
 	{
 	case 1:

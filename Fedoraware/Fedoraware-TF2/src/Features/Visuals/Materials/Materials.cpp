@@ -136,7 +136,7 @@ void CMaterials::ReloadMaterials()
 		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
 		mat.sVMT += "\n	$additive \"1\"";
 		mat.sVMT += "\n	$phong \"1\"";
-		mat.sVMT += "\n	$phongfresnelranges \"[0 0.025 0.05]\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 0.001 0.001]\"";
 		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
 		mat.sVMT += "\n	$envmapfresnel \"1\"";
 		mat.sVMT += "\n	$selfillum \"1\"";
@@ -223,12 +223,12 @@ void CMaterials::SetColor(IMaterial* material, Color_t color, bool bSetColor)
 		if (material)
 		{
 			if (auto $phongtint = material->FindVar("$phongtint", nullptr, false))
-				$phongtint->SetVecValue(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
+				$phongtint->SetVecValue(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
 			if (auto $envmaptint = material->FindVar("$envmaptint", nullptr, false))
-				$envmaptint->SetVecValue(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
+				$envmaptint->SetVecValue(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
 		}
-		I::RenderView->SetColorModulation(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
-		I::RenderView->SetBlend(Color::TOFLOAT(color.a));
+		I::RenderView->SetColorModulation(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
+		I::RenderView->SetBlend(float(color.a) / 255.f);
 	}
 	else
 	{
@@ -328,23 +328,26 @@ void CMaterials::RemoveMaterial(std::string sName)
 
 	std::filesystem::remove(MaterialFolder + "\\" + sName + ".vmt");
 
-	auto removeFromVar = [sName](std::vector<std::string>& var)
+	auto removeFromVar = [sName](ConfigVar<std::vector<std::string>>& var)
 		{
-			for (auto it = var.begin(); it != var.end();)
+			for (auto& [_, val] : var.Map)
 			{
-				if (*it == sName)
-					it = var.erase(it);
-				else
-					++it;
+				for (auto it = val.begin(); it != val.end();)
+				{
+					if (*it == sName)
+						it = val.erase(it);
+					else
+						++it;
+				}
 			}
 		};
-	removeFromVar(Vars::Chams::Friendly::Chams.Value.VisibleMaterial);
-	removeFromVar(Vars::Chams::Friendly::Chams.Value.OccludedMaterial);
-	removeFromVar(Vars::Chams::Enemy::Chams.Value.VisibleMaterial);
-	removeFromVar(Vars::Chams::Enemy::Chams.Value.OccludedMaterial);
-	removeFromVar(Vars::Chams::World::Chams.Value.VisibleMaterial);
-	removeFromVar(Vars::Chams::World::Chams.Value.OccludedMaterial);
-	removeFromVar(Vars::Chams::Backtrack::Chams.Value.VisibleMaterial);
-	removeFromVar(Vars::Chams::FakeAngle::Chams.Value.VisibleMaterial);
-	removeFromVar(Vars::Chams::Viewmodel::Chams.Value.VisibleMaterial);
+	removeFromVar(Vars::Chams::Friendly::VisibleMaterial);
+	removeFromVar(Vars::Chams::Friendly::OccludedMaterial);
+	removeFromVar(Vars::Chams::Enemy::VisibleMaterial);
+	removeFromVar(Vars::Chams::Enemy::OccludedMaterial);
+	removeFromVar(Vars::Chams::World::VisibleMaterial);
+	removeFromVar(Vars::Chams::World::OccludedMaterial);
+	removeFromVar(Vars::Chams::Backtrack::VisibleMaterial);
+	removeFromVar(Vars::Chams::FakeAngle::VisibleMaterial);
+	removeFromVar(Vars::Chams::Viewmodel::VisibleMaterial);
 }

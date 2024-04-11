@@ -18,11 +18,14 @@ void ScreenSize_t::Update()
 
 
 
-void CDraw::RemakeFonts()
+void CDraw::RemakeFonts(float flDPI)
 {
-	m_Fonts[FONT_ESP] = { 0x0, Vars::Fonts::FONT_ESP::szName.Value.c_str(), int(Vars::Fonts::FONT_ESP::nTall.Value * Vars::Menu::DPI.Value), Vars::Fonts::FONT_ESP::nWeight.Value, Vars::Fonts::FONT_ESP::nFlags.Value };
-	m_Fonts[FONT_NAME] = { 0x0, Vars::Fonts::FONT_NAME::szName.Value.c_str(), int(Vars::Fonts::FONT_NAME::nTall.Value * Vars::Menu::DPI.Value), Vars::Fonts::FONT_NAME::nWeight.Value, Vars::Fonts::FONT_NAME::nFlags.Value };
-	m_Fonts[FONT_INDICATORS] = { 0x0, Vars::Fonts::FONT_INDICATORS::szName.Value.c_str(), int(Vars::Fonts::FONT_INDICATORS::nTall.Value * Vars::Menu::DPI.Value), Vars::Fonts::FONT_INDICATORS::nWeight.Value, Vars::Fonts::FONT_INDICATORS::nFlags.Value };
+	if (!flDPI)
+		flDPI = Vars::Menu::DPI.Map["default"];
+
+	m_Fonts[FONT_ESP] = { 0x0, Vars::Fonts::FONT_ESP::szName.Value.c_str(), int(Vars::Fonts::FONT_ESP::nTall.Value * flDPI), Vars::Fonts::FONT_ESP::nWeight.Value, Vars::Fonts::FONT_ESP::nFlags.Value };
+	m_Fonts[FONT_NAME] = { 0x0, Vars::Fonts::FONT_NAME::szName.Value.c_str(), int(Vars::Fonts::FONT_NAME::nTall.Value * flDPI), Vars::Fonts::FONT_NAME::nWeight.Value, Vars::Fonts::FONT_NAME::nFlags.Value };
+	m_Fonts[FONT_INDICATORS] = { 0x0, Vars::Fonts::FONT_INDICATORS::szName.Value.c_str(), int(Vars::Fonts::FONT_INDICATORS::nTall.Value * flDPI), Vars::Fonts::FONT_INDICATORS::nWeight.Value, Vars::Fonts::FONT_INDICATORS::nFlags.Value };
 
 	ReloadFonts();
 }

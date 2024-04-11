@@ -62,7 +62,7 @@ void CyoaView(const CRecvProxyData* data, void* pPlayer, void* out)
 {
 	const int value = data->m_Value.m_Int;
 	const auto valueOut = static_cast<int*>(out);
-	if (!Vars::Visuals::RemoveTaunts.Value)
+	if (!Vars::Visuals::Removals::Taunts.Value)
 	{
 		*valueOut = value;
 		return;

@@ -68,7 +68,7 @@ public:
 
 	void Restart();
 	void FrameStageNotify();
-	std::optional<TickRecord> Run(CUserCmd* pCmd);
+	void Run(CUserCmd* pCmd);
 	void SetLerp(CGameEvent* pEvent);
 	void ResolverUpdate(CBaseEntity* pEntity);
 	void ReportShot(int iIndex);

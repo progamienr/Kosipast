@@ -39,10 +39,10 @@ bool CSpectatorList::GetSpectators(CBaseEntity* pLocal)
 				respawnTime = pResource->GetNextRespawnTime(pTeammate->GetIndex());
 				respawnIn = std::max(int(respawnTime - I::GlobalVars->curtime), 0);
 			}
-			bool respawnTimeIncreased = false; // theoretically the respawn times could change without extendfreeze but oh well
+			bool respawnTimeIncreased = false; // theoretically the respawn times could be changed by the map but oh well
 			if (!RespawnCache.contains(pTeammate->GetIndex()))
 				RespawnCache[pTeammate->GetIndex()] = respawnTime;
-			if (RespawnCache[pTeammate->GetIndex()] + 4.9f < respawnTime)
+			if (RespawnCache[pTeammate->GetIndex()] + 0.9f < respawnTime)
 			{
 				respawnTimeIncreased = true;
 				RespawnCache[pTeammate->GetIndex()] = -1.f;

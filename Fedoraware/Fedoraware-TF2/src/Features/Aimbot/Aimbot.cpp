@@ -4,19 +4,15 @@
 #include "AimbotHitscan/AimbotHitscan.h"
 #include "AimbotProjectile/AimbotProjectile.h"
 #include "AimbotMelee/AimbotMelee.h"
+#include "AutoDetonate/AutoDetonate.h"
+#include "AutoAirblast/AutoAirblast.h"
+#include "AutoUber/AutoUber.h"
+#include "AutoRocketJump/AutoRocketJump.h"
 #include "../Misc/Misc.h"
 
 bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
-	// Don't run if aimbot is disabled
-	//if (!Vars::Aimbot::Global::Active.Value) { return false; }
-
-	// Don't run in menus
 	if (I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
-		return false;
-
-	// Don't run if we are frozen in place.
-	if (G::Frozen)
 		return false;
 
 	if (!pLocal->IsAlive() ||
@@ -30,31 +26,10 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 
 	switch (G::CurItemDefIndex)
 	{
-		case Soldier_m_RocketJumper:
-		case Demoman_s_StickyJumper: 
-			return false;
+	case Soldier_m_RocketJumper:
+	case Demoman_s_StickyJumper:
+		return false;
 	}
-
-	switch (pWeapon->GetWeaponID())
-	{
-		case TF_WEAPON_PDA:
-		case TF_WEAPON_PDA_ENGINEER_BUILD:
-		case TF_WEAPON_PDA_ENGINEER_DESTROY:
-		case TF_WEAPON_PDA_SPY:
-		case TF_WEAPON_PDA_SPY_BUILD:
-		case TF_WEAPON_INVIS:
-		case TF_WEAPON_BUFF_ITEM:
-		case TF_WEAPON_GRAPPLINGHOOK:
-			return false;
-	}
-
-/*	//	weapon data check for null damage
-	if (CTFWeaponInfo* sWeaponInfo = pWeapon->GetTFWeaponInfo())
-	{
-		WeaponData_t sWeaponData = sWeaponInfo->m_WeaponData[0];
-		if (sWeaponData.m_nDamage < 1)
-			return false;
-	}*/
 
 	return true;
 }
@@ -63,16 +38,17 @@ bool CAimbot::Run(CUserCmd* pCmd)
 {
 	G::AimPos = Vec3();
 
-	if (F::Misc.bMovementStopped || F::Misc.bFastAccel)
-		return false;
-
 	const auto pLocal = g_EntityCache.GetLocal();
 	const auto pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon)
+
+	F::AutoRocketJump.Run(pLocal, pWeapon, pCmd);
+
+	if (!pLocal || !pWeapon || !ShouldRun(pLocal, pWeapon))
 		return false;
 
-	if (!ShouldRun(pLocal, pWeapon))
-		return false;
+	F::AutoDetonate.Run(pLocal, pWeapon, pCmd);
+	F::AutoAirblast.Run(pLocal, pWeapon, pCmd);
+	F::AutoUber.Run(pLocal, pWeapon, pCmd);
 
 	const bool bAttacking = G::IsAttacking;
 	switch (G::CurWeaponType)

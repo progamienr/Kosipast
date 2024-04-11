@@ -98,7 +98,7 @@ bool CBacktrack::WithinRewind(const TickRecord& record)
 		return false;
 
 	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.f, flMaxUnlag) - iNetChan->GetLatency(FLOW_OUTGOING);
-	const int iServerTick = iTickCount + (Vars::Misc::NetworkFix.Value ? 1 : 0) + G::AnticipatedChoke + Vars::Backtrack::Offset.Value;
+	const int iServerTick = iTickCount + (Vars::Misc::Game::NetworkFix.Value ? 1 : 0) + G::AnticipatedChoke + Vars::Backtrack::Offset.Value;
 
 	const float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(record.flSimTime));
 
@@ -144,7 +144,7 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pReco
 				return validRecords;
 
 			const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.f, flMaxUnlag) - iNetChan->GetLatency(FLOW_OUTGOING);
-			const int iServerTick = iTickCount + (Vars::Misc::NetworkFix.Value ? 1 : 0) + G::AnticipatedChoke + Vars::Backtrack::Offset.Value;
+			const int iServerTick = iTickCount + (Vars::Misc::Game::NetworkFix.Value ? 1 : 0) + G::AnticipatedChoke + Vars::Backtrack::Offset.Value;
 
 			std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
 				{
@@ -237,7 +237,8 @@ void CBacktrack::MakeRecords()
 		{
 			const Vec3 vDelta = curRecord.vOrigin - mRecords[pEntity].front().vOrigin;
 			
-			const float flDist = powf(I::Cvar->FindVar("sv_lagcompensation_teleport_dist")->GetFloat(), 2.f);
+			static auto sv_lagcompensation_teleport_dist = g_ConVars.FindVar("sv_lagcompensation_teleport_dist");
+			const float flDist = powf(sv_lagcompensation_teleport_dist ? sv_lagcompensation_teleport_dist->GetFloat() : 64.f, 2.f);
 			if (vDelta.Length2DSqr() > flDist)
 			{
 				bLagComp = true;
@@ -304,82 +305,26 @@ void CBacktrack::FrameStageNotify()
 	if (!pLocal || !iNetChan)
 		return Restart();
 
-	flMaxUnlag = g_ConVars.sv_maxunlag->GetFloat();
+	static auto sv_maxunlag = g_ConVars.FindVar("sv_maxunlag");
+	flMaxUnlag = sv_maxunlag ? sv_maxunlag->GetFloat() : 1.f;
 
 	StoreNolerp();
 	MakeRecords();
 	CleanRecords();
 }
 
-std::optional<TickRecord> CBacktrack::Run(CUserCmd* pCmd) // backtrack to crosshair
+void CBacktrack::Run(CUserCmd* pCmd)
 {
 	SendLerp();
 
-	if (!Vars::Backtrack::Enabled.Value)
-		return std::nullopt;
-
 	// might not even be necessary
 	G::AnticipatedChoke = 0;
-	if (G::ShiftedTicks != G::MaxShift)
-	{
-		switch (G::CurWeaponType)
-		{
-		case EWeaponType::PROJECTILE:
-			if (Vars::Aimbot::Projectile::AimMethod.Value == 2)
-				G::AnticipatedChoke = 1;
-			break;
-		case EWeaponType::MELEE:
-			if (Vars::Aimbot::Melee::AimMethod.Value == 2)
-				G::AnticipatedChoke = 1;
-			break;
-		}
-	}
-	const int iChoke = G::ChokeAmount;
-	if (iChoke && !Vars::CL_Move::FakeLag::UnchokeOnAttack.Value &&
-		G::ShiftedTicks == G::ShiftedGoal && !G::DoubleTap)
-	{
-		G::AnticipatedChoke = G::ChokeGoal - iChoke;
-	}
-	// iffy, unsure if there is a good way to get it to work well without unchoking
+	if (G::ShiftedTicks != G::MaxShift && G::CurWeaponType != EWeaponType::HITSCAN && Vars::Aimbot::General::AimType.Value == 3)
+		G::AnticipatedChoke = 1;
+	if (G::ChokeAmount && !Vars::CL_Move::Fakelag::UnchokeOnAttack.Value && G::ShiftedTicks == G::ShiftedGoal && !G::DoubleTap)
+		G::AnticipatedChoke = G::ChokeGoal - G::ChokeAmount; // iffy, unsure if there is a good way to get it to work well without unchoking
 
 	UpdateDatagram();
-
-	//if (G::IsAttacking)
-	const bool bShouldRun = G::CurItemDefIndex != Sniper_m_TheClassic && pCmd->buttons & IN_ATTACK ||
-		G::CurItemDefIndex == Sniper_m_TheClassic && pCmd->buttons & ~IN_ATTACK && bLastTickHeld;
-	bLastTickHeld = pCmd->buttons & IN_ATTACK;
-	if (bShouldRun)
-	{
-		CBaseEntity* pLocal = g_EntityCache.GetLocal();
-		if (!pLocal)
-			return std::nullopt;
-
-		const Vec3 vShootPos = pLocal->GetShootPos();
-		const Vec3 vAngles = pCmd->viewangles;
-
-		std::optional<TickRecord> cReturnTick;
-		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
-		{
-			if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsAGhost())
-				continue;
-
-			PlayerInfo_t pi{}; // dont care about ignored players
-			if (I::EngineClient->GetPlayerInfo(pEnemy->GetIndex(), &pi) && F::PlayerUtils.IsIgnored(pi.friendsID))
-				continue;
-
-			if (const std::optional<TickRecord> checkRec = GetHitRecord(pCmd, pEnemy, vAngles, vShootPos))
-			{
-				cReturnTick = checkRec;
-				break;
-			}
-		}
-		if (cReturnTick)
-		{
-			pCmd->tick_count = TIME_TO_TICKS(cReturnTick->flSimTime) + TIME_TO_TICKS(flFakeInterp);
-			return std::nullopt;
-		}
-	}
-	return std::nullopt;
 }
 
 void CBacktrack::ResolverUpdate(CBaseEntity* pEntity)

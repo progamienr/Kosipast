@@ -63,24 +63,24 @@ void DrawBeam(const Vector& source, const Vector& end)
 {
 	BeamInfo_t beamInfo;
 	beamInfo.m_nType = 0;
-	beamInfo.m_pszModelName = Vars::Visuals::Beans::UseCustomModel.Value ? Vars::Visuals::Beans::Model.Value.c_str() : "sprites/physbeam.vmt";
+	beamInfo.m_pszModelName = Vars::Visuals::Beams::UseCustomModel.Value ? Vars::Visuals::Beams::Model.Value.c_str() : "sprites/physbeam.vmt";
 	beamInfo.m_nModelIndex = -1; // will be set by CreateBeamPoints if its -1
 	beamInfo.m_flHaloScale = 0.0f;
-	beamInfo.m_flLife = Vars::Visuals::Beans::Life.Value;
-	beamInfo.m_flWidth = Vars::Visuals::Beans::Width.Value;
-	beamInfo.m_flEndWidth = Vars::Visuals::Beans::EndWidth.Value;
-	beamInfo.m_flFadeLength = Vars::Visuals::Beans::FadeLength.Value;
-	beamInfo.m_flAmplitude = Vars::Visuals::Beans::Amplitude.Value;
-	beamInfo.m_flBrightness = Vars::Visuals::Beans::Brightness.Value;
-	beamInfo.m_flSpeed = Vars::Visuals::Beans::Speed.Value;
+	beamInfo.m_flLife = Vars::Visuals::Beams::Life.Value;
+	beamInfo.m_flWidth = Vars::Visuals::Beams::Width.Value;
+	beamInfo.m_flEndWidth = Vars::Visuals::Beams::EndWidth.Value;
+	beamInfo.m_flFadeLength = Vars::Visuals::Beams::FadeLength.Value;
+	beamInfo.m_flAmplitude = Vars::Visuals::Beams::Amplitude.Value;
+	beamInfo.m_flBrightness = Vars::Visuals::Beams::Brightness.Value;
+	beamInfo.m_flSpeed = Vars::Visuals::Beams::Speed.Value;
 	beamInfo.m_nStartFrame = 0;
 	beamInfo.m_flFrameRate = 0;
-	beamInfo.m_flRed = Vars::Visuals::Beans::Rainbow.Value ? floor(sin(I::GlobalVars->curtime + 0) * 128.0f + 128.0f) : Vars::Visuals::Beans::BeamColor.Value.r;
-	beamInfo.m_flGreen = Vars::Visuals::Beans::Rainbow.Value ? floor(sin(I::GlobalVars->curtime + 2) * 128.0f + 128.0f) : Vars::Visuals::Beans::BeamColor.Value.g;
-	beamInfo.m_flBlue = Vars::Visuals::Beans::Rainbow.Value ? floor(sin(I::GlobalVars->curtime + 4) * 128.0f + 128.0f) : Vars::Visuals::Beans::BeamColor.Value.b;
-	beamInfo.m_nSegments = Vars::Visuals::Beans::Segments.Value;
+	beamInfo.m_flRed = Vars::Visuals::Beams::Rainbow.Value ? floor(sin(I::GlobalVars->curtime + 0) * 128.0f + 128.0f) : Vars::Visuals::Beams::BeamColor.Value.r;
+	beamInfo.m_flGreen = Vars::Visuals::Beams::Rainbow.Value ? floor(sin(I::GlobalVars->curtime + 2) * 128.0f + 128.0f) : Vars::Visuals::Beams::BeamColor.Value.g;
+	beamInfo.m_flBlue = Vars::Visuals::Beams::Rainbow.Value ? floor(sin(I::GlobalVars->curtime + 4) * 128.0f + 128.0f) : Vars::Visuals::Beams::BeamColor.Value.b;
+	beamInfo.m_nSegments = Vars::Visuals::Beams::Segments.Value;
 	beamInfo.m_bRenderable = true;
-	beamInfo.m_nFlags = Vars::Visuals::Beans::Flags.Value;
+	beamInfo.m_nFlags = Vars::Visuals::Beams::Flags.Value;
 	beamInfo.m_vecStart = source;
 	beamInfo.m_vecEnd = end;
 
@@ -132,6 +132,6 @@ MAKE_HOOK(C_BaseEntity_FireBullets, S::CBaseEntity_FireBullets(), void, __fastca
 	else
 		Particles::ParticleTracer(string.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment, true);
 
-	if (Vars::Visuals::Beans::Active.Value)
+	if (Vars::Visuals::Beams::Active.Value)
 		DrawBeam(trace.vStartPos, trace.vEndPos);
 }

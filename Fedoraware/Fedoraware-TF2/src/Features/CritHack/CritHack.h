@@ -6,17 +6,11 @@ typedef unsigned int       u32;
 
 struct WeaponStorage
 {
-	float Bucket = 300.f;
-
 	float Damage = 0.f;
-	std::pair<int, int> ShotsCrits = { 1, 0 };
 	float Cost = 0.f;
-
 	int AvailableCrits = 0;
 	int PotentialCrits = 0;
-
 	int StreamWait = -1;
-	int StreamEnd = -1;
 
 	int EntIndex = -1;
 	int DefIndex = -1;
@@ -28,12 +22,10 @@ struct WeaponStorage
 class CCritHack
 {
 private:
-	bool IsEnabled();
-
 	void Fill(CBaseEntity* pLocal, const CUserCmd* pCmd, int n = 10);
 	int FirstGoodCommand(std::deque<int>& vCommands, const CUserCmd* pCmd);
 
-	bool IsCritCommand(int iSlot, int iIndex, const i32 command_number, const bool bCrit = true);
+	bool IsCritCommand(int iSlot, int iIndex, const i32 command_number, const bool bCrit = true, const bool bSafe = true);
 	u32 DecryptOrEncryptSeed(int iSlot, int iIndex, const u32 uSeed);
 
 	void GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
@@ -52,12 +44,7 @@ private:
 	float CritChance = 0.f;
 	int WishRandomSeed = 0;
 
-	float BucketDefault = 300.f;
-	float BucketBottom = -250.f;
-	float BucketCap = 1000.f;
-
 public:
-
 	void Run(CUserCmd* pCmd);
 	bool CalcIsAttackCriticalHandler(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);

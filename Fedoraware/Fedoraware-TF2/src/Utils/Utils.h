@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Color/Color.h"
+#include "Types/Types.h"
 #include "Interface/Interface.h"
 #include "VFunc/VFunc.h"
 #include "Pattern/Pattern.h"

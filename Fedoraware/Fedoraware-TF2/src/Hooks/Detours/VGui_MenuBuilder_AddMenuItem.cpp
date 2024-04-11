@@ -20,7 +20,7 @@ MAKE_HOOK(CVoiceStatus_IsPlayerBlocked, S::CVoiceStatus_IsPlayerBlocked(), bool,
     static auto CVoiceStatus_IsPlayerBlocked_Call = S::CVoiceStatus_IsPlayerBlocked_Call();
     const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
-    if (!Vars::Visuals::ScoreboardPlayerlist.Value)
+    if (!Vars::Visuals::UI::ScoreboardPlayerlist.Value)
         return Hook.Original<FN>()(ecx, edx, playerIndex);
 
     if (dwRetAddr == CVoiceStatus_IsPlayerBlocked_Call)
@@ -35,7 +35,7 @@ MAKE_HOOK(VGui_MenuBuilder_AddMenuItem, S::VGui_MenuBuilder_AddMenuItem(), void*
     static auto VGui_MenuBuilder_AddMenuItem_Call = S::VGui_MenuBuilder_AddMenuItem_Call();
     const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
-    if (!Vars::Visuals::ScoreboardPlayerlist.Value)
+    if (!Vars::Visuals::UI::ScoreboardPlayerlist.Value)
         return Hook.Original<FN>()(ecx, edx, pszButtonText, pszCommand, pszCategoryName);
 
     if (dwRetAddr == VGui_MenuBuilder_AddMenuItem_Call && PlayerIndex != -1)
@@ -64,7 +64,7 @@ MAKE_HOOK(VGui_MenuBuilder_AddMenuItem, S::VGui_MenuBuilder_AddMenuItem(), void*
 MAKE_HOOK(CTFClientScoreBoardDialog_OnCommand, S::CTFClientScoreBoardDialog_OnCommand(), void, __fastcall,
     void* ecx, void* edx, const char* command)
 {
-    if (!Vars::Visuals::ScoreboardPlayerlist.Value)
+    if (!Vars::Visuals::UI::ScoreboardPlayerlist.Value)
         return Hook.Original<FN>()(ecx, edx, command);
 
     if (FNV1A::Hash(command) == FNV1A::HashConst("fedignore"))

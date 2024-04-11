@@ -5,6 +5,12 @@
 
 class CGlow
 {
+	Glow_t GetStruct(
+		bool Stencil = false,
+		bool Blur = false,
+		int StencilScale = 1,
+		int BlurScale = 1
+	);
 	bool GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color);
 
 	void SetupBegin(Glow_t glow, IMatRenderContext* pRenderContext, IMaterial* m_pMatBlurY);

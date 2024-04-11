@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Feature.h"
 
-#define MaterialFolder (g_CFG.GetConfigPath() + "\\Materials")
+#define MaterialFolder (F::ConfigManager.GetConfigPath() + "\\Materials")
 
 struct Material_t
 {

@@ -5,7 +5,7 @@ void CAutoQueue::Run()
 	const bool bInGame = !I::EngineVGui->IsGameUIVisible() || I::EngineClient->IsInGame();
 
 	// Auto queue
-	if (Vars::Misc::AutoCasualQueue.Value == 1)
+	if (Vars::Misc::Queueing::AutoCasualQueue.Value == 1)
 	{
 		if (bInGame)
 			return;
@@ -20,7 +20,7 @@ void CAutoQueue::Run()
 			I::TFPartyClient->RequestQueueForMatch(k_eTFMatchGroup_Casual_Default);
 		}
 	}
-	if (Vars::Misc::AutoCasualQueue.Value == 2)
+	if (Vars::Misc::Queueing::AutoCasualQueue.Value == 2)
 	{
 		const bool bInQueueForMatchGroup = I::TFPartyClient->BInQueueForMatchGroup(k_eTFMatchGroup_Casual_Default);
 

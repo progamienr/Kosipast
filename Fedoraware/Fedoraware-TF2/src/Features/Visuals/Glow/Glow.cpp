@@ -8,6 +8,16 @@
 #include "../FakeAngle/FakeAngle.h"
 #include "../../Backtrack/Backtrack.h"
 
+Glow_t CGlow::GetStruct(bool Stencil, bool Blur, int StencilScale, int BlurScale)
+{
+	return Glow_t{
+		Stencil,
+		Blur,
+		StencilScale,
+		BlurScale
+	};
+}
+
 bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 {
 	CBaseEntity* pLocal = g_EntityCache.GetLocal();
@@ -24,7 +34,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 	case ETFClassID::CTFPlayer:
 	{
 		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-		*glow = bFriendly ? Vars::Glow::Friendly::Glow.Value : Vars::Glow::Enemy::Glow.Value;
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
 		*color = GetEntityDrawColor(pEntity, Vars::Colors::Relative.Value);
 		return bFriendly ? Vars::Glow::Friendly::Players.Value : Vars::Glow::Enemy::Players.Value;
 	}
@@ -35,7 +47,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*glow = bFriendly ? Vars::Glow::Friendly::Glow.Value : Vars::Glow::Enemy::Glow.Value;
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
 		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
 		return bFriendly ? Vars::Glow::Friendly::Players.Value : Vars::Glow::Enemy::Players.Value;
 	}
@@ -47,7 +61,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hBuilder());
 
 		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-		*glow = bFriendly ? Vars::Glow::Friendly::Glow.Value : Vars::Glow::Enemy::Glow.Value;
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
 		*color = GetEntityDrawColor(pOwner ? pOwner : pEntity, Vars::Colors::Relative.Value);
 		return bFriendly ? Vars::Glow::Friendly::Buildings.Value : Vars::Glow::Enemy::Buildings.Value;
 	}
@@ -61,7 +77,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*glow = bFriendly ? Vars::Glow::Friendly::Glow.Value : Vars::Glow::Enemy::Glow.Value;
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
 		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
 		return bFriendly ? Vars::Glow::Friendly::Ragdolls.Value : Vars::Glow::Enemy::Ragdolls.Value;
 	}
@@ -88,7 +106,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*glow = bFriendly ? Vars::Glow::Friendly::Glow.Value : Vars::Glow::Enemy::Glow.Value;
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
 		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
 		return bFriendly ? Vars::Glow::Friendly::Projectiles.Value : Vars::Glow::Enemy::Projectiles.Value;
 	}
@@ -98,20 +118,20 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 	case ETFClassID::CMerasmus:
 	case ETFClassID::CZombie:
 	case ETFClassID::CEyeballBoss:
-		*glow = Vars::Glow::World::Glow.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 		*color = Vars::Colors::NPC.Value;
 		return Vars::Glow::World::NPCs.Value;
 	// pickup glow
 	case ETFClassID::CTFAmmoPack:
-		*glow = Vars::Glow::World::Glow.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 		*color = Vars::Colors::Ammo.Value;
 		return Vars::Glow::World::Pickups.Value;
 	case ETFClassID::CCurrencyPack:
-		*glow = Vars::Glow::World::Glow.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 		*color = Vars::Colors::Money.Value;
 		return Vars::Glow::World::Pickups.Value;
 	case ETFClassID::CHalloweenGiftPickup:
-		*glow = Vars::Glow::World::Glow.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 		*color = Vars::Colors::Halloween.Value;
 		return Vars::Glow::World::Halloween.Value;
 	case ETFClassID::CBaseAnimating:
@@ -119,19 +139,19 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 		const auto szName = pEntity->GetModelName();
 		if (Hash::IsAmmo(szName))
 		{
-			*glow = Vars::Glow::World::Glow.Value;
+			*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 			*color = Vars::Colors::Ammo.Value;
 			return Vars::Glow::World::Pickups.Value;
 		}
 		if (Hash::IsHealth(szName))
 		{
-			*glow = Vars::Glow::World::Glow.Value;
+			*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 			*color = Vars::Colors::Health.Value;
 			return Vars::Glow::World::Pickups.Value;
 		}
 		if (Hash::IsSpell(szName))
 		{
-			*glow = Vars::Glow::World::Glow.Value;
+			*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 			*color = Vars::Colors::Halloween.Value;
 			return Vars::Glow::World::Halloween.Value;
 		}
@@ -140,7 +160,7 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 	// bomb glow
 	case ETFClassID::CTFPumpkinBomb:
 	case ETFClassID::CTFGenericBomb:
-		*glow = Vars::Glow::World::Glow.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
 		*color = Vars::Colors::Bomb.Value;
 		return Vars::Glow::World::Bombs.Value;
 	}
@@ -153,7 +173,9 @@ bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 			return false;
 
 		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*glow = bFriendly ? Vars::Glow::Friendly::Glow.Value : Vars::Glow::Enemy::Glow.Value;
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
 		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
 		return bFriendly ? Vars::Glow::Friendly::Players.Value : Vars::Glow::Enemy::Players.Value;
 	}
@@ -317,8 +339,8 @@ void CGlow::RenderMain()
 		SetupMid(pRenderContext, m_pMatGlowColor, w, h);
 		for (auto& info : entities)
 		{
-			I::RenderView->SetColorModulation(Color::TOFLOAT(info.m_Color.r), Color::TOFLOAT(info.m_Color.g), Color::TOFLOAT(info.m_Color.b));
-			I::RenderView->SetBlend(Color::TOFLOAT(info.m_Color.a));
+			I::RenderView->SetColorModulation(float(info.m_Color.r) / 255.f, float(info.m_Color.g) / 255.f, float(info.m_Color.b) / 255.f);
+			I::RenderView->SetBlend(float(info.m_Color.a) / 255.f);
 			DrawModel(info.m_pEntity, false);
 		}
 
@@ -350,7 +372,7 @@ void CGlow::RenderMain()
 void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld,
 	int w, int h, IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, IMaterial* m_pMatBlurX, IMaterial* m_pMatBlurY, IMaterial* m_pMatHaloAddToScreen)
 {
-	if (!Vars::Backtrack::Enabled.Value || !Vars::Glow::Backtrack::Active.Value || !Vars::Glow::Backtrack::Glow.Value.Stencil && !Vars::Glow::Backtrack::Glow.Value.Blur)
+	if (!Vars::Backtrack::Enabled.Value || !Vars::Glow::Backtrack::Active.Value || !Vars::Glow::Backtrack::Stencil.Value && !Vars::Glow::Backtrack::Blur.Value)
 		return;
 
 	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
@@ -428,23 +450,25 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 
 
 
-	SetupBegin(Vars::Glow::Backtrack::Glow.Value, pRenderContext, m_pMatBlurY);
+	auto glow = GetStruct(Vars::Glow::Backtrack::Stencil.Value, Vars::Glow::Backtrack::Blur.Value, Vars::Glow::Backtrack::StencilScale.Value, Vars::Glow::Backtrack::BlurScale.Value);
+
+	SetupBegin(glow, pRenderContext, m_pMatBlurY);
 	drawModels(true);
 
 	StencilEnd(pRenderContext);
 
 	SetupMid(pRenderContext, m_pMatGlowColor, w, h);
 	auto color = GetEntityDrawColor(pEntity, Vars::Colors::Relative.Value);
-	I::RenderView->SetColorModulation(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
-	I::RenderView->SetBlend(Color::TOFLOAT(color.a));
+	I::RenderView->SetColorModulation(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
+	I::RenderView->SetBlend(float(color.a) / 255.f);
 	drawModels(false);
 
-	SetupEnd(Vars::Glow::Backtrack::Glow.Value, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
+	SetupEnd(glow, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
 }
 void CGlow::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld,
 	int w, int h, IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, IMaterial* m_pMatBlurX, IMaterial* m_pMatBlurY, IMaterial* m_pMatHaloAddToScreen)
 {
-	if (!Vars::Glow::FakeAngle::Active.Value || !Vars::Glow::FakeAngle::Glow.Value.Stencil && !Vars::Glow::FakeAngle::Glow.Value.Blur || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAngle.DrawChams || !F::FakeAngle.BonesSetup)
+	if (!Vars::Glow::FakeAngle::Active.Value || !Vars::Glow::FakeAngle::Stencil.Value && !Vars::Glow::FakeAngle::Blur.Value || pInfo.m_nEntIndex != I::EngineClient->GetLocalPlayer() || !F::FakeAngle.DrawChams || !F::FakeAngle.BonesSetup)
 		return;
 
 	const auto ModelRender_DrawModelExecute = g_HookManager.GetMapHooks()["ModelRender_DrawModelExecute"];
@@ -466,18 +490,20 @@ void CGlow::RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInf
 
 
 
-	SetupBegin(Vars::Glow::FakeAngle::Glow.Value, pRenderContext, m_pMatBlurY);
+	auto glow = GetStruct(Vars::Glow::FakeAngle::Stencil.Value, Vars::Glow::FakeAngle::Blur.Value, Vars::Glow::FakeAngle::StencilScale.Value, Vars::Glow::FakeAngle::BlurScale.Value);
+
+	SetupBegin(glow, pRenderContext, m_pMatBlurY);
 	drawModel(true);
 
 	StencilEnd(pRenderContext);
 
 	SetupMid(pRenderContext, m_pMatGlowColor, w, h);
 	auto& color = Vars::Colors::Local.Value;
-	I::RenderView->SetColorModulation(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
-	I::RenderView->SetBlend(Color::TOFLOAT(color.a));
+	I::RenderView->SetColorModulation(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
+	I::RenderView->SetBlend(float(color.a) / 255.f);
 	drawModel(false);
 
-	SetupEnd(Vars::Glow::FakeAngle::Glow.Value, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
+	SetupEnd(glow, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
 }
 void CGlow::RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 {
@@ -507,7 +533,7 @@ void CGlow::RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_
 
 void CGlow::RenderViewmodel(void* ecx, int flags)
 {
-	if (!Vars::Glow::Viewmodel::Weapon.Value)
+	if (!Vars::Glow::Viewmodel::Weapon.Value || !Vars::Glow::Viewmodel::Stencil.Value && !Vars::Glow::Viewmodel::Blur.Value)
 		return;
 
 	const int w = g_ScreenSize.w, h = g_ScreenSize.h;
@@ -541,22 +567,24 @@ void CGlow::RenderViewmodel(void* ecx, int flags)
 
 
 
-	SetupBegin(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurY);
+	auto glow = GetStruct(Vars::Glow::Viewmodel::Stencil.Value, Vars::Glow::Viewmodel::Blur.Value, Vars::Glow::Viewmodel::StencilScale.Value, Vars::Glow::Viewmodel::BlurScale.Value);
+
+	SetupBegin(glow, pRenderContext, m_pMatBlurY);
 	drawModel(true);
 
 	StencilEnd(pRenderContext);
 
 	SetupMid(pRenderContext, m_pMatGlowColor, w, h);
 	auto& color = Vars::Colors::Local.Value;
-	I::RenderView->SetColorModulation(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
-	I::RenderView->SetBlend(Color::TOFLOAT(color.a));
+	I::RenderView->SetColorModulation(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
+	I::RenderView->SetBlend(float(color.a) / 255.f);
 	drawModel(false);
 
-	SetupEnd(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
+	SetupEnd(glow, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
 }
 void CGlow::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 {
-	if (!Vars::Glow::Viewmodel::Hands.Value || !Vars::Glow::Viewmodel::Glow.Value.Stencil && !Vars::Glow::Viewmodel::Glow.Value.Blur)
+	if (!Vars::Glow::Viewmodel::Hands.Value || !Vars::Glow::Viewmodel::Stencil.Value && !Vars::Glow::Viewmodel::Blur.Value)
 		return;
 
 	const int w = g_ScreenSize.w, h = g_ScreenSize.h;
@@ -589,19 +617,21 @@ void CGlow::RenderViewmodel(const DrawModelState_t& pState, const ModelRenderInf
 		};
 
 
-	
-	SetupBegin(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurY);
+
+	auto glow = GetStruct(Vars::Glow::Viewmodel::Stencil.Value, Vars::Glow::Viewmodel::Blur.Value, Vars::Glow::Viewmodel::StencilScale.Value, Vars::Glow::Viewmodel::BlurScale.Value);
+
+	SetupBegin(glow, pRenderContext, m_pMatBlurY);
 	drawModel(true);
 
 	StencilEnd(pRenderContext);
 
 	SetupMid(pRenderContext, m_pMatGlowColor, w, h);
 	auto& color = Vars::Colors::Local.Value;
-	I::RenderView->SetColorModulation(Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b));
-	I::RenderView->SetBlend(Color::TOFLOAT(color.a));
+	I::RenderView->SetColorModulation(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
+	I::RenderView->SetBlend(float(color.a) / 255.f);
 	drawModel(false);
 
-	SetupEnd(Vars::Glow::Viewmodel::Glow.Value, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
+	SetupEnd(glow, pRenderContext, m_pMatBlurX, m_pMatBlurY, m_pMatHaloAddToScreen, w, h);
 }
 
 

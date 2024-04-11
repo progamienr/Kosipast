@@ -18,7 +18,7 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		{
 			// Remove punch effect
 			G::PunchAngles = pLocal->m_vecPunchAngle(); // use in aimbot 
-			if (Vars::Visuals::RemovePunch.Value)
+			if (Vars::Visuals::Removals::ViewPunch.Value)
 				pLocal->ClearPunchAngle(); // visual no-recoil
 			F::Resolver.FrameStageNotify(pLocal);
 		}
@@ -41,7 +41,9 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 			if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer())
 				continue; // local player managed in CPrediction_RunCommand
 
-			if (auto iDifference = std::min(TIME_TO_TICKS(pEntity->m_flSimulationTime() - pEntity->m_flOldSimulationTime()), g_ConVars.sv_maxusrcmdprocessticks->GetInt()))
+			static auto sv_maxusrcmdprocessticks = g_ConVars.FindVar("sv_maxusrcmdprocessticks");
+			const int iTicks = sv_maxusrcmdprocessticks ? sv_maxusrcmdprocessticks->GetInt() : 24;
+			if (auto iDifference = std::min(TIME_TO_TICKS(pEntity->m_flSimulationTime() - pEntity->m_flOldSimulationTime()), iTicks))
 			{
 				float flOldFrameTime = I::GlobalVars->frametime;
 				I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.f : TICK_INTERVAL;

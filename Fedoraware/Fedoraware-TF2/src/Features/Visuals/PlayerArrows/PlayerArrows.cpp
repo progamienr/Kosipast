@@ -3,7 +3,7 @@
 
 bool CPlayerArrows::ShouldRun(CBaseEntity* pLocal)
 {
-	if (!Vars::Visuals::Arrows::Active.Value)
+	if (!Vars::Visuals::FOVArrows::Active.Value)
 		return false;
 
 	if (!pLocal->IsAlive() || pLocal->IsStunned())
@@ -56,9 +56,9 @@ void CPlayerArrows::DrawArrowTo(const Vec3& vecFromPos, const Vec3& vecToPos, Co
 		return;
 
 	Vec2
-		p1 = { static_cast<float>(-Vars::Visuals::Arrows::Offset.Value), 12.5f },
-		p2 = { static_cast<float>(-Vars::Visuals::Arrows::Offset.Value), -12.5f },
-		p3 = { static_cast<float>(-Vars::Visuals::Arrows::Offset.Value) - 25.f * sqrt(3.f) / 2.f, 0.f };
+		p1 = { static_cast<float>(-Vars::Visuals::FOVArrows::Offset.Value), 12.5f },
+		p2 = { static_cast<float>(-Vars::Visuals::FOVArrows::Offset.Value), -12.5f },
+		p3 = { static_cast<float>(-Vars::Visuals::FOVArrows::Offset.Value) - 25.f * sqrt(3.f) / 2.f, 0.f };
 
 	auto angle = Vec3();
 	Math::VectorAngles(Vec3(cx - vScreenPos.x, cy - vScreenPos.y, 0), angle);
@@ -107,7 +107,7 @@ void CPlayerArrows::Run()
 			{
 				return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 			};
-			const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::Arrows::MaxDist.Value, Vars::Visuals::Arrows::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
+			const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::FOVArrows::MaxDist.Value, Vars::Visuals::FOVArrows::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
 			color.a = static_cast<byte>(fMap * 255.f);
 
 			DrawArrowTo(vLocalPos, vEnemyPos, color);

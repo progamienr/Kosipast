@@ -42,7 +42,7 @@ class CDraw {
 
 public:
 
-	void RemakeFonts();
+	void RemakeFonts(float flDPI = 0.f);
 	void ReloadFonts();
 
 	void String(const Font_t& font, int x, int y, const Color_t& clr, const EAlign& align, const char* str, ...);

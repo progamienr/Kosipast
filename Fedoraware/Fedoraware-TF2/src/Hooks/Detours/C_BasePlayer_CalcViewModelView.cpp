@@ -3,23 +3,20 @@
 MAKE_HOOK(C_BasePlayer_CalcViewModelView, S::CBasePlayer_CalcViewModelView(), void, __fastcall,
 	void* ecx, void* edx, CBaseEntity* pOwner, const Vec3& vEyePosition, Vec3& vEyeAngles)
 {
-	if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
+	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(ecx, edx, pOwner, vEyePosition, vEyeAngles);
 
 	bool bFlip = false;
 	{
-		ConVar* cl_flipviewmodels = g_ConVars.cl_flipviewmodels;
+		static auto cl_flipviewmodels = g_ConVars.FindVar("cl_flipviewmodels");
 		CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
-		if (cl_flipviewmodels && pWeapon)
-		{
-			if (cl_flipviewmodels->GetBool())
-				bFlip = !bFlip;
-			if (pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW)
-				bFlip = !bFlip;
-		}
+		if (cl_flipviewmodels ? cl_flipviewmodels->GetBool() : false)
+			bFlip = !bFlip;
+		if (pWeapon && pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW)
+			bFlip = !bFlip;
 	}
 
-	if (Vars::Visuals::AimbotViewmodel.Value)
+	if (Vars::Visuals::Viewmodel::ViewmodelAim.Value)
 	{
 		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
@@ -53,11 +50,10 @@ MAKE_HOOK(C_BasePlayer_CalcViewModelView, S::CBasePlayer_CalcViewModelView(), vo
 	Math::AngleVectors(vEyeAngles, &vForward, &vRight, &vUp);
 
 	Vec3 vNewEyePosition = vEyePosition + 
-		(vRight * Vars::Visuals::VMOffsetX.Value * (bFlip ? -1 : 1)) + 
-		(vForward * Vars::Visuals::VMOffsetY.Value) + 
-		(vUp * Vars::Visuals::VMOffsetZ.Value);
-
-	vEyeAngles.z += Vars::Visuals::VMRoll.Value * (bFlip ? -1 : 1); //VM Roll
+		(vRight * Vars::Visuals::Viewmodel::OffsetX.Value * (bFlip ? -1 : 1)) + 
+		(vForward * Vars::Visuals::Viewmodel::OffsetY.Value) +
+		(vUp * Vars::Visuals::Viewmodel::OffsetZ.Value);
+	vEyeAngles.z += Vars::Visuals::Viewmodel::Roll.Value * (bFlip ? -1 : 1);
 
 	Hook.Original<FN>()(ecx, edx, pOwner, vNewEyePosition, vEyeAngles);
 }

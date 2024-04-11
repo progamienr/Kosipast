@@ -15,11 +15,12 @@ class CMenu
 	void MenuLogs();
 	void MenuSettings();
 
-	void AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw);
-	void DrawKeybinds();
+	void AddDraggable(const char* szTitle, ConfigVar<DragBox_t>& info, bool bShouldDraw);
+	void DrawBinds();
 	void DrawCameraWindow();
 	void DrawRadar();
 
+	void LoadColors();
 	void LoadStyle();
 
 	int CurrentTab = 0;
@@ -70,8 +71,9 @@ public:
 	ImFont* FontSmall = nullptr;
 	ImFont* FontRegular = nullptr;
 	ImFont* FontBold = nullptr;
-	ImFont* FontBlack = nullptr;
 	ImFont* FontLarge = nullptr;
+	ImFont* FontBlack = nullptr;
+	ImFont* FontTitle = nullptr;
 	ImFont* FontMono = nullptr;
 
 	ImFont* IconFontRegular = nullptr;

@@ -2,6 +2,7 @@
 
 #include "../../Features/Misc/Misc.h"
 #include "../../Features/Logs/Logs.h"
+#include"../../Features/NoSpread/NoSpreadHitscan/NoSpreadHitscan.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -67,7 +68,10 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 
 		case TextMsg:
 		{
-			if (Vars::Misc::AntiAutobalance.Value && msgData.GetNumBitsLeft() > 35)
+			if (F::NoSpreadHitscan.ParsePlayerPerf(msgData))
+				return true;
+
+			if (Vars::Misc::Automation::AntiAutobalance.Value && msgData.GetNumBitsLeft() > 35)
 			{
 				const INetChannel* server = I::EngineClient->GetNetChannelInfo();
 				const std::string data(bufData);
@@ -98,7 +102,7 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 		case VGUIMenu:
 		{
 			// Remove MOTD
-			if (Vars::Visuals::RemoveMOTD.Value)
+			if (Vars::Visuals::Removals::MOTD.Value)
 			{
 				if (strcmp(reinterpret_cast<char*>(msgData.m_pData), "info") == 0)
 				{
@@ -112,7 +116,7 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 
 		case ForcePlayerViewAngles:
 		{
-			return Vars::Visuals::PreventForcedAngles.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
+			return Vars::Visuals::Removals::AngleForcing.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
 		}
 
 		case SpawnFlyingBird:
@@ -120,14 +124,14 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 		case PlayerTauntSoundLoopStart:
 		case PlayerTauntSoundLoopEnd:
 		{
-			return Vars::Visuals::RemoveTaunts.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
+			return Vars::Visuals::Removals::Taunts.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
 		}
 
 		case Shake:
 		case Fade:
 		case Rumble:
 		{
-			return Vars::Visuals::RemoveScreenEffects.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
+			return Vars::Visuals::Removals::ScreenEffects.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
 		}
 	}
 

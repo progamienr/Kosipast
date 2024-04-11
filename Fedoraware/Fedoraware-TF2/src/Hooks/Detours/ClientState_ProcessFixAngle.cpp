@@ -9,5 +9,5 @@
 MAKE_HOOK(ClientState_ProcessFixAngle, S::ClientState_ProcessFixAngle(), bool, __fastcall,
 	void* ecx, void* edx, SVC_FixAngle* msg)
 {
-	return Vars::Visuals::PreventForcedAngles.Value ? false : Hook.Original<FN>()(ecx, edx, msg);
+	return Vars::Visuals::Removals::AngleForcing.Value ? false : Hook.Original<FN>()(ecx, edx, msg);
 }

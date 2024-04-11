@@ -17,8 +17,6 @@ class CTickshiftHandler
 	void MoveMain(float accumulated_extra_samples, bool bFinalTick);
 
 	bool bSpeedhack = false;
-	int iNextPassiveTick = 0;
-	int iTickRate = 0;
 	bool bGoalReached = true;
 
 public:

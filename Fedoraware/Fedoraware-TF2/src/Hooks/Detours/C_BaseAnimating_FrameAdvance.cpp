@@ -7,7 +7,7 @@ MAKE_HOOK(C_BaseAnimating_FrameAdvance, S::CBaseAnimating_FrameAdvance(), float,
 {
 	const auto pEntity = static_cast<CBaseEntity*>(ecx);
 
-	if (!Vars::Visuals::RemoveInterpolation.Value || pEntity == g_EntityCache.GetLocal())
+	if (!Vars::Visuals::Removals::Interpolation.Value || pEntity == g_EntityCache.GetLocal())
 		return Hook.Original<FN>()(ecx, edx, flInterval);
 
 	if (pEntity && pEntity->IsPlayer())

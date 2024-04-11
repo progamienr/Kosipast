@@ -15,34 +15,22 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 	static const auto dwHudScopeShouldDraw = S::HudScopeShouldDraw();
 	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
-	//static std::map<void*, bool> retaddrs;
-
-	//if (!retaddrs.contains(retad))
-	//{
-	//	retaddrs[retad] = true;
-	//	I::CVars->ConsolePrintf("%p\n", retad);
-	//}
+	auto GetOuter = [&ecx]() -> CBaseEntity*
+		{
+			static const auto dwShared = g_NetVars.GetNetVar("CTFPlayer", "m_Shared");
+			static const auto dwBombHeadStage = g_NetVars.GetNetVar("CTFPlayer", "m_nHalloweenBombHeadStage");
+			static const auto dwOff = (dwBombHeadStage - dwShared) + 0x4;
+			return *reinterpret_cast<CBaseEntity**>(reinterpret_cast<DWORD>(ecx) + dwOff);
+		};
 
 	if (nCond == TF_COND_ZOOMED)
 	{
-		if (dwRetAddr == dwPlayerShouldDraw ||
-			dwRetAddr == dwWearableShouldDraw ||
-			Vars::Visuals::RemoveScope.Value && dwRetAddr == dwHudScopeShouldDraw)
-		{
+		if (dwRetAddr == dwPlayerShouldDraw || dwRetAddr == dwWearableShouldDraw || Vars::Visuals::Removals::Scope.Value && dwRetAddr == dwHudScopeShouldDraw)
 			return false;
-		}
 	}
 
-	auto GetOuter = [&ecx]() -> CBaseEntity*
-	{
-		static const auto dwShared = g_NetVars.get_offset("DT_TFPlayer", "m_Shared");
-		static const auto dwBombHeadStage = g_NetVars.get_offset("DT_TFPlayer", "m_Shared", "m_nHalloweenBombHeadStage");
-		static const auto dwOff = (dwBombHeadStage - dwShared) + 0x4;
-		return *reinterpret_cast<CBaseEntity**>(reinterpret_cast<DWORD>(ecx) + dwOff);
-	};
-
 	// Compare team's, removing team's taunt is useless
-	if (nCond == TF_COND_TAUNTING && Vars::Visuals::RemoveTaunts.Value)
+	if (nCond == TF_COND_TAUNTING && Vars::Visuals::Removals::Taunts.Value)
 	{
 		const auto& pLocal = g_EntityCache.GetLocal();
 		const auto& pEntity = GetOuter();
@@ -51,10 +39,10 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 	}
 
 	// Just compare entity ptr's, filtering out local is enough. Also prevents T pose.
-	if (nCond == TF_COND_DISGUISED && Vars::Visuals::RemoveDisguises.Value && g_EntityCache.GetLocal() != GetOuter())
+	if (nCond == TF_COND_DISGUISED && Vars::Visuals::Removals::Disguises.Value && g_EntityCache.GetLocal() != GetOuter())
 		return false;
 
-	if (nCond == TF_COND_HALLOWEEN_KART && Vars::Misc::KartControl.Value && !G::AnimateKart && g_EntityCache.GetLocal() == GetOuter())
+	if (nCond == TF_COND_HALLOWEEN_KART && Vars::Misc::Automation::KartControl.Value && !G::AnimateKart && g_EntityCache.GetLocal() == GetOuter())
 		return false;
 
 	return Hook.Original<FN>()(ecx, edx, nCond);

@@ -3,7 +3,7 @@
 MAKE_HOOK(CHudCrosshair_GetDrawPosition, S::CHudCrosshair_GetDrawPosition(), void, __cdecl,
 	float* pX, float* pY, bool* pbBehindCamera, Vec3 angleCrosshairOffset)
 {
-	if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
+	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(pX, pY, pbBehindCamera, angleCrosshairOffset);
 
 	const auto& pLocal = g_EntityCache.GetLocal();
@@ -37,7 +37,7 @@ MAKE_HOOK(CHudCrosshair_GetDrawPosition, S::CHudCrosshair_GetDrawPosition(), voi
 		}
 	}
 
-	if (Vars::Visuals::CrosshairAimPos.Value &&
+	if (Vars::Visuals::Viewmodel::CrosshairAim.Value &&
 		pLocal->IsAlive())
 	{
 		static Vec3 vPos = {};

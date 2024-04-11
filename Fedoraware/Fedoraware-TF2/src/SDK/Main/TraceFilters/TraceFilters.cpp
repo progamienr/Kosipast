@@ -12,7 +12,7 @@ bool CTraceFilterHitscan::ShouldHitEntity(void* pEntityHandle, int nContentsMask
 
 	const int iTargetTeam = pEntity->m_iTeamNum(), iLocalTeam = pLocal ? pLocal->m_iTeamNum() : iTargetTeam;
 	bool bSniperRifle = false;
-	if (pLocal && pLocal == pSkip)
+	if (pLocal && pLocal == pSkip && pWeapon)
 	{
 		switch (pWeapon->GetWeaponID())
 		{
@@ -59,7 +59,7 @@ bool CTraceFilterProjectile::ShouldHitEntity(void* pEntityHandle, int nContentsM
 	auto pWeapon = g_EntityCache.GetWeapon();
 
 	const int iTargetTeam = pEntity->m_iTeamNum(), iLocalTeam = pLocal ? pLocal->m_iTeamNum() : iTargetTeam;
-	const bool bCrossbow = pLocal && pLocal == pSkip ? pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW : false;
+	const bool bCrossbow = (pLocal && pLocal == pSkip && pWeapon) ? pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW : false;
 
 	switch (pEntity->GetClassID())
 	{

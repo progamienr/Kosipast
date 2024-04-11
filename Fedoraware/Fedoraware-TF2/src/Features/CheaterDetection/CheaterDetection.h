@@ -92,4 +92,4 @@ public:
 	void OnLoad();
 };
 
-ADD_FEATURE(CCheaterDetection, BadActors)
+ADD_FEATURE(CCheaterDetection, CheaterDetection)

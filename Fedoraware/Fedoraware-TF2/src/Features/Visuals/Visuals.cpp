@@ -8,6 +8,7 @@
 #include "../PacketManip/AntiAim/AntiAim.h"
 #include "../Simulation/ProjectileSimulation/ProjectileSimulation.h"
 #include "../CameraWindow/CameraWindow.h"
+#include "../NoSpread/NoSpreadHitscan/NoSpreadHitscan.h"
 #include "Materials/Materials.h"
 
 #include <ImGui/imgui_impl_win32.h>
@@ -25,32 +26,12 @@ namespace S
 
 void CVisuals::DrawAimbotFOV(CBaseEntity* pLocal)
 {
-	if (!Vars::Aimbot::Global::Active.Value || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsTaunting() || pLocal->IsStunned() || pLocal->IsInBumperKart())
+	if (!Vars::Aimbot::General::FOVCircle.Value || !Vars::Colors::FOVCircle.Value.a || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsTaunting() || pLocal->IsStunned() || pLocal->IsInBumperKart())
 		return;
 
-	float curFOV = 0.f;
-	switch (G::CurWeaponType)
-	{
-	case EWeaponType::HITSCAN:
-		if (Vars::Aimbot::Hitscan::Active.Value)
-			curFOV = Vars::Aimbot::Hitscan::AimFOV.Value;
-		break;
-	case EWeaponType::PROJECTILE:
-		if (Vars::Aimbot::Projectile::Active.Value)
-			curFOV = Vars::Aimbot::Projectile::AimFOV.Value;
-		break;
-	case EWeaponType::MELEE:
-		if (Vars::Aimbot::Melee::Active.Value)
-			curFOV = Vars::Aimbot::Melee::AimFOV.Value;
-	}
-
-	//Current Active Aimbot FOV
-	if (curFOV)
-	{
-		const float flR = tanf(DEG2RAD(curFOV) / 2.0f) / tanf(DEG2RAD(pLocal->m_iFOV()) / 2.0f) * g_ScreenSize.w;
-		const Color_t clr = Vars::Colors::FOVCircle.Value;
-		g_Draw.LineCircle(g_ScreenSize.w / 2, g_ScreenSize.h / 2, flR, 68, clr);
-	}
+	const float flR = tanf(DEG2RAD(Vars::Aimbot::General::AimFOV.Value) / 2.0f) / tanf(DEG2RAD(pLocal->m_iFOV()) / 2.0f) * g_ScreenSize.w;
+	const Color_t clr = Vars::Colors::FOVCircle.Value;
+	g_Draw.LineCircle(g_ScreenSize.w / 2, g_ScreenSize.h / 2, flR, 68, clr);
 }
 
 void CVisuals::DrawTickbaseText()
@@ -68,9 +49,9 @@ void CVisuals::DrawTickbaseText()
 	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 	const int offset = 7 + 12 * Vars::Menu::DPI.Value;
 
-	g_Draw.String(fFont, dtPos.x, dtPos.y + 2, Vars::Menu::Theme::Active.Value, ALIGN_TOP, L"Ticks %d / %d", iTicks, G::MaxShift);
+	g_Draw.String(fFont, dtPos.x, dtPos.y + 2, Vars::Menu::Theme::Active.Value, ALIGN_TOP, "Ticks %d / %d", iTicks, G::MaxShift);
 	if (G::WaitForShift)
-		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall + offset, Vars::Menu::Theme::Active.Value, ALIGN_TOP, L"Not Ready");
+		g_Draw.String(fFont, dtPos.x, dtPos.y + fFont.nTall + offset, Vars::Menu::Theme::Active.Value, ALIGN_TOP, "Not Ready");
 }
 void CVisuals::DrawTickbaseBars()
 {
@@ -104,38 +85,8 @@ void CVisuals::DrawTickbaseBars()
 	}
 }
 
-void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
+void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal)
 {
-	if (!(Vars::Menu::Indicators.Value & (1 << 4)) || !pLocal->IsAlive())
-		return;
-
-	int x = Vars::Menu::ConditionsDisplay.Value.x;
-	int y = Vars::Menu::ConditionsDisplay.Value.y + 8;
-	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
-
-	EAlign align = ALIGN_TOP;
-	if (x <= (100 + 50 * Vars::Menu::DPI.Value))
-	{
-		x -= 42 * Vars::Menu::DPI.Value;
-		align = ALIGN_TOPLEFT;
-	}
-	else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
-	{
-		x += 42 * Vars::Menu::DPI.Value;
-		align = ALIGN_TOPRIGHT;
-	}
-
-	std::vector<std::wstring> conditionsVec = F::LocalConditions.GetPlayerConditions(pLocal);
-
-	int offset = 0;
-	for (const std::wstring& cond : conditionsVec)
-	{
-		g_Draw.String(fFont, x, y + offset, Vars::Menu::Theme::Active.Value, align, cond.data());
-		offset += fFont.nTall + 1;
-	}
-}
-
-void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 	if (!(Vars::Menu::Indicators.Value & (1 << 3)) || !pLocal || !pLocal->IsAlive())
 		return;
 
@@ -185,19 +136,86 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal) {
 		else
 			g_Draw.String(fFont, x, y, Vars::Menu::Theme::Active.Value, align, "In %.0f, Out %.0f ms", flLatencyIn, flLatencyOut);
 	}
-	g_Draw.String(fFont, x, y + fFont.nTall + 1, Vars::Menu::Theme::Active.Value, align, "Scoreboard %d ms", iLatencyScoreBoard);
+	g_Draw.String(fFont, x, y += fFont.nTall + 1, Vars::Menu::Theme::Active.Value, align, "Scoreboard %d ms", iLatencyScoreBoard);
 	if (Vars::Debug::Info.Value)
 	{
-		g_Draw.String(fFont, x, y + fFont.nTall * 3, { 255, 255, 255, 255 }, align, "iTickCount %i (%i, %i, %i)", F::Backtrack.iTickCount, TIME_TO_TICKS(F::Backtrack.GetReal()), TIME_TO_TICKS(flLatencyIn / 1000), TIME_TO_TICKS(flLatencyOut / 1000));
-		g_Draw.String(fFont, x, y + fFont.nTall * 4, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, align, "iTickCount %i (%i, %i, %i)", F::Backtrack.iTickCount, TIME_TO_TICKS(F::Backtrack.GetReal()), TIME_TO_TICKS(flLatencyIn / 1000), TIME_TO_TICKS(flLatencyOut / 1000));
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, align, "G::AnticipatedChoke %i", G::AnticipatedChoke);
 	}
+}
+
+void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
+{
+	if (!(Vars::Menu::Indicators.Value & (1 << 4)) || !pLocal->IsAlive())
+		return;
+
+	int x = Vars::Menu::ConditionsDisplay.Value.x;
+	int y = Vars::Menu::ConditionsDisplay.Value.y + 8;
+	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
+
+	EAlign align = ALIGN_TOP;
+	if (x <= (100 + 50 * Vars::Menu::DPI.Value))
+	{
+		x -= 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPLEFT;
+	}
+	else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
+	{
+		x += 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPRIGHT;
+	}
+
+	std::vector<std::wstring> conditionsVec = F::LocalConditions.GetPlayerConditions(pLocal);
+
+	int offset = 0;
+	for (const std::wstring& cond : conditionsVec)
+	{
+		g_Draw.String(fFont, x, y + offset, Vars::Menu::Theme::Active.Value, align, cond.data());
+		offset += fFont.nTall + 1;
+	}
+}
+
+void CVisuals::DrawSeedPrediction(CBaseEntity* pLocal)
+{
+	if (!(Vars::Menu::Indicators.Value & (1 << 5)) || !pLocal || !pLocal->IsAlive() || !Vars::Aimbot::General::NoSpread.Value)
+		return;
+
+	if (!Vars::Debug::Info.Value)
+	{
+		const auto& pWeapon = g_EntityCache.GetWeapon();
+		if (!pWeapon || !F::NoSpreadHitscan.ShouldRun(pLocal, pWeapon))
+			return;
+	}
+
+	int x = Vars::Menu::SeedPredictionDisplay.Value.x;
+	int y = Vars::Menu::SeedPredictionDisplay.Value.y + 8;
+	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
+
+	EAlign align = ALIGN_TOP;
+	if (x <= (100 + 50 * Vars::Menu::DPI.Value))
+	{
+		x -= 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPLEFT;
+	}
+	else if (x >= g_ScreenSize.w - (100 + 50 * Vars::Menu::DPI.Value))
+	{
+		x += 42 * Vars::Menu::DPI.Value;
+		align = ALIGN_TOPRIGHT;
+	}
+
+	const auto& cColor = F::NoSpreadHitscan.bSynced ? Vars::Menu::Theme::Active.Value : Vars::Menu::Theme::Inactive.Value;
+
+	g_Draw.String(fFont, x, y, cColor, align, std::format("Uptime {}", F::NoSpreadHitscan.GetFormat(F::NoSpreadHitscan.flServerTime)).c_str());
+	g_Draw.String(fFont, x, y += fFont.nTall + 1, cColor, align, std::format("Mantissa step {}", F::NoSpreadHitscan.flMantissaStep).c_str());
+	if (Vars::Debug::Info.Value)
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, cColor, align, std::format("Seed {}", F::NoSpreadHitscan.iSeed).c_str());
 }
 
 void CVisuals::ProjectileTrace(const bool bQuick)
 {
 	F::CameraWindow.ShouldDraw = false;
 
-	if (bQuick ? !Vars::Visuals::ProjectileTrajectory.Value : !Vars::Visuals::TrajectoryOnShot.Value)
+	if (bQuick ? !Vars::Visuals::Simulation::ProjectileTrajectory.Value : !Vars::Visuals::Simulation::TrajectoryOnShot.Value)
 		return;
 
 	const auto& pLocal = g_EntityCache.GetLocal();
@@ -245,7 +263,7 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 		}
 	}
 
-	projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
+	projInfo.PredictionLines.push_back({ trace.vEndPos, Math::GetRotatedPosition(trace.vEndPos, Math::VelocityToAngles(F::ProjSim.GetVelocity() * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::Simulation::SeparatorLength.Value) });
 	
 	if (bQuick)
 	{
@@ -253,7 +271,7 @@ void CVisuals::ProjectileTrace(const bool bQuick)
 		if (Vars::Colors::ClippedColor.Value.a)
 			DrawSimLine(projInfo.PredictionLines, Vars::Colors::ClippedColor.Value, false, true);
 
-		if (!I::EngineVGui->IsGameUIVisible() && Vars::Visuals::ProjectileCamera.Value && pLocal->m_vecOrigin().DistTo(trace.vEndPos) > 500.f)
+		if (!I::EngineVGui->IsGameUIVisible() && Vars::Visuals::Simulation::ProjectileCamera.Value && pLocal->m_vecOrigin().DistTo(trace.vEndPos) > 500.f)
 		{
 			auto vAngles = Math::CalcAngle(trace.vStartPos, trace.vEndPos);
 			Vec3 vForward = {}; Math::AngleVectors(vAngles, &vForward);
@@ -276,7 +294,7 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 	if (!pLocal->IsAlive() || pLocal->IsAGhost() || !I::Input->CAM_IsThirdPerson())
 		return;
 
-	if (Vars::AntiHack::AntiAim::Active.Value && Vars::Debug::AntiAimLines.Value)
+	if (F::AntiAim.AntiAimOn() && Vars::Debug::AntiAimLines.Value)
 	{
 		static constexpr Color_t realColour = { 0, 255, 0, 255 };
 		static constexpr Color_t fakeColour = { 255, 0, 0, 255 };
@@ -301,24 +319,24 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 	// Debug info
 	if (Vars::Debug::Info.Value)
 	{
-		int yoffset = 10, xoffset = 10;
+		int x = 10, y = 10;
 		const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
 
-		g_Draw.String(fFont, xoffset, yoffset, Utils::Rainbow(), ALIGN_TOPLEFT, "Fedoraware");
-		{
-			Vec3 vec = pLocal->m_vecOrigin();
-			g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Origin: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
-		}
-		{
-			Vec3 vec = pLocal->m_vecVelocity();
-			g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: (%.3f, %.3f, %.3f)", vec.x, vec.y, vec.z);
-		}
+		g_Draw.String(fFont, x, y, Utils::Rainbow(), ALIGN_TOPLEFT, "Fedoraware");
+
+		Vec3 vOrigin = pLocal->m_vecOrigin();
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Origin: (%.3f, %.3f, %.3f)", vOrigin.x, vOrigin.y, vOrigin.z);
+
+		Vec3 vVelocity = pLocal->m_vecVelocity();
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: (%.3f, %.3f, %.3f)", vVelocity.x, vVelocity.y, vVelocity.z);
 
 		auto pCmd = G::LastUserCmd;
 		if (!pCmd)
 			return;
-		g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
-		g_Draw.String(fFont, xoffset, yoffset += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd buttons: %i", pCmd->buttons);
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd buttons: %i", pCmd->buttons);
+
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "RoundState: %i", Utils::GetRoundState());
 	}
 }
 
@@ -386,7 +404,7 @@ void CVisuals::DrawSimLine(std::deque<std::pair<Vec3, Vec3>>& Line, Color_t Colo
 			const auto& vStart = Line[i - 1].first;
 			const auto& vRotate = Line[i - 1].second;
 			const auto& vEnd = Line[i].first;
-			if (((Line.size() - i) % Vars::Visuals::SeperatorSpacing.Value) == 0)
+			if (((Line.size() - i) % Vars::Visuals::Simulation::SeparatorSpacing.Value) == 0)
 				RenderLine(vStart, vRotate, Color);
 			RenderLine(vStart, vEnd, Color);
 		}
@@ -400,7 +418,7 @@ void CVisuals::DrawSimLines()
 		if (Line.m_flTime >= 0.f && Line.m_flTime < I::GlobalVars->curtime)
 			continue;
 
-		DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::SimSeperators.Value, Line.m_bZBuffer, Line.m_flTime);
+		DrawSimLine(Line.m_line, Line.m_color, Vars::Visuals::Simulation::Separators.Value, Line.m_bZBuffer, Line.m_flTime);
 	}
 }
 
@@ -435,12 +453,12 @@ void CVisuals::RevealBoxes()
 void CVisuals::DrawServerHitboxes()
 {
 	static int iOldTick = I::GlobalVars->tickcount;
-	if (iOldTick == I::GlobalVars->tickcount) { return; }
+	if (iOldTick == I::GlobalVars->tickcount)
+		return;
 	iOldTick = I::GlobalVars->tickcount;
-	// draw our serverside hitbox on local servers, used to test fakelag & antiaim
+
 	if (I::Input->CAM_IsThirdPerson() && Vars::Debug::ServerHitbox.Value)
 	{
-		//	i have no idea what this is
 		using GetServerAnimating_t = void* (*)(int);
 		static auto GetServerAnimating = S::GetServerAnimating.As<GetServerAnimating_t>();
 
@@ -452,7 +470,7 @@ void CVisuals::DrawServerHitboxes()
 		{
 			void* server_animating = GetServerAnimating(pLocal->GetIndex());
 			if (server_animating)
-				DrawServerHitboxes(server_animating, I::GlobalVars->interval_per_tick, true);
+				DrawServerHitboxes(server_animating, TICK_INTERVAL, true);
 		}
 	}
 }
@@ -488,7 +506,7 @@ void CVisuals::FOV(CViewSetup* pView)
 	{
 		pLocal->m_iFOV() = pView->fov;
 
-		const int fov = pLocal->IsScoped() ? Vars::Visuals::ZoomFieldOfView.Value : Vars::Visuals::FieldOfView.Value;
+		const int fov = pLocal->IsScoped() ? Vars::Visuals::UI::ZoomFieldOfView.Value : Vars::Visuals::UI::FieldOfView.Value;
 		if (!fov)
 			return;
 
@@ -503,14 +521,7 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 	if (!pLocal || !pLocal->IsAlive())
 		return I::Input->CAM_ToFirstPerson();
 	
-	// Toggle key
-	if (!I::EngineVGui->IsGameUIVisible() && !I::MatSystemSurface->IsCursorVisible() && Vars::Visuals::ThirdPerson::Key.Value)
-	{
-		if (F::KeyHandler.Pressed(Vars::Visuals::ThirdPerson::Key.Value))
-			Vars::Visuals::ThirdPerson::Active.Value = !Vars::Visuals::ThirdPerson::Active.Value;
-	}
-
-	const bool bNoZoom = (!Vars::Visuals::RemoveScope.Value || Vars::Visuals::ZoomFieldOfView.Value < 70) && pLocal->IsScoped();
+	const bool bNoZoom = (!Vars::Visuals::Removals::Scope.Value || Vars::Visuals::UI::ZoomFieldOfView.Value < 70) && pLocal->IsScoped();
 	const bool bForce = pLocal->IsTaunting() || pLocal->IsAGhost() || pLocal->IsInBumperKart() || pLocal->InCond(TF_COND_HALLOWEEN_THRILLER);
 
 	//if (bForce)
@@ -534,7 +545,7 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 
 		const Vec3 viewDiff = pView->origin - pLocal->GetEyePosition();
 		CGameTrace Trace = {}; CTraceFilterWorldAndPropsOnly Filter = {};
-		Utils::TraceHull(pView->origin - viewDiff, pView->origin + offset - viewDiff, { -16.0f, -16.0f, -16.0f }, { 16.0f, 16.0f, 16.0f }, MASK_SOLID, & Filter, & Trace);
+		Utils::TraceHull(pView->origin - viewDiff, pView->origin + offset - viewDiff, { -14.0f, -14.0f, -14.0f }, { 14.0f, 14.0f, 14.0f }, MASK_SOLID, & Filter, & Trace);
 
 		pView->origin += offset * Trace.flFraction - viewDiff;
 	}
@@ -542,7 +553,7 @@ void CVisuals::ThirdPerson(CViewSetup* pView)
 
 bool CVisuals::RemoveScope(int nPanel)
 {
-	if (!Vars::Visuals::RemoveScope.Value) { return false; }
+	if (!Vars::Visuals::Removals::Scope.Value) { return false; }
 
 	if (!m_nHudZoom && Hash::IsHudScope(I::VGuiPanel->GetName(nPanel)))
 		m_nHudZoom = nPanel;
@@ -552,7 +563,7 @@ bool CVisuals::RemoveScope(int nPanel)
 
 void CVisuals::DrawSightlines()
 {
-	if (Vars::Visuals::SniperSightlines.Value)
+	if (Vars::Visuals::UI::SniperSightlines.Value)
 	{
 		if (!m_SightLines.empty())
 		{
@@ -567,7 +578,7 @@ void CVisuals::DrawSightlines()
 
 void CVisuals::FillSightlines()
 {
-	if (Vars::Visuals::SniperSightlines.Value)
+	if (Vars::Visuals::UI::SniperSightlines.Value)
 	{
 		m_SightLines = {}; // should get rid of residual lines
 
@@ -595,28 +606,22 @@ void CVisuals::FillSightlines()
 			}
 
 			Vec3 vShootPos = pEnemy->GetAbsOrigin() + pEnemy->GetViewOffset();
-			if (!mDots.contains(pEnemy))
-			{
-				CTraceFilterHitscan filter{};
-				CGameTrace trace{};
+			Vec3 vForward; Math::AngleVectors(pEnemy->GetEyeAngles(), &vForward);
+			Vec3 vShootEnd = mDots.contains(pEnemy) ? mDots[pEnemy] : vShootPos + (vForward * 8192.f);
 
-				Vec3 vForward; Math::AngleVectors(pEnemy->GetEyeAngles(), &vForward);
-				Vec3 vShootEnd = vShootPos + (vForward * 8192.f);
+			CTraceFilterHitscan filter{};
+			CGameTrace trace{};
+			filter.pSkip = pEnemy;
+			Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
 
-				filter.pSkip = pEnemy;
-				Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
-
-				m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
-			}
-			else
-				m_SightLines[pEnemy->GetIndex()] = { vShootPos, mDots[pEnemy], GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
+			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
 		}
 	}
 }
 
 void CVisuals::PickupTimers()
 {
-	if (!Vars::Visuals::PickupTimers.Value)
+	if (!Vars::Visuals::UI::PickupTimers.Value)
 		return;
 
 	for (auto pickupData = PickupDatas.begin(); pickupData != PickupDatas.end();)
@@ -725,13 +730,13 @@ void ApplyModulation(const Color_t& clr, bool bSky = false)
 		if (!bSky ? !sGroup._Starts_with("World") : !sGroup._Starts_with("SkyBox"))
 			continue;
 
-		pMaterial->ColorModulate(Color::TOFLOAT(clr.r), Color::TOFLOAT(clr.g), Color::TOFLOAT(clr.b));
+		pMaterial->ColorModulate(float(clr.r) / 255.f, float(clr.g) / 255.f, float(clr.b) / 255.f);
 	}
 }
 
 void CVisuals::Modulate()
 {
-	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
+	const bool bScreenshot = Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 	const bool bWorldModulation = Vars::Visuals::World::Modulations.Value & 1 << 0 && !bScreenshot;
 	const bool bSkyModulation = Vars::Visuals::World::Modulations.Value & 1 << 1 && !bScreenshot;
 
@@ -789,10 +794,11 @@ void CVisuals::SkyboxChanger()
 {
 	using LoadNamedSkysFn = bool(_cdecl*)(const char*);
 	static auto fnLoadSkys = S::LoadSkys.As<LoadNamedSkysFn>();
-	const bool bScreenshot = Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
+	const bool bScreenshot = Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 
+	static auto sv_skyname = g_ConVars.FindVar("sv_skyname");
 	if (Vars::Visuals::World::SkyboxChanger.Value != "Off" && !bScreenshot)
 		fnLoadSkys(Vars::Visuals::World::SkyboxChanger.Value.c_str());
-	else if (auto sv_skyname = I::Cvar->FindVar("sv_skyname"))
+	else if (sv_skyname)
 		fnLoadSkys(sv_skyname->GetString());
 }

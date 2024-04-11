@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "../../../Utils/Color/Color.h"
+#include "../../../Utils/Types/Types.h"
 
 enum types_t
 {

@@ -22,14 +22,12 @@
     <ClCompile Include="src\Features\Aimbot\AimbotHitscan\AimbotHitscan.cpp" />
     <ClCompile Include="src\Features\Aimbot\AimbotMelee\AimbotMelee.cpp" />
     <ClCompile Include="src\Features\Aimbot\AimbotProjectile\AimbotProjectile.cpp" />
-    <ClCompile Include="src\Features\AntiHack\CheaterDetection.cpp" />
+    <ClCompile Include="src\Features\CheaterDetection\CheaterDetection.cpp" />
     <ClCompile Include="src\Features\AutoQueue\AutoQueue.cpp" />
-    <ClCompile Include="src\Features\Auto\Auto.cpp" />
-    <ClCompile Include="src\Features\Auto\AutoBlast\AutoBlast.cpp" />
-    <ClCompile Include="src\Features\Auto\AutoDetonate\AutoDetonate.cpp" />
-    <ClCompile Include="src\Features\Auto\AutoGlobal\AutoGlobal.cpp" />
-    <ClCompile Include="src\Features\Auto\AutoJump\AutoJump.cpp" />
-    <ClCompile Include="src\Features\Auto\AutoUber\AutoUber.cpp" />
+    <ClCompile Include="src\Features\Aimbot\AutoAirblast\AutoAirblast.cpp" />
+    <ClCompile Include="src\Features\Aimbot\AutoDetonate\AutoDetonate.cpp" />
+    <ClCompile Include="src\Features\Aimbot\AutoRocketJump\AutoRocketJump.cpp" />
+    <ClCompile Include="src\Features\Aimbot\AutoUber\AutoUber.cpp" />
     <ClCompile Include="src\Features\Backtrack\Backtrack.cpp" />
     <ClCompile Include="src\Features\Commands\Commands.cpp" />
     <ClCompile Include="src\Features\Menu\ConfigManager\ConfigManager.cpp" />
@@ -168,8 +166,13 @@
     <ClCompile Include="src\Hooks\Detours\CRendering3dView_EnableWorldFog.cpp" />
     <ClCompile Include="src\Hooks\Detours\CSkyboxView_Enable3dSkyboxFog.cpp" />
     <ClCompile Include="src\Features\Menu\Fonts\CascadiaMono.h" />
-    <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_InterpolateServerEntities.cpp" />
+    <ClCompile Include="src\Features\Menu\Conditions\Conditions.cpp" />
+    <ClCompile Include="src\Features\NoSpread\NoSpreadProjectile\NoSpreadProjectile.cpp" />
+    <ClCompile Include="src\Features\NoSpread\NoSpreadHitscan\NoSpreadHitscan.cpp" />
+    <ClCompile Include="src\Hooks\Detours\ViewRender_LevelShutdown.cpp" />
+    <ClCompile Include="src\Hooks\Detours\CStaticPropMgr_DrawStaticProps.cpp" />
+    <ClCompile Include="src\Features\CritHack\CritHack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ImGui\imconfig.h" />
@@ -242,14 +245,12 @@
     <ClInclude Include="src\Features\Aimbot\AimbotHitscan\AimbotHitscan.h" />
     <ClInclude Include="src\Features\Aimbot\AimbotMelee\AimbotMelee.h" />
     <ClInclude Include="src\Features\Aimbot\AimbotProjectile\AimbotProjectile.h" />
-    <ClInclude Include="src\Features\AntiHack\CheaterDetection.h" />
+    <ClInclude Include="src\Features\CheaterDetection\CheaterDetection.h" />
     <ClInclude Include="src\Features\AutoQueue\AutoQueue.h" />
-    <ClInclude Include="src\Features\Auto\Auto.h" />
-    <ClInclude Include="src\Features\Auto\AutoBlast\AutoBlast.h" />
-    <ClInclude Include="src\Features\Auto\AutoDetonate\AutoDetonate.h" />
-    <ClInclude Include="src\Features\Auto\AutoGlobal\AutoGlobal.h" />
-    <ClInclude Include="src\Features\Auto\AutoJump\AutoJump.h" />
-    <ClInclude Include="src\Features\Auto\AutoUber\AutoUber.h" />
+    <ClInclude Include="src\Features\Aimbot\AutoAirblast\AutoAirblast.h" />
+    <ClInclude Include="src\Features\Aimbot\AutoDetonate\AutoDetonate.h" />
+    <ClInclude Include="src\Features\Aimbot\AutoRocketJump\AutoRocketJump.h" />
+    <ClInclude Include="src\Features\Aimbot\AutoUber\AutoUber.h" />
     <ClInclude Include="src\Features\Backtrack\Backtrack.h" />
     <ClInclude Include="src\Features\Color.h" />
     <ClInclude Include="src\Features\Commands\Commands.h" />
@@ -360,7 +361,7 @@
     <ClInclude Include="src\SDK\SDK.h" />
     <ClInclude Include="src\SDK\Signatures\Signatures.h" />
     <ClInclude Include="src\Utils\Base64\Base64.hpp" />
-    <ClInclude Include="src\Utils\Color\Color.h" />
+    <ClInclude Include="src\Utils\Types\Types.h" />
     <ClInclude Include="src\Utils\CRC\CRC.h" />
     <ClInclude Include="src\Utils\Events\Events.h" />
     <ClInclude Include="src\Utils\Hash\FNV1A.h" />
@@ -385,6 +386,9 @@
     <ClInclude Include="src\Features\CameraWindow\CameraWindow.h" />
     <ClInclude Include="src\Features\Menu\Playerlist\PlayerCore.h" />
     <ClInclude Include="src\SDK\Interfaces\IStudioRender\IStudioRender.h" />
+    <ClInclude Include="src\Features\Menu\Conditions\Conditions.h" />
+    <ClInclude Include="src\Features\NoSpread\NoSpreadProjectile\NoSpreadProjectile.h" />
+    <ClInclude Include="src\Features\NoSpread\NoSpreadHitscan\NoSpreadHitscan.h" />
     <ClInclude Include="src\Features\CritHack\CritHack.h" />
   </ItemGroup>
   <ItemGroup>

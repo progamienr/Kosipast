@@ -24,7 +24,8 @@ MAKE_HOOK(C_BaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void, __
 			const float flDelta = newRecord.m_flSimulationTime - oldRecord.m_flSimulationTime;
 			const Vec3 vDelta = newRecord.m_vecOrigin - oldRecord.m_vecOrigin;
 
-			const float flDist = powf(I::Cvar->FindVar("sv_lagcompensation_teleport_dist")->GetFloat(), 2.f) * TIME_TO_TICKS(flDelta);
+			static auto sv_lagcompensation_teleport_dist = g_ConVars.FindVar("sv_lagcompensation_teleport_dist");
+			const float flDist = powf(sv_lagcompensation_teleport_dist ? sv_lagcompensation_teleport_dist->GetFloat() : 64.f, 2.f) * TIME_TO_TICKS(flDelta);
 			if (flDelta > 0.f && vDelta.Length2DSqr() < flDist)
 			{
 				Vec3 vOldOrigin = oldRecord.m_vecOrigin;

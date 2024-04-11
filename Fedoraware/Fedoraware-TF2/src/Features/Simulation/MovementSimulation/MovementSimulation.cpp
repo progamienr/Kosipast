@@ -211,7 +211,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 	bool bCalculated = cancelStrafe ? false : StrafePrediction(playerStorageOut, iStrafeSamples);
 
 	// really hope this doesn't work like shit
-	if (useHitchance && bCalculated && !pPlayer->m_vecVelocity().IsZero() && Vars::Aimbot::Projectile::StrafePredictionHitchance.Value)
+	if (useHitchance && bCalculated && !pPlayer->m_vecVelocity().IsZero() && Vars::Aimbot::Projectile::Hitchance.Value)
 	{
 		const auto& mVelocityRecords = mVelocities[playerStorageOut.m_pPlayer->GetIndex()];
 		const int iSamples = mVelocityRecords.size();
@@ -240,9 +240,9 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer, PlayerStorage& player
 			}
 		}
 
-		if (flCurrentChance < Vars::Aimbot::Projectile::StrafePredictionHitchance.Value / 100)
+		if (flCurrentChance < Vars::Aimbot::Projectile::Hitchance.Value / 100)
 		{
-			Utils::ConLog("MovementSimulation", std::format("Hitchance ({}% < {}%)", flCurrentChance * 100, Vars::Aimbot::Projectile::StrafePredictionHitchance.Value).c_str(), { 125, 255, 83, 255 }, Vars::Debug::Logging.Value);
+			Utils::ConLog("MovementSimulation", std::format("Hitchance ({}% < {}%)", flCurrentChance * 100, Vars::Aimbot::Projectile::Hitchance.Value).c_str(), { 125, 255, 83, 255 }, Vars::Debug::Logging.Value);
 
 			playerStorageOut.m_bFailed = true;
 			return false;
@@ -354,7 +354,7 @@ void CMovementSimulation::RunTick(PlayerStorage& playerStorage)
 	if (playerStorage.m_bFailed || !playerStorage.m_pPlayer || !playerStorage.m_pPlayer->IsPlayer())
 		return;
 
-	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::SeperatorLength.Value) });
+	playerStorage.PredictionLines.push_back({ playerStorage.m_MoveData.m_vecOrigin, Math::GetRotatedPosition(playerStorage.m_MoveData.m_vecOrigin, Math::VelocityToAngles(playerStorage.m_MoveData.m_vecVelocity * Vec3(1, 1, 0)).Length2D() + 90, Vars::Visuals::Simulation::SeparatorLength.Value) });
 
 	//make sure frametime and prediction vars are right
 	I::Prediction->m_bInPrediction = true;

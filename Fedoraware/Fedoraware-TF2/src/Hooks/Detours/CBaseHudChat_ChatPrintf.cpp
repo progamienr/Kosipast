@@ -1,5 +1,4 @@
 #include "../Hooks.h"
-#include "../../Features/AntiHack/CheaterDetection.h"
 #include "../../Features/Visuals/Visuals.h"
 #include "../../Features/Menu/Playerlist/PlayerUtils.h"
 
@@ -35,16 +34,16 @@ MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pCh
 	 *	@https://www.unknowncheats.me/forum/team-fortress-2-a/488217-chat-flags-titles.html
 		i swear its not pasted i just used this as inspiration, credits myzarfin.
 	*/
-	if (iPlayerIndex && Vars::Misc::ChatTags.Value)
+	if (iPlayerIndex && Vars::Misc::Chat::Tags.Value)
 	{
 		std::string tag = "", color = "";
 		if (iPlayerIndex == I::EngineClient->GetLocalPlayer())
 			tag = "You", color = Vars::Colors::Local.Value.to_hex_alpha();
 		else if (g_EntityCache.IsFriend(iPlayerIndex))
-			tag = "Friend", color = F::PlayerUtils.vTags["Friend"].Color.to_hex_alpha();
+			tag = "Friend", color = F::PlayerUtils.mTags["Friend"].Color.to_hex_alpha();
 		else
 		{
-			std::string sTag; PriorityLabel plTag;
+			std::string sTag; PriorityLabel_t plTag;
 			if (F::PlayerUtils.GetSignificantTag(pi.friendsID, &sTag, &plTag, 0))
 				tag = sTag, color = plTag.Color.to_hex_alpha();
 		}

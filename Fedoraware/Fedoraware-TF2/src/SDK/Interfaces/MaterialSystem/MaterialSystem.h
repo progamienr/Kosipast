@@ -51,7 +51,7 @@ struct MaterialVideoMode_t
 {
 	int m_Width;
 	int m_Height;
-	ImageFormat m_Format;
+	EImageFormat m_Format;
 	int m_RefreshRate;
 };
 
@@ -108,7 +108,7 @@ public:
 	virtual void SpewDriverInfo() const = 0;
 	virtual void GetDXLevelDefaults(unsigned int& max_dxlevel, unsigned int& recommended_dxlevel) = 0;
 	virtual void GetBackBufferDimensions(int& width, int& height) const = 0;
-	virtual ImageFormat GetBackBufferFormat() const = 0;
+	virtual EImageFormat GetBackBufferFormat() const = 0;
 	virtual bool SupportsHDRMode(HDRType_t nHDRModede) = 0;
 	virtual bool AddView(void* hwnd) = 0;
 	virtual void RemoveView(void* hwnd) = 0;
@@ -159,13 +159,13 @@ public:
 	virtual void SetAsyncTextureLoadCache(void* hFileCache) = 0;
 	virtual ITexture* FindTexture(char const* pTextureName, const char* pTextureGroupName, bool complain = true, int nAdditionalCreationFlags = 0) = 0;
 	virtual bool IsTextureLoaded(char const* pTextureName) const = 0;
-	virtual ITexture* CreateProceduralTexture(const char* pTextureName, const char* pTextureGroupName, int w, int h, ImageFormat fmt, int nFlags) = 0;
+	virtual ITexture* CreateProceduralTexture(const char* pTextureName, const char* pTextureGroupName, int w, int h, EImageFormat fmt, int nFlags) = 0;
 	virtual void BeginRenderTargetAllocation() = 0;
 	virtual void EndRenderTargetAllocation() = 0;
-	virtual ITexture* CreateRenderTargetTexture(int w, int h, RenderTargetSizeMode_t sizeMode, ImageFormat	format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED) = 0;
-	virtual ITexture* CreateNamedRenderTargetTextureEx(const char* pRTName, int w, int h, RenderTargetSizeMode_t sizeMode, ImageFormat format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED, unsigned int textureFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, unsigned int renderTargetFlags = 0) = 0;
-	virtual ITexture* CreateNamedRenderTargetTexture(const char* pRTName, int w, int h, RenderTargetSizeMode_t sizeMode, ImageFormat format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED, bool bClampTexCoords = true, bool bAutoMipMap = false) = 0;
-	virtual ITexture* CreateNamedRenderTargetTextureEx2(const char* pRTName, int w, int h, RenderTargetSizeMode_t sizeMode, ImageFormat format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED, unsigned int textureFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, unsigned int renderTargetFlags = 0) = 0;
+	virtual ITexture* CreateRenderTargetTexture(int w, int h, RenderTargetSizeMode_t sizeMode, EImageFormat	format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED) = 0;
+	virtual ITexture* CreateNamedRenderTargetTextureEx(const char* pRTName, int w, int h, RenderTargetSizeMode_t sizeMode, EImageFormat format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED, unsigned int textureFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, unsigned int renderTargetFlags = 0) = 0;
+	virtual ITexture* CreateNamedRenderTargetTexture(const char* pRTName, int w, int h, RenderTargetSizeMode_t sizeMode, EImageFormat format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED, bool bClampTexCoords = true, bool bAutoMipMap = false) = 0;
+	virtual ITexture* CreateNamedRenderTargetTextureEx2(const char* pRTName, int w, int h, RenderTargetSizeMode_t sizeMode, EImageFormat format, MaterialRenderTargetDepth_t depth = MATERIAL_RT_DEPTH_SHARED, unsigned int textureFlags = TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, unsigned int renderTargetFlags = 0) = 0;
 	virtual void BeginLightmapAllocation() = 0;
 	virtual void EndLightmapAllocation() = 0;
 	virtual int AllocateLightmap(int width, int height, int offsetIntoLightmapPage[2], IMaterial* pMaterial) = 0;
@@ -182,14 +182,14 @@ public:
 	virtual void EndUpdateLightmaps(void) = 0;
 	virtual MaterialLock_t Lock() = 0;
 	virtual void Unlock(MaterialLock_t) = 0;
-	virtual ImageFormat GetShadowDepthTextureFormat() = 0;
+	virtual EImageFormat GetShadowDepthTextureFormat() = 0;
 	virtual bool SupportsFetch4(void) = 0;
 	virtual IMatRenderContext* CreateRenderContext(MaterialContextType_t type) = 0;
 	virtual IMatRenderContext* SetRenderContext(IMatRenderContext*) = 0;
 	virtual bool SupportsCSAAMode(int nNumSamples, int nQualityLevel) = 0;
 	virtual void RemoveModeChangeCallBack(ModeChangeCallbackFunc_t func) = 0;
 	virtual IMaterial* FindProceduralMaterial(const char* pMaterialName, const char* pTextureGroupName, KeyValues* pVMTKeyValues) = 0;
-	virtual ImageFormat GetNullTextureFormat() = 0;
+	virtual EImageFormat GetNullTextureFormat() = 0;
 	virtual void AddTextureAlias(const char* pAlias, const char* pRealName) = 0;
 	virtual void RemoveTextureAlias(const char* pAlias) = 0;
 	virtual int AllocateDynamicLightmap(int lightmapSize[2], int* pOutOffsetIntoPage, int frameID) = 0;
@@ -203,11 +203,11 @@ public:
 	virtual void SetRenderTargetFrameBufferSizeOverrides(int nWidth, int nHeight) = 0;
 	virtual void GetRenderTargetFrameBufferDimensions(int& nWidth, int& nHeight) = 0;
 	virtual char* GetDisplayDeviceName() const = 0;
-	virtual ITexture* CreateTextureFromBits(int w, int h, int mips, ImageFormat fmt, int srcBufferSize, byte* srcBits) = 0;
+	virtual ITexture* CreateTextureFromBits(int w, int h, int mips, EImageFormat fmt, int srcBufferSize, byte* srcBits) = 0;
 	virtual void OverrideRenderTargetAllocation(bool rtAlloc) = 0;
 	virtual ITextureCompositor* NewTextureCompositor(int w, int h, const char* pCompositeName, int nTeamNum, uint64 randomSeed, KeyValues* stageDesc, uint32 texCompositeCreateFlags = 0) = 0;
 	virtual void AsyncFindTexture(const char* pFilename, const char* pTextureGroupName, IAsyncTextureOperationReceiver* pRecipient, void* pExtraArgs, bool bComplain = true, int nAdditionalCreationFlags = 0) = 0;
-	virtual ITexture* CreateNamedTextureFromBitsEx(const char* pName, const char* pTextureGroupName, int w, int h, int mips, ImageFormat fmt, int srcBufferSize, byte* srcBits, int nFlags) = 0;
+	virtual ITexture* CreateNamedTextureFromBitsEx(const char* pName, const char* pTextureGroupName, int w, int h, int mips, EImageFormat fmt, int srcBufferSize, byte* srcBits, int nFlags) = 0;
 	virtual bool AddTextureCompositorTemplate(const char* pName, KeyValues* pTmplDesc, int nTexCompositeTemplateFlags = 0) = 0;
 	virtual bool VerifyTextureCompositorTemplates() = 0;
 };

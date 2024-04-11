@@ -5,5 +5,5 @@ MAKE_HOOK(ClientState_GetClientInterpAmount, S::ClientState_GetClientInterpAmoun
 	void* ecx, void* edx)
 {
 	G::LerpTime = Hook.Original<FN>()(ecx, edx);
-	return Vars::Visuals::RemoveInterpolation.Value ? 0.f : G::LerpTime;
+	return Vars::Visuals::Removals::Interpolation.Value ? 0.f : G::LerpTime;
 }

@@ -12,14 +12,14 @@ MAKE_HOOK(CSoundEmitterSystem_EmitSound, S::CSoundEmitterSystem_EmitSound(), voi
 		boost::algorithm::to_lower(soundName);
 
 		// Footsteps
-		if (Vars::Misc::SoundBlock.Value & (1 << 0))
+		if (Vars::Misc::Sound::Block.Value & (1 << 0))
 		{
 			if (soundName.find("footsteps") != std::string::npos)
 				return;
 		}
 
 		// Noisemaker
-		if (Vars::Misc::SoundBlock.Value & (1 << 1))
+		if (Vars::Misc::Sound::Block.Value & (1 << 1))
 		{
 			for (auto& sound : NOISEMAKER_SOUNDS)
 			{

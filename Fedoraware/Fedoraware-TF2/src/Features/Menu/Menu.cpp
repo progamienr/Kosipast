@@ -20,6 +20,7 @@
 
 #include "Components.hpp"
 #include "ConfigManager/ConfigManager.h"
+#include "Conditions/Conditions.h"
 #include "../CameraWindow/CameraWindow.h"
 #include "../Backtrack/Backtrack.h"
 
@@ -92,20 +93,43 @@ void CMenu::DrawMenu()
 	// Title Text
 	if (Vars::Menu::CheatName.Value != "")
 	{
-		PushFont(FontLarge);
-		const auto titleSize = CalcTextSize(Vars::Menu::CheatName.Value.c_str());
-		SetNextWindowSize({ std::min(titleSize.x + 26.f, mainWindowSize.x), 40.f });
+		PushFont(FontTitle);
+		const auto textSize = CalcTextSize(Vars::Menu::CheatName.Value.c_str());
+		SetNextWindowSize({ std::min(textSize.x + 26.f, mainWindowSize.x), 40.f });
 		SetNextWindowPos({ mainWindowPos.x, mainWindowPos.y - 48.f });
 		PushStyleVar(ImGuiStyleVar_WindowMinSize, { 40.f, 40.f });
 		if (Begin("TitleWindow", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing))
 		{
 			const auto windowPos = GetWindowPos();
-			GetWindowDrawList()->AddText(FontLarge, FontLarge->FontSize, { windowPos.x + 13.f, windowPos.y + 10.f }, Accent, Vars::Menu::CheatName.Value.c_str());
+			GetWindowDrawList()->AddText(FontTitle, FontTitle->FontSize, { windowPos.x + 13.f, windowPos.y + 10.f }, Accent, Vars::Menu::CheatName.Value.c_str());
 
 			End();
 		}
 		PopStyleVar();
 		PopFont();
+	}
+
+	// Condition Text
+	if (sCondition != "default")
+	{
+		const auto textSize = CalcTextSize(std::format("Editing for condition {}", sCondition).c_str());
+		SetNextWindowSize({ std::min(textSize.x + 56.f, mainWindowSize.x), 40.f });
+		SetNextWindowPos({ mainWindowPos.x, mainWindowPos.y + mainWindowSize.y + 8.f });
+		PushStyleVar(ImGuiStyleVar_WindowMinSize, { 40.f, 40.f });
+		if (Begin("TitleWindow", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing))
+		{
+			const auto windowPos = GetWindowPos();
+			const auto preSize = CalcTextSize("Editing for condition ");
+			GetWindowDrawList()->AddText(FontRegular, FontRegular->FontSize, { windowPos.x + 16.f, windowPos.y + 13.f }, Active, "Editing for condition ");
+			GetWindowDrawList()->AddText(FontRegular, FontRegular->FontSize, { windowPos.x + 16.f + preSize.x, windowPos.y + 13.f }, Accent, sCondition.c_str());
+
+			SetCursorPos({ textSize.x + 28, 11 });
+			if (IconButton(ICON_MD_CANCEL))
+				sCondition = "default";
+
+			End();
+		}
+		PopStyleVar();
 	}
 }
 
@@ -125,40 +149,42 @@ void CMenu::MenuAimbot()
 			TableNextColumn();
 			if (Section("Global"))
 			{
-				FColorPicker("Aimbot FOV circle", &Vars::Colors::FOVCircle.Value);
-				FToggle("Aimbot", &Vars::Aimbot::Global::Active.Value);
-				FToggle("Autoshoot", &Vars::Aimbot::Global::AutoShoot.Value, FToggle_Middle);
-				FKeybind("Aimbot key", Vars::Aimbot::Global::AimKey.Value);
-				FDropdown("Target", &Vars::Aimbot::Global::AimAt.Value, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Ignore", &Vars::Aimbot::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Dead Ringer", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
-				bTransparent = !(Vars::Aimbot::Global::IgnoreOptions.Value & 1 << 1);
-					FSlider("Ignore cloak", &Vars::Aimbot::Global::IgnoreCloakPercentage.Value, 0, 100, 10, "%d%%", FSlider_Clamp);
+				FDropdown("Aim type", Vars::Aimbot::General::AimType, { "Off", "Plain", "Smooth", "Silent" }, {}, FDropdown_Left);
+				FDropdown("Target selection", Vars::Aimbot::General::TargetSelection, { "FOV", "Distance" }, {}, FDropdown_Right);
+				FDropdown("Target", Vars::Aimbot::General::Target, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Ignore", Vars::Aimbot::General::Ignore, { "Invulnerable", "Cloaked", "Dead Ringer", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
+				FSlider("Aim FOV", Vars::Aimbot::General::AimFOV, 1.f, 180.f, 1.f, "%.0f", FSlider_Clamp);
+				bTransparent = FGet(Vars::Aimbot::General::AimType) != 2;
+					FSlider("Smoothing## Hitscan", Vars::Aimbot::General::Smoothing, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Clamp);
 				bTransparent = false;
-				FSlider("Max targets", &Vars::Aimbot::Global::MaxTargets.Value, 1, 6, 1, "%d", FSlider_Clamp);
-				bTransparent = !(Vars::Aimbot::Global::IgnoreOptions.Value & 1 << 6);
-					FSlider("Tick tolerance", &Vars::Aimbot::Global::TickTolerance.Value, 0, 21, 1, "%d", FSlider_Clamp);
+				FSlider("Max targets", Vars::Aimbot::General::MaxTargets, 1, 6, 1, "%d", FSlider_Clamp);
+				bTransparent = !(FGet(Vars::Aimbot::General::Ignore) & 1 << 1);
+					FSlider("Ignore cloak", Vars::Aimbot::General::IgnoreCloakPercentage, 0, 100, 10, "%d%%", FSlider_Clamp);
 				bTransparent = false;
-			} EndSection();
-			if (Section("Crits"))
-			{
-				FToggle("Crit hack", &Vars::CritHack::Active.Value);
-				FToggle("Avoid random", &Vars::CritHack::AvoidRandom.Value);
-				FToggle("Always melee", &Vars::CritHack::AlwaysMelee.Value, FToggle_Middle);
-				FKeybind("Crit key", Vars::CritHack::CritKey.Value);
+				bTransparent = !(FGet(Vars::Aimbot::General::Ignore) & 1 << 6);
+					FSlider("Tick tolerance", Vars::Aimbot::General::TickTolerance, 0, 21, 1, "%d", FSlider_Clamp);
+				bTransparent = false;
+				FColorPicker("Aimbot FOV circle", Vars::Colors::FOVCircle);
+				FToggle("Autoshoot", Vars::Aimbot::General::AutoShoot);
+				FToggle("FOV Circle", Vars::Aimbot::General::FOVCircle, FToggle_Middle);
+				FToggle("Force crits", Vars::CritHack::ForceCrits);
+				FToggle("Avoid random crits", Vars::CritHack::AvoidRandom, FToggle_Middle);
+				FToggle("Always melee", Vars::CritHack::AlwaysMelee);
+				FToggle("No spread", Vars::Aimbot::General::NoSpread, FToggle_Middle);
 			} EndSection();
 			if (Section("Backtrack"))
 			{
-				FToggle("Active", &Vars::Backtrack::Enabled.Value);
-				FToggle("Prefer on shot", &Vars::Backtrack::PreferOnShot.Value, FToggle_Middle);
-				FSlider("Fake latency", &Vars::Backtrack::Latency.Value, 0, F::Backtrack.flMaxUnlag * 1000, 5, "%d", FSlider_Clamp); // unreliable above 900
-				FSlider("Fake interp", &Vars::Backtrack::Interp.Value, 0, F::Backtrack.flMaxUnlag * 1000, 5, "%d", FSlider_Clamp);
-				FSlider("Window", &Vars::Backtrack::Window.Value, 1, 200, 5, "%d", FSlider_Clamp);
+				FToggle("Active", Vars::Backtrack::Enabled);
+				FToggle("Prefer on shot", Vars::Backtrack::PreferOnShot, FToggle_Middle);
+				FSlider("Fake latency", Vars::Backtrack::Latency, 0, F::Backtrack.flMaxUnlag * 1000, 5, "%d", FSlider_Clamp); // unreliable above 900
+				FSlider("Fake interp", Vars::Backtrack::Interp, 0, F::Backtrack.flMaxUnlag * 1000, 5, "%d", FSlider_Clamp);
+				FSlider("Window", Vars::Backtrack::Window, 1, 200, 5, "%d", FSlider_Clamp);
 			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
 				if (Section("debug## backtrack"))
 				{
-					FSlider("offset", &Vars::Backtrack::Offset.Value, -5, 5);
+					FSlider("offset", Vars::Backtrack::Offset, -5, 5);
 				} EndSection();
 			}
 
@@ -166,73 +192,57 @@ void CMenu::MenuAimbot()
 			TableNextColumn();
 			if (Section("Hitscan"))
 			{
-				FToggle("Active", &Vars::Aimbot::Hitscan::Active.Value);
-				FSlider("Aim FOV## Hitscan", &Vars::Aimbot::Hitscan::AimFOV.Value, 1.f, 180.f, 1.f, "%.0f", FSlider_Right | FSlider_Clamp);
-				FDropdown("Aim type", &Vars::Aimbot::Hitscan::AimMethod.Value, { "Plain", "Smooth", "Silent" }, {}, FDropdown_Left);
-				FDropdown("Target selection", &Vars::Aimbot::Hitscan::SortMethod.Value, { "FOV", "Distance" }, {}, FDropdown_Right);
-				FDropdown("Hitboxes", &Vars::Aimbot::Hitscan::Hitboxes.Value, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Modifiers", &Vars::Aimbot::Hitscan::Modifiers.Value, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi | FDropdown_Right);
-				bTransparent = Vars::Aimbot::Hitscan::AimMethod.Value != 1;
-					FSlider("Smooth factor## Hitscan", &Vars::Aimbot::Hitscan::SmoothingAmount.Value, 0.f, 100.f, 1.f, "%.0f", FSlider_Clamp);
-				bTransparent = false;
-				FSlider("Point scale", &Vars::Aimbot::Hitscan::PointScale.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
-				bTransparent = !(Vars::Aimbot::Hitscan::Modifiers.Value & 1 << 0);
-					FSlider("Tapfire distance", &Vars::Aimbot::Hitscan::TapFireDist.Value, 250.f, 1000.f, 50.f, "%.0f", FSlider_Clamp | FSlider_Precision);
+				FDropdown("Hitboxes", Vars::Aimbot::Hitscan::Hitboxes, { "Head", "Body", "Pelvis", "Arms", "Legs" }, { 1 << 0, 1 << 2, 1 << 1, 1 << 3, 1 << 4 }, FDropdown_Multi);
+				FDropdown("Modifiers## Hitscan", Vars::Aimbot::Hitscan::Modifiers, { "Tapfire", "Wait for heatshot", "Wait for charge", "Scoped only", "Auto scope", "Bodyaim if lethal", "Extinguish team" }, {}, FDropdown_Multi);
+				FSlider("Point scale", Vars::Aimbot::Hitscan::PointScale, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
+				bTransparent = !(FGet(Vars::Aimbot::Hitscan::Modifiers) & 1 << 0);
+					FSlider("Tapfire distance", Vars::Aimbot::Hitscan::TapFireDist, 250.f, 1000.f, 50.f, "%.0f", FSlider_Clamp | FSlider_Precision);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Projectile"))
 			{
-				FToggle("Active", &Vars::Aimbot::Projectile::Active.Value);
-				FSlider("Aim FOV## Projectile", &Vars::Aimbot::Projectile::AimFOV.Value, 1.f, 180.f, 1.f, "%1.f", FSlider_Right | FSlider_Clamp);
-				FDropdown("Aim type", &Vars::Aimbot::Projectile::AimMethod.Value, { "Plain", "Smooth", "Silent" }, {}, FDropdown_Left);
-				FDropdown("Target selection", &Vars::Aimbot::Projectile::SortMethod.Value, { "FOV", "Distance" }, {}, FDropdown_Right);
-				FDropdown("Predict", &Vars::Aimbot::Projectile::StrafePrediction.Value, { "Air strafing", "Ground strafing" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Splash", &Vars::Aimbot::Projectile::SplashPrediction.Value, { "Off", "Include", "Prefer", "Only" }, {}, FDropdown_Right);
-				bTransparent = Vars::Aimbot::Projectile::AimMethod.Value != 1;
-					FSlider("Smooth factor## Projectile", &Vars::Aimbot::Projectile::SmoothingAmount.Value, 0.f, 100.f, 1.f, "%.0f", FSlider_Clamp);
-				bTransparent = !Vars::Aimbot::Projectile::StrafePrediction.Value;
-					FSlider("Hit chance", &Vars::Aimbot::Projectile::StrafePredictionHitchance.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
+				FDropdown("Predict", Vars::Aimbot::Projectile::StrafePrediction, { "Air strafing", "Ground strafing" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Splash", Vars::Aimbot::Projectile::SplashPrediction, { "Off", "Include", "Prefer", "Only" }, {}, FDropdown_Right);
+				FDropdown("Auto detonate", Vars::Aimbot::Projectile::AutoDetonate, { "Stickies", "Flares" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Auto airblast", Vars::Aimbot::Projectile::AutoAirblast, { "Off", "Legit", "Rage" }, {}, FDropdown_Right);
+				FDropdown("Modifiers## Projectile", Vars::Aimbot::Projectile::Modifiers, { "Charge shot", "Cancel charge", "Bodyaim if lethal" }, {}, FDropdown_Multi);
+				FSlider("Max simulation time", Vars::Aimbot::Projectile::PredictionTime, 0.1f, 10.f, 0.1f, "%.1fs");
+				bTransparent = !FGet(Vars::Aimbot::Projectile::StrafePrediction);
+					FSlider("Hit chance", Vars::Aimbot::Projectile::Hitchance, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
 				bTransparent = false;
-				FSlider("Max simulation time", &Vars::Aimbot::Projectile::PredictionTime.Value, 0.1f, 10.f, 0.1f, "%.1fs");
-				bTransparent = !Vars::Aimbot::Projectile::AutoRelease.Value;
-					FSlider("Auto release", &Vars::Aimbot::Projectile::AutoRelease.Value, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
+				FSlider("Autodet radius", Vars::Aimbot::Projectile::AutodetRadius, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
+				FSlider("Splash radius", Vars::Aimbot::Projectile::SplashRadius, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
+				bTransparent = !FGet(Vars::Aimbot::Projectile::AutoRelease);
+					FSlider("Auto release", Vars::Aimbot::Projectile::AutoRelease, 0.f, 100.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Precision);
 				bTransparent = false;
-				FToggle("Charge loose cannon", &Vars::Aimbot::Projectile::ChargeLooseCannon.Value);
-				FToggle("No spread", &Vars::Aimbot::Projectile::NoSpread.Value, FToggle_Middle);
 			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
 				if (Section("debug## projectile"))
 				{
-					FSlider("ground samples", &Vars::Aimbot::Projectile::iGroundSamples.Value, 3, 66, 1, "%d", FSlider_Left);
-					FSlider("air samples", &Vars::Aimbot::Projectile::iAirSamples.Value, 3, 66, 1, "%d", FSlider_Right);
-					FSlider("vert shift", &Vars::Aimbot::Projectile::VerticalShift.Value, 0.f, 20.f, 0.5f, "%.1f", FSlider_Left);
-					FSlider("hunterman lerp", &Vars::Aimbot::Projectile::HuntermanLerp.Value, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Right);
-					FSlider("latency offset", &Vars::Aimbot::Projectile::LatOff.Value, -1.f, 1.f, 0.1f, "%.1f", FSlider_Left);
-					FSlider("hull inc", &Vars::Aimbot::Projectile::HullInc.Value, 0.f, 3.f, 0.5f, "%.1f", FSlider_Right);
-					FSlider("drag override", &Vars::Aimbot::Projectile::DragOverride.Value, 0.f, 1.f, 0.001f, "%.3f", FSlider_Left);
-					FSlider("time override", &Vars::Aimbot::Projectile::TimeOverride.Value, 0.f, 1.f, 0.001f, "%.3f", FSlider_Right);
-					FSlider("splash points", &Vars::Aimbot::Projectile::SplashPoints.Value, 0, 100, 1, "%d", FSlider_Left);
-					FSlider("splash count", &Vars::Aimbot::Projectile::SplashCount.Value, 1, 5, 1, "%d", FSlider_Right);
+					FSlider("ground samples", Vars::Aimbot::Projectile::iGroundSamples, 3, 66, 1, "%d", FSlider_Left);
+					FSlider("air samples", Vars::Aimbot::Projectile::iAirSamples, 3, 66, 1, "%d", FSlider_Right);
+					FSlider("vert shift", Vars::Aimbot::Projectile::VerticalShift, 0.f, 20.f, 0.5f, "%.1f", FSlider_Left);
+					FSlider("hunterman lerp", Vars::Aimbot::Projectile::HuntermanLerp, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Right);
+					FSlider("latency offset", Vars::Aimbot::Projectile::LatOff, -1.f, 1.f, 0.1f, "%.1f", FSlider_Left);
+					FSlider("hull inc", Vars::Aimbot::Projectile::HullInc, 0.f, 3.f, 0.5f, "%.1f", FSlider_Right);
+					FSlider("drag override", Vars::Aimbot::Projectile::DragOverride, 0.f, 1.f, 0.001f, "%.3f", FSlider_Left);
+					FSlider("time override", Vars::Aimbot::Projectile::TimeOverride, 0.f, 1.f, 0.001f, "%.3f", FSlider_Right);
+					FSlider("splash points", Vars::Aimbot::Projectile::SplashPoints, 0, 100, 1, "%d", FSlider_Left);
+					FSlider("splash count", Vars::Aimbot::Projectile::SplashCount, 1, 5, 1, "%d", FSlider_Right);
 				} EndSection();
 			}
 			if (Section("Melee"))
 			{
-				FToggle("Active", &Vars::Aimbot::Melee::Active.Value);
-				FSlider("Aim FOV## Melee", &Vars::Aimbot::Melee::AimFOV.Value, 1.f, 180.f, 1.f, "%1.f", FSlider_Right | FSlider_Clamp);
-				FDropdown("Aim type", &Vars::Aimbot::Melee::AimMethod.Value, { "Plain", "Smooth", "Silent" });
-				bTransparent = Vars::Aimbot::Melee::AimMethod.Value != 1;
-					FSlider("Smooth factor## Melee", &Vars::Aimbot::Melee::SmoothingAmount.Value, 0.f, 100.f, 1.f, "%.0f", FSlider_Clamp);
-				bTransparent = false;
-				FToggle("Auto backstab", &Vars::Aimbot::Melee::AutoBackstab.Value);
-				FToggle("Ignore razorback", &Vars::Aimbot::Melee::IgnoreRazorback.Value, FToggle_Middle);
-				FToggle("Swing prediction", &Vars::Aimbot::Melee::SwingPrediction.Value);
-				FToggle("Whip teammates", &Vars::Aimbot::Melee::WhipTeam.Value, FToggle_Middle);
+				FToggle("Auto backstab", Vars::Aimbot::Melee::AutoBackstab);
+				FToggle("Ignore razorback", Vars::Aimbot::Melee::IgnoreRazorback, FToggle_Middle);
+				FToggle("Swing prediction", Vars::Aimbot::Melee::SwingPrediction);
+				FToggle("Whip teammates", Vars::Aimbot::Melee::WhipTeam, FToggle_Middle);
 			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
 				if (Section("debug## melee"))
-					FSlider("swing ticks", &Vars::Aimbot::Melee::SwingTicks.Value, 10, 14);
+					FSlider("swing ticks", Vars::Aimbot::Melee::SwingTicks, 10, 14);
 				EndSection();
 			}
 
@@ -247,108 +257,92 @@ void CMenu::MenuAimbot()
 			TableNextColumn();
 			if (Section("Doubletap"))
 			{
-				const int iVar = g_ConVars.sv_maxusrcmdprocessticks->GetInt();
-				const int iTicks = iVar ? iVar : 24;
-
-				FToggle("Enabled", &Vars::CL_Move::DoubleTap::Enabled.Value);
-				FSlider("Tick limit", &Vars::CL_Move::DoubleTap::TickLimit.Value, 1, iTicks, 1, "%d", FSlider_Clamp);
-				FSlider("Warp rate", &Vars::CL_Move::DoubleTap::WarpRate.Value, 1, iTicks, 1, "%d", FSlider_Clamp);
-				FSlider("Passive recharge", &Vars::CL_Move::DoubleTap::PassiveRecharge.Value, 0, iTicks, 1, "%d", FSlider_Clamp);
-				FDropdown("Mode", &Vars::CL_Move::DoubleTap::Mode.Value, { "Always", "Hold", "Toggle" });
-				bTransparent = Vars::CL_Move::DoubleTap::Mode.Value == 0;
-					FKeybind("Doubletap key", Vars::CL_Move::DoubleTap::DoubletapKey.Value);
-				bTransparent = false;
-				FKeybind("Recharge key", Vars::CL_Move::DoubleTap::RechargeKey.Value);
-				FKeybind("Teleport key", Vars::CL_Move::DoubleTap::TeleportKey.Value);
-				FDropdown("Options", &Vars::CL_Move::DoubleTap::Options.Value, { "Anti-warp", "Avoid airborne", "Auto retain", "Auto Recharge", "Recharge While Dead" }, {}, FDropdown_Multi);
+				FToggle("Doubletap", Vars::CL_Move::Doubletap::Doubletap);
+				FToggle("Warp", Vars::CL_Move::Doubletap::Warp, FToggle_Middle);
+				FToggle("Recharge ticks", Vars::CL_Move::Doubletap::RechargeTicks);
+				FToggle("Anti-warp", Vars::CL_Move::Doubletap::AntiWarp, FToggle_Middle);
+				FSlider("Tick limit", Vars::CL_Move::Doubletap::TickLimit, 2, 22, 1, "%d", FSlider_Clamp);
+				FSlider("Warp rate", Vars::CL_Move::Doubletap::WarpRate, 2, 22, 1, "%d", FSlider_Clamp);
+				FSlider("Passive recharge", Vars::CL_Move::Doubletap::PassiveRecharge, 0, 66, 1, "%d", FSlider_Clamp);
 			} EndSection();
 			if (Section("Fakelag"))
 			{
-				FToggle("Enabled", &Vars::CL_Move::FakeLag::Enabled.Value);
-				FDropdown("Mode", &Vars::CL_Move::FakeLag::Mode.Value, { "Always", "Hold", "Toggle" });
-				bTransparent = Vars::CL_Move::FakeLag::Mode.Value == 0;
-					FKeybind("Fakelag key", Vars::CL_Move::FakeLag::Key.Value);
+				FDropdown("Fakelag", Vars::CL_Move::Fakelag::Fakelag, { "Off", "Plain", "Random", "Adaptive" }, {}, FSlider_Left);
+				FDropdown("Options", Vars::CL_Move::Fakelag::Options, { "While Moving", "While Unducking", "While Airborne" }, {}, FDropdown_Multi | FSlider_Right);
+				bTransparent = FGet(Vars::CL_Move::Fakelag::Fakelag) != 1;
+					FSlider("Plain ticks", Vars::CL_Move::Fakelag::PlainTicks, 1, 22, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = FGet(Vars::CL_Move::Fakelag::Fakelag) != 2;
+					FSlider("Random ticks", Vars::CL_Move::Fakelag::RandomTicks, 1, 22, 1, "%d - %d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
-				FDropdown("Type", &Vars::CL_Move::FakeLag::Type.Value, { "Plain", "Random", "Adaptive" });
-				FDropdown("Options", &Vars::CL_Move::FakeLag::Options.Value, { "While Moving", "While Unducking", "While Airborne" }, {}, FDropdown_Multi);
-				bTransparent = Vars::CL_Move::FakeLag::Type.Value != 0;
-					FSlider("Plain value", &Vars::CL_Move::FakeLag::Value.Value, 1, 22, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = Vars::CL_Move::FakeLag::Type.Value != 1;
-					FSlider("Random value", &Vars::CL_Move::FakeLag::Min.Value, &Vars::CL_Move::FakeLag::Max.Value, 1, 22, 1, "%d - %d", FSlider_Clamp | FSlider_Right);
-				bTransparent = false;
-				FToggle("Unchoke on attack", &Vars::CL_Move::FakeLag::UnchokeOnAttack.Value);
-				FToggle("Retain blastjump", &Vars::CL_Move::FakeLag::RetainBlastJump.Value, FToggle_Middle);
+				FToggle("Unchoke on attack", Vars::CL_Move::Fakelag::UnchokeOnAttack);
+				FToggle("Retain blastjump", Vars::CL_Move::Fakelag::RetainBlastJump, FToggle_Middle);
 			} EndSection();
-
-			if (Section("Speedhack"))
+			if (Section("Anti Aim"))
 			{
-				FToggle("Speedhack", &Vars::CL_Move::SpeedEnabled.Value);
-				bTransparent = !Vars::CL_Move::SpeedEnabled.Value;
-					FSlider("SpeedHack factor", &Vars::CL_Move::SpeedFactor.Value, 1, 50, 1);
+				FDropdown("Real pitch", Vars::AntiHack::AntiAim::PitchReal, { "None", "Up", "Down", "Zero" }, {}, FDropdown_Left);
+				FDropdown("Fake pitch", Vars::AntiHack::AntiAim::PitchFake, { "None", "Up", "Down" }, {}, FDropdown_Right);
+				FDropdown("Real yaw", Vars::AntiHack::AntiAim::YawReal, { "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }, {}, FDropdown_Left);
+				FDropdown("Fake yaw", Vars::AntiHack::AntiAim::YawFake, { "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }, {}, FDropdown_Right);
+				FDropdown("Real offset", Vars::AntiHack::AntiAim::RealYawMode, { "View", "Target" }, {}, FDropdown_Left);
+				FDropdown("Fake offset", Vars::AntiHack::AntiAim::FakeYawMode, { "View", "Target" }, {}, FDropdown_Right);
+				FSlider("Real offset## Offset", Vars::AntiHack::AntiAim::RealYawOffset, -180, 180, 5, "%d", FSlider_Left | FSlider_Clamp | FSlider_Precision);
+				FSlider("Fake offset## Offset", Vars::AntiHack::AntiAim::FakeYawOffset, -180, 180, 5, "%d", FSlider_Right | FSlider_Clamp | FSlider_Precision);
+				bTransparent = FGet(Vars::AntiHack::AntiAim::YawFake) != 5 && FGet(Vars::AntiHack::AntiAim::YawReal) != 5;
+					FSlider("Spin Speed", Vars::AntiHack::AntiAim::SpinSpeed, -30.f, 30.f, 1.f, "%.0f", FSlider_Left);
 				bTransparent = false;
+				FToggle("Anti-overlap", Vars::AntiHack::AntiAim::AntiOverlap, FToggle_Middle);
+				Dummy({ 0, 8 });
+				//FToggle("Hide pitch on shot", Vars::AntiHack::AntiAim::InvalidShootPitch);
 			} EndSection();
 
 			/* Column 2 */
 			TableNextColumn();
-			if (Section("Anti Aim"))
-			{
-				FToggle("Active", &Vars::AntiHack::AntiAim::Active.Value);
-				FKeybind("Anti-aim Key", Vars::AntiHack::AntiAim::ToggleKey.Value);
-				FDropdown("Real pitch", &Vars::AntiHack::AntiAim::PitchReal.Value, { "None", "Up", "Down", "Zero" }, {}, FDropdown_Left);
-				FDropdown("Fake pitch", &Vars::AntiHack::AntiAim::PitchFake.Value, { "None", "Up", "Down" }, {}, FDropdown_Right);
-				FDropdown("Real yaw", &Vars::AntiHack::AntiAim::YawReal.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }, {}, FDropdown_Left);
-				FDropdown("Fake yaw", &Vars::AntiHack::AntiAim::YawFake.Value, { "None", "Forward", "Left", "Right", "Backwards", "Spin", "Edge" }, {}, FDropdown_Right);
-				FDropdown("Real offset", &Vars::AntiHack::AntiAim::RealYawMode.Value, { "View", "Target" }, {}, FDropdown_Left);
-				FDropdown("Fake offset", &Vars::AntiHack::AntiAim::FakeYawMode.Value, { "View", "Target" }, {}, FDropdown_Right);
-				FSlider("Real offset## Offset", &Vars::AntiHack::AntiAim::RealYawOffset.Value, -180, 180, 5, "%d", FSlider_Left | FSlider_Clamp | FSlider_Precision);
-				FSlider("Fake offset## Offset", &Vars::AntiHack::AntiAim::FakeYawOffset.Value, -180, 180, 5, "%d", FSlider_Right | FSlider_Clamp | FSlider_Precision);
-				bTransparent = Vars::AntiHack::AntiAim::YawFake.Value != 5 && Vars::AntiHack::AntiAim::YawReal.Value != 5;
-					FSlider("Spin Speed", &Vars::AntiHack::AntiAim::SpinSpeed.Value, -30.f, 30.f, 1.f, "%.0f", FSlider_Left);
-				bTransparent = false;
-				FToggle("Anti-overlap", &Vars::AntiHack::AntiAim::AntiOverlap.Value, FToggle_Middle);
-				Dummy({ 0, 8 });
-				//FToggle("Hide pitch on shot", &Vars::AntiHack::AntiAim::InvalidShootPitch.Value);
-			} EndSection();
-			if (Section("Auto Peek"))
-			{
-				FKeybind("Autopeek Key", Vars::CL_Move::AutoPeekKey.Value);
-			} EndSection();
 			if (Section("Cheater Detection"))
 			{
-				FToggle("Enabled", &Vars::CheaterDetection::Enabled.Value);
-				bTransparent = !Vars::CheaterDetection::Enabled.Value;
-					FDropdown("Detection methods", &Vars::CheaterDetection::Methods.Value, { "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" }, {}, FDropdown_Multi);
-					FDropdown("Ignore conditions", &Vars::CheaterDetection::Protections.Value, { "Double Scans", "Lagging Client", "Timing Out" }, {}, FDropdown_Multi);
-					FSlider("Suspicion gate", &Vars::CheaterDetection::SuspicionGate.Value, 5, 50, 1);
+				bTransparent = !FGet(Vars::CheaterDetection::Methods);
+					FDropdown("Detection methods", Vars::CheaterDetection::Methods, { "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" }, {}, FDropdown_Multi);
+					FDropdown("Ignore conditions", Vars::CheaterDetection::Protections, { "Double Scans", "Lagging Client", "Timing Out" }, {}, FDropdown_Multi);
+					FSlider("Suspicion gate", Vars::CheaterDetection::SuspicionGate, 5, 50, 1);
 
-					bTransparent = !(Vars::CheaterDetection::Methods.Value & 1 << 1) || bTransparent;
-						FSlider("High score multiplier", &Vars::CheaterDetection::ScoreMultiplier.Value, 1.5f, 4.f, 0.1f, "%.1f");
-					bTransparent = !Vars::CheaterDetection::Enabled.Value;
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 1) || bTransparent;
+					FSlider("High score multiplier", Vars::CheaterDetection::ScoreMultiplier, 1.5f, 4.f, 0.1f, "%.1f");
+				bTransparent = !FGet(Vars::CheaterDetection::Methods);
 
-					bTransparent = !(Vars::CheaterDetection::Methods.Value & (1 << 3 | 1 << 2)) || bTransparent;
-						FSlider("Packet manipulation gate", &Vars::CheaterDetection::PacketManipGate.Value, 1, 22, 1);
-					bTransparent = !Vars::CheaterDetection::Enabled.Value;
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & (1 << 3 | 1 << 2)) || bTransparent;
+					FSlider("Packet manipulation gate", Vars::CheaterDetection::PacketManipGate, 1, 22, 1);
+				bTransparent = !FGet(Vars::CheaterDetection::Methods);
 
-					bTransparent = !(Vars::CheaterDetection::Methods.Value & 1 << 4) || bTransparent;
-						FSlider("Bunnyhop sensitivity", &Vars::CheaterDetection::BHopMaxDelay.Value, 1, 5, 1, "%d", FSlider_Left);
-						FSlider("Minimum detections", &Vars::CheaterDetection::BHopDetectionsRequired.Value, 2, 15, 1, "%d", FSlider_Right);
-					bTransparent = !Vars::CheaterDetection::Enabled.Value;
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 4) || bTransparent;
+					FSlider("Bunnyhop sensitivity", Vars::CheaterDetection::BHopMaxDelay, 1, 5, 1, "%d", FSlider_Left);
+					FSlider("Minimum detections", Vars::CheaterDetection::BHopDetectionsRequired, 2, 15, 1, "%d", FSlider_Right);
+				bTransparent = !FGet(Vars::CheaterDetection::Methods);
 
-					bTransparent = !(Vars::CheaterDetection::Methods.Value & 1 << 5) || bTransparent;
-						FSlider("Minimum aim-flick", &Vars::CheaterDetection::MinimumFlickDistance.Value, 5.f, 30.f, 0.1f, "%.1f", FSlider_Left);
-						FSlider("Maximum noise", &Vars::CheaterDetection::MaximumNoise.Value, 5.f, 15.f, 0.1f, "%.1f", FSlider_Right);
-					bTransparent = !Vars::CheaterDetection::Enabled.Value;
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 5) || bTransparent;
+					FSlider("Minimum aim-flick", Vars::CheaterDetection::MinimumFlickDistance, 5.f, 30.f, 0.1f, "%.1f", FSlider_Left);
+					FSlider("Maximum noise", Vars::CheaterDetection::MaximumNoise, 5.f, 15.f, 0.1f, "%.1f", FSlider_Right);
+				bTransparent = !FGet(Vars::CheaterDetection::Methods);
 
-					bTransparent = !(Vars::CheaterDetection::Methods.Value & 1 << 7) || bTransparent;
-						FSlider("Maximum aimbot FOV", &Vars::CheaterDetection::MaxScaledAimbotFoV.Value, 5.f, 30.f, 0.1f, "%.1f", FSlider_Left);
-						FSlider("Minimum aimbot FOV", &Vars::CheaterDetection::MinimumAimbotFoV.Value, 5.f, 30.f, 0.1f, "%.1f", FSlider_Right);
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 7) || bTransparent;
+					FSlider("Maximum aimbot FOV", Vars::CheaterDetection::MaxScaledAimbotFoV, 5.f, 30.f, 0.1f, "%.1f", FSlider_Left);
+					FSlider("Minimum aimbot FOV", Vars::CheaterDetection::MinimumAimbotFoV, 5.f, 30.f, 0.1f, "%.1f", FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Resolver"))
 			{
-				FToggle("Enabled", &Vars::AntiHack::Resolver::Resolver.Value);
-				bTransparent = !Vars::AntiHack::Resolver::Resolver.Value;
-					FToggle("Ignore in-air", &Vars::AntiHack::Resolver::IgnoreAirborne.Value, FToggle_Middle);
+				FToggle("Enabled", Vars::AntiHack::Resolver::Resolver);
+				bTransparent = !FGet(Vars::AntiHack::Resolver::Resolver);
+					FToggle("Ignore in-air", Vars::AntiHack::Resolver::IgnoreAirborne, FToggle_Middle);
+				bTransparent = false;
+			} EndSection();
+			if (Section("Auto Peek"))
+			{
+				FToggle("Auto peek", Vars::CL_Move::AutoPeek);
+			} EndSection();
+			if (Section("Speedhack"))
+			{
+				FToggle("Speedhack", Vars::CL_Move::SpeedEnabled);
+				bTransparent = !FGet(Vars::CL_Move::SpeedEnabled);
+					FSlider("SpeedHack factor", Vars::CL_Move::SpeedFactor, 1, 50, 1);
 				bTransparent = false;
 			} EndSection();
 
@@ -363,54 +357,22 @@ void CMenu::MenuAimbot()
 			TableNextColumn();
 			if (Section("Global"))
 			{
-				FToggle("Active", &Vars::Auto::Global::Active.Value);
-				FKeybind("Trigger key", Vars::Auto::Global::AutoKey.Value);
-				FDropdown("Ignore", &Vars::Auto::Global::IgnoreOptions.Value, { "Invulnerable", "Cloaked", "Taunting", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi);
+				FToggle("Active", Vars::Auto::Global::Active);
 			} EndSection();
 			if (Section("Autouber"))
 			{
-				FToggle("Active", &Vars::Auto::Uber::Active.Value);
-				FToggle("Activate charge trigger", &Vars::Auto::Uber::VoiceCommand.Value, FToggle_Middle);
-				FToggle("Only uber friends", &Vars::Auto::Uber::OnlyFriends.Value);
-				FToggle("Preserve self", &Vars::Auto::Uber::PopLocal.Value, FToggle_Middle);
-				FDropdown("Auto vaccinator", &Vars::Auto::Uber::AutoVaccinator.Value, { "Bullet", "Blast", "Fire" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Bullet react classes", &Vars::Auto::Uber::ReactClasses.Value, { "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, FDropdown_Multi | FDropdown_Right);
-				FSlider("Health left", &Vars::Auto::Uber::HealthLeft.Value, 1.f, 99.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Left);
-				FSlider("Reaction FOV", &Vars::Auto::Uber::ReactFOV.Value, 0, 90, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Active", Vars::Auto::Uber::Active);
+				FToggle("Activate charge trigger", Vars::Auto::Uber::VoiceCommand, FToggle_Middle);
+				FToggle("Only uber friends", Vars::Auto::Uber::OnlyFriends);
+				FToggle("Preserve self", Vars::Auto::Uber::PopLocal, FToggle_Middle);
+				FDropdown("Auto vaccinator", Vars::Auto::Uber::AutoVaccinator, { "Bullet", "Blast", "Fire" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Bullet react classes", Vars::Auto::Uber::ReactClasses, { "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, FDropdown_Multi | FDropdown_Right);
+				FSlider("Health left", Vars::Auto::Uber::HealthLeft, 1.f, 99.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Left);
+				FSlider("Reaction FOV", Vars::Auto::Uber::ReactFOV, 0, 90, 1, "%d", FSlider_Clamp | FSlider_Right);
 			} EndSection();
-			if (Section("Auto Jump"))
-			{
-				FKeybind("Auto rocket jump", Vars::Auto::Jump::JumpKey.Value);
-				FKeybind("Auto CTap", Vars::Auto::Jump::CTapKey.Value);
-			} EndSection();
-			if (Vars::Debug::Info.Value)
-			{
-				if (Section("debug"))
-				{
-					FSlider("timing offset", &Vars::Auto::Jump::TimingOffset.Value, -1, 1);
-					FSlider("apply timing offset above", &Vars::Auto::Jump::ApplyAbove.Value, 0, 8);
-				}
-				EndSection();
-			}
 
 			/* Column 2 */
 			TableNextColumn();
-			if (Section("Auto Detonate"))
-			{
-				FToggle("Active", &Vars::Auto::Detonate::Active.Value);
-				FDropdown("Target", &Vars::Auto::Detonate::DetonateTargets.Value, { "Players", "Sentry", "Dispenser", "Teleporter", "NPCs", "Bombs", "Stickies" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6 }, FDropdown_Multi);
-				FSlider("Detonation radius", &Vars::Auto::Detonate::RadiusScale.Value, 10.f, 100.f, 1.f, "%.0f%%", FSlider_Clamp);
-				FToggle("Stickies", &Vars::Auto::Detonate::Stickies.Value);
-				FToggle("Flares", &Vars::Auto::Detonate::Flares.Value, FToggle_Middle);
-			} EndSection();
-			if (Section("Autoblast"))
-			{
-				FToggle("Active", &Vars::Auto::Airblast::Active.Value);
-				FToggle("Rage", &Vars::Auto::Airblast::Rage.Value, FToggle_Middle);
-				FToggle("Extinguish players", &Vars::Auto::Airblast::ExtinguishPlayers.Value);
-				FToggle("Disable on attack", &Vars::Auto::Airblast::DisableOnAttack.Value, FToggle_Middle);
-				FSlider("FOV", &Vars::Auto::Airblast::FOV.Value, 1.f, 180.f, 1.f, "%.0f", FSlider_Clamp);
-			} EndSection();
 
 			EndTable();
 		}
@@ -432,47 +394,47 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("ESP"))
 			{
-				FDropdown("Draw", &Vars::ESP::Draw.Value, { "Enemy", "Team", "Friends", "Local", "NPCs", "Health", "Ammo", "Money", "Bombs", "Spellbook", "Gargoyle" }, {}, FDropdown_Multi);
-				FDropdown("Player", &Vars::ESP::Player.Value, { "Name", "Health bar", "Health text", "Uber bar", "Uber text", "Class icon", "Class text", "Weapon icon", "Weapon text", "Distance", "Box", "Bones", "Priority", "Labels", "Buffs", "Debuffs", "Misc", "Lag compensation", "Ping", "KDR" }, {}, FDropdown_Multi);
-				FDropdown("Building", &Vars::ESP::Building.Value, { "Name", "Health bar", "Health text", "Distance", "Box", "Owner", "Level", "Conditions" }, {}, FDropdown_Multi);
+				FDropdown("Draw", Vars::ESP::Draw, { "Enemy", "Team", "Friends", "Local", "NPCs", "Health", "Ammo", "Money", "Bombs", "Spellbook", "Gargoyle" }, {}, FDropdown_Multi);
+				FDropdown("Player", Vars::ESP::Player, { "Name", "Health bar", "Health text", "Uber bar", "Uber text", "Class icon", "Class text", "Weapon icon", "Weapon text", "Distance", "Box", "Bones", "Priority", "Labels", "Buffs", "Debuffs", "Misc", "Lag compensation", "Ping", "KDR" }, {}, FDropdown_Multi);
+				FDropdown("Building", Vars::ESP::Building, { "Name", "Health bar", "Health text", "Distance", "Box", "Owner", "Level", "Conditions" }, {}, FDropdown_Multi);
 			} EndSection();
 
 			/* Column 2 */
 			TableNextColumn();
 			if (Section("Colors"))
 			{
-				FToggle("Relative colors", &Vars::Colors::Relative.Value);
-				if (Vars::Colors::Relative.Value)
+				FToggle("Relative colors", Vars::Colors::Relative);
+				if (FGet(Vars::Colors::Relative))
 				{
-					FColorPicker("Enemy color", &Vars::Colors::Enemy.Value, 0, FColorPicker_Left);
-					FColorPicker("Team color", &Vars::Colors::Team.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+					FColorPicker("Enemy color", Vars::Colors::Enemy, 0, FColorPicker_Left);
+					FColorPicker("Team color", Vars::Colors::Team, 0, FColorPicker_Middle | FColorPicker_SameLine);
 				}
 				else
 				{
-					FColorPicker("RED color", &Vars::Colors::TeamRed.Value, 0, FColorPicker_Left);
-					FColorPicker("BLU color", &Vars::Colors::TeamBlu.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+					FColorPicker("RED color", Vars::Colors::TeamRed, 0, FColorPicker_Left);
+					FColorPicker("BLU color", Vars::Colors::TeamBlu, 0, FColorPicker_Middle | FColorPicker_SameLine);
 				}
 
-				FColorPicker("Health bar top", &Vars::Colors::HealthBar.Value.EndColor, 0, FColorPicker_Left);
-				FColorPicker("Health bar bottom", &Vars::Colors::HealthBar.Value.StartColor, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("Uber bar", &Vars::Colors::UberBar.Value, 0, FColorPicker_Left);
-				FColorPicker("Invulnerable color", &Vars::Colors::Invulnerable.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("Overheal color", &Vars::Colors::Overheal.Value, 0, FColorPicker_Left);
-				FColorPicker("Cloaked color", &Vars::Colors::Cloak.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("Local color", &Vars::Colors::Local.Value, 0, FColorPicker_Left);
-				FColorPicker("Target color", &Vars::Colors::Target.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Health bar top", Vars::Colors::HealthBar, false, 0, FColorPicker_Left);
+				FColorPicker("Health bar bottom", Vars::Colors::HealthBar, true, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Uber bar", Vars::Colors::UberBar, 0, FColorPicker_Left);
+				FColorPicker("Invulnerable color", Vars::Colors::Invulnerable, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Overheal color", Vars::Colors::Overheal, 0, FColorPicker_Left);
+				FColorPicker("Cloaked color", Vars::Colors::Cloak, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Local color", Vars::Colors::Local, 0, FColorPicker_Left);
+				FColorPicker("Target color", Vars::Colors::Target, 0, FColorPicker_Middle | FColorPicker_SameLine);
 
-				FColorPicker("Healthpack color", &Vars::Colors::Health.Value, 0, FColorPicker_Left);
-				FColorPicker("Ammopack color", &Vars::Colors::Ammo.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("NPC color", &Vars::Colors::NPC.Value, 0, FColorPicker_Left);
-				FColorPicker("Bomb color", &Vars::Colors::Bomb.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				FColorPicker("Money color", &Vars::Colors::Money.Value, 0, FColorPicker_Left);
-				FColorPicker("Halloween color", &Vars::Colors::Halloween.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Healthpack color", Vars::Colors::Health, 0, FColorPicker_Left);
+				FColorPicker("Ammopack color", Vars::Colors::Ammo, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("NPC color", Vars::Colors::NPC, 0, FColorPicker_Left);
+				FColorPicker("Bomb color", Vars::Colors::Bomb, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Money color", Vars::Colors::Money, 0, FColorPicker_Left);
+				FColorPicker("Halloween color", Vars::Colors::Halloween, 0, FColorPicker_Middle | FColorPicker_SameLine);
 
-				FSlider("Active alpha", &Vars::ESP::ActiveAlpha.Value, 0, 255, 5, "%d", FSlider_Clamp);
-				FSlider("Dormant alpha", &Vars::ESP::DormantAlpha.Value, 0, 255, 5, "%d", FSlider_Clamp);
-				FSlider("Dormant Decay Time", &Vars::ESP::DormantTime.Value, 0.015f, 5.0f, 0.1f, "%.1f", FSlider_Left | FSlider_Clamp);
-				FToggle("Dormant priority only", &Vars::ESP::DormantPriority.Value, FToggle_Middle); Dummy({ 0, 8 });
+				FSlider("Active alpha", Vars::ESP::ActiveAlpha, 0, 255, 5, "%d", FSlider_Clamp);
+				FSlider("Dormant alpha", Vars::ESP::DormantAlpha, 0, 255, 5, "%d", FSlider_Clamp);
+				FSlider("Dormant Decay Time", Vars::ESP::DormantTime, 0.015f, 5.0f, 0.1f, "%.1f", FSlider_Left | FSlider_Clamp);
+				FToggle("Dormant priority only", Vars::ESP::DormantPriority, FToggle_Middle); Dummy({ 0, 8 });
 			} EndSection();
 
 			EndTable();
@@ -486,66 +448,66 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("Friendly"))
 			{
-				FToggle("Players", &Vars::Chams::Friendly::Players.Value);
-				FToggle("Ragdolls", &Vars::Chams::Friendly::Ragdolls.Value, FToggle_Middle);
-				FToggle("Buildings", &Vars::Chams::Friendly::Buildings.Value);
-				FToggle("Projectiles", &Vars::Chams::Friendly::Projectiles.Value, FToggle_Middle);
+				FToggle("Players", Vars::Chams::Friendly::Players);
+				FToggle("Ragdolls", Vars::Chams::Friendly::Ragdolls, FToggle_Middle);
+				FToggle("Buildings", Vars::Chams::Friendly::Buildings);
+				FToggle("Projectiles", Vars::Chams::Friendly::Projectiles, FToggle_Middle);
 
-				FMDropdown("Visible material", &Vars::Chams::Friendly::Chams.Value.VisibleMaterial, FDropdown_Left, 1);
-				FColorPicker("Visible color", &Vars::Chams::Friendly::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
-				FMDropdown("Occluded material", &Vars::Chams::Friendly::Chams.Value.OccludedMaterial, FDropdown_Right, 1);
-				FColorPicker("Occluded color", &Vars::Chams::Friendly::Chams.Value.OccludedColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Visible material", Vars::Chams::Friendly::VisibleMaterial, FDropdown_Left, 1);
+				FColorPicker("Visible color", Vars::Chams::Friendly::VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Occluded material", Vars::Chams::Friendly::OccludedMaterial, FDropdown_Right, 1);
+				FColorPicker("Occluded color", Vars::Chams::Friendly::OccludedColor, 0, FColorPicker_Dropdown);
 			} EndSection();
 			if (Section("Enemy"))
 			{
-				FToggle("Players", &Vars::Chams::Enemy::Players.Value);
-				FToggle("Ragdolls", &Vars::Chams::Enemy::Ragdolls.Value, FToggle_Middle);
-				FToggle("Buildings", &Vars::Chams::Enemy::Buildings.Value);
-				FToggle("Projectiles", &Vars::Chams::Enemy::Projectiles.Value, FToggle_Middle);
+				FToggle("Players", Vars::Chams::Enemy::Players);
+				FToggle("Ragdolls", Vars::Chams::Enemy::Ragdolls, FToggle_Middle);
+				FToggle("Buildings", Vars::Chams::Enemy::Buildings);
+				FToggle("Projectiles", Vars::Chams::Enemy::Projectiles, FToggle_Middle);
 
-				FMDropdown("Visible material", &Vars::Chams::Enemy::Chams.Value.VisibleMaterial, FDropdown_Left, 1);
-				FColorPicker("Visible color", &Vars::Chams::Enemy::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
-				FMDropdown("Occluded material", &Vars::Chams::Enemy::Chams.Value.OccludedMaterial, FDropdown_Right, 1);
-				FColorPicker("Occluded color", &Vars::Chams::Enemy::Chams.Value.OccludedColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Visible material", Vars::Chams::Enemy::VisibleMaterial, FDropdown_Left, 1);
+				FColorPicker("Visible color", Vars::Chams::Enemy::VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Occluded material", Vars::Chams::Enemy::OccludedMaterial, FDropdown_Right, 1);
+				FColorPicker("Occluded color", Vars::Chams::Enemy::OccludedColor, 0, FColorPicker_Dropdown);
 			} EndSection();
 			if (Section("World"))
 			{
-				FToggle("NPCs", &Vars::Chams::World::NPCs.Value);
-				FToggle("Pickups", &Vars::Chams::World::Pickups.Value, FToggle_Middle);
-				FToggle("Bombs", &Vars::Chams::World::Bombs.Value);
-				FToggle("Halloween", &Vars::Chams::World::Halloween.Value, FToggle_Middle);
+				FToggle("NPCs", Vars::Chams::World::NPCs);
+				FToggle("Pickups", Vars::Chams::World::Pickups, FToggle_Middle);
+				FToggle("Bombs", Vars::Chams::World::Bombs);
+				FToggle("Halloween", Vars::Chams::World::Halloween, FToggle_Middle);
 
-				FMDropdown("Visible material", &Vars::Chams::World::Chams.Value.VisibleMaterial, FDropdown_Left, 1);
-				FColorPicker("Visible color", &Vars::Chams::World::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
-				FMDropdown("Occluded material", &Vars::Chams::World::Chams.Value.OccludedMaterial, FDropdown_Right, 1);
-				FColorPicker("Occluded color", &Vars::Chams::World::Chams.Value.OccludedColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Visible material", Vars::Chams::World::VisibleMaterial, FDropdown_Left, 1);
+				FColorPicker("Visible color", Vars::Chams::World::VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Occluded material", Vars::Chams::World::OccludedMaterial, FDropdown_Right, 1);
+				FColorPicker("Occluded color", Vars::Chams::World::OccludedColor, 0, FColorPicker_Dropdown);
 			} EndSection();
 
 			/* Column 2 */
 			TableNextColumn();
 			if (Section("Backtrack"))
 			{
-				FToggle("Active", &Vars::Chams::Backtrack::Active.Value);
+				FToggle("Active", Vars::Chams::Backtrack::Active);
 				SameLine(GetWindowSize().x / 2 + 4); SetCursorPosY(GetCursorPosY() - 24);
-				FDropdown("Draw", &Vars::Chams::Backtrack::Draw.Value, { "Last", "Last + first", "All" }, {}, FDropdown_Left);
+				FDropdown("Draw", Vars::Chams::Backtrack::Draw, { "Last", "Last + first", "All" }, {}, FDropdown_Left);
 
-				FMDropdown("Material", &Vars::Chams::Backtrack::Chams.Value.VisibleMaterial, FDropdown_None, 1);
-				FColorPicker("Color", &Vars::Chams::Backtrack::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Material", Vars::Chams::Backtrack::VisibleMaterial, FDropdown_None, 1);
+				FColorPicker("Color", Vars::Chams::Backtrack::VisibleColor, 0, FColorPicker_Dropdown);
 			} EndSection();
 			if (Section("Fake Angle"))
 			{
-				FToggle("Active", &Vars::Chams::FakeAngle::Active.Value);
+				FToggle("Active", Vars::Chams::FakeAngle::Active);
 
-				FMDropdown("Material", &Vars::Chams::FakeAngle::Chams.Value.VisibleMaterial, FDropdown_None, 1);
-				FColorPicker("Color", &Vars::Chams::FakeAngle::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Material", Vars::Chams::FakeAngle::VisibleMaterial, FDropdown_None, 1);
+				FColorPicker("Color", Vars::Chams::FakeAngle::VisibleColor, 0, FColorPicker_Dropdown);
 			} EndSection();
 			if (Section("Viewmodel"))
 			{
-				FToggle("Weapon", &Vars::Chams::Viewmodel::Weapon.Value);
-				FToggle("Hands", &Vars::Chams::Viewmodel::Hands.Value, FToggle_Middle);
+				FToggle("Weapon", Vars::Chams::Viewmodel::Weapon);
+				FToggle("Hands", Vars::Chams::Viewmodel::Hands, FToggle_Middle);
 
-				FMDropdown("Material", &Vars::Chams::Viewmodel::Chams.Value.VisibleMaterial, FDropdown_None, 1);
-				FColorPicker("Color", &Vars::Chams::Viewmodel::Chams.Value.VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Material", Vars::Chams::Viewmodel::VisibleMaterial, FDropdown_None, 1);
+				FColorPicker("Color", Vars::Chams::Viewmodel::VisibleColor, 0, FColorPicker_Dropdown);
 			} EndSection();
 
 			EndTable();
@@ -559,50 +521,50 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("Friendly"))
 			{
-				FToggle("Players", &Vars::Glow::Friendly::Players.Value);
-				FToggle("Ragdolls", &Vars::Glow::Friendly::Ragdolls.Value, FToggle_Middle);
-				FToggle("Buildings", &Vars::Glow::Friendly::Buildings.Value);
-				FToggle("Projectiles", &Vars::Glow::Friendly::Projectiles.Value, FToggle_Middle);
+				FToggle("Players", Vars::Glow::Friendly::Players);
+				FToggle("Ragdolls", Vars::Glow::Friendly::Ragdolls, FToggle_Middle);
+				FToggle("Buildings", Vars::Glow::Friendly::Buildings);
+				FToggle("Projectiles", Vars::Glow::Friendly::Projectiles, FToggle_Middle);
 				Dummy({ 0, 8 });
 
-				FToggle("Stencil", &Vars::Glow::Friendly::Glow.Value.Stencil);
-				FToggle("Blur", &Vars::Glow::Friendly::Glow.Value.Blur, FToggle_Middle);
-				bTransparent = !Vars::Glow::Friendly::Glow.Value.Stencil;
-					FSlider("Stencil scale## Friendly", &Vars::Glow::Friendly::Glow.Value.StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = !Vars::Glow::Friendly::Glow.Value.Blur;
-					FSlider("Blur scale## Friendly", &Vars::Glow::Friendly::Glow.Value.BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Stencil", Vars::Glow::Friendly::Stencil);
+				FToggle("Blur", Vars::Glow::Friendly::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::Friendly::Stencil);
+					FSlider("Stencil scale## Friendly", Vars::Glow::Friendly::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::Friendly::Blur);
+					FSlider("Blur scale## Friendly", Vars::Glow::Friendly::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Enemy"))
 			{
-				FToggle("Players", &Vars::Glow::Enemy::Players.Value);
-				FToggle("Ragdolls", &Vars::Glow::Enemy::Ragdolls.Value, FToggle_Middle);
-				FToggle("Buildings", &Vars::Glow::Enemy::Buildings.Value);
-				FToggle("Projectiles", &Vars::Glow::Enemy::Projectiles.Value, FToggle_Middle);
+				FToggle("Players", Vars::Glow::Enemy::Players);
+				FToggle("Ragdolls", Vars::Glow::Enemy::Ragdolls, FToggle_Middle);
+				FToggle("Buildings", Vars::Glow::Enemy::Buildings);
+				FToggle("Projectiles", Vars::Glow::Enemy::Projectiles, FToggle_Middle);
 				Dummy({ 0, 8 });
 
-				FToggle("Stencil", &Vars::Glow::Enemy::Glow.Value.Stencil);
-				FToggle("Blur", &Vars::Glow::Enemy::Glow.Value.Blur, FToggle_Middle);
-				bTransparent = !Vars::Glow::Enemy::Glow.Value.Stencil;
-					FSlider("Stencil scale## Enemy", &Vars::Glow::Enemy::Glow.Value.StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = !Vars::Glow::Enemy::Glow.Value.Blur;
-					FSlider("Blur scale## Enemy", &Vars::Glow::Enemy::Glow.Value.BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Stencil", Vars::Glow::Enemy::Stencil);
+				FToggle("Blur", Vars::Glow::Enemy::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::Enemy::Stencil);
+					FSlider("Stencil scale## Enemy", Vars::Glow::Enemy::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::Enemy::Blur);
+					FSlider("Blur scale## Enemy", Vars::Glow::Enemy::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 			if (Section("World"))
 			{
-				FToggle("NPCs", &Vars::Glow::World::NPCs.Value);
-				FToggle("Pickups", &Vars::Glow::World::Pickups.Value, FToggle_Middle);
-				FToggle("Bombs", &Vars::Glow::World::Bombs.Value);
-				FToggle("Halloween", &Vars::Glow::World::Halloween.Value, FToggle_Middle);
+				FToggle("NPCs", Vars::Glow::World::NPCs);
+				FToggle("Pickups", Vars::Glow::World::Pickups, FToggle_Middle);
+				FToggle("Bombs", Vars::Glow::World::Bombs);
+				FToggle("Halloween", Vars::Glow::World::Halloween, FToggle_Middle);
 				Dummy({ 0, 8 });
 
-				FToggle("Stencil", &Vars::Glow::World::Glow.Value.Stencil);
-				FToggle("Blur", &Vars::Glow::World::Glow.Value.Blur, FToggle_Middle);
-				bTransparent = !Vars::Glow::World::Glow.Value.Stencil;
-					FSlider("Stencil scale## World", &Vars::Glow::World::Glow.Value.StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = !Vars::Glow::World::Glow.Value.Blur;
-					FSlider("Blur scale## World", &Vars::Glow::World::Glow.Value.BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Stencil", Vars::Glow::World::Stencil);
+				FToggle("Blur", Vars::Glow::World::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::World::Stencil);
+					FSlider("Stencil scale## World", Vars::Glow::World::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::World::Blur);
+					FSlider("Blur scale## World", Vars::Glow::World::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 
@@ -610,44 +572,44 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("Backtrack"))
 			{
-				FToggle("Active", &Vars::Glow::Backtrack::Active.Value);
+				FToggle("Active", Vars::Glow::Backtrack::Active);
 				SameLine(GetWindowSize().x / 2 + 4); SetCursorPosY(GetCursorPosY() - 24);
-				FDropdown("Draw", &Vars::Glow::Backtrack::Draw.Value, { "Last", "Last + first", "All" }, {}, FDropdown_Left);
+				FDropdown("Draw", Vars::Glow::Backtrack::Draw, { "Last", "Last + first", "All" }, {}, FDropdown_Left);
 				Dummy({ 0, 8 });
 
-				FToggle("Stencil", &Vars::Glow::Backtrack::Glow.Value.Stencil);
-				FToggle("Blur", &Vars::Glow::Backtrack::Glow.Value.Blur, FToggle_Middle);
-				bTransparent = !Vars::Glow::Backtrack::Glow.Value.Stencil;
-					FSlider("Stencil scale## Backtrack", &Vars::Glow::Backtrack::Glow.Value.StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = !Vars::Glow::Backtrack::Glow.Value.Blur;
-					FSlider("Blur scale## Backtrack", &Vars::Glow::Backtrack::Glow.Value.BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Stencil", Vars::Glow::Backtrack::Stencil);
+				FToggle("Blur", Vars::Glow::Backtrack::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::Backtrack::Stencil);
+					FSlider("Stencil scale## Backtrack", Vars::Glow::Backtrack::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::Backtrack::Blur);
+					FSlider("Blur scale## Backtrack", Vars::Glow::Backtrack::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Fake Angle"))
 			{
-				FToggle("Active", &Vars::Glow::FakeAngle::Active.Value);
+				FToggle("Active", Vars::Glow::FakeAngle::Active);
 				Dummy({ 0, 8 });
 
-				FToggle("Stencil", &Vars::Glow::FakeAngle::Glow.Value.Stencil);
-				FToggle("Blur", &Vars::Glow::FakeAngle::Glow.Value.Blur, FToggle_Middle);
-				bTransparent = !Vars::Glow::FakeAngle::Glow.Value.Stencil;
-					FSlider("Stencil scale## FakeAngle", &Vars::Glow::FakeAngle::Glow.Value.StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = !Vars::Glow::FakeAngle::Glow.Value.Blur;
-					FSlider("Blur scale## FakeAngle", &Vars::Glow::FakeAngle::Glow.Value.BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Stencil", Vars::Glow::FakeAngle::Stencil);
+				FToggle("Blur", Vars::Glow::FakeAngle::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::FakeAngle::Stencil);
+					FSlider("Stencil scale## FakeAngle", Vars::Glow::FakeAngle::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::FakeAngle::Blur);
+					FSlider("Blur scale## FakeAngle", Vars::Glow::FakeAngle::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Viewmodel"))
 			{
-				FToggle("Weapon", &Vars::Glow::Viewmodel::Weapon.Value);
-				FToggle("Hands", &Vars::Glow::Viewmodel::Hands.Value, FToggle_Middle);
+				FToggle("Weapon", Vars::Glow::Viewmodel::Weapon);
+				FToggle("Hands", Vars::Glow::Viewmodel::Hands, FToggle_Middle);
 				Dummy({ 0, 8 });
 
-				FToggle("Stencil", &Vars::Glow::Viewmodel::Glow.Value.Stencil);
-				FToggle("Blur", &Vars::Glow::Viewmodel::Glow.Value.Blur, FToggle_Middle);
-				bTransparent = !Vars::Glow::Viewmodel::Glow.Value.Stencil;
-					FSlider("Stencil scale## Viewmodel", &Vars::Glow::Viewmodel::Glow.Value.StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
-				bTransparent = !Vars::Glow::Viewmodel::Glow.Value.Blur;
-					FSlider("Blur scale## Viewmodel", &Vars::Glow::Viewmodel::Glow.Value.BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				FToggle("Stencil", Vars::Glow::Viewmodel::Stencil);
+				FToggle("Blur", Vars::Glow::Viewmodel::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::Viewmodel::Stencil);
+					FSlider("Stencil scale## Viewmodel", Vars::Glow::Viewmodel::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::Viewmodel::Blur);
+					FSlider("Blur scale## Viewmodel", Vars::Glow::Viewmodel::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 
@@ -662,61 +624,61 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("Removals"))
 			{
-				FToggle("Scope", &Vars::Visuals::RemoveScope.Value);
-				FToggle("Interpolation", &Vars::Visuals::RemoveInterpolation.Value, FToggle_Middle);
-				FToggle("Disguises", &Vars::Visuals::RemoveDisguises.Value);
-				FToggle("Screen overlays", &Vars::Visuals::RemoveScreenOverlays.Value, FToggle_Middle);
-				FToggle("Taunts", &Vars::Visuals::RemoveTaunts.Value);
-				FToggle("Screen effects", &Vars::Visuals::RemoveScreenEffects.Value, FToggle_Middle);
-				FToggle("View punch", &Vars::Visuals::RemovePunch.Value);
-				FToggle("Angle forcing", &Vars::Visuals::PreventForcedAngles.Value, FToggle_Middle);
-				FToggle("MOTD", &Vars::Visuals::RemoveMOTD.Value);
-				FToggle("Convar queries", &Vars::Visuals::RemoveConvarQueries.Value, FToggle_Middle);
-				FToggle("Post processing", &Vars::Visuals::RemovePostProcessing.Value);
-				FToggle("DSP", &Vars::Visuals::RemoveDSP.Value, FToggle_Middle);
+				FToggle("Scope", Vars::Visuals::Removals::Scope);
+				FToggle("Interpolation", Vars::Visuals::Removals::Interpolation, FToggle_Middle);
+				FToggle("Disguises", Vars::Visuals::Removals::Disguises);
+				FToggle("Screen overlays", Vars::Visuals::Removals::ScreenOverlays, FToggle_Middle);
+				FToggle("Taunts", Vars::Visuals::Removals::Taunts);
+				FToggle("Screen effects", Vars::Visuals::Removals::ScreenEffects, FToggle_Middle);
+				FToggle("View punch", Vars::Visuals::Removals::ViewPunch);
+				FToggle("Angle forcing", Vars::Visuals::Removals::AngleForcing, FToggle_Middle);
+				FToggle("MOTD", Vars::Visuals::Removals::MOTD);
+				FToggle("Convar queries", Vars::Visuals::Removals::ConvarQueries, FToggle_Middle);
+				FToggle("Post processing", Vars::Visuals::Removals::PostProcessing);
+				FToggle("DSP", Vars::Visuals::Removals::DSP, FToggle_Middle);
 			} EndSection();
 			if (Section("UI"))
 			{
-				FSlider("Field of view", &Vars::Visuals::FieldOfView.Value, 0, 160, 1, "%d");
-				FSlider("Zoomed field of view", &Vars::Visuals::ZoomFieldOfView.Value, 0, 160, 1, "%d");
-				FToggle("Reveal scoreboard", &Vars::Visuals::RevealScoreboard.Value);
-				FToggle("Scoreboard playerlist", &Vars::Visuals::ScoreboardPlayerlist.Value, FToggle_Middle);
-				FToggle("Scoreboard colors", &Vars::Visuals::ScoreboardColors.Value);
-				FToggle("Clean screenshots", &Vars::Visuals::CleanScreenshots.Value, FToggle_Middle);
-				FToggle("Sniper sightlines", &Vars::Visuals::SniperSightlines.Value);
-				FToggle("Pickup timers", &Vars::Visuals::PickupTimers.Value, FToggle_Middle);
+				FSlider("Field of view", Vars::Visuals::UI::FieldOfView, 0, 160, 1, "%d");
+				FSlider("Zoomed field of view", Vars::Visuals::UI::ZoomFieldOfView, 0, 160, 1, "%d");
+				FToggle("Reveal scoreboard", Vars::Visuals::UI::RevealScoreboard);
+				FToggle("Scoreboard playerlist", Vars::Visuals::UI::ScoreboardPlayerlist, FToggle_Middle);
+				FToggle("Scoreboard colors", Vars::Visuals::UI::ScoreboardColors);
+				FToggle("Clean screenshots", Vars::Visuals::UI::CleanScreenshots, FToggle_Middle);
+				FToggle("Sniper sightlines", Vars::Visuals::UI::SniperSightlines);
+				FToggle("Pickup timers", Vars::Visuals::UI::PickupTimers, FToggle_Middle);
 			} EndSection();
 			if (Section("Viewmodel"))
 			{
-				FToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
-				FToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value, FToggle_Middle);
-				FSlider("Offset X", &Vars::Visuals::VMOffsetX.Value, -45, 45, 5, "%d", FSlider_Precision);
-				FSlider("Offset Y", &Vars::Visuals::VMOffsetY.Value, -45, 45, 5, "%d", FSlider_Precision);
-				FSlider("Offset Z", &Vars::Visuals::VMOffsetZ.Value, -45, 45, 5, "%d", FSlider_Precision);
-				FSlider("Roll", &Vars::Visuals::VMRoll.Value, -180, 180, 5, "%d", FSlider_Clamp | FSlider_Precision);
-				FToggle("Sway", &Vars::Visuals::ViewmodelSway.Value);
-				bTransparent = !Vars::Visuals::ViewmodelSway.Value;
-					FSlider("Sway scale", &Vars::Visuals::ViewmodelSwayScale.Value, 0.01f, 5.f, 0.1f, "%.1f", FSlider_Left);
-					FSlider("Sway interp", &Vars::Visuals::ViewmodelSwayInterp.Value, 0.01f, 1.f, 0.1f, "%.1f", FSlider_Right);
+				FToggle("Crosshair aim position", Vars::Visuals::Viewmodel::CrosshairAim);
+				FToggle("Viewmodel aim position", Vars::Visuals::Viewmodel::ViewmodelAim, FToggle_Middle);
+				FSlider("Offset X", Vars::Visuals::Viewmodel::OffsetX, -45, 45, 5, "%d", FSlider_Precision);
+				FSlider("Offset Y", Vars::Visuals::Viewmodel::OffsetY, -45, 45, 5, "%d", FSlider_Precision);
+				FSlider("Offset Z", Vars::Visuals::Viewmodel::OffsetZ, -45, 45, 5, "%d", FSlider_Precision);
+				FSlider("Roll", Vars::Visuals::Viewmodel::Roll, -180, 180, 5, "%d", FSlider_Clamp | FSlider_Precision);
+				FToggle("Sway", Vars::Visuals::Viewmodel::Sway);
+				bTransparent = !FGet(Vars::Visuals::Viewmodel::Sway);
+					FSlider("Sway scale", Vars::Visuals::Viewmodel::SwayScale, 0.01f, 5.f, 0.1f, "%.1f", FSlider_Left);
+					FSlider("Sway interp", Vars::Visuals::Viewmodel::SwayInterp, 0.01f, 1.f, 0.1f, "%.1f", FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Tracers"))
 			{
-				FSDropdown("Bullet trail", &Vars::Visuals::Tracers::ParticleTracer.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP 2", "Big Nasty", "Distortion Trail", "Black Ink" }, FSDropdown_Custom | FSDropdown_Left);
-				FSDropdown("Crit trail", &Vars::Visuals::Tracers::ParticleTracerCrits.Value, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP 2", "Big Nasty", "Distortion Trail", "Black Ink" }, FSDropdown_Custom | FSDropdown_Right);
+				FSDropdown("Bullet trail", Vars::Visuals::Tracers::ParticleTracer, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP 2", "Big Nasty", "Distortion Trail", "Black Ink" }, FSDropdown_Custom | FDropdown_Left);
+				FSDropdown("Crit trail", Vars::Visuals::Tracers::ParticleTracerCrits, { "Off", "Machina", "C.A.P.P.E.R", "Short Circuit", "Merasmus ZAP", "Merasmus ZAP 2", "Big Nasty", "Distortion Trail", "Black Ink" }, FSDropdown_Custom | FDropdown_Right);
 			} EndSection();
 			if (Section("Ragdolls"))
 			{
-				FToggle("No ragdolls", &Vars::Visuals::Ragdolls::NoRagdolls.Value);
-				FToggle("No gibs", &Vars::Visuals::Ragdolls::NoGib.Value, FToggle_Middle);
-				FToggle("Mods", &Vars::Visuals::Ragdolls::Active.Value);
-				bTransparent = !Vars::Visuals::Ragdolls::Active.Value;
-					FToggle("Enemy only", &Vars::Visuals::Ragdolls::EnemyOnly.Value, FToggle_Middle);
-					FDropdown("Ragdoll effects", &Vars::Visuals::Ragdolls::Effects.Value, { "Burning", "Electrocuted", "Ash", "Dissolve" }, {}, FDropdown_Multi | FDropdown_Left);
-					FDropdown("Ragdoll model", &Vars::Visuals::Ragdolls::Type.Value, { "None", "Gold", "Ice" }, {}, FDropdown_Right);
-					FSlider("Ragdoll force", &Vars::Visuals::Ragdolls::Force.Value, -10.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
-					FSlider("Horizontal force", &Vars::Visuals::Ragdolls::ForceHorizontal.Value, -10.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
-					FSlider("Vertical force", &Vars::Visuals::Ragdolls::ForceVertical.Value, -10.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
+				FToggle("No ragdolls", Vars::Visuals::Ragdolls::NoRagdolls);
+				FToggle("No gibs", Vars::Visuals::Ragdolls::NoGib, FToggle_Middle);
+				FToggle("Mods", Vars::Visuals::Ragdolls::Active);
+				bTransparent = !FGet(Vars::Visuals::Ragdolls::Active);
+					FToggle("Enemy only", Vars::Visuals::Ragdolls::EnemyOnly, FToggle_Middle);
+					FDropdown("Ragdoll effects", Vars::Visuals::Ragdolls::Effects, { "Burning", "Electrocuted", "Ash", "Dissolve" }, {}, FDropdown_Multi | FDropdown_Left);
+					FDropdown("Ragdoll model", Vars::Visuals::Ragdolls::Type, { "None", "Gold", "Ice" }, {}, FDropdown_Right);
+					FSlider("Ragdoll force", Vars::Visuals::Ragdolls::Force, -10.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
+					FSlider("Horizontal force", Vars::Visuals::Ragdolls::ForceHorizontal, -10.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
+					FSlider("Vertical force", Vars::Visuals::Ragdolls::ForceVertical, -10.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
 				bTransparent = false;
 			} EndSection();
 
@@ -724,97 +686,96 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("Bullet"))
 			{
-				FColorPicker("Bullet tracer color", &Vars::Colors::BulletTracer.Value);
-				FToggle("Bullet tracers", &Vars::Visuals::BulletTracer.Value);
+				FColorPicker("Bullet tracer color", Vars::Colors::BulletTracer);
+				FToggle("Bullet tracers", Vars::Visuals::Bullet::BulletTracer);
 			} EndSection();
 			if (Section("Simulation"))
 			{
-				FColorPicker("Prediction line color", &Vars::Colors::PredictionColor.Value, 1); FColorPicker("Projectile line color", &Vars::Colors::ProjectileColor.Value);
-				FToggle("Enabled", &Vars::Visuals::SimLines.Value);
-				FToggle("Timed", &Vars::Visuals::TimedLines.Value, FToggle_Middle);
-				FToggle("Seperators", &Vars::Visuals::SimSeperators.Value);
-				bTransparent = !Vars::Visuals::SimSeperators.Value;
-					FSlider("Seperator length", &Vars::Visuals::SeperatorLength.Value, 2, 16, 1, "%d", FSlider_Left);
-					FSlider("Seperator spacing", &Vars::Visuals::SeperatorSpacing.Value, 1, 16, 1, "%d", FSlider_Right);
+				FColorPicker("Prediction line color", Vars::Colors::PredictionColor, 1); FColorPicker("Projectile line color", Vars::Colors::ProjectileColor);
+				FToggle("Enabled", Vars::Visuals::Simulation::Enabled);
+				FToggle("Timed", Vars::Visuals::Simulation::Timed, FToggle_Middle);
+				FToggle("Seperators", Vars::Visuals::Simulation::Separators);
+				bTransparent = !FGet(Vars::Visuals::Simulation::Separators);
+					FSlider("Seperator length", Vars::Visuals::Simulation::SeparatorLength, 2, 16, 1, "%d", FSlider_Left);
+					FSlider("Seperator spacing", Vars::Visuals::Simulation::SeparatorSpacing, 1, 16, 1, "%d", FSlider_Right);
 				bTransparent = false;
-				FColorPicker("Clipped line color", &Vars::Colors::ClippedColor.Value);
-				FToggle("Projectile trajectory", &Vars::Visuals::ProjectileTrajectory.Value);
-				FToggle("Projectile camera", &Vars::Visuals::ProjectileCamera.Value, FToggle_Middle);
-				FToggle("Trajectory on shot", &Vars::Visuals::TrajectoryOnShot.Value);
-				FToggle("Swing prediction lines", &Vars::Visuals::SwingLines.Value, FToggle_Middle);
+				FColorPicker("Clipped line color", Vars::Colors::ClippedColor);
+				FToggle("Projectile trajectory", Vars::Visuals::Simulation::ProjectileTrajectory);
+				FToggle("Projectile camera", Vars::Visuals::Simulation::ProjectileCamera, FToggle_Middle);
+				FToggle("Trajectory on shot", Vars::Visuals::Simulation::TrajectoryOnShot);
+				FToggle("Swing prediction lines", Vars::Visuals::Simulation::SwingLines, FToggle_Middle);
 			} EndSection();
 			if (Vars::Debug::Info.Value)
 			{
 				if (Section("debug"))
 				{
-					FToggle("overwrite", &Vars::Visuals::PTOverwrite.Value);
-					FSlider("off x", &Vars::Visuals::PTOffX.Value, -25.f, 25.f, 0.5f, "%.1f", FSlider_Precision);
-					FSlider("off y", &Vars::Visuals::PTOffY.Value, -25.f, 25.f, 0.5f, "%.1f", FSlider_Precision);
-					FSlider("off z", &Vars::Visuals::PTOffZ.Value, -25.f, 25.f, 0.5f, "%.1f", FSlider_Precision);
-					FToggle("pipes", &Vars::Visuals::PTPipes.Value);
-					FSlider("hull", &Vars::Visuals::PTHull.Value, 0.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
-					FSlider("speed", &Vars::Visuals::PTSpeed.Value, 0.f, 5000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("gravity", &Vars::Visuals::PTGravity.Value, 0.f, 2.f, 0.1f, "%.1f", FSlider_Precision);
-					FToggle("no spin", &Vars::Visuals::PTNoSpin.Value);
-					FSlider("lifetime", &Vars::Visuals::PTLifeTime.Value, 0.f, 10.f, 0.1f, "%.1f", FSlider_Precision);
-					FSlider("up vel", &Vars::Visuals::PTUpVelocity.Value, 0.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("ang vel x", &Vars::Visuals::PTAngVelocityX.Value, -1000.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("ang vel y", &Vars::Visuals::PTAngVelocityY.Value, -1000.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("ang vel z", &Vars::Visuals::PTAngVelocityZ.Value, -1000.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("drag", &Vars::Visuals::PTDrag.Value, 0.f, 2.f, 0.1f, "%.1f", FSlider_Precision);
-					FSlider("drag x", &Vars::Visuals::PTDragBasisX.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("drag y", &Vars::Visuals::PTDragBasisY.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("drag z", &Vars::Visuals::PTDragBasisZ.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("ang drag x", &Vars::Visuals::PTAngDragBasisX.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("ang drag y", &Vars::Visuals::PTAngDragBasisY.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("ang drag z", &Vars::Visuals::PTAngDragBasisZ.Value, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
-					FSlider("max vel", &Vars::Visuals::PTMaxVelocity.Value, 0.f, 4000.f, 50.f, "%.0f", FSlider_Precision);
-					FSlider("max ang vel", &Vars::Visuals::PTMaxAngularVelocity.Value, 0.f, 7200.f, 50.f, "%.0f", FSlider_Precision);
+					FToggle("overwrite", Vars::Visuals::Trajectory::Overwrite);
+					FSlider("off x", Vars::Visuals::Trajectory::OffX, -25.f, 25.f, 0.5f, "%.1f", FSlider_Precision);
+					FSlider("off y", Vars::Visuals::Trajectory::OffY, -25.f, 25.f, 0.5f, "%.1f", FSlider_Precision);
+					FSlider("off z", Vars::Visuals::Trajectory::OffZ, -25.f, 25.f, 0.5f, "%.1f", FSlider_Precision);
+					FToggle("pipes", Vars::Visuals::Trajectory::Pipes);
+					FSlider("hull", Vars::Visuals::Trajectory::Hull, 0.f, 10.f, 0.5f, "%.1f", FSlider_Precision);
+					FSlider("speed", Vars::Visuals::Trajectory::Speed, 0.f, 5000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("gravity", Vars::Visuals::Trajectory::Gravity, 0.f, 2.f, 0.1f, "%.1f", FSlider_Precision);
+					FToggle("no spin", Vars::Visuals::Trajectory::NoSpin);
+					FSlider("lifetime", Vars::Visuals::Trajectory::LifeTime, 0.f, 10.f, 0.1f, "%.1f", FSlider_Precision);
+					FSlider("up vel", Vars::Visuals::Trajectory::UpVelocity, 0.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("ang vel x", Vars::Visuals::Trajectory::AngVelocityX, -1000.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("ang vel y", Vars::Visuals::Trajectory::AngVelocityY, -1000.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("ang vel z", Vars::Visuals::Trajectory::AngVelocityZ, -1000.f, 1000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("drag", Vars::Visuals::Trajectory::Drag, 0.f, 2.f, 0.1f, "%.1f", FSlider_Precision);
+					FSlider("drag x", Vars::Visuals::Trajectory::DragBasisX, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("drag y", Vars::Visuals::Trajectory::DragBasisY, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("drag z", Vars::Visuals::Trajectory::DragBasisZ, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("ang drag x", Vars::Visuals::Trajectory::AngDragBasisX, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("ang drag y", Vars::Visuals::Trajectory::AngDragBasisY, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("ang drag z", Vars::Visuals::Trajectory::AngDragBasisZ, 0.f, 0.1f, 0.01f, "%.2f", FSlider_Precision);
+					FSlider("max vel", Vars::Visuals::Trajectory::MaxVelocity, 0.f, 4000.f, 50.f, "%.0f", FSlider_Precision);
+					FSlider("max ang vel", Vars::Visuals::Trajectory::MaxAngularVelocity, 0.f, 7200.f, 50.f, "%.0f", FSlider_Precision);
 				} EndSection();
 			}
 			if (Section("Hitbox"))
 			{
-				FColorPicker("Edge color", &Vars::Colors::HitboxEdge.Value, 1); FColorPicker("Face color", &Vars::Colors::HitboxFace.Value);
-				FToggle("Draw Hitboxes", &Vars::Visuals::ShowHitboxes.Value);
+				FColorPicker("Edge color", Vars::Colors::HitboxEdge, 1); FColorPicker("Face color", Vars::Colors::HitboxFace);
+				FToggle("Draw Hitboxes", Vars::Visuals::Hitbox::ShowHitboxes);
 			} EndSection();
 			if (Section("Thirdperson"))
 			{
-				FToggle("Thirdperson", &Vars::Visuals::ThirdPerson::Active.Value);
-				FKeybind("Thirdperson key", Vars::Visuals::ThirdPerson::Key.Value);
-				FSlider("Thirdperson distance", &Vars::Visuals::ThirdPerson::Distance.Value, 0.f, 500.f, 5.f, "%.0f", FSlider_Precision);
-				FSlider("Thirdperson right", &Vars::Visuals::ThirdPerson::Right.Value, -500.f, 500.f, 5.f, "%.0f", FSlider_Precision);
-				FSlider("Thirdperson up", &Vars::Visuals::ThirdPerson::Up.Value, -500.f, 500.f, 5.f, "%.0f", FSlider_Precision);
-				FToggle("Thirdperson crosshair", &Vars::Visuals::ThirdPerson::Crosshair.Value);
+				FToggle("Thirdperson", Vars::Visuals::ThirdPerson::Active);
+				FToggle("Thirdperson crosshair", Vars::Visuals::ThirdPerson::Crosshair, FToggle_Middle);
+				FSlider("Thirdperson distance", Vars::Visuals::ThirdPerson::Distance, 0.f, 500.f, 5.f, "%.0f", FSlider_Precision);
+				FSlider("Thirdperson right", Vars::Visuals::ThirdPerson::Right, -500.f, 500.f, 5.f, "%.0f", FSlider_Precision);
+				FSlider("Thirdperson up", Vars::Visuals::ThirdPerson::Up, -500.f, 500.f, 5.f, "%.0f", FSlider_Precision);
 			} EndSection();
 			if (Section("Out of FOV arrows"))
 			{
-				FToggle("Active", &Vars::Visuals::Arrows::Active.Value);
-				FSlider("Offset", &Vars::Visuals::Arrows::Offset.Value, 0, 500, 25, "%d", FSlider_Precision);
-				FSlider("Max distance", &Vars::Visuals::Arrows::MaxDist.Value, 0.f, 5000.f, 50.f, "%.0f", FSlider_Precision);
+				FToggle("Active", Vars::Visuals::FOVArrows::Active);
+				FSlider("Offset", Vars::Visuals::FOVArrows::Offset, 0, 500, 25, "%d", FSlider_Precision);
+				FSlider("Max distance", Vars::Visuals::FOVArrows::MaxDist, 0.f, 5000.f, 50.f, "%.0f", FSlider_Precision);
 			} EndSection();
 			if (Section("World"))
 			{
-				FSDropdown("World texture", &Vars::Visuals::World::WorldTexture.Value, { "Default", "Dev", "Camo", "Black", "White", "Flat" }, FSDropdown_Custom);
-				FDropdown("Modulations", &Vars::Visuals::World::Modulations.Value, { "World", "Sky", "Prop", "Particle", "Fog" }, { }, FDropdown_Left | FDropdown_Multi);
+				FSDropdown("World texture", Vars::Visuals::World::WorldTexture, { "Default", "Dev", "Camo", "Black", "White", "Flat" }, FSDropdown_Custom);
+				FDropdown("Modulations", Vars::Visuals::World::Modulations, { "World", "Sky", "Prop", "Particle", "Fog" }, { }, FDropdown_Left | FDropdown_Multi);
 				static std::vector skyNames = {
 					"Off", "sky_tf2_04", "sky_upward", "sky_dustbowl_01", "sky_goldrush_01", "sky_granary_01", "sky_well_01", "sky_gravel_01", "sky_badlands_01",
 					"sky_hydro_01", "sky_night_01", "sky_nightfall_01", "sky_trainyard_01", "sky_stormfront_01", "sky_morningsnow_01","sky_alpinestorm_01",
 					"sky_harvest_01", "sky_harvest_night_01", "sky_halloween", "sky_halloween_night_01", "sky_halloween_night2014_01", "sky_island_01", "sky_rainbow_01"
 				};
-				FSDropdown("Skybox changer", &Vars::Visuals::World::SkyboxChanger.Value, skyNames, FSDropdown_Custom | FSDropdown_Right);
-				bTransparent = !(Vars::Visuals::World::Modulations.Value & 1 << 0);
-					FColorPicker("World modulation", &Vars::Colors::WorldModulation.Value, 0, FColorPicker_Left);
-				bTransparent = !(Vars::Visuals::World::Modulations.Value & 1 << 1);
-					FColorPicker("Sky modulation", &Vars::Colors::SkyModulation.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				bTransparent = !(Vars::Visuals::World::Modulations.Value & 1 << 2);
-					FColorPicker("Prop modulation", &Vars::Colors::PropModulation.Value, 0, FColorPicker_Left);
-				bTransparent = !(Vars::Visuals::World::Modulations.Value & 1 << 3);
-					FColorPicker("Particle modulation", &Vars::Colors::ParticleModulation.Value, 0, FColorPicker_Middle | FColorPicker_SameLine);
-				bTransparent = !(Vars::Visuals::World::Modulations.Value & 1 << 4);
-					FColorPicker("Fog modulation", &Vars::Colors::FogModulation.Value, 0, FColorPicker_Left);
+				FSDropdown("Skybox changer", Vars::Visuals::World::SkyboxChanger, skyNames, FSDropdown_Custom | FDropdown_Right);
+				bTransparent = !(FGet(Vars::Visuals::World::Modulations) & 1 << 0);
+					FColorPicker("World modulation", Vars::Colors::WorldModulation, 0, FColorPicker_Left);
+				bTransparent = !(FGet(Vars::Visuals::World::Modulations) & 1 << 1);
+					FColorPicker("Sky modulation", Vars::Colors::SkyModulation, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				bTransparent = !(FGet(Vars::Visuals::World::Modulations) & 1 << 2);
+					FColorPicker("Prop modulation", Vars::Colors::PropModulation, 0, FColorPicker_Left);
+				bTransparent = !(FGet(Vars::Visuals::World::Modulations) & 1 << 3);
+					FColorPicker("Particle modulation", Vars::Colors::ParticleModulation, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				bTransparent = !(FGet(Vars::Visuals::World::Modulations) & 1 << 4);
+					FColorPicker("Fog modulation", Vars::Colors::FogModulation, 0, FColorPicker_Left);
 				bTransparent = false;
-				FToggle("Near prop fade", &Vars::Visuals::World::NearPropFade.Value);
-				FToggle("No prop fade", &Vars::Visuals::World::NoPropFade.Value, FToggle_Middle);
+				FToggle("Near prop fade", Vars::Visuals::World::NearPropFade);
+				FToggle("No prop fade", Vars::Visuals::World::NoPropFade, FToggle_Middle);
 			} EndSection();
 
 			EndTable();
@@ -828,40 +789,40 @@ void CMenu::MenuVisuals()
 			TableNextColumn();
 			if (Section("Main"))
 			{
-				FToggle("Active", &Vars::Radar::Main::Active.Value);
-				FToggle("Draw out of range", &Vars::Radar::Main::AlwaysDraw.Value, FToggle_Middle);
-				FDropdown("Style", &Vars::Radar::Main::Style.Value, { "Circle", "Rectangle" });
-				FSlider("Range", &Vars::Radar::Main::Range.Value, 50, 3000, 50, "%d", FSlider_Precision);
-				FSlider("Background alpha", &Vars::Radar::Main::BackAlpha.Value, 0, 255, 1, "%d", FSlider_Clamp);
-				FSlider("Line alpha", &Vars::Radar::Main::LineAlpha.Value, 0, 255, 1, "%d", FSlider_Clamp);
+				FToggle("Active", Vars::Radar::Main::Active);
+				FToggle("Draw out of range", Vars::Radar::Main::AlwaysDraw, FToggle_Middle);
+				FDropdown("Style", Vars::Radar::Main::Style, { "Circle", "Rectangle" });
+				FSlider("Range", Vars::Radar::Main::Range, 50, 3000, 50, "%d", FSlider_Precision);
+				FSlider("Background alpha", Vars::Radar::Main::BackAlpha, 0, 255, 1, "%d", FSlider_Clamp);
+				FSlider("Line alpha", Vars::Radar::Main::LineAlpha, 0, 255, 1, "%d", FSlider_Clamp);
 			} EndSection();
 			if (Section("Player"))
 			{
-				FToggle("Active", &Vars::Radar::Players::Active.Value);
-				FToggle("Background", &Vars::Radar::Players::Background.Value, FToggle_Middle);
-				FDropdown("Draw", &Vars::Radar::Players::Draw.Value, { "Local", "Enemy", "Team", "Friends", "Cloaked" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Icon", &Vars::Radar::Players::IconType.Value, { "Icons", "Portraits", "Avatar" }, {}, FDropdown_Right);
-				FSlider("Icon size## Player", &Vars::Radar::Players::IconSize.Value, 12, 30, 2);
-				FToggle("Health bar", &Vars::Radar::Players::Health.Value);
-				FToggle("Height indicator", &Vars::Radar::Players::Height.Value, FToggle_Middle);
+				FToggle("Active", Vars::Radar::Players::Active);
+				FToggle("Background", Vars::Radar::Players::Background, FToggle_Middle);
+				FDropdown("Draw", Vars::Radar::Players::Draw, { "Local", "Enemy", "Team", "Friends", "Cloaked" }, {}, FDropdown_Multi | FDropdown_Left);
+				FDropdown("Icon", Vars::Radar::Players::IconType, { "Icons", "Portraits", "Avatar" }, {}, FDropdown_Right);
+				FSlider("Icon size## Player", Vars::Radar::Players::IconSize, 12, 30, 2);
+				FToggle("Health bar", Vars::Radar::Players::Health);
+				FToggle("Height indicator", Vars::Radar::Players::Height, FToggle_Middle);
 			} EndSection();
 
 			/* Column 2 */
 			TableNextColumn();
 			if (Section("Building"))
 			{
-				FToggle("Active", &Vars::Radar::Buildings::Active.Value);
-				FToggle("Background", &Vars::Radar::Buildings::Background.Value, FToggle_Middle);
-				FDropdown("Draw", &Vars::Radar::Buildings::Draw.Value, { "Local", "Enemy", "Team", "Friends" }, {}, FDropdown_Multi);
-				FSlider("Icon size## Building", &Vars::Radar::Buildings::IconSize.Value, 12, 30, 2);
-				FToggle("Health bar", &Vars::Radar::Buildings::Health.Value);
+				FToggle("Active", Vars::Radar::Buildings::Active);
+				FToggle("Background", Vars::Radar::Buildings::Background, FToggle_Middle);
+				FDropdown("Draw", Vars::Radar::Buildings::Draw, { "Local", "Enemy", "Team", "Friends" }, {}, FDropdown_Multi);
+				FSlider("Icon size## Building", Vars::Radar::Buildings::IconSize, 12, 30, 2);
+				FToggle("Health bar", Vars::Radar::Buildings::Health);
 			} EndSection();
 			if (Section("World"))
 			{
-				FToggle("Active", &Vars::Radar::World::Active.Value);
-				FToggle("Background", &Vars::Radar::World::Background.Value, FToggle_Middle);
-				FDropdown("Draw", &Vars::Radar::World::Draw.Value, { "Health", "Ammo", "Money", "Bombs", "Halloween" }, {}, FDropdown_Multi);
-				FSlider("Icon size## World", &Vars::Radar::World::IconSize.Value, 12, 30, 2);
+				FToggle("Active", Vars::Radar::World::Active);
+				FToggle("Background", Vars::Radar::World::Background, FToggle_Middle);
+				FDropdown("Draw", Vars::Radar::World::Draw, { "Health", "Ammo", "Money", "Bombs", "Halloween" }, {}, FDropdown_Multi);
+				FSlider("Icon size## World", Vars::Radar::World::IconSize, 12, 30, 2);
 			} EndSection();
 
 			EndTable();
@@ -870,37 +831,33 @@ void CMenu::MenuVisuals()
 	// Menu
 	case 5:
 	{
-		bool bUpdate = false;
-
 		if (BeginTable("MenuTable", 2))
 		{
 			/* Column 1 */
 			TableNextColumn();
 			if (Section("General"))
 			{
-				bUpdate = FColorPicker("Accent color", &Vars::Menu::Theme::Accent.Value, 0, FColorPicker_Left);
-				bUpdate = FColorPicker("Foremost color", &Vars::Menu::Theme::Foremost.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
-				bUpdate = FColorPicker("Background color", &Vars::Menu::Theme::Background.Value, 0, FColorPicker_Left) || bUpdate;
-				bUpdate = FColorPicker("Foreground color", &Vars::Menu::Theme::Foreground.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
-				bUpdate = FColorPicker("Active color", &Vars::Menu::Theme::Active.Value, 0, FColorPicker_Left) || bUpdate;
-				bUpdate = FColorPicker("Inactive color", &Vars::Menu::Theme::Inactive.Value, 0, FColorPicker_Middle | FColorPicker_SameLine) || bUpdate;
+				FColorPicker("Accent color", Vars::Menu::Theme::Accent, 0, FColorPicker_Left);
+				FColorPicker("Foremost color", Vars::Menu::Theme::Foremost, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Background color", Vars::Menu::Theme::Background, 0, FColorPicker_Left);
+				FColorPicker("Foreground color", Vars::Menu::Theme::Foreground, 0, FColorPicker_Middle | FColorPicker_SameLine);
+				FColorPicker("Active color", Vars::Menu::Theme::Active, 0, FColorPicker_Left);
+				FColorPicker("Inactive color", Vars::Menu::Theme::Inactive, 0, FColorPicker_Middle | FColorPicker_SameLine);
 
-				FSDropdown("Cheat title", &Vars::Menu::CheatName.Value, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
-				FSDropdown("Chat info prefix", &Vars::Menu::CheatPrefix.Value, {}, FSDropdown_Right);
-				FKeybind("Menu key", Vars::Menu::MenuKey.Value, true);
+				FSDropdown("Cheat title", Vars::Menu::CheatName, {}, FSDropdown_AutoUpdate | FDropdown_Left);
+				FSDropdown("Chat info prefix", Vars::Menu::CheatPrefix, {}, FDropdown_Right);
+				FKeybind("Menu primary key", Vars::Menu::MenuPrimaryKey.Map["default"], FButton_Left | FKeybind_AllowMenu);
+				FKeybind("Menu secondary key", Vars::Menu::MenuSecondaryKey.Map["default"], FButton_Right | FButton_SameLine | FKeybind_AllowMenu);
+				if (Vars::Menu::MenuPrimaryKey.Map["default"] == VK_LBUTTON)
+					Vars::Menu::MenuPrimaryKey.Map["default"] = VK_INSERT;
+				if (Vars::Menu::MenuSecondaryKey.Map["default"] == VK_LBUTTON)
+					Vars::Menu::MenuSecondaryKey.Map["default"] = VK_F3;
 			} EndSection();
 			if (Section("Indicators"))
 			{
-				FDropdown("Indicators", &Vars::Menu::Indicators.Value, { "Ticks", "Crit hack", "Spectators", "Ping", "Conditions" }, {}, FDropdown_Multi);
-				if (FSlider("DPI", &Vars::Menu::DPI.Value, 0.8f, 1.8f, 0.2f, "%.1f", FSlider_Precision))
-				{
-					g_Draw.RemakeFonts();
-					for (const auto var : g_Vars)
-					{
-						if (var->m_iType == typeid(DragBox_t).hash_code())
-							var->GetVar<DragBox_t>()->Value.update = true;
-					}
-				}
+				FDropdown("Indicators", Vars::Menu::Indicators, { "Ticks", "Crit hack", "Spectators", "Ping", "Conditions", "Seed prediction" }, {}, FDropdown_Multi);
+				if (FSlider("DPI", Vars::Menu::DPI, 0.8f, 1.8f, 0.2f, "%.1f", FSlider_Precision))
+					g_Draw.RemakeFonts(Vars::Menu::DPI.Map["default"]);
 			} EndSection();
 
 			/* Column 2 */
@@ -908,9 +865,6 @@ void CMenu::MenuVisuals()
 
 			EndTable();
 		}
-
-		if (bUpdate)
-			LoadStyle();
 	}
 	}
 }
@@ -926,102 +880,112 @@ void CMenu::MenuMisc()
 		TableNextColumn();
 		if (Section("Movement"))
 		{
-			FDropdown("Autostrafe", &Vars::Misc::AutoStrafe.Value, { "Off", "Legit", "Directional" });
-			bTransparent = Vars::Misc::AutoStrafe.Value != 2;
-				FToggle("Only on movement key", &Vars::Misc::DirectionalOnlyOnMove.Value);
-				FToggle("Only on space", &Vars::Misc::DirectionalOnlyOnSpace.Value, FToggle_Middle);
+			FDropdown("Autostrafe", Vars::Misc::Movement::AutoStrafe, { "Off", "Legit", "Directional" });
+			bTransparent = FGet(Vars::Misc::Movement::AutoStrafe) != 2;
+				FSlider("Autostrafe turn scale", Vars::Misc::Movement::AutoStrafeTurnScale, 0.f, 1.f, 0.1f, "%.1f", FSlider_Clamp | FSlider_Precision);
 			bTransparent = false;
-			FToggle("Bunnyhop", &Vars::Misc::AutoJump.Value);
-			FToggle("Auto jumpbug", &Vars::Misc::AutoJumpbug.Value, FToggle_Middle); // this is unreliable without setups, do not depend on it!
-			FToggle("Fast stop", &Vars::Misc::FastStop.Value);
-			FToggle("Fast accelerate", &Vars::Misc::FastAccel.Value, FToggle_Middle);
-			FToggle("Fast strafe", &Vars::Misc::FastStrafe.Value);
-			FToggle("No push", &Vars::Misc::NoPush.Value, FToggle_Middle);
-			FToggle("Crouch speed", &Vars::Misc::CrouchSpeed.Value);
+			FToggle("Bunnyhop", Vars::Misc::Movement::Bunnyhop);
+			FToggle("Auto jumpbug", Vars::Misc::Movement::AutoJumpbug, FToggle_Middle); // this is unreliable without setups, do not depend on it!
+			FToggle("Auto rocketjump", Vars::Misc::Movement::AutoRocketJump);
+			FToggle("Auto ctap", Vars::Misc::Movement::AutoCTap, FToggle_Middle);
+			FToggle("Fast stop", Vars::Misc::Movement::FastStop);
+			FToggle("Fast accelerate", Vars::Misc::Movement::FastAccel, FToggle_Middle);
+			FToggle("Fast strafe", Vars::Misc::Movement::FastStrafe);
+			FToggle("No push", Vars::Misc::Movement::NoPush, FToggle_Middle);
+			FToggle("Crouch speed", Vars::Misc::Movement::CrouchSpeed);
 		} EndSection();
+		if (Vars::Debug::Info.Value)
+		{
+			if (Section("debug"))
+			{
+				FSlider("timing offset", Vars::Misc::Movement::TimingOffset, -1, 1);
+				FSlider("apply timing offset above", Vars::Misc::Movement::ApplyAbove, 0, 8);
+			} EndSection();
+		}
 		if (Section("Exploits"))
 		{
-			FToggle("Cheats bypass", &Vars::Misc::CheatsBypass.Value);
-			FToggle("Pure bypass", &Vars::Misc::BypassPure.Value, FToggle_Middle);
-			FToggle("Ping reducer", &Vars::Misc::PingReducer.Value);
-			bTransparent = !Vars::Misc::PingReducer.Value;
-				FSlider("cl_cmdrate", &Vars::Misc::PingTarget.Value, 1, 66, 1, "%d", FSlider_Right | FSlider_Clamp);
+			FToggle("Cheats bypass", Vars::Misc::Exploits::CheatsBypass);
+			FToggle("Pure bypass", Vars::Misc::Exploits::BypassPure, FToggle_Middle);
+			FToggle("Ping reducer", Vars::Misc::Exploits::PingReducer);
+			bTransparent = !FGet(Vars::Misc::Exploits::PingReducer);
+				FSlider("cl_cmdrate", Vars::Misc::Exploits::PingTarget, 1, 66, 1, "%d", FSlider_Right | FSlider_Clamp);
 			bTransparent = false;
 			SetCursorPosY(GetCursorPosY() - 8);
-			FToggle("Equip region unlock", &Vars::Misc::EquipRegionUnlock.Value);
+			FToggle("Equip region unlock", Vars::Misc::Exploits::EquipRegionUnlock);
 		} EndSection();
 		if (Vars::Debug::Info.Value)
 		{
 			if (Section("Convar spoofer"))
 			{
-				FSDropdown("Convar", &Vars::Misc::ConvarName.Value, {}, FSDropdown_Left);
-				FSDropdown("Value", &Vars::Misc::ConvarValue.Value, {}, FSDropdown_Right);
+				static std::string sName = "", sValue = "";
+
+				FSDropdown("Convar", &sName, {}, FDropdown_Left);
+				FSDropdown("Value", &sValue, {}, FDropdown_Right);
 				if (FButton("Send"))
 				{
 					CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
 					if (netChannel)
 					{
-						Utils::ConLog("Convar", std::format("Sent {} as {}", Vars::Misc::ConvarName.Value, Vars::Misc::ConvarValue.Value).c_str(), Vars::Menu::Theme::Accent.Value);
-						NET_SetConVar cmd(Vars::Misc::ConvarName.Value.c_str(), Vars::Misc::ConvarValue.Value.c_str());
+						Utils::ConLog("Convar", std::format("Sent {} as {}", sName, sValue).c_str(), VecToColor(Accent));
+						NET_SetConVar cmd(sName.c_str(), sValue.c_str());
 						netChannel->SendNetMsg(cmd);
 
-						//Vars::Misc::ConvarName = "";
-						//Vars::Misc::ConvarValue = "";
+						//sName = "";
+						//sValue = "";
 					}
 				}
 			} EndSection();
 		}
 		if (Section("Automation"))
 		{
-			FToggle("Anti-backstab", &Vars::Misc::AntiBackstab.Value);
-			FToggle("Anti-AFK", &Vars::Misc::AntiAFK.Value, FToggle_Middle);
-			FToggle("Anti autobalance", &Vars::Misc::AntiAutobalance.Value);
-			FToggle("Auto accept item drops", &Vars::Misc::AutoAcceptItemDrops.Value, FToggle_Middle);
-			FToggle("Taunt control", &Vars::Misc::TauntControl.Value);
-			FToggle("Kart control", &Vars::Misc::KartControl.Value, FToggle_Middle);
-			FToggle("Backpack expander", &Vars::Misc::BackpackExpander.Value);
+			FToggle("Anti-backstab", Vars::Misc::Automation::AntiBackstab);
+			FToggle("Anti-AFK", Vars::Misc::Automation::AntiAFK, FToggle_Middle);
+			FToggle("Anti autobalance", Vars::Misc::Automation::AntiAutobalance);
+			FToggle("Auto accept item drops", Vars::Misc::Automation::AcceptItemDrops, FToggle_Middle);
+			FToggle("Taunt control", Vars::Misc::Automation::TauntControl);
+			FToggle("Kart control", Vars::Misc::Automation::KartControl, FToggle_Middle);
+			FToggle("Backpack expander", Vars::Misc::Automation::BackpackExpander);
 		} EndSection();
 		if (Section("Sound"))
 		{
-			FDropdown("Block sounds", &Vars::Misc::SoundBlock.Value, { "Footsteps", "Noisemaker" }, {}, FDropdown_Multi);
-			FToggle("Giant weapon sounds", &Vars::Misc::GiantWeaponSounds.Value);
+			FDropdown("Block", Vars::Misc::Sound::Block, { "Footsteps", "Noisemaker" }, {}, FDropdown_Multi);
+			FToggle("Giant weapon sounds", Vars::Misc::Sound::GiantWeaponSounds);
 		} EndSection();
 		if (Section("Mann vs. Machine"))
 		{
-			FToggle("Instant respawn", &Vars::Misc::InstantRespawn.Value);
-			FToggle("Instant revive", &Vars::Misc::InstantRevive.Value, FToggle_Middle);
+			FToggle("Instant respawn", Vars::Misc::MannVsMachine::InstantRespawn);
+			FToggle("Instant revive", Vars::Misc::MannVsMachine::InstantRevive, FToggle_Middle);
 		} EndSection();
 
 		/* Column 2 */
 		TableNextColumn();
 		if (Section("Game"))
 		{
-			FToggle("Network fix", &Vars::Misc::NetworkFix.Value);
-			FToggle("Prediction fix", &Vars::Misc::PredictionFix.Value, FToggle_Middle);
-			FToggle("Prediction error jitter fix", &Vars::Misc::PredictionErrorJitterFix.Value);
-			FToggle("SetupBones optimization", &Vars::Misc::SetupBonesOptimization.Value, FToggle_Middle);
+			FToggle("Network fix", Vars::Misc::Game::NetworkFix);
+			FToggle("Prediction error jitter fix", Vars::Misc::Game::PredictionErrorJitterFix);
+			FToggle("SetupBones optimization", Vars::Misc::Game::SetupBonesOptimization, FToggle_Middle);
 		} EndSection();
 		if (Section("Queueing"))
 		{
-			FDropdown("Force regions", &Vars::Misc::ForceRegions.Value,
+			FDropdown("Force regions", Vars::Misc::Queueing::ForceRegions,
 				{ "Atlanta", "Chicago", "Los Angeles", "Moses Lake", "Seattle", "Virginia", "Washington", "Amsterdam", "Frankfurt", "London", "Madrid", "Paris", "Stockholm", "Vienna", "Warsaw", "Buenos Aires", "Lima", "Santiago", "Sao Paulo", "Chennai", "Dubai", "Guangzhou", "Hong Kong", "Mumbai", "Seoul", "Shanghai", "Singapore", "Tianjin", "Tokyo", "Sydney", "Johannesburg" },
 				{ DC_ATL,	 DC_ORD,	DC_LAX,		   DC_EAT,		 DC_SEA,	DC_IAD,		DC_DFW,		  DC_AMS,	   DC_FRA,		DC_LHR,	  DC_MAD,	DC_PAR,	 DC_STO,	  DC_VIE,	DC_WAW,	  DC_EZE,		  DC_LIM, DC_SCL,	  DC_GRU,	   DC_MAA,	  DC_DXB,  DC_CAN,		DC_HKG,		 DC_BOM,   DC_SEO,	DC_SHA,		DC_SGP,		 DC_TSN,	DC_TYO,	 DC_SYD,   DC_JNB },
 				FDropdown_Multi
 			);
-			FDropdown("Auto queue", &Vars::Misc::AutoCasualQueue.Value, { "Off", "In menu", "Always" });
-			FToggle("Freeze queue", &Vars::Misc::FreezeQueue.Value);
+			FDropdown("Auto queue", Vars::Misc::Queueing::AutoCasualQueue, { "Off", "In menu", "Always" });
+			FToggle("Freeze queue", Vars::Misc::Queueing::FreezeQueue);
 		} EndSection();
 		if (Section("Chat"))
 		{
-			FToggle("Chat tags", &Vars::Misc::ChatTags.Value);
+			FToggle("Chat tags", Vars::Misc::Chat::Tags);
 		} EndSection();
 		if (Section("Steam RPC"))
 		{
-			FToggle("Steam RPC", &Vars::Misc::Steam::EnableRPC.Value);
-			FDropdown("Match group", &Vars::Misc::Steam::MatchGroup.Value, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" });
-			FSDropdown("Map text", &Vars::Misc::Steam::MapText.Value, { "Fedoraware", "Figoraware", "Meowhook.club", "Rathook.cc", "Nitro.tf" }, FSDropdown_Custom);
-			FSlider("Group size", &Vars::Misc::Steam::GroupSize.Value, 0, 6);
-			FToggle("Override in menu", &Vars::Misc::Steam::OverrideMenu.Value);
+			FToggle("Steam RPC", Vars::Misc::Steam::EnableRPC);
+			FDropdown("Match group", Vars::Misc::Steam::MatchGroup, { "Special Event", "MvM Mann Up", "Competitive", "Casual", "MvM Boot Camp" }, {}, FDropdown_Left);
+			FSDropdown("Map text", Vars::Misc::Steam::MapText, { "Fedoraware", "Figoraware", "Meowhook.club", "Rathook.cc", "Nitro.tf" }, FSDropdown_Custom | FDropdown_Right);
+			FSlider("Group size", Vars::Misc::Steam::GroupSize, 0, 6);
+			FToggle("Override in menu", Vars::Misc::Steam::OverrideMenu);
 		} EndSection();
 
 		EndTable();
@@ -1047,25 +1011,25 @@ void CMenu::MenuLogs()
 			TableNextColumn();
 			if (Section("Logging"))
 			{
-				FDropdown("Logs", &Vars::Logging::Logs.Value, { "Vote start", "Vote cast", "Class changes", "Damage", "Cheat detection", "Tags" }, {}, FDropdown_Multi);
-				FSlider("Notification time", &Vars::Logging::Lifetime.Value, 0.5f, 5.f, 0.5f, "%.1f");
+				FDropdown("Logs", Vars::Logging::Logs, { "Vote start", "Vote cast", "Class changes", "Damage", "Cheat detection", "Tags" }, {}, FDropdown_Multi);
+				FSlider("Notification time", Vars::Logging::Lifetime, 0.5f, 5.f, 0.5f, "%.1f");
 			} EndSection();
 			if (Section("Vote Start"))
 			{
-				bTransparent = !(Vars::Logging::Logs.Value & 1 << 0);
-					FDropdown("Log to", &Vars::Logging::VoteStart::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+				bTransparent = !(FGet(Vars::Logging::Logs) & 1 << 0);
+					FDropdown("Log to", Vars::Logging::VoteStart::LogTo, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Vote Cast"))
 			{
-				bTransparent = !(Vars::Logging::Logs.Value & 1 << 1);
-					FDropdown("Log to", &Vars::Logging::VoteCast::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+				bTransparent = !(FGet(Vars::Logging::Logs) & 1 << 1);
+					FDropdown("Log to", Vars::Logging::VoteCast::LogTo, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Class Change"))
 			{
-				bTransparent = !(Vars::Logging::Logs.Value & 1 << 2);
-					FDropdown("Log to", &Vars::Logging::ClassChange::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+				bTransparent = !(FGet(Vars::Logging::Logs) & 1 << 2);
+					FDropdown("Log to", Vars::Logging::ClassChange::LogTo, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
 				bTransparent = false;
 			} EndSection();
 
@@ -1073,20 +1037,20 @@ void CMenu::MenuLogs()
 			TableNextColumn();
 			if (Section("Damage"))
 			{
-				bTransparent = !(Vars::Logging::Logs.Value & 1 << 3);
-					FDropdown("Log to", &Vars::Logging::Damage::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+				bTransparent = !(FGet(Vars::Logging::Logs) & 1 << 3);
+					FDropdown("Log to", Vars::Logging::Damage::LogTo, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Cheat Detection"))
 			{
-				bTransparent = !(Vars::Logging::Logs.Value & 1 << 4);
-					FDropdown("Log to", &Vars::Logging::CheatDetection::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+				bTransparent = !(FGet(Vars::Logging::Logs) & 1 << 4);
+					FDropdown("Log to", Vars::Logging::CheatDetection::LogTo, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Tags"))
 			{
-				bTransparent = !(Vars::Logging::Logs.Value & 1 << 5);
-					FDropdown("Log to", &Vars::Logging::Tags::LogTo.Value, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
+				bTransparent = !(FGet(Vars::Logging::Logs) & 1 << 5);
+					FDropdown("Log to", Vars::Logging::Tags::LogTo, { "Toasts", "Chat", "Party", "Console" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 3 }, FDropdown_Multi);
 				bTransparent = false;
 			} EndSection();
 
@@ -1111,9 +1075,9 @@ void CMenu::MenuSettings()
 			if (Section("Config"))
 			{
 				if (FButton("Configs folder", FButton_Left))
-					ShellExecuteA(NULL, NULL, g_CFG.GetConfigPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
+					ShellExecuteA(NULL, NULL, F::ConfigManager.GetConfigPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
 				if (FButton("Visuals folder", FButton_Right | FButton_SameLine))
-					ShellExecuteA(NULL, NULL, g_CFG.GetVisualsPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
+					ShellExecuteA(NULL, NULL, F::ConfigManager.GetVisualsPath().c_str(), NULL, NULL, SW_SHOWNORMAL);
 
 				FTabs({ "GENERAL", "VISUALS", }, &CurrentConfigType, { GetColumnWidth() / 2 + 2, SubTabSize.y }, { 6, GetCursorPos().y }, false);
 
@@ -1123,26 +1087,26 @@ void CMenu::MenuSettings()
 				case 0:
 				{
 					static std::string newName;
-					FSDropdown("Config name", &newName, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
+					FSDropdown("Config name", &newName, {}, FSDropdown_AutoUpdate | FDropdown_Left);
 					if (FButton("Create", FButton_Fit | FButton_SameLine | FButton_Large) && newName.length() > 0)
 					{
-						if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + newName))
-							g_CFG.SaveConfig(newName);
+						if (!std::filesystem::exists(F::ConfigManager.GetConfigPath() + "\\" + newName))
+							F::ConfigManager.SaveConfig(newName);
 						newName.clear();
 					}
 
-					for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetConfigPath()))
+					for (const auto& entry : std::filesystem::directory_iterator(F::ConfigManager.GetConfigPath()))
 					{
-						if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
+						if (!entry.is_regular_file() || entry.path().extension() != F::ConfigManager.ConfigExtension)
 							continue;
 
 						std::string configName = entry.path().filename().string();
-						configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
+						configName.erase(configName.end() - F::ConfigManager.ConfigExtension.size(), configName.end());
 
 						const auto current = GetCursorPos().y;
 
 						SetCursorPos({ 14, current + 11 });
-						TextColored(configName == g_CFG.GetCurrentConfig() ? Active.Value : Inactive.Value, configName.c_str());
+						TextColored(configName == F::ConfigManager.GetCurrentConfig() ? Active.Value : Inactive.Value, configName.c_str());
 
 						int o = 26;
 
@@ -1154,19 +1118,16 @@ void CMenu::MenuSettings()
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_SAVE))
 						{
-							if (configName != g_CFG.GetCurrentConfig() || g_CFG.GetCurrentVisuals() != "")
+							if (configName != F::ConfigManager.GetCurrentConfig() || F::ConfigManager.GetCurrentVisuals() != "")
 								OpenPopup(std::format("Confirmation## SaveConfig{}", configName).c_str());
 							else
-								g_CFG.SaveConfig(configName);
+								F::ConfigManager.SaveConfig(configName);
 						}
 						o += 25;
 
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_DOWNLOAD))
-						{
-							g_CFG.LoadConfig(configName);
-							LoadStyle();
-						}
+							F::ConfigManager.LoadConfig(configName);
 
 						// Dialogs
 						{
@@ -1177,7 +1138,7 @@ void CMenu::MenuSettings()
 
 								if (FButton("Yes, override", FButton_Left))
 								{
-									g_CFG.SaveConfig(configName);
+									F::ConfigManager.SaveConfig(configName);
 									CloseCurrentPopup();
 								}
 								if (FButton("No", FButton_Right | FButton_SameLine))
@@ -1193,7 +1154,7 @@ void CMenu::MenuSettings()
 
 								if (FButton("Yes, delete", FButton_Left))
 								{
-									g_CFG.RemoveConfig(configName);
+									F::ConfigManager.RemoveConfig(configName);
 									CloseCurrentPopup();
 								}
 								if (FButton("No", FButton_Right | FButton_SameLine))
@@ -1211,26 +1172,26 @@ void CMenu::MenuSettings()
 				case 1:
 				{
 					static std::string newName;
-					FSDropdown("Config name", &newName, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
+					FSDropdown("Config name", &newName, {}, FSDropdown_AutoUpdate | FDropdown_Left);
 					if (FButton("Create", FButton_Fit | FButton_SameLine | FButton_Large) && newName.length() > 0)
 					{
-						if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + newName))
-							g_CFG.SaveVisual(newName);
+						if (!std::filesystem::exists(F::ConfigManager.GetVisualsPath() + "\\" + newName))
+							F::ConfigManager.SaveVisual(newName);
 						newName.clear();
 					}
 
-					for (const auto& entry : std::filesystem::directory_iterator(g_CFG.GetVisualsPath()))
+					for (const auto& entry : std::filesystem::directory_iterator(F::ConfigManager.GetVisualsPath()))
 					{
-						if (!entry.is_regular_file() || entry.path().extension() != g_CFG.ConfigExtension)
+						if (!entry.is_regular_file() || entry.path().extension() != F::ConfigManager.ConfigExtension)
 							continue;
 
 						std::string configName = entry.path().filename().string();
-						configName.erase(configName.end() - g_CFG.ConfigExtension.size(), configName.end());
+						configName.erase(configName.end() - F::ConfigManager.ConfigExtension.size(), configName.end());
 
 						const auto current = GetCursorPos().y;
 
 						SetCursorPos({ 14, current + 11 });
-						TextColored(configName == g_CFG.GetCurrentVisuals() ? Active.Value : Inactive.Value, configName.c_str());
+						TextColored(configName == F::ConfigManager.GetCurrentVisuals() ? Active.Value : Inactive.Value, configName.c_str());
 
 						int o = 26;
 
@@ -1242,19 +1203,16 @@ void CMenu::MenuSettings()
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_SAVE))
 						{
-							if (configName != g_CFG.GetCurrentVisuals())
+							if (configName != F::ConfigManager.GetCurrentVisuals())
 								OpenPopup(std::format("Confirmation## SaveVisual{}", configName).c_str());
 							else
-								g_CFG.SaveVisual(configName);
+								F::ConfigManager.SaveVisual(configName);
 						}
 						o += 25;
 
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_DOWNLOAD))
-						{
-							g_CFG.LoadVisual(configName);
-							LoadStyle();
-						}
+							F::ConfigManager.LoadVisual(configName);
 
 						// Dialogs
 						{
@@ -1265,7 +1223,7 @@ void CMenu::MenuSettings()
 
 								if (FButton("Yes, override", FButton_Left))
 								{
-									g_CFG.SaveVisual(configName);
+									F::ConfigManager.SaveVisual(configName);
 									CloseCurrentPopup();
 								}
 								if (FButton("No", FButton_Right | FButton_SameLine))
@@ -1281,7 +1239,7 @@ void CMenu::MenuSettings()
 
 								if (FButton("Yes, delete", FButton_Left))
 								{
-									g_CFG.RemoveVisual(configName);
+									F::ConfigManager.RemoveVisual(configName);
 									CloseCurrentPopup();
 								}
 								if (FButton("No", FButton_Right | FButton_SameLine))
@@ -1305,16 +1263,16 @@ void CMenu::MenuSettings()
 			TableNextColumn();
 			if (Section("Debug"))
 			{
-				FToggle("Debug info", &Vars::Debug::Info.Value);
-				FToggle("Debug logging", &Vars::Debug::Logging.Value, FToggle_Middle);
+				FToggle("Debug info", Vars::Debug::Info);
+				FToggle("Debug logging", Vars::Debug::Logging, FToggle_Middle);
 				FToggle("Allow secure servers", I::AllowSecureServers);
 				bool* m_bPendingPingRefresh = reinterpret_cast<bool*>(I::TFGCClientSystem + 828);
 				if (m_bPendingPingRefresh)
 					FToggle("Pending ping refresh", m_bPendingPingRefresh, FToggle_Middle);
-				FToggle("Show server hitboxes", &Vars::Debug::ServerHitbox.Value); HelpMarker("localhost servers");
-				FToggle("Anti aim lines", &Vars::Debug::AntiAimLines.Value, FToggle_Middle);
+				FToggle("Show server hitboxes", Vars::Debug::ServerHitbox); HelpMarker("localhost servers");
+				FToggle("Anti aim lines", Vars::Debug::AntiAimLines, FToggle_Middle);
 				static std::string particleName = "ping_circle";
-				FSDropdown("Particle name", &particleName, {}, FSDropdown_Left);
+				FSDropdown("Particle name", &particleName, {}, FDropdown_Left);
 				const auto& pLocal = g_EntityCache.GetLocal();
 				if (FButton("Dispatch", FButton_Right | FButton_SameLine | FButton_Large) && pLocal)
 					Particles::DispatchParticleEffect(particleName.c_str(), pLocal->GetAbsOrigin(), { });
@@ -1389,20 +1347,214 @@ void CMenu::MenuSettings()
 		break;
 	// Conditions
 	case 1:
-		if (BeginTable("ConfigConditionsTable", 2)) // conditions coming soon hopefully
+		if (Section("Settings"))
 		{
-			/* Column 1 */
-			TableNextColumn();
-			if (Section("Settings"))
+			FToggle("Show bind window", Vars::Menu::ShowBinds);
+			FToggle("Menu shows binds", Vars::Menu::MenuShowsBinds, FToggle_Middle);
+		} EndSection();
+		if (Section("Conditions"))
+		{
+			static std::string sName = "";
+			static Condition_t tCond = {};
+
+			if (BeginTable("ConditionsTable", 2))
 			{
-				FToggle("Show keybind menu", &Vars::Menu::ShowKeybinds.Value);
-				FToggle("Show keybind changes", &Vars::Menu::ShowKBChanges.Value, FToggle_Middle);
-			} EndSection();
+				/* Column 1 */
+				TableNextColumn(); SetCursorPos({ GetCursorPos().x - 8, GetCursorPos().y - 8 });
+				if (BeginChild("ConditionsTableTable1", { GetColumnWidth() + 4, 104 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoBackground))
+				{
+					FSDropdown("Name", &sName, {}, FSDropdown_AutoUpdate | FDropdown_Left);
+					FSDropdown("Parent", &tCond.Parent, {}, FSDropdown_AutoUpdate | FDropdown_Right);
+					FDropdown("Type", &tCond.Type, { "Key", "Class", "Weapon type" }, {}, FDropdown_Left);
+					switch (tCond.Type)
+					{
+					case 0: tCond.Info = std::min(tCond.Info, 2); FDropdown("Behavior", &tCond.Info, { "Hold", "Toggle", "Double click" }, {}, FDropdown_Right); break;
+					case 1: tCond.Info = std::min(tCond.Info, 8); FDropdown("Class", &tCond.Info, { "Scout", "Soldier", "Pyro", "Demoman", "Heavy", "Engineer", "Medic", "Sniper", "Spy" }, {}, FDropdown_Right); break;
+					case 2: tCond.Info = std::min(tCond.Info, 2); FDropdown("Weapon type", &tCond.Info, { "Hitscan", "Projectile", "Melee" }, {}, FDropdown_Right); break;
+					}
+				} EndChild();
 
-			TableNextColumn();
+				/* Column 2 */
+				TableNextColumn(); SetCursorPos({ GetCursorPos().x - 4, GetCursorPos().y - 8 });
+				if (BeginChild("ConditionsTableTable2", { GetColumnWidth() + 8, 104 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoBackground))
+				{
+					SetCursorPos({ 8, 24 });
+					FToggle("Visible", &tCond.Visible);
+					FToggle("Not", &tCond.Not, FToggle_Middle);
+					if (tCond.Type == 0)
+					{
+						SetCursorPos({ 8, 56 });
+						FKeybind("Key", tCond.Key, FButton_Large, -96);
+					}
 
-			EndTable();
-		}
+					// create/modify button
+					bool bCreate = false, bClear = false, bMatch = false, bParent = true;
+					if (tCond.Parent != "")
+						bParent = F::Conditions.Exists(tCond.Parent);
+
+					SetCursorPos({ GetWindowSize().x - 96, 64 });
+					PushStyleColor(ImGuiCol_Button, Foremost.Value);
+					PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
+					if (sName != "" && sName != "default" && bParent && (!tCond.Type ? tCond.Key : true))
+					{
+						PushStyleColor(ImGuiCol_ButtonHovered, ForemostLight.Value);
+						bCreate = Button("##CreateButton", { 40, 40 });
+					}
+					else
+					{
+						PushStyleColor(ImGuiCol_ButtonHovered, Foremost.Value);
+						Button("##CreateButton", { 40, 40 });
+					}
+					PopStyleColor(3);
+					SetCursorPos({ GetWindowSize().x - 83, 76 });
+					if (sName != "" && sName != "default" && bParent && (!tCond.Type ? tCond.Key : true))
+					{
+						bMatch = F::Conditions.Exists(sName);
+						IconImage(bMatch ? ICON_MD_SETTINGS : ICON_MD_ADD);
+					}
+					else
+					{
+						bTransparent = true;
+						IconImage(ICON_MD_ADD);
+						bTransparent = false;
+					}
+
+					// clear button
+					SetCursorPos({ GetWindowSize().x - 48, 64 });
+					PushStyleColor(ImGuiCol_Button, Foremost.Value);
+					PushStyleColor(ImGuiCol_ButtonHovered, ForemostLight.Value);
+					PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
+					bClear = Button("##ClearButton", { 40, 40 });
+					PopStyleColor(3);
+					SetCursorPos({ GetWindowSize().x - 35, 76 });
+					IconImage(ICON_MD_CLEAR);
+
+					if (bCreate)
+						F::Conditions.AddCondition(sName, tCond);
+					if (bCreate || bClear)
+					{
+						sName = "";
+						tCond = {};
+					}
+				} EndChild();
+
+				EndTable();
+			}
+
+			PushStyleColor(ImGuiCol_Text, Inactive.Value);
+			SetCursorPos({ 14, 128 }); FText("Conditions");
+			PopStyleColor();
+
+			std::function<int(std::string, int, int)> getConds = [&](std::string parent, int x, int y)
+				{
+					for (auto& sCond : F::Conditions.vConditions)
+					{
+						auto& cCond = F::Conditions.mConditions[sCond];
+						if (cCond.Parent != parent)
+							continue;
+
+						y++;
+
+						std::string info; std::string state;
+						switch (cCond.Type)
+						{
+							// key
+						case 0:
+							switch (cCond.Info)
+							{
+							case 0: { info = "hold"; break; }
+							case 1: { info = "toggle"; break; }
+							case 2: { info = "double"; break; }
+							}
+							state = VK2STR(cCond.Key);
+							break;
+							// class
+						case 1:
+							info = "class";
+							switch (cCond.Info)
+							{
+							case 0: { state = "scout"; break; }
+							case 1: { state = "soldier"; break; }
+							case 2: { state = "pyro"; break; }
+							case 3: { state = "demoman"; break; }
+							case 4: { state = "heavy"; break; }
+							case 5: { state = "engineer"; break; }
+							case 6: { state = "medic"; break; }
+							case 7: { state = "sniper"; break; }
+							case 8: { state = "spy"; break; }
+							}
+							break;
+							// weapon type
+						case 2:
+							info = "weapon";
+							switch (cCond.Info)
+							{
+							case 0: { state = "hitscan"; break; }
+							case 1: { state = "projectile"; break; }
+							case 2: { state = "melee"; break; }
+							}
+						}
+						if (cCond.Not)
+							info = std::format("not {}", info);
+						std::string str = std::format("{}, {}", info, state);
+
+						bool bClicked = false, bDelete = false, bEdit = false;
+
+						const ImVec2 restorePos = { 8.f + 28 * x, 108.f + 36.f * y };
+
+						// background
+						const float width = GetWindowSize().x - 16 - 28 * x; const auto winPos = GetWindowPos();
+						GetWindowDrawList()->AddRectFilled({ winPos.x + restorePos.x, winPos.y + restorePos.y }, { winPos.x + restorePos.x + width, winPos.y + restorePos.y + 28 }, Foremost, 3);
+
+						// text
+						SetCursorPos({ restorePos.x + 10, restorePos.y + 7 });
+						TextUnformatted(sCond.c_str());
+
+						SetCursorPos({ restorePos.x + width / 2 - CalcTextSize(str.c_str()).x / 2, restorePos.y + 7 });
+						TextUnformatted(std::format("{}", str).c_str());
+
+						// buttons
+						SetCursorPos({ restorePos.x + width - 22, restorePos.y + 5 });
+						bDelete = IconButton(ICON_MD_DELETE);
+
+						SetCursorPos({ restorePos.x + width - 47, restorePos.y + 5 });
+						bEdit = IconButton(ICON_MD_EDIT);
+
+						SetCursorPos(restorePos);
+						bClicked = Button(std::format("##{}", sCond).c_str(), { width, 28 });
+
+						if (bClicked)
+						{
+							sName = sCond;
+							tCond = cCond;
+						}
+						if (bDelete)
+							OpenPopup(std::format("Confirmation## DeleteCond{}", sCond).c_str());
+						if (BeginPopupModal(std::format("Confirmation## DeleteCond{}", sCond).c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysUseWindowPadding))
+						{
+							const bool bChildren = F::Conditions.HasChildren(sCond);
+							Text(std::format("Do you really want to delete '{}'{}?", sCond, bChildren ? " and all of its children" : "").c_str());
+
+							if (FButton("Yes", FButton_Left))
+							{
+								F::Conditions.RemoveCondition(sCond);
+								CloseCurrentPopup();
+							}
+							if (FButton("No", FButton_Right | FButton_SameLine))
+								CloseCurrentPopup();
+
+							EndPopup();
+						}
+						if (bEdit)
+							sCondition = sCond;
+
+						y = getConds(sCond, x + 1, y);
+					}
+
+					return y;
+				};
+			getConds("", 0, 0);
+		} EndSection();
 		break;
 	// PlayerList
 	case 2:
@@ -1432,8 +1584,8 @@ void CMenu::MenuSettings()
 						const ImVec2 restorePos = { x ? GetWindowSize().x / 2 + 4.f : 8.f, 32.f + 36.f * y };
 
 						// background
-						const float width = GetWindowSize().x / 2 - 12; const auto windowPos = GetWindowPos();
-						GetWindowDrawList()->AddRectFilled({ windowPos.x + restorePos.x, windowPos.y + restorePos.y }, { windowPos.x + restorePos.x + width, windowPos.y + restorePos.y + 28 }, imColor, 3);
+						const float width = GetWindowSize().x / 2 - 12; const auto winPos = GetWindowPos();
+						GetWindowDrawList()->AddRectFilled({ winPos.x + restorePos.x, winPos.y + restorePos.y }, { winPos.x + restorePos.x + width, winPos.y + restorePos.y + 28 }, imColor, 3);
 
 						// text + icons
 						if (player.Local)
@@ -1476,7 +1628,7 @@ void CMenu::MenuSettings()
 								float tOffset = 0;
 								for (const auto& sTag : G::PlayerTags[player.FriendsID])
 								{
-									PriorityLabel plTag;
+									PriorityLabel_t plTag;
 									if (!F::PlayerUtils.GetTag(sTag, &plTag))
 										continue;
 
@@ -1484,7 +1636,7 @@ void CMenu::MenuSettings()
 									const float tagWidth = CalcTextSize(sTag.c_str()).x + 25;
 									const ImVec2 tagPos = { tOffset, 4 };
 
-									PushStyleColor(ImGuiCol_Text, tagColor.Value.x + tagColor.Value.y + tagColor.Value.z > 2.f ? ImVec4{ 0, 0, 0, 1 } : ImVec4{ 1, 1, 1, 1 });
+									PushStyleColor(ImGuiCol_Text, IsColorBright(tagColor) ? ImVec4{ 0, 0, 0, 1 } : ImVec4{ 1, 1, 1, 1 });
 
 									GetWindowDrawList()->AddRectFilled({ childPos.x + tagPos.x, childPos.y + tagPos.y }, { childPos.x + tagPos.x + tagWidth, childPos.y + tagPos.y + 20 }, tagColor, 3);
 									SetCursorPos({ tagPos.x + 5, tagPos.y + 4 });
@@ -1503,11 +1655,11 @@ void CMenu::MenuSettings()
 							if (!player.Local)
 							{
 								//bClicked = IsItemClicked();
-								bClicked = IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) || bClicked;
+								bClicked = IsItemHovered() && IsMouseClicked(ImGuiMouseButton_Right) || bClicked;
 
 								SetCursorPos(restorePos);
 								/*bClicked = */Button(std::format("##{}", player.Name).c_str(), { width, 28 }) || bClicked;
-								bClicked = IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) || bClicked;
+								bClicked = IsItemHovered() && IsMouseClicked(ImGuiMouseButton_Right) || bClicked;
 							}
 						}
 
@@ -1536,7 +1688,7 @@ void CMenu::MenuSettings()
 						}
 						else if (FBeginPopup(std::format("Add{}", player.FriendsID).c_str()))
 						{
-							for (const auto& [sTag, plTag] : F::PlayerUtils.vTags)
+							for (const auto& [sTag, plTag] : F::PlayerUtils.mTags)
 							{
 								if (!plTag.Assignable || F::PlayerUtils.HasTag(player.FriendsID, sTag))
 									continue;
@@ -1606,57 +1758,62 @@ void CMenu::MenuSettings()
 		} EndSection();
 		if (Section("Tags"))
 		{
-			static std::string tagName = "";
-			static PriorityLabel tagData = {};
+			static std::string sName = "";
+			static PriorityLabel_t tTag = {};
 
 			if (BeginTable("TagTable", 2))
 			{
 				/* Column 1 */
-				TableNextColumn(); if (BeginChild("TagTable1", { GetColumnWidth(), 48 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground))
+				TableNextColumn(); SetCursorPos({ GetCursorPos().x - 8, GetCursorPos().y - 8 });
+				if (BeginChild("TagTable1", { GetColumnWidth() + 4, 56 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoBackground))
 				{
-					FSDropdown("Name", &tagName, {}, FSDropdown_AutoUpdate | FSDropdown_Left, 1);
-					FColorPicker("Color", &tagData.Color, 0, FColorPicker_Dropdown);
+					FSDropdown("Name", &sName, {}, FSDropdown_AutoUpdate | FDropdown_Left, 1);
+					FColorPicker("Color", &tTag.Color, 0, FColorPicker_Dropdown);
 
-					bTransparent = tagData.Label; // transparent if we want a label, user can still use to sort
-						SetCursorPosY(GetCursorPos().y - 37); Dummy({});
-						FSlider("Priority", &tagData.Priority, -10, 10, 1, "%d", FSlider_Right);
-					bTransparent = false;
+					bDisabled = sName == "Default" || sName == "Ignored";
+						int iLabel = bDisabled ? 0 : tTag.Label;
+						FDropdown("Type", &iLabel, { "Priority", "Label" }, {}, FDropdown_Right);
+						tTag.Label = iLabel;
+						if (bDisabled)
+							tTag.Label = false;
+					bDisabled = false;
 				} EndChild();
 
 				/* Column 2 */
-				TableNextColumn(); if (BeginChild("TagTable2", { GetColumnWidth(), 48 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground))
+				TableNextColumn(); SetCursorPos({ GetCursorPos().x - 4, GetCursorPos().y - 8 });
+				if (BeginChild("TagTable2", { GetColumnWidth() + 8, 56 }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoBackground))
 				{
-					bDisabled = tagName == "Default" || tagName == "Ignored"; // force nonlabel on default & ignored
-						Dummy({ 0, 11 }); FToggle("Label", &tagData.Label);
-						if (bDisabled)
-							tagData.Label = false;
-					bDisabled = false;
-
-					bool bCreate = false, bClear = false;
+					bTransparent = tTag.Label; // transparent if we want a label, user can still use to sort
+						SetCursorPosY(GetCursorPos().y + 12);
+						FSlider("Priority", &tTag.Priority, -10, 10, 1, "%d", FSlider_Left);
+					bTransparent = false;
 
 					// create/modify button
+					bool bCreate = false, bClear = false;
+
+					SetCursorPos({ GetWindowSize().x - 96, 16 });
 					PushStyleColor(ImGuiCol_Button, Foremost.Value);
-					SetCursorPos({ GetWindowSize().x - 88, 8 });
-					if (tagName != "")
+					PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
+					if (sName != "")
 					{
 						PushStyleColor(ImGuiCol_ButtonHovered, ForemostLight.Value);
-						PushStyleColor(ImGuiCol_ButtonActive, ForemostLight.Value);
 						bCreate = Button("##CreateButton", { 40, 40 });
 					}
 					else
 					{
 						PushStyleColor(ImGuiCol_ButtonHovered, Foremost.Value);
-						PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
 						Button("##CreateButton", { 40, 40 });
 					}
 					PopStyleColor(3);
-					SetCursorPos({ GetWindowSize().x - 75, 20 });
-					if (tagName != "")
+					SetCursorPos({ GetWindowSize().x - 83, 28 });
+					if (sName != "")
 					{
 						bool bMatch = false;
-						for (const auto& [sTag, _] : F::PlayerUtils.vTags)
+						for (const auto& [sTag, _] : F::PlayerUtils.mTags)
 						{
-							if (sTag == tagName)
+							if (bMatch)
+								break;
+							if (sTag == sName)
 								bMatch = true;
 						}
 						IconImage(bMatch ? ICON_MD_SETTINGS : ICON_MD_ADD);
@@ -1669,33 +1826,33 @@ void CMenu::MenuSettings()
 					}
 
 					// clear button
-					SetCursorPos({ GetWindowSize().x - 40, 8 });
+					SetCursorPos({ GetWindowSize().x - 48, 16 });
 					PushStyleColor(ImGuiCol_Button, Foremost.Value);
 					PushStyleColor(ImGuiCol_ButtonHovered, ForemostLight.Value);
-					PushStyleColor(ImGuiCol_ButtonActive, ForemostLight.Value);
+					PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
 					bClear = Button("##ClearButton", { 40, 40 });
 					PopStyleColor(3);
-					SetCursorPos({ GetWindowSize().x - 27, 20 });
+					SetCursorPos({ GetWindowSize().x - 35, 28 });
 					IconImage(ICON_MD_CLEAR);
 
 					if (bCreate)
 					{
 						F::PlayerUtils.bSaveTags = true;
-						F::PlayerUtils.vTags[tagName].Color = tagData.Color;
-						F::PlayerUtils.vTags[tagName].Priority = tagData.Priority;
-						F::PlayerUtils.vTags[tagName].Label = tagData.Label;
+						F::PlayerUtils.mTags[sName].Color = tTag.Color;
+						F::PlayerUtils.mTags[sName].Priority = tTag.Priority;
+						F::PlayerUtils.mTags[sName].Label = tTag.Label;
 					}
 					if (bCreate || bClear)
 					{
-						tagName = "";
-						tagData = {};
+						sName = "";
+						tTag = {};
 					}
 				} EndChild();
 
 				EndTable();
 			}
 
-			auto drawTag = [](const std::string sTag, const PriorityLabel& plTag, int y)
+			auto drawTag = [](const std::string sTag, const PriorityLabel_t& plTag, int y)
 				{
 					bool bClicked = false, bDelete = false;
 
@@ -1705,12 +1862,18 @@ void CMenu::MenuSettings()
 					const ImVec2 restorePos = { plTag.Label ? GetWindowSize().x * 2 / 3 + 4.f : 8.f, 96.f + 36.f * y };
 
 					// background
-					const float width = GetWindowSize().x * (plTag.Label ? 1.f / 3 : 2.f / 3) - 12; const auto windowPos = GetWindowPos();
-					GetWindowDrawList()->AddRectFilled({ windowPos.x + restorePos.x, windowPos.y + restorePos.y }, { windowPos.x + restorePos.x + width, windowPos.y + restorePos.y + 28 }, imColor, 3);
+					const float width = GetWindowSize().x * (plTag.Label ? 1.f / 3 : 2.f / 3) - 12; const auto winPos = GetWindowPos();
+					GetWindowDrawList()->AddRectFilled({ winPos.x + restorePos.x, winPos.y + restorePos.y }, { winPos.x + restorePos.x + width, winPos.y + restorePos.y + 28 }, imColor, 3);
 
 					// text
 					SetCursorPos({ restorePos.x + 10, restorePos.y + 7 });
 					TextUnformatted(sTag.c_str());
+
+					if (!plTag.Label)
+					{
+						SetCursorPos({ restorePos.x + width / 2, restorePos.y + 7 });
+						TextUnformatted(std::format("{}", plTag.Priority).c_str());
+					}
 
 					// buttons
 					if (!plTag.Locked)
@@ -1718,29 +1881,25 @@ void CMenu::MenuSettings()
 						SetCursorPos({ restorePos.x + width - 22, restorePos.y + 5 });
 						bDelete = IconButton(ICON_MD_DELETE);
 					}
-					if (!plTag.Label)
-					{
-						SetCursorPos({ restorePos.x + width / 2, restorePos.y + 7 });
-						TextUnformatted(std::format("{}", plTag.Priority).c_str());
-					}
+
 					SetCursorPos(restorePos);
 					bClicked = Button(std::format("##{}", sTag).c_str(), { width, 28 });
 
 					if (bClicked)
 					{
-						tagName = sTag;
-						tagData.Color = plTag.Color;
-						tagData.Priority = plTag.Priority;
-						tagData.Label = plTag.Label;
+						sName = sTag;
+						tTag.Color = plTag.Color;
+						tTag.Priority = plTag.Priority;
+						tTag.Label = plTag.Label;
 					}
 					if (bDelete)
 					{
-						F::PlayerUtils.vTags.erase(sTag);
+						F::PlayerUtils.mTags.erase(sTag);
 						F::PlayerUtils.bSaveTags = true;
-						if (tagName == sTag)
+						if (sName == sTag)
 						{
-							tagName = "";
-							tagData = {};
+							sName = "";
+							tTag = {};
 						}
 					}
 				};
@@ -1750,8 +1909,8 @@ void CMenu::MenuSettings()
 			SetCursorPos({ GetWindowSize().x * 2 / 3 + 10, 80 }); FText("Labels");
 			PopStyleColor();
 
-			std::vector<std::pair<std::string, PriorityLabel>> vPriorities = {}, vLabels = {};
-			for (const auto& [sTag, plTag] : F::PlayerUtils.vTags)
+			std::vector<std::pair<std::string, PriorityLabel_t>> vPriorities = {}, vLabels = {};
+			for (const auto& [sTag, plTag] : F::PlayerUtils.mTags)
 			{
 				if (!plTag.Label)
 					vPriorities.push_back({ sTag, plTag });
@@ -1806,7 +1965,7 @@ void CMenu::MenuSettings()
 			if (Section("Manager"))
 			{
 				static std::string newName;
-				FSDropdown("Material name", &newName, {}, FSDropdown_AutoUpdate | FSDropdown_Left);
+				FSDropdown("Material name", &newName, {}, FSDropdown_AutoUpdate | FDropdown_Left);
 				if (FButton("Create", FButton_Fit | FButton_SameLine | FButton_Large) && newName.length() > 0)
 				{
 					F::Materials.AddMaterial(newName);
@@ -1923,173 +2082,258 @@ void CMenu::MenuSettings()
 }
 #pragma endregion
 
-void CMenu::AddDraggable(const char* szTitle, DragBox_t& info, bool bShouldDraw)
+void CMenu::AddDraggable(const char* szTitle, ConfigVar<DragBox_t>& var, bool bShouldDraw)
 {
-	if (bShouldDraw)
-	{
-		const float sizeX = 100.f * Vars::Menu::DPI.Value, sizeY = 40.f * Vars::Menu::DPI.Value;
+	using namespace ImGui;
 
-		if (info.update)
-		{
-			ImGui::SetNextWindowSize({ sizeX, sizeY }, ImGuiCond_Always);
-			ImGui::SetNextWindowPos({ float(info.x - sizeX / 2), float(info.y) }, ImGuiCond_Always);
-			info.update = false;
-		}
-
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
-		ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorToVec(Vars::Menu::Theme::Active.Value));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { sizeX, sizeY });
-		if (ImGui::Begin(szTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
-		{
-			ImGui::PushFont(FontBlack);
-			auto size = ImGui::CalcTextSize(szTitle);
-			ImGui::SetCursorPos({ (sizeX - size.x) * 0.5f, (sizeY - size.y) * 0.5f });
-			ImGui::Text(szTitle);
-			ImGui::PopFont();
-
-			const ImVec2 winPos = ImGui::GetWindowPos();
-			info.x = winPos.x + sizeX / 2;
-			info.y = winPos.y;
-
-			ImGui::End();
-		}
-		ImGui::PopStyleVar(3);
-		ImGui::PopStyleColor(2);
-	}
-}
-
-void CMenu::DrawKeybinds()
-{
-	if (!Vars::Menu::ShowKeybinds.Value)
+	if (!bShouldDraw)
 		return;
 
-	DragBox_t& info = Vars::Menu::KeybindsDisplay.Value;
-	if (info.update)
+	static std::unordered_map<const char*, DragBox_t> old = {};
+	DragBox_t info = FGet(var);
+	const float sizeX = 100.f * Vars::Menu::DPI.Value, sizeY = 40.f * Vars::Menu::DPI.Value;
+	SetNextWindowSize({ sizeX, sizeY }, ImGuiCond_Always);
+	if (!old.contains(szTitle) || info != old[szTitle])
+		SetNextWindowPos({ float(info.x - sizeX / 2), float(info.y) }, ImGuiCond_Always);
+
+	PushStyleColor(ImGuiCol_WindowBg, {});
+	PushStyleColor(ImGuiCol_Border, Active.Value);
+	PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
+	PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
+	PushStyleVar(ImGuiStyleVar_WindowMinSize, { sizeX, sizeY });
+	if (Begin(szTitle, nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
-		ImGui::SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
-		info.update = false;
+		const auto winPos = GetWindowPos();
+
+		info.x = winPos.x + sizeX / 2; info.y = winPos.y; old[szTitle] = info;
+		FSet(var, info);
+
+		PushFont(FontBlack);
+		auto size = CalcTextSize(szTitle);
+		SetCursorPos({ (sizeX - size.x) * 0.5f, (sizeY - size.y) * 0.5f });
+		Text(szTitle);
+		PopFont();
+
+		End();
 	}
+	PopStyleVar(3);
+	PopStyleColor(2);
+}
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.f, 4.f });
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
-	ImGui::SetNextWindowSize({ 200.f, 0.f });
+void CMenu::DrawBinds()
+{
+	using namespace ImGui;
 
-	if (ImGui::Begin("Keybinds", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar))
+	if ((IsOpen ? !FGet(Vars::Menu::ShowBinds) : !Vars::Menu::ShowBinds.Value) || !IsOpen && I::EngineVGui->IsGameUIVisible())
+		return;
+
+	static DragBox_t old = {};
+	DragBox_t info = IsOpen ? FGet(Vars::Menu::BindsDisplay) : Vars::Menu::BindsDisplay.Value;
+	if (info != old)
+		SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
+
+	std::vector<bool> actives;
+	std::vector<std::string> titles;
+	std::vector<std::string> infos;
+	std::vector<std::string> states;
+	float titleWidth = 0;
+	float infoWidth = 0;
+	float stateWidth = 0;
+
+	PushFont(FontSmall);
+	std::function<void(std::string)> getConds = [&](std::string parent)
+		{
+			for (auto& sCond : F::Conditions.vConditions)
+			{
+				auto& tCond = F::Conditions.mConditions[sCond];
+				if (tCond.Parent != parent)
+					continue;
+
+				if (tCond.Visible)
+				{
+					std::string info; std::string state;
+					switch (tCond.Type)
+					{
+					// key
+					case 0:
+						switch (tCond.Info)
+						{
+						case 0: { info = "hold"; break; }
+						case 1: { info = "toggle"; break; }
+						case 2: { info = "double"; break; }
+						}
+						state = VK2STR(tCond.Key);
+						break;
+					// class
+					case 1:
+						info = "class";
+						switch (tCond.Info)
+						{
+						case 0: { state = "scout"; break; }
+						case 1: { state = "soldier"; break; }
+						case 2: { state = "pyro"; break; }
+						case 3: { state = "demoman"; break; }
+						case 4: { state = "heavy"; break; }
+						case 5: { state = "engineer"; break; }
+						case 6: { state = "medic"; break; }
+						case 7: { state = "sniper"; break; }
+						case 8: { state = "spy"; break; }
+						}
+						break;
+					// weapon type
+					case 2:
+						info = "weapon";
+						switch (tCond.Info)
+						{
+						case 0: { state = "hitscan"; break; }
+						case 1: { state = "projectile"; break; }
+						case 2: { state = "melee"; break; }
+						}
+					}
+					if (tCond.Not)
+						info = std::format("not {}", info);
+
+					actives.push_back(tCond.Active);
+					titles.push_back(sCond);
+					infos.push_back(info);
+					states.push_back(state);
+					titleWidth = std::max(titleWidth, CalcTextSize(sCond.c_str()).x);
+					infoWidth = std::max(infoWidth, CalcTextSize(info.c_str()).x);
+					stateWidth = std::max(stateWidth, CalcTextSize(state.c_str()).x);
+				}
+
+				if (tCond.Active)
+					getConds(sCond);
+			}
+		};
+	getConds("");
+
+	SetNextWindowSize({ std::max(titleWidth + infoWidth + stateWidth + 42, 56.f), 18.f * actives.size() + 38 });
+	PushStyleVar(ImGuiStyleVar_WindowMinSize, { 40.f, 40.f });
+	if (Begin("Binds", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		auto drawOption = [](const char* name, bool active)
-			{
-				ImGui::Text(name);
-				ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::CalcTextSize(active ? "[On]" : "[Off]").x);
-				ImGui::Text(active ? "[On]" : "[Off]");
-			};
+		const auto winPos = GetWindowPos();
 
-		auto isActive = [](bool active, bool needsKey, int key)
-			{
-				return active && (!needsKey || GetAsyncKeyState(key) & 0x8000);
-			};
+		info.x = winPos.x; info.y = winPos.y; old = info;
+		if (IsOpen)
+			FSet(Vars::Menu::BindsDisplay, info);
 
-		drawOption("Aimbot", isActive(Vars::Aimbot::Global::Active.Value, Vars::Aimbot::Global::AimKey.Value, Vars::Aimbot::Global::AimKey.Value));
-		drawOption("Auto Shoot", Vars::Aimbot::Global::AutoShoot.Value);
-		drawOption("Double Tap", isActive(Vars::CL_Move::DoubleTap::Enabled.Value, Vars::CL_Move::DoubleTap::Mode.Value == 1, Vars::CL_Move::DoubleTap::DoubletapKey.Value));
-		drawOption("Anti Aim", Vars::AntiHack::AntiAim::Active.Value);
-		drawOption("Fakelag", isActive(Vars::CL_Move::FakeLag::Enabled.Value, Vars::CL_Move::FakeLag::Mode.Value == 1, Vars::CL_Move::FakeLag::Key.Value));
-		drawOption("Triggerbot", isActive(Vars::Auto::Global::Active.Value, Vars::Auto::Global::AutoKey.Value, Vars::Auto::Global::AutoKey.Value));
+		PushFont(FontLarge);
+		SetCursorPos({ 11, 9 });
+		Text("Binds");
+		PopFont();
 
-		const ImVec2 winPos = ImGui::GetWindowPos();
-		info.x = winPos.x;
-		info.y = winPos.y;
+		const float width = std::max(titleWidth + infoWidth + stateWidth + 42, 56.f);
+		GetWindowDrawList()->AddRectFilled({ winPos.x + 8, winPos.y + 26 }, { winPos.x + width - 8, winPos.y + 27 }, Accent, 3);
 
-		ImGui::End();
+		for (size_t i = 0; i < actives.size(); i++)
+		{
+			SetCursorPos({ 12, 18.f * i + 35 });
+			PushStyleColor(ImGuiCol_Text, actives[i] ? Accent.Value : Inactive.Value);
+			Text(titles[i].c_str());
+			PopStyleColor();
+
+			SetCursorPos({ titleWidth + 22, 18.f * i + 35 });
+			PushStyleColor(ImGuiCol_Text, actives[i] ? Active.Value : Inactive.Value);
+			Text(infos[i].c_str());
+
+			SetCursorPos({ titleWidth + infoWidth + 32, 18.f * i + 35 });
+			Text(states[i].c_str());
+			PopStyleColor();
+		}
+
+		End();
 	}
-
-	ImGui::PopStyleVar(2);
+	PopStyleVar();
+	PopFont();
 }
 
 /* Window for the camera feature */
 void CMenu::DrawCameraWindow()
 {
-	if (!Vars::Visuals::ProjectileCamera.Value)
+	using namespace ImGui;
+
+	if (!FGet(Vars::Visuals::Simulation::ProjectileCamera))
 		return;
 
-	WindowBox_t& info = Vars::Visuals::ProjectileWindow.Value;
-	if (info.update)
+	static WindowBox_t old = {};
+	WindowBox_t info = FGet(Vars::Visuals::Simulation::ProjectileWindow);
+	if (info != old)
 	{
-		ImGui::SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
-		ImGui::SetNextWindowSize({ float(info.w), float(info.h) }, ImGuiCond_Always);
-		info.update = false;
+		SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
+		SetNextWindowSize({ float(info.w), float(info.h) }, ImGuiCond_Always);
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
-	ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorToVec(Vars::Menu::Theme::Active.Value));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 100.f });
-	if (ImGui::Begin("Camera", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
+	PushStyleColor(ImGuiCol_WindowBg, {});
+	PushStyleColor(ImGuiCol_Border, Active.Value);
+	PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
+	PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
+	PushStyleVar(ImGuiStyleVar_WindowMinSize, { 100.f, 100.f });
+	if (Begin("Camera", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
-		const ImVec2 winPos = ImGui::GetWindowPos();
-		const ImVec2 winSize = ImGui::GetWindowSize();
+		const auto winPos = GetWindowPos();
+		const auto winSize = GetWindowSize();
 
-		ImGui::PushFont(FontBlack);
-		auto size = ImGui::CalcTextSize("Camera");
-		ImGui::SetCursorPos({ (winSize.x - size.x) * 0.5f, (winSize.y - size.y) * 0.5f });
-		ImGui::Text("Camera");
-		ImGui::PopFont();
+		info.x = winPos.x; info.y = winPos.y; info.w = winSize.x; info.h = winSize.y; old = info;
+		FSet(Vars::Visuals::Simulation::ProjectileWindow, info);
 
-		info.x = int(winPos.x);
-		info.y = int(winPos.y);
-		info.w = int(winSize.x);
-		info.h = int(winSize.y);
+		PushFont(FontBlack);
+		auto size = CalcTextSize("Camera");
+		SetCursorPos({ (winSize.x - size.x) * 0.5f, (winSize.y - size.y) * 0.5f });
+		Text("Camera");
+		PopFont();
 
-		ImGui::End();
+		End();
 	}
-	ImGui::PopStyleVar(3);
-	ImGui::PopStyleColor(2);
+	PopStyleVar(3);
+	PopStyleColor(2);
 }
 
 static void SquareConstraints(ImGuiSizeCallbackData* data) { data->DesiredSize.x = data->DesiredSize.y = std::max(data->DesiredSize.x, data->DesiredSize.y); }
 void CMenu::DrawRadar()
 {
-	if (!Vars::Radar::Main::Active.Value)
+	using namespace ImGui;
+
+	if (!FGet(Vars::Radar::Main::Active))
 		return;
 
-	WindowBox_t& info = Vars::Radar::Main::Window.Value;
-	if (info.update)
+	static WindowBox_t old = {};
+	WindowBox_t info = FGet(Vars::Radar::Main::Window);
+	if (info != old)
 	{
-		ImGui::SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
-		ImGui::SetNextWindowSize({ float(info.w), float(info.w) }, ImGuiCond_Always);
-		info.update = false;
+		SetNextWindowPos({ float(info.x), float(info.y) }, ImGuiCond_Always);
+		SetNextWindowSize({ float(info.w), float(info.w) }, ImGuiCond_Always);
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
-	ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorToVec(Vars::Menu::Theme::Active.Value));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
-	ImGui::SetNextWindowSizeConstraints({ 100.f, 100.f }, { 1000.f, 1000.f }, SquareConstraints);
-	if (ImGui::Begin("Radar", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
+	PushStyleColor(ImGuiCol_WindowBg, {});
+	PushStyleColor(ImGuiCol_Border, Active.Value);
+	PushStyleVar(ImGuiStyleVar_WindowRounding, 3);
+	PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
+	SetNextWindowSizeConstraints({ 100.f, 100.f }, { 1000.f, 1000.f }, SquareConstraints);
+	if (Begin("Radar", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
-		const ImVec2 winPos = ImGui::GetWindowPos();
-		const ImVec2 winSize = ImGui::GetWindowSize();
+		const ImVec2 winPos = GetWindowPos();
+		const ImVec2 winSize = GetWindowSize();
 
-		ImGui::PushFont(FontBlack);
-		auto size = ImGui::CalcTextSize("Radar");
-		ImGui::SetCursorPos({ (winSize.x - size.x) * 0.5f, (winSize.y - size.y) * 0.5f });
-		ImGui::Text("Radar");
-		ImGui::PopFont();
+		info.x = winPos.x; info.y = winPos.y; info.w = winSize.x; old = info;
+		FSet(Vars::Radar::Main::Window, info);
 
-		info.x = static_cast<int>(winPos.x);
-		info.y = static_cast<int>(winPos.y);
-		info.w = static_cast<int>(winSize.x);
+		PushFont(FontBlack);
+		auto size = CalcTextSize("Radar");
+		SetCursorPos({ (winSize.x - size.x) * 0.5f, (winSize.y - size.y) * 0.5f });
+		Text("Radar");
+		PopFont();
 
-		ImGui::End();
+		End();
 	}
-	ImGui::PopStyleVar(2);
-	ImGui::PopStyleColor(2);
+	PopStyleVar(2);
+	PopStyleColor(2);
 }
 
 void CMenu::Render(IDirect3DDevice9* pDevice)
 {
+	using namespace ImGui;
+
 	if (!ConfigLoaded)
 		return;
 
@@ -2104,103 +2348,105 @@ void CMenu::Render(IDirect3DDevice9* pDevice)
 	pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
 	pDevice->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
 
-	// Toggle menu (defaults are 'insert' and 'F3', another can be added in menu)
-	if (Utils::IsGameWindowInFocus() && (F::KeyHandler.Pressed(VK_INSERT) || F::KeyHandler.Pressed(VK_F3) || F::KeyHandler.Pressed(Vars::Menu::MenuKey.Value)))
+	if (Utils::IsGameWindowInFocus() && (F::KeyHandler.Pressed(Vars::Menu::MenuPrimaryKey.Value)) || F::KeyHandler.Pressed(Vars::Menu::MenuSecondaryKey.Value))
 		I::MatSystemSurface->SetCursorAlwaysVisible(IsOpen = !IsOpen);
+	G::InKeybind = false;
 
-	// Begin current frame
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-	ImGui::PushFont(FontRegular);
+	NewFrame();
 
-	// better looking dt bars
+	LoadColors();
+	PushFont(FontRegular);
 	F::Visuals.DrawTickbaseBars();
-
-	// Window that should always be visible
-	DrawKeybinds();
+	DrawBinds();
 
 	if (IsOpen)
 	{
-		ImGui::KeyHandler();
+		KeyHandler();
 
 		DrawMenu();
 
 		DrawCameraWindow();
 		DrawRadar();
 
-		AddDraggable("Ticks", Vars::Menu::TicksDisplay.Value, Vars::Menu::Indicators.Value & (1 << 0));
-		AddDraggable("Crit hack", Vars::Menu::CritsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 1));
-		AddDraggable("Spectators", Vars::Menu::SpectatorsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 2));
-		AddDraggable("Ping", Vars::Menu::PingDisplay.Value, Vars::Menu::Indicators.Value & (1 << 3));
-		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay.Value, Vars::Menu::Indicators.Value & (1 << 4));
+		AddDraggable("Ticks", Vars::Menu::TicksDisplay, FGet(Vars::Menu::Indicators) & (1 << 0));
+		AddDraggable("Crit hack", Vars::Menu::CritsDisplay, FGet(Vars::Menu::Indicators) & (1 << 1));
+		AddDraggable("Spectators", Vars::Menu::SpectatorsDisplay, FGet(Vars::Menu::Indicators) & (1 << 2));
+		AddDraggable("Ping", Vars::Menu::PingDisplay, FGet(Vars::Menu::Indicators) & (1 << 3));
+		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay, FGet(Vars::Menu::Indicators) & (1 << 4));
+		AddDraggable("Seed prediction", Vars::Menu::SeedPredictionDisplay, FGet(Vars::Menu::Indicators) & (1 << 5));
 
-		Cursor = ImGui::GetMouseCursor();
+		Cursor = GetMouseCursor();
 	}
 	else
-		ImGui::mActives.clear();
+		mActives.clear();
 
-	// End frame and render
-	ImGui::PopFont();
-	ImGui::EndFrame();
+	PopFont();
+
+	EndFrame();
 	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+	ImGui_ImplDX9_RenderDrawData(GetDrawData());
 	pDevice->SetRenderState(D3DRS_SRGBWRITEENABLE, true);
+}
+
+void CMenu::LoadColors()
+{
+	using namespace ImGui;
+
+	Accent = ColorToVec(Vars::Menu::Theme::Accent.Value);
+	AccentLight = ImColor(Accent.Value.x * 1.1f, Accent.Value.y * 1.1f, Accent.Value.z * 1.1f, Accent.Value.w);
+	Background = ColorToVec(Vars::Menu::Theme::Background.Value);
+	Foreground = ColorToVec(Vars::Menu::Theme::Foreground.Value);
+	Foremost = ColorToVec(Vars::Menu::Theme::Foremost.Value);
+	ForemostLight = ImColor(Foremost.Value.x * 1.1f, Foremost.Value.y * 1.1f, Foremost.Value.z * 1.1f, Foremost.Value.w);
+	Inactive = ColorToVec(Vars::Menu::Theme::Inactive.Value);
+	Active = ColorToVec(Vars::Menu::Theme::Active.Value);
+
+	ImVec4* colors = GetStyle().Colors;
+	colors[ImGuiCol_Button] = {};
+	colors[ImGuiCol_ButtonHovered] = {};
+	colors[ImGuiCol_ButtonActive] = {};
+	colors[ImGuiCol_FrameBg] = Foremost;
+	colors[ImGuiCol_FrameBgHovered] = ForemostLight;
+	colors[ImGuiCol_FrameBgActive] = Foremost;
+	colors[ImGuiCol_Header] = {};
+	colors[ImGuiCol_HeaderHovered] = ForemostLight;
+	colors[ImGuiCol_HeaderActive] = {};
+	colors[ImGuiCol_ModalWindowDimBg] = { Background.Value.x, Background.Value.y, Background.Value.z, 0.4f };
+	colors[ImGuiCol_PopupBg] = ForemostLight;
+	colors[ImGuiCol_ResizeGrip] = {};
+	colors[ImGuiCol_ResizeGripActive] = {};
+	colors[ImGuiCol_ResizeGripHovered] = {};
+	colors[ImGuiCol_ScrollbarBg] = {};
+	colors[ImGuiCol_SliderGrab] = Accent;
+	colors[ImGuiCol_SliderGrabActive] = AccentLight;
+	colors[ImGuiCol_Text] = Active;
+	colors[ImGuiCol_WindowBg] = Background;
 }
 
 void CMenu::LoadStyle()
 {
-	// Style & Colors
-	{
-		Accent = ImGui::ColorToVec(Vars::Menu::Theme::Accent.Value);
-		AccentLight = ImColor(Accent.Value.x * 1.1f, Accent.Value.y * 1.1f, Accent.Value.z * 1.1f, Accent.Value.w);
-		Background = ImGui::ColorToVec(Vars::Menu::Theme::Background.Value);
-		Foreground = ImGui::ColorToVec(Vars::Menu::Theme::Foreground.Value);
-		Foremost = ImGui::ColorToVec(Vars::Menu::Theme::Foremost.Value);
-		ForemostLight = ImColor(Foremost.Value.x * 1.1f, Foremost.Value.y * 1.1f, Foremost.Value.z * 1.1f, Foremost.Value.w);
-		Inactive = ImGui::ColorToVec(Vars::Menu::Theme::Inactive.Value);
-		Active = ImGui::ColorToVec(Vars::Menu::Theme::Active.Value);
+	using namespace ImGui;
 
-		auto& style = ImGui::GetStyle();
-		style.ButtonTextAlign = { 0.5f, 0.5f }; // Center button text
-		style.CellPadding = { 4, 0 };
-		style.ChildBorderSize = 0.f;
-		style.ChildRounding = 0.f;
-		style.FrameBorderSize = 0.f;
-		style.FramePadding = { 0, 0 };
-		style.FrameRounding = 3.f;
-		style.ItemInnerSpacing = { 0, 0 };
-		style.ItemSpacing = { 8, 8 };
-		style.PopupBorderSize = 0.f;
-		style.PopupRounding = 3.f;
-		style.ScrollbarSize = 9.f;
-		style.ScrollbarRounding = 0.f;
-		style.WindowBorderSize = 0.f;
-		style.WindowMinSize = { 100, 100 };
-		style.WindowPadding = { 0, 0 };
-		style.WindowRounding = 3.f;
-
-		ImVec4* colors = style.Colors;
-		colors[ImGuiCol_Button] = {};
-		colors[ImGuiCol_ButtonHovered] = {};
-		colors[ImGuiCol_ButtonActive] = {};
-		colors[ImGuiCol_FrameBg] = Foremost;
-		colors[ImGuiCol_FrameBgHovered] = ForemostLight;
-		colors[ImGuiCol_FrameBgActive] = Foremost;
-		colors[ImGuiCol_Header] = {};
-		colors[ImGuiCol_HeaderHovered] = ForemostLight;
-		colors[ImGuiCol_HeaderActive] = {};
-		colors[ImGuiCol_ModalWindowDimBg] = { Background.Value.x, Background.Value.y, Background.Value.z, 0.4f };
-		colors[ImGuiCol_PopupBg] = ForemostLight;
-		colors[ImGuiCol_ResizeGrip] = {};
-		colors[ImGuiCol_ResizeGripActive] = {};
-		colors[ImGuiCol_ResizeGripHovered] = {};
-		colors[ImGuiCol_ScrollbarBg] = {};
-		colors[ImGuiCol_SliderGrab] = Accent;
-		colors[ImGuiCol_SliderGrabActive] = AccentLight;
-		colors[ImGuiCol_Text] = Active;
-		colors[ImGuiCol_WindowBg] = Background;
-	}
+	auto& style = GetStyle();
+	style.ButtonTextAlign = { 0.5f, 0.5f }; // Center button text
+	style.CellPadding = { 4, 0 };
+	style.ChildBorderSize = 0.f;
+	style.ChildRounding = 0.f;
+	style.FrameBorderSize = 0.f;
+	style.FramePadding = { 0, 0 };
+	style.FrameRounding = 3.f;
+	style.ItemInnerSpacing = { 0, 0 };
+	style.ItemSpacing = { 8, 8 };
+	style.PopupBorderSize = 0.f;
+	style.PopupRounding = 3.f;
+	style.ScrollbarSize = 9.f;
+	style.ScrollbarRounding = 0.f;
+	style.WindowBorderSize = 0.f;
+	style.WindowMinSize = { 100, 100 };
+	style.WindowPadding = { 0, 0 };
+	style.WindowRounding = 3.f;
 }
 
 // i think this will occasionally fail and only draw half of the menu w/o any input
@@ -2222,8 +2468,9 @@ void CMenu::Init(IDirect3DDevice9* pDevice)
 		FontSmall = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 11.f, &fontConfig, fontRange);
 		FontRegular = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 13.f, &fontConfig, fontRange);
 		FontBold = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBold_compressed_data, RobotoBold_compressed_size, 13.f, &fontConfig, fontRange);
+		FontLarge = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 15.f, &fontConfig, fontRange);
 		FontBlack = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoBlack_compressed_data, RobotoBlack_compressed_size, 15.f, &fontConfig, fontRange);
-		FontLarge = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 20.f, &fontConfig, fontRange);
+		FontTitle = io.Fonts->AddFontFromMemoryCompressedTTF(RobotoMedium_compressed_data, RobotoMedium_compressed_size, 20.f, &fontConfig, fontRange);
 		FontMono = io.Fonts->AddFontFromMemoryCompressedTTF(CascadiaMono_compressed_data, CascadiaMono_compressed_size, 15.f, &fontConfig, fontRange);
 
 		ImFontConfig iconConfig;

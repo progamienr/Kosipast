@@ -20,8 +20,9 @@ public:
 	void DrawAimbotFOV(CBaseEntity* pLocal);
 	void DrawTickbaseText();
 	void DrawTickbaseBars();
-	void DrawOnScreenConditions(CBaseEntity* pLocal);
 	void DrawOnScreenPing(CBaseEntity* pLocal);
+	void DrawOnScreenConditions(CBaseEntity* pLocal);
+	void DrawSeedPrediction(CBaseEntity* pLocal);
 	void ProjectileTrace(const bool bQuick = true);
 	void DrawAntiAim(CBaseEntity* pLocal);
 	void DrawDebugInfo(CBaseEntity* pLocal);

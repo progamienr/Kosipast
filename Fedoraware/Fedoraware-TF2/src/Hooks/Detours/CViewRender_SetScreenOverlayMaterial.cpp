@@ -7,7 +7,7 @@ MAKE_HOOK(CViewRender_SetScreenOverlayMaterial, Utils::GetVFuncPtr(I::ViewRender
 	const int matIndex = Vars::Visuals::VisualOverlay.Value;
 	const bool menuOverlay = Vars::Menu::Vignette.Value && F::Menu.IsOpen;
 
-	if (!matIndex && !menuOverlay && Vars::Visuals::RemoveScreenOverlays.Value)
+	if (!matIndex && !menuOverlay && Vars::Visuals::Removals::ScreenOverlays.Value)
 	{
 		return Hook.Original<FN>()(ecx, edx, nullptr);
 	}

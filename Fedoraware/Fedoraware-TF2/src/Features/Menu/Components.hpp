@@ -1,6 +1,7 @@
 #pragma once
 #include "ImGui/imgui_internal.h"
 #include "Menu.h"
+#include "Conditions/Conditions.h"
 #include "../Visuals/Materials/Materials.h"
 
 const char* CurrentCondition = "";
@@ -21,6 +22,13 @@ enum FButton_
 	FButton_SameLine = 1 << 3,
 	FButton_Large = 1 << 4,
 	FButton_NoUpper = 1 << 5
+};
+
+enum FKeybind_
+{
+	FKeybind_None = 0,
+	FKeybind_AllowNone = 1 << 6,
+	FKeybind_AllowMenu = 1 << 7
 };
 
 enum FToggle_
@@ -50,8 +58,6 @@ enum FDropdown_
 enum FSDropdown_
 {
 	FSDropdown_None = 0,
-	FSDropdown_Left = 1 << 0,
-	FSDropdown_Right = 1 << 1,
 	FSDropdown_Custom = 1 << 2,
 	FSDropdown_AutoUpdate = 1 << 3
 };
@@ -68,6 +74,7 @@ enum FColorPicker_
 namespace ImGui
 {
 	std::unordered_map<std::string, int> mActives;
+	std::string sCondition = "default";
 	bool bDisabled = false, bTransparent = false;
 
 	__inline float fnmodf(float _X, float _Y)
@@ -76,10 +83,20 @@ namespace ImGui
 		return fmodf(_X, _Y) + (_X < 0 ? _Y : 0);
 	}
 
+	__inline bool IsColorBright(Color_t color)
+	{
+		return color.r + color.g + color.b > 510;
+	}
+
+	__inline bool IsColorBright(ImColor color)
+	{
+		return color.Value.x + color.Value.y + color.Value.z > 2.f;
+	}
+
 	/* Color_t to ImVec4 */
 	__inline ImVec4 ColorToVec(Color_t color)
 	{
-		return { Color::TOFLOAT(color.r), Color::TOFLOAT(color.g), Color::TOFLOAT(color.b), Color::TOFLOAT(color.a) };
+		return { float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f, float(color.a) / 255.f };
 	}
 
 	/* ImVec4 to Color_t */
@@ -237,7 +254,7 @@ namespace ImGui
 			PushStyleColor(ImGuiCol_Text, color);
 		PushFont(large ? F::Menu.IconFontLarge : F::Menu.IconFontRegular);
 		TextUnformatted(icon);
-		if (IsItemHovered())
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 		const bool pressed = IsItemClicked();
 		PopFont();
@@ -326,7 +343,7 @@ namespace ImGui
 					lastHeights.clear();
 				*current = i;
 			}
-			if (IsItemHovered())
+			if (!bDisabled && IsItemHovered())
 				SetMouseCursor(ImGuiMouseCursor_Hand);
 
 			const auto originalPos = GetCursorPos();
@@ -394,7 +411,7 @@ namespace ImGui
 			PopStyleVar();
 	}
 
-	__inline bool FButton(const char* label, int flags = 0)
+	__inline bool FButton(const char* label, int flags = 0, int sizeOffset = 0)
 	{
 		if (bTransparent || bDisabled)
 			PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
@@ -402,7 +419,7 @@ namespace ImGui
 		std::string str = label;
 		if (!(flags & FButton_NoUpper))
 			std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-		label = str.c_str();
+		label = str.c_str(); // why is this fucjking needed ??? ?
 
 		float sizex = GetWindowSize().x - 2 * GetStyle().WindowPadding.x;
 		if (flags & FButton_Left || flags & FButton_Right)
@@ -419,13 +436,13 @@ namespace ImGui
 
 		PushStyleColor(ImGuiCol_Border, F::Menu.Accent.Value);
 		PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1);
-		const bool active = Button(label, { sizex, flags & FButton_Large ? 40.f : 30.f });
-		if (IsItemHovered())
+		const bool active = Button(label, { sizex + sizeOffset, flags & FButton_Large ? 40.f : 30.f });
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 		PopStyleVar();
 		PopStyleColor();
 
-		SetCursorPos(restorePos); DebugDummy({ sizex, flags & FButton_Large ? 48.f : 38.f });
+		SetCursorPos(restorePos); DebugDummy({ sizex + sizeOffset, flags & FButton_Large ? 48.f : 38.f });
 
 		if (bTransparent || bDisabled)
 			PopStyleVar();
@@ -448,7 +465,7 @@ namespace ImGui
 			changed = false;
 		if (changed)
 			*var = !*var;
-		if (IsItemHovered())
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 
 		SetCursorPos({ restorePos.x + 4, restorePos.y + 3 });
@@ -560,7 +577,7 @@ namespace ImGui
 			TextUnformatted(text.c_str());
 			if (!bDisabled)
 			{
-				if (IsItemHovered() && ImGui::IsWindowHovered())
+				if (!bDisabled && IsItemHovered() && ImGui::IsWindowHovered())
 					SetMouseCursor(ImGuiMouseCursor_TextInput);
 				if (mActives[index])
 					GetWindowDrawList()->AddRectFilled({ adjPos.x + original.x, adjPos.y + original.y + 14 }, { adjPos.x + original.x + width, adjPos.y + original.y + 15 }, F::Menu.Active);
@@ -600,7 +617,7 @@ namespace ImGui
 		ImDrawList* drawList = GetWindowDrawList(); auto mouse = GetMousePos();
 		const bool within = adjPos.x + mins.x - 6 < mouse.x && mouse.x < adjPos.x + maxs.x + 5 &&
 			adjPos.y + mins.y - 6 < mouse.y && mouse.y < adjPos.y + maxs.y + 5;
-		if (within && ImGui::IsWindowHovered())
+		if (!bDisabled && within && ImGui::IsWindowHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 		const float mousePerc = (mouse.x - (adjPos.x + mins.x)) / ((adjPos.x + maxs.x) - (adjPos.x + mins.x)) + (step / 2) / (v_max - v_min);
 		if (var2)
@@ -845,7 +862,7 @@ namespace ImGui
 
 			EndCombo();
 		}
-		if (IsItemHovered())
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 		if (BeginComboPreview())
 		{
@@ -887,13 +904,13 @@ namespace ImGui
 		if (!entries.size())
 		{
 			PushStyleColor(ImGuiCol_PopupBg, {});
-			PushStyleVar(ImGuiStyleVar_WindowPadding, { 8, 0 });
+			PushStyleVar(ImGuiStyleVar_WindowPadding, { GetStyle().WindowPadding.x, 0 });
 		}
 		PushStyleVar(ImGuiStyleVar_FramePadding, { 0.f, 13.5f });
 		float sizex = GetWindowSize().x;
-		if (flags & (FSDropdown_Left | FSDropdown_Right))
+		if (flags & (FDropdown_Left | FDropdown_Right))
 			sizex = sizex / 2 + 4;
-		if (flags & FSDropdown_Right)
+		if (flags & FDropdown_Right)
 			SameLine(sizex);
 		sizex = sizex - 2 * GetStyle().WindowPadding.x - 10 * colors;
 		PushItemWidth(sizex);
@@ -993,7 +1010,7 @@ namespace ImGui
 		}
 		else
 			mActives[label] = false;
-		if (IsItemHovered())
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_TextInput);
 		if (BeginComboPreview())
 		{
@@ -1141,7 +1158,7 @@ namespace ImGui
 
 			EndCombo();
 		}
-		if (IsItemHovered())
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 		if (BeginComboPreview())
 		{
@@ -1196,7 +1213,7 @@ namespace ImGui
 		}
 		PopStyleColor();
 		PopStyleVar(3);
-		if (IsItemHovered())
+		if (!bDisabled && IsItemHovered())
 			SetMouseCursor(ImGuiMouseCursor_Hand);
 		if (marker)
 			HelpMarker(label);
@@ -1260,12 +1277,7 @@ namespace ImGui
 		std::map<short, bool> mNewKeys = {};
 
 		for (short iKey = 0; iKey < 255; iKey++)
-		{
-			if (iKey == VK_INSERT || iKey == VK_F3)
-				continue;
-
 			mNewKeys[iKey] = GetAsyncKeyState(iKey) & 0x8000;
-		}
 
 		iKeyPressed = 0;
 		for (auto& [iKey, bPressed] : mNewKeys)
@@ -1279,84 +1291,88 @@ namespace ImGui
 
 		mOldKeys = mNewKeys;
 	}
-	__inline bool FKeybind(const char* label, int& output, bool bAllowNone = true, int flags = 0) // placeholder, will be repurposed
+
+	__inline std::string VK2STR(const short key)
 	{
-		auto VK2STR = [&](const short key) -> std::string
-			{
-				switch (key)
-				{
-				case 0x0: return "none";
-				case VK_LBUTTON: return "mouse1";
-				case VK_RBUTTON: return "mouse2";
-				case VK_MBUTTON: return "mouse3";
-				case VK_XBUTTON1: return "mouse4";
-				case VK_XBUTTON2: return "mouse5";
-				case VK_CONTROL:
-				case VK_LCONTROL:
-				case VK_RCONTROL: return "control";
-				case VK_DELETE: return "delete";
-				case VK_NUMPAD0: return "num0";
-				case VK_NUMPAD1: return "num1";
-				case VK_NUMPAD2: return "num2";
-				case VK_NUMPAD3: return "num3";
-				case VK_NUMPAD4: return "num4";
-				case VK_NUMPAD5: return "num5";
-				case VK_NUMPAD6: return "num6";
-				case VK_NUMPAD7: return "num7";
-				case VK_NUMPAD8: return "num8";
-				case VK_NUMPAD9: return "num9";
-				case VK_PRIOR: return "pgup";
-				case VK_NEXT: return "pgdown";
-				case VK_HOME: return "home";
-				case VK_END: return "end";
-				case VK_CLEAR: return "clear";
-				case VK_UP: return "up";
-				case VK_DOWN: return "down";
-				case VK_LEFT: return "left";
-				case VK_RIGHT: return "right";
-				case VK_ESCAPE: return "escape";
-				case VK_F13: return "f13";
-				case VK_F14: return "f14";
-				case VK_F15: return "f15";
-				case VK_F16: return "f16";
-				case VK_F17: return "f17";
-				case VK_F18: return "f18";
-				case VK_F19: return "f19";
-				case VK_F20: return "f20";
-				case VK_F21: return "f21";
-				case VK_F22: return "f22";
-				case VK_F23: return "f23";
-				case VK_F24: return "f24";
-				case VK_PAUSE: return "pause";
-				}
+		switch (key)
+		{
+		case 0x0: return "none";
+		case VK_LBUTTON: return "mouse1";
+		case VK_RBUTTON: return "mouse2";
+		case VK_MBUTTON: return "mouse3";
+		case VK_XBUTTON1: return "mouse4";
+		case VK_XBUTTON2: return "mouse5";
+		case VK_CONTROL:
+		case VK_LCONTROL:
+		case VK_RCONTROL: return "control";
+		case VK_NUMPAD0: return "num0";
+		case VK_NUMPAD1: return "num1";
+		case VK_NUMPAD2: return "num2";
+		case VK_NUMPAD3: return "num3";
+		case VK_NUMPAD4: return "num4";
+		case VK_NUMPAD5: return "num5";
+		case VK_NUMPAD6: return "num6";
+		case VK_NUMPAD7: return "num7";
+		case VK_NUMPAD8: return "num8";
+		case VK_NUMPAD9: return "num9";
+		case VK_DIVIDE: return "num/";
+		case VK_INSERT: return "insert";
+		case VK_DELETE: return "delete";
+		case VK_PRIOR: return "pgup";
+		case VK_NEXT: return "pgdown";
+		case VK_HOME: return "home";
+		case VK_END: return "end";
+		case VK_CLEAR: return "clear";
+		case VK_UP: return "up";
+		case VK_DOWN: return "down";
+		case VK_LEFT: return "left";
+		case VK_RIGHT: return "right";
+		case VK_ESCAPE: return "escape";
+		case VK_F13: return "f13";
+		case VK_F14: return "f14";
+		case VK_F15: return "f15";
+		case VK_F16: return "f16";
+		case VK_F17: return "f17";
+		case VK_F18: return "f18";
+		case VK_F19: return "f19";
+		case VK_F20: return "f20";
+		case VK_F21: return "f21";
+		case VK_F22: return "f22";
+		case VK_F23: return "f23";
+		case VK_F24: return "f24";
+		case VK_LWIN:
+		case VK_RWIN: return "windows";
+		case VK_PAUSE: return "pause";
+		case VK_APPS: return "apps";
+		}
 
-				std::string str = "unknown";
+		std::string str = "unknown";
 
-				CHAR output[16] = { "\0" };
-				if (GetKeyNameTextA(MapVirtualKeyW(key, MAPVK_VK_TO_VSC) << 16, output, 16))
-					str = output;
+		CHAR output[16] = { "\0" };
+		if (GetKeyNameTextA(MapVirtualKeyW(key, MAPVK_VK_TO_VSC) << 16, output, 16))
+			str = output;
 
-				std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-				str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
+		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+		str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
 
-				if (Vars::Debug::Info.Value && str == "unknown")
-					str = std::format("{:#x}", key);
+		if (Vars::Debug::Info.Value && str == "unknown")
+			str = std::format("{:#x}", key);
 
-				return str;
-			};
-
+		return str;
+	}
+	__inline bool FKeybind(const char* label, int& output, int flags = 0, int sizeOffset = 0)
+	{
 		static bool bCanceled = false;
 
 		const auto id = GetID(label);
 		PushID(label);
 
-		G::InKeybind = false; // don't create conflicting/unintended inputs
 		if (GetActiveID() == id)
 		{
 			G::InKeybind = true;
 
-			//FButton("...", flags | FButton_NoUpper);
-			FButton(std::format("{}: ...", label).c_str(), flags | FButton_NoUpper);
+			//FButton("...", flags | FButton_NoUpper, sizeOffset);
+			FButton(std::format("{}: ...", label).c_str(), flags | FButton_NoUpper, sizeOffset);
 			const bool bHovered = IsItemHovered();
 
 			if (bHovered && IsMouseClicked(ImGuiMouseButton_Left))
@@ -1373,18 +1389,18 @@ namespace ImGui
 					switch (iKeyPressed)
 					{
 					case VK_LBUTTON:
-						if (!bHovered)
-							output = iKeyPressed;
+						output = bHovered ? output : iKeyPressed;
 						break;
 					case VK_ESCAPE:
-						if (bAllowNone)
+						if (flags & FKeybind_AllowNone)
 						{
 							output = 0x0;
 							break;
 						}
 						[[fallthrough]];
 					default:
-						output = iKeyPressed;
+						if (flags & FKeybind_AllowMenu || iKeyPressed != Vars::Menu::MenuPrimaryKey.Value && iKeyPressed != Vars::Menu::MenuSecondaryKey.Value)
+							output = iKeyPressed;
 					}
 					ClearActiveID();
 				}
@@ -1393,7 +1409,7 @@ namespace ImGui
 			GetCurrentContext()->ActiveIdAllowOverlap = true;
 		}
 		//else if (FButton(VK2STR(output).c_str(), flags | FButton_NoUpper) && !bCanceled)
-		else if (FButton(std::format("{}: {}", label, VK2STR(output)).c_str(), flags | FButton_NoUpper) && !bCanceled)
+		else if (FButton(std::format("{}: {}", label, VK2STR(output)).c_str(), flags | FButton_NoUpper, sizeOffset) && !bCanceled)
 			SetActiveID(id, GetCurrentWindow());
 
 		if (bCanceled && !IsMouseDown(ImGuiMouseButton_Left) && !IsMouseReleased(ImGuiMouseButton_Left))
@@ -1430,5 +1446,174 @@ namespace ImGui
 			entries.push_back(pair.first.c_str());
 
 		return FVDropdown(label, var, entries, flags, colors);
+	}
+
+	// convar wrappers
+	bool bOldDisabled, bOldTransparent;
+
+	template <class T>
+	__inline std::string GetCondition(ConfigVar<T>& var, bool bForce = false)
+	{
+		if (var.m_iFlags & (NOSAVE | NOCOND))
+			return "default";
+
+		if (bForce)
+			return sCondition;
+
+		std::string parent = sCondition;
+		while (true)
+		{
+			if (parent == "default" || var.Map.contains(parent))
+				break;
+			parent = F::Conditions.GetParent(parent);
+		}
+		return parent;
+	}
+
+	template <class T>
+	__inline T GetParentValue(ConfigVar<T>& var, std::string sCond) // oh my god
+	{
+		std::string parent = sCond;
+		while (true)
+		{
+			parent = F::Conditions.GetParent(parent);
+			if (parent == "default" || var.Map.contains(parent))
+				break;
+		}
+		return var.Map[parent];
+	}
+
+	template <class T>
+	__inline T FGet(ConfigVar<T>& var, const bool bDisable = false)
+	{
+		bOldDisabled = bDisabled, bOldTransparent = bTransparent;
+
+		const auto condition = GetCondition(var);
+		if (bDisable)
+		{
+			if (sCondition == "default")
+			{
+				if (Vars::Menu::MenuShowsBinds.Value && sCondition == "default" && var.Map["default"] != var.Value)
+				{
+					for (auto& [sCond, tVal] : var.Map)
+					{
+						if (sCond == "default")
+							continue;
+
+						if (tVal == var.Value)
+						{
+							bDisabled = true;
+							return tVal;
+						}
+					}
+				}
+			}
+			else
+				bTransparent = sCondition != condition && !(var.m_iFlags & (NOSAVE | NOCOND));
+		}
+		return var.Map[condition];
+	}
+
+	template <class T>
+	__inline void FSet(ConfigVar<T>& var, T val)
+	{
+		if (!bDisabled)
+		{
+			const auto condition = GetCondition(var, true);
+			const auto value = GetParentValue(var, condition);
+
+			if (value != val)
+				var.Map[condition] = val;
+			else if (condition != "default")
+			{
+				for (auto it = var.Map.begin(); it != var.Map.end();)
+				{
+					if (it->first == condition)
+						it = var.Map.erase(it);
+					else
+						++it;
+				}
+			}
+		}
+
+		bDisabled = bOldDisabled, bTransparent = bOldTransparent;
+	}
+
+	__inline bool FToggle(const char* label, ConfigVar<bool>& var, int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FToggle(label, &val, flags);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FSlider(const char* label, ConfigVar<FloatRange_t>& var, float v_min, float v_max, float step = 1.f, const char* fmt = "%.0f", int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FSlider(label, &val.Min, &val.Max, v_min, v_max, step, fmt, flags);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FSlider(const char* label, ConfigVar<IntRange_t>& var, int v_min, int v_max, int step = 1, const char* fmt = "%d", int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FSlider(label, &val.Min, &val.Max, v_min, v_max, step, fmt, flags);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FSlider(const char* label, ConfigVar<float>& var, float v_min, float v_max, float step = 1.f, const char* fmt = "%.0f", int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FSlider(label, &val, v_min, v_max, step, fmt, flags);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FSlider(const char* label, ConfigVar<int>& var, int v_min, int v_max, int step = 1, const char* fmt = "%d", int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FSlider(label, &val, v_min, v_max, step, fmt, flags);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FDropdown(const char* label, ConfigVar<int>& var, std::vector<const char*> titles, std::vector<int> values = {}, int flags = 0, int colors = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FDropdown(label, &val, titles, values, flags, colors);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FSDropdown(const char* label, ConfigVar<std::string>& var, std::vector<const char*> entries = {}, int flags = 0, int colors = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FSDropdown(label, &val, entries, flags, colors);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FVDropdown(const char* label, ConfigVar<std::vector<std::string>>& var, std::vector<std::string> titles, int flags = 0, int colors = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FVDropdown(label, &val, titles, flags, colors);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FMDropdown(const char* label, ConfigVar<std::vector<std::string>>& var, int flags = 0, int colors = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FMDropdown(label, &val, flags, colors);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FColorPicker(const char* label, ConfigVar<Color_t>& var, int offset = 0, int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FColorPicker(label, &val, offset, flags);
+		FSet(var, val);
+		return bReturn;
+	}
+	__inline bool FColorPicker(const char* label, ConfigVar<Gradient_t>& var, bool start = true, int offset = 0, int flags = 0)
+	{
+		auto val = FGet(var, true);
+		const bool bReturn = FColorPicker(label, start ? &val.StartColor : &val.EndColor, offset, flags);
+		FSet(var, val);
+		return bReturn;
 	}
 }

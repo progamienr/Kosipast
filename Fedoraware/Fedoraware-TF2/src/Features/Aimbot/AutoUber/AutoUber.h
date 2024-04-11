@@ -1,6 +1,8 @@
 #pragma once
 #include "../../Feature.h"
 
+#include "../AimbotGlobal/AimbotGlobal.h"
+
 class CAutoUber
 {
 public:

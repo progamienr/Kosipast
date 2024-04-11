@@ -20,7 +20,7 @@ void CCameraWindow::Draw()
 	if (!CameraMat || !I::EngineClient->IsInGame() || !ShouldDraw)
 		return;
 
-	const WindowBox_t& info = Vars::Visuals::ProjectileWindow.Value;
+	const WindowBox_t& info = Vars::Visuals::Simulation::ProjectileWindow.Value;
 
 	// Draw to screen
 	const auto renderCtx = I::MaterialSystem->GetRenderContext();
@@ -40,7 +40,7 @@ void CCameraWindow::RenderView(void* ecx, const CViewSetup& pViewSetup)
 	if (!CameraTex || !ShouldDraw)
 		return;
 
-	const WindowBox_t& info = Vars::Visuals::ProjectileWindow.Value;
+	const WindowBox_t& info = Vars::Visuals::Simulation::ProjectileWindow.Value;
 
 	CViewSetup viewSetup = pViewSetup;
 	viewSetup.x = 0;

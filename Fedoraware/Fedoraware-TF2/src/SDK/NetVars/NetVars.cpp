@@ -1,38 +1,34 @@
 #include "NetVars.h"
+#include "../Interfaces/Interfaces.h"
 
-#undef GetProp
-
-void CNetVars::Init()
+int CNetVars::GetOffset(RecvTable* pTable, const char* szNetVar)
 {
-	const auto* client_class = I::BaseClientDLL->GetAllClasses();
-
-	while (client_class != nullptr)
+	for (int i = 0; i < pTable->m_nProps; i++)
 	{
-		const auto class_info = std::make_shared<node>(0);
-		RecvTable* recv_table = reinterpret_cast<RecvTable*>(client_class->m_pRecvTable);
-		if (!class_info || !recv_table)
+		RecvProp Prop = pTable->m_pProps[i];
+
+		if (std::string_view(Prop.m_pVarName).compare(szNetVar) == 0)
+			return Prop.GetOffset();
+
+		if (auto DataTable = Prop.GetDataTable())
 		{
-			continue;
+			if (auto nOffset = GetOffset(DataTable, szNetVar))
+				return nOffset + Prop.GetOffset();
 		}
-		populate_nodes(recv_table, &class_info->nodes);
-		nodes.emplace(recv_table->GetName(), class_info);
-
-		client_class = client_class->m_pNext;
 	}
+
+	return 0;
 }
 
-void CNetVars::populate_nodes(RecvTable* recv_table, map_type* map)
+int CNetVars::GetNetVar(const char* szClass, const char* szNetVar)
 {
-	for (auto i = 0; i < recv_table->GetNumProps(); i++)
+	CClientClass* pClasses = I::BaseClientDLL->GetAllClasses();
+
+	for (auto pCurrNode = pClasses; pCurrNode; pCurrNode = pCurrNode->m_pNext)
 	{
-		const auto* prop = recv_table->GetPropW(i);
-		const auto prop_info = std::make_shared<node>(prop->GetOffset());
-
-		if (prop->GetType() == DPT_DataTable)
-			populate_nodes(prop->GetDataTable(), &prop_info->nodes);
-
-		map->emplace(prop->GetName(), prop_info);
+		if (std::string_view(szClass).compare(pCurrNode->m_pNetworkName) == 0)
+			return GetOffset(pCurrNode->m_pRecvTable, szNetVar);
 	}
-}
 
-CNetVars g_NetVars;
+	return 0;
+}

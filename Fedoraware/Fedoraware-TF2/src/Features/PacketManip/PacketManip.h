@@ -3,12 +3,13 @@
 #include "FakeLag/FakeLag.h"
 #include "AntiAim/AntiAim.h"
 
-class CPacketManip {
-private:
+class CPacketManip
+{
 	bool WillTimeOut();
-	bool AACheck(CUserCmd* pCmd);
+	bool AntiAimCheck();
+
 public:
-	void CreateMove(CUserCmd* pCmd, bool* pSendPacket);
+	void Run(CUserCmd* pCmd, bool* pSendPacket);
 };
 
 ADD_FEATURE(CPacketManip, PacketManip)

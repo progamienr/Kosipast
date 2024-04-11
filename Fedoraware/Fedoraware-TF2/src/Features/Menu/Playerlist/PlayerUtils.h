@@ -16,7 +16,7 @@ struct ListPlayer
 	bool Fake{};
 };
 
-struct PriorityLabel
+struct PriorityLabel_t
 {
 	Color_t Color = { 255, 255, 255, 255 };
 	int Priority = 0;
@@ -29,7 +29,7 @@ struct PriorityLabel
 class CPlayerlistUtils
 {
 public:
-	bool GetTag(std::string sTag, PriorityLabel* plTag);
+	bool GetTag(std::string sTag, PriorityLabel_t* plTag);
 
 	void AddTag(uint32_t friendsID, std::string sTag, bool bSave = true, std::string sName = "");
 	void AddTag(int iIndex, std::string sTag, bool bSave = true, std::string sName = "");
@@ -42,8 +42,8 @@ public:
 
 	int GetPriority(uint32_t friendsID);
 	int GetPriority(int iIndex);
-	bool GetSignificantTag(uint32_t friendsID, std::string* sTag, PriorityLabel* plTag, int iMode = 1); // iMode: 0 - Priorities & Labels, 1 - Priorities, 2 - Labels
-	bool GetSignificantTag(int iIndex, std::string* sTag, PriorityLabel* plTag, int iMode = 1); // iMode: 0 - Priorities & Labels, 1 - Priorities, 2 - Labels
+	bool GetSignificantTag(uint32_t friendsID, std::string* sTag, PriorityLabel_t* plTag, int iMode = 1); // iMode: 0 - Priorities & Labels, 1 - Priorities, 2 - Labels
+	bool GetSignificantTag(int iIndex, std::string* sTag, PriorityLabel_t* plTag, int iMode = 1); // iMode: 0 - Priorities & Labels, 1 - Priorities, 2 - Labels
 	bool IsIgnored(uint32_t friendsID);
 	bool IsIgnored(int iIndex);
 	bool IsFriend(int iIndex);
@@ -54,7 +54,7 @@ public:
 	const std::vector<const char*> vListPitch = { "None", "Up", "Down", "Zero", "Auto" };
 	const std::vector<const char*> vListYaw = { "None", "Forward", "Backward", "Left", "Right", "Invert", "Edge", "Auto" };
 
-	std::unordered_map<std::string, PriorityLabel> vTags = {
+	std::unordered_map<std::string, PriorityLabel_t> mTags = {
 		{ "Default", { { 200, 200, 200, 255 }, 0, false, false, true } },
 		{ "Ignored", { { 200, 200, 200, 255 }, -1, false, true, true } },
 		{ "Cheater", { { 255, 100, 100, 255 }, 1, false, true, true } },

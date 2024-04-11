@@ -3,7 +3,6 @@
 #include "../../Vars.h"
 #include "../../Color.h"
 
-#include "../../AntiHack/CheaterDetection.h"
 #include "../../Backtrack/Backtrack.h"
 #include "../../Menu/Playerlist/PlayerUtils.h"
 
@@ -111,7 +110,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			if (Vars::ESP::DormantPriority.Value)
 			{
 				PlayerInfo_t pi{};
-				if (I::EngineClient->GetPlayerInfo(nIndex, &pi) && F::PlayerUtils.GetPriority(pi.friendsID) <= F::PlayerUtils.vTags["Default"].Priority)
+				if (I::EngineClient->GetPlayerInfo(nIndex, &pi) && F::PlayerUtils.GetPriority(pi.friendsID) <= F::PlayerUtils.mTags["Default"].Priority)
 					continue;
 			}
 			pPlayer->m_iHealth() = cResource->GetHealth(pPlayer->GetIndex());
@@ -211,7 +210,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 				if (Vars::ESP::Player.Value & 1 << 12)
 				{
-					std::string sTag; PriorityLabel plTag;
+					std::string sTag; PriorityLabel_t plTag;
 					if (F::PlayerUtils.GetSignificantTag(pi.friendsID, &sTag, &plTag, 1))
 					{
 						tOffset += fFontName.nTall + 2;
@@ -221,16 +220,16 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 				if (Vars::ESP::Player.Value & 1 << 13)
 				{
-					std::vector<std::pair<std::string, PriorityLabel>> vLabels = {};
+					std::vector<std::pair<std::string, PriorityLabel_t>> vLabels = {};
 					for (const auto& sTag : G::PlayerTags[pi.friendsID])
 					{
-						PriorityLabel plTag;
+						PriorityLabel_t plTag;
 						if (F::PlayerUtils.GetTag(sTag, &plTag) && plTag.Label)
 							vLabels.push_back({ sTag, plTag });
 					}
 					if (Utils::IsSteamFriend(pi.friendsID))
 					{
-						const auto& plTag = F::PlayerUtils.vTags["Friend"];
+						const auto& plTag = F::PlayerUtils.mTags["Friend"];
 						if (plTag.Label)
 							vLabels.push_back({ "Friend", plTag });
 					}
@@ -496,7 +495,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					// Misc
 					if (Vars::ESP::Player.Value & 1 << 16)
 					{
-						if (Vars::Visuals::RemoveTaunts.Value && pPlayer->InCond(TF_COND_TAUNTING)) // i dont really see a need for this condition unless you have this enabled
+						if (Vars::Visuals::Removals::Taunts.Value && pPlayer->InCond(TF_COND_TAUNTING)) // i dont really see a need for this condition unless you have this enabled
 							drawCond("TAUNT", { 255, 100, 200, 255 }, x + w + 4, y);
 
 						if (pPlayer->m_bFeignDeathReady())

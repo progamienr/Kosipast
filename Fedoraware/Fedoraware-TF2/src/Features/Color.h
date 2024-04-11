@@ -29,7 +29,7 @@ __inline Color_t GetEntityDrawColor(CBaseEntity* pEntity, bool enableOtherColors
 		PlayerInfo_t pi{}; bool bTagColor = false; Color_t cTagColor;
 		if (I::EngineClient->GetPlayerInfo(pEntity->GetIndex(), &pi))
 		{
-			std::string _; PriorityLabel plTag;
+			std::string _; PriorityLabel_t plTag;
 			if (bTagColor = F::PlayerUtils.GetSignificantTag(pi.friendsID, &_, &plTag))
 				cTagColor = plTag.Color;
 		}
@@ -37,7 +37,7 @@ __inline Color_t GetEntityDrawColor(CBaseEntity* pEntity, bool enableOtherColors
 		if (g_EntityCache.GetLocal()->GetIndex() == pEntity->GetIndex())
 			out = Vars::Colors::Local.Value;
 		else if (g_EntityCache.IsFriend(pEntity->GetIndex()))
-			out = F::PlayerUtils.vTags["Friend"].Color;
+			out = F::PlayerUtils.mTags["Friend"].Color;
 		else if (bTagColor)
 			out = cTagColor;
 		else if (pEntity->IsCloaked())

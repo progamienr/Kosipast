@@ -3,6 +3,12 @@
 
 class CChams
 {
+	Chams_t GetStruct(
+		std::vector<std::string> VisibleMaterial = { "Original" },
+		std::vector<std::string> OccludedMaterial = {},
+		Color_t VisibleColor = { 255, 255, 255, 255 },
+		Color_t OccludedColor = { 255, 255, 255, 255 }
+	);
 	bool GetChams(CBaseEntity* pEntity, Chams_t* pChams);
 
 	void StencilBegin(IMatRenderContext* pRenderContext, bool bTwoModels = false);

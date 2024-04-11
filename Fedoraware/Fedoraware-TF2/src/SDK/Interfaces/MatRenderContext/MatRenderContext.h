@@ -44,7 +44,7 @@ public:
 	virtual void				BindLightmapPage(int lightmapPageID) = 0;
 	virtual void				DepthRange(float zNear, float zFar) = 0;
 	virtual void				ClearBuffers(bool bClearColor, bool bClearDepth, bool bClearStencil = false) = 0;
-	virtual void				ReadPixels(int x, int y, int width, int height, unsigned char *data, ImageFormat dstFormat) = 0;
+	virtual void				ReadPixels(int x, int y, int width, int height, unsigned char *data, EImageFormat dstFormat) = 0;
 	virtual void				SetAmbientLight(float r, float g, float b) = 0;
 	virtual void				SetLight(int lightNum, const LightDesc_t &desc) = 0;
 	virtual void				SetAmbientLightCube(Vector4D cube[6]) = 0;
@@ -136,7 +136,7 @@ public:
 	virtual void Unused6() {};
 	virtual void Unused7() {};
 	virtual void Unused8() {};
-	virtual void ReadPixelsAndStretch(Rect_t *pSrcRect, Rect_t *pDstRect, unsigned char *pBuffer, ImageFormat dstFormat, int nDstStride) = 0;
+	virtual void ReadPixelsAndStretch(Rect_t *pSrcRect, Rect_t *pDstRect, unsigned char *pBuffer, EImageFormat dstFormat, int nDstStride) = 0;
 	virtual void GetWindowSize(int &width, int &height) const = 0;
 	virtual void DrawScreenSpaceRectangle(
 		IMaterial *pMaterial,
@@ -242,5 +242,5 @@ public:
 	virtual void OverrideAlphaWriteEnable(bool bEnable, bool bAlphaWriteEnable) = 0;
 	virtual void OverrideColorWriteEnable(bool bOverrideEnable, bool bColorWriteEnable) = 0;
 	virtual void ClearBuffersObeyStencilEx(bool bClearColor, bool bClearAlpha, bool bClearDepth) = 0;
-	virtual void AsyncCreateTextureFromRenderTarget(ITexture *pSrcRt, const char *pDstName, ImageFormat dstFmt, bool bGenMips, int nAdditionalCreationFlags, IAsyncTextureOperationReceiver *pRecipient, void *pExtraArgs) = 0;
+	virtual void AsyncCreateTextureFromRenderTarget(ITexture *pSrcRt, const char *pDstName, EImageFormat dstFmt, bool bGenMips, int nAdditionalCreationFlags, IAsyncTextureOperationReceiver *pRecipient, void *pExtraArgs) = 0;
 };

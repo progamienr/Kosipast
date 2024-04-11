@@ -28,7 +28,7 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 		case clc_FileCRCCheck:
 		{
 			// whitelist
-			if (Vars::Misc::BypassPure.Value)
+			if (Vars::Misc::Exploits::BypassPure.Value)
 			{
 				return false;
 			}
@@ -38,7 +38,7 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 		case clc_RespondCvarValue:
 		{
 			//	causes b1g crash
-			if (Vars::Visuals::RemoveConvarQueries.Value)
+			if (Vars::Visuals::Removals::ConvarQueries.Value)
 			{
 				if (const auto respondMsg = reinterpret_cast<DWORD*>(&msg))
 				{
@@ -62,7 +62,9 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 
 		case clc_Move:
 		{
-			const int iAllowedNewCommands = fmax(g_ConVars.sv_maxusrcmdprocessticks->GetInt() - G::ShiftedTicks, 0); // g_ConVars.sv_maxusrcmdprocessticks->GetInt();
+			static auto sv_maxusrcmdprocessticks = g_ConVars.FindVar("sv_maxusrcmdprocessticks");
+			const int iTicks = sv_maxusrcmdprocessticks ? sv_maxusrcmdprocessticks->GetInt() : 24;
+			const int iAllowedNewCommands = fmax(iTicks - G::ShiftedTicks, 0);
 			const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
 			const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands - 3;
 			if (iCmdCount > iAllowedNewCommands)

@@ -24,6 +24,7 @@ struct Info_t
 	float flSphere = 0.f;
 	float flUpFix = 0.f;
 	float flOffset = 0.f;
+	int iPrimeTime = 0;
 };
 
 class CAimbotProjectile
@@ -42,11 +43,10 @@ class CAimbotProjectile
 	bool RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 
 	void Aim(CUserCmd* pCmd, Vec3& vAngle);
-	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod = Vars::Aimbot::Projectile::AimMethod.Value);
+	Vec3 Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod = Vars::Aimbot::General::AimType.Value);
 
 	bool bLastTickHeld = false;
 	bool bLastTickReload = false;
-	bool bFlameThrower = false;
 
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);

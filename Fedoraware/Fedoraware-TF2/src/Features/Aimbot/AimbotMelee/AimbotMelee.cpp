@@ -29,10 +29,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 		}
 	}
 
-	const auto sortMethod = ESortMethod::DISTANCE;
-
-	// Players
-	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::PLAYER)
+	if (Vars::Aimbot::General::Target.Value & ToAimAt::PLAYER)
 	{
 		const bool bDisciplinary = Vars::Aimbot::Melee::WhipTeam.Value && pWeapon->m_iItemDefinitionIndex() == Soldier_t_TheDisciplinaryAction;
 		for (const auto& pTarget : g_EntityCache.GetGroup(bDisciplinary ? EGroupType::PLAYERS_ALL : EGroupType::PLAYERS_ENEMIES))
@@ -47,7 +44,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
 				continue;
 
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -56,8 +53,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 		}
 	}
 
-	// Buildings
-	if (Vars::Aimbot::Global::AimAt.Value)
+	if (Vars::Aimbot::General::Target.Value)
 	{
 		const bool hasWrench = (pWeapon->GetWeaponID() == TF_WEAPON_WRENCH);
 		const bool canDestroySapper = (G::CurItemDefIndex == Pyro_t_Homewrecker ||
@@ -72,11 +68,11 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 
 			bool isSentry = pBuilding->IsSentrygun(), isDispenser = pBuilding->IsDispenser(), isTeleporter = pBuilding->IsTeleporter();
 
-			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::SENTRY) && isSentry)
+			if (!(Vars::Aimbot::General::Target.Value & ToAimAt::SENTRY) && isSentry)
 				continue;
-			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::DISPENSER) && isDispenser)
+			if (!(Vars::Aimbot::General::Target.Value & ToAimAt::DISPENSER) && isDispenser)
 				continue;
-			if (!(Vars::Aimbot::Global::AimAt.Value & ToAimAt::TELEPORTER) && isTeleporter)
+			if (!(Vars::Aimbot::General::Target.Value & ToAimAt::TELEPORTER) && isTeleporter)
 				continue;
 
 			if (pBuilding->m_iTeamNum() == pLocal->m_iTeamNum())
@@ -99,15 +95,14 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 			const float flDistTo = vLocalPos.DistTo(vPos);
 
-			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
 				continue;
 
 			validTargets.push_back({ pBuilding, isSentry ? ETargetType::SENTRY : (isDispenser ? ETargetType::DISPENSER : ETargetType::TELEPORTER), vPos, vAngleTo, flFOVTo, flDistTo });
 		}
 	}
 
-	// NPCs
-	if (Vars::Aimbot::Global::AimAt.Value & ToAimAt::NPC)
+	if (Vars::Aimbot::General::Target.Value & ToAimAt::NPC)
 	{
 		for (const auto& pNPC : g_EntityCache.GetGroup(EGroupType::WORLD_NPC))
 		{
@@ -115,9 +110,9 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
+			const float flDistTo = vLocalPos.DistTo(vPos);
 
-			if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
+			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
 				continue;
 
 			validTargets.push_back({ pNPC, ETargetType::NPC, vPos, vAngleTo, flFOVTo, flDistTo });
@@ -158,7 +153,7 @@ std::vector<Target_t> CAimbotMelee::SortTargets(CBaseEntity* pLocal, CBaseCombat
 	std::vector<Target_t> sortedTargets = {};
 	int i = 0; for (auto& target : validTargets)
 	{
-		i++; if (i > Vars::Aimbot::Global::MaxTargets.Value) break;
+		i++; if (i > Vars::Aimbot::General::MaxTargets.Value) break;
 
 		sortedTargets.push_back(target);
 	}
@@ -186,8 +181,8 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 
 	// swing prediction / auto warp
 	const int iSwingTicks = GetSwingTime(pWeapon);
-	int iMax = (iDoubletapTicks && Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid())
-		? std::max(iSwingTicks - Vars::CL_Move::DoubleTap::TickLimit.Value, 0)
+	int iMax = (iDoubletapTicks && Vars::CL_Move::Doubletap::AntiWarp.Value && pLocal->OnSolid())
+		? std::max(iSwingTicks - Vars::CL_Move::Doubletap::TickLimit.Value - 1, 0)
 		: std::max(iSwingTicks, iDoubletapTicks);
 
 	if ((Vars::Aimbot::Melee::SwingPrediction.Value || iDoubletapTicks) && pWeapon->m_flSmackTime() < 0.f && iMax)
@@ -237,9 +232,9 @@ void CAimbotMelee::SimulatePlayers(CBaseEntity* pLocal, CBaseCombatWeapon* pWeap
 		}
 		vEyePos = localStorage.m_MoveData.m_vecOrigin + pLocal->m_vecViewOffset();
 
-		if (Vars::Visuals::SwingLines.Value)
+		if (Vars::Visuals::Simulation::SwingLines.Value)
 		{
-			const bool bAlwaysDraw = !Vars::Aimbot::Global::AutoShoot.Value || Vars::Debug::Info.Value;
+			const bool bAlwaysDraw = !Vars::Aimbot::General::AutoShoot.Value || Vars::Debug::Info.Value;
 			if (!bAlwaysDraw)
 			{
 				simLines[pLocal] = localStorage.PredictionLines;
@@ -269,7 +264,7 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 	if (Vars::Aimbot::Melee::IgnoreRazorback.Value)
 	{
 		CUtlVector<CBaseEntity*> itemList;
-		int iBackstabShield = Utils::ATTRIB_HOOK_FLOAT(0, "set_blockbackstab_once", pTarget, &itemList);
+		int iBackstabShield = Utils::AttribHookValue(0, "set_blockbackstab_once", pTarget, &itemList);
 		if (iBackstabShield && itemList.Count())
 		{
 			CBaseEntity* pEntity = itemList.Element(0);
@@ -303,9 +298,16 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CBaseEntity* pLocal, Vec3 e
 
 int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vec3 vEyePos, std::deque<TickRecord> newRecords)
 {
-	const float flHull = Utils::ATTRIB_HOOK_FLOAT(18, "melee_bounds_multiplier", pWeapon);
-	const float flRange = pWeapon->GetSwingRange(pLocal) * Utils::ATTRIB_HOOK_FLOAT(1, "melee_range_multiplier", pWeapon);
-	if (flRange <= 0.f)
+	float flHull = Utils::AttribHookValue(18, "melee_bounds_multiplier", pWeapon);
+	float flRange = pWeapon->GetSwingRange(pLocal);
+	if (pLocal->m_flModelScale() > 1.0f)
+	{
+		flRange *= pLocal->m_flModelScale();
+		flRange *= pLocal->m_flModelScale();
+		flRange *= pLocal->m_flModelScale();
+	}
+	flRange = Utils::AttribHookValue(flRange, "melee_range_multiplier", pWeapon);
+	if (flHull <= 0.f || flRange <= 0.f)
 		return false;
 
 	static Vec3 vecSwingMins = { -flHull, -flHull, -flHull };
@@ -367,7 +369,7 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 		target.m_pEntity->SetAbsOrigin(pTick.vOrigin);
 
 		target.m_vPos = pTick.vOrigin + vecDiff;
-		target.m_vAngleTo = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, target.m_vPos));
+		target.m_vAngleTo = Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(vEyePos, target.m_vPos), iAimType);
 
 		Vec3 vecForward = Vec3();
 		Math::AngleVectors(target.m_vAngleTo, &vecForward);
@@ -380,24 +382,6 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 			Utils::TraceHull(vEyePos, vecTraceEnd, vecSwingMins, vecSwingMaxs, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 			bReturn = trace.entity && trace.entity == target.m_pEntity;
 		}
-		/* does not respect aimbot viewangles, not using for now but seems promising ?
-		bool bReturn = false;
-		{
-			const Vec3 vPos = pLocal->GetAbsOrigin();
-			const Vec3 vAng = pLocal->GetEyeAngles();
-
-			pLocal->SetAbsOrigin(vEyePos - pLocal->m_vecViewOffset());
-			pLocal->GetEyeAngles() = vAngleTo;
-
-			CGameTrace trace;
-			bReturn = pWeapon->DoSwingTraceInternal(trace);
-			if (bReturn)
-				bReturn = trace.entity == target.m_pEntity;
-
-			pLocal->SetAbsOrigin(vPos);
-			pLocal->GetEyeAngles() = vAng;
-		}
-		*/
 
 		if (bReturn && Vars::Aimbot::Melee::AutoBackstab.Value && pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 		{
@@ -417,7 +401,7 @@ int CAimbotMelee::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapo
 
 			return true;
 		}
-		else if (Vars::Aimbot::Melee::AimMethod.Value == 1)
+		else if (iAimType == 2)
 		{
 			auto vAngle = Math::CalcAngle(vEyePos, target.m_vPos);
 
@@ -447,10 +431,10 @@ bool CAimbotMelee::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 // assume angle calculated outside with other overload
 void CAimbotMelee::Aim(CUserCmd* pCmd, Vec3& vAngle)
 {
-	if (Vars::Aimbot::Melee::AimMethod.Value != 2)
+	if (iAimType != 3)
 	{
 		pCmd->viewangles = vAngle;
-		//I::EngineClient->SetViewAngles(vAngle);
+		I::EngineClient->SetViewAngles(pCmd->viewangles);
 	}
 	else if (G::IsAttacking)
 	{
@@ -468,18 +452,18 @@ Vec3 CAimbotMelee::Aim(Vec3 vCurAngle, Vec3 vToAngle, int iMethod)
 
 	switch (iMethod)
 	{
-	case 0: // Plain
-	case 2: // Silent
+	case 1: // Plain
+	case 3: // Silent
 		vReturn = vToAngle;
 		break;
-	case 1: // Smooth
+	case 2: // Smooth
 	{
 		auto shortDist = [](const float flAngleA, const float flAngleB)
 			{
 				const float flDelta = fmodf((flAngleA - flAngleB), 360.f);
 				return fmodf(2 * flDelta, 360.f) - flDelta;
 			};
-		const float t = 1.f - Vars::Aimbot::Melee::SmoothingAmount.Value / 100.f;
+		const float t = 1.f - Vars::Aimbot::General::Smoothing.Value / 100.f;
 		vReturn.x = vCurAngle.x - shortDist(vCurAngle.x, vToAngle.x) * t;
 		vReturn.y = vCurAngle.y - shortDist(vCurAngle.y, vToAngle.y) * t;
 		break;
@@ -493,12 +477,11 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 {
 	if (lockedTarget.m_pEntity && pWeapon->m_flSmackTime() < 0.f)
 		lockedTarget.m_pEntity = nullptr;
-	if ((!Vars::Aimbot::Global::Active.Value || !Vars::Aimbot::Melee::Active.Value) && !lockedTarget.m_pEntity || (!G::CanPrimaryAttack || !Vars::Aimbot::Global::AutoShoot.Value) && pWeapon->m_flSmackTime() < 0.f)
-		return;
 
-	const bool bShouldAim = (Vars::Aimbot::Global::AimKey.Value == VK_LBUTTON ? (pCmd->buttons & IN_ATTACK) : F::AimbotGlobal.IsKeyDown());
-	if (!bShouldAim && !lockedTarget.m_pEntity)
+	if (!Vars::Aimbot::General::AimType.Value && !lockedTarget.m_pEntity || (!G::CanPrimaryAttack || !Vars::Aimbot::General::AutoShoot.Value) && pWeapon->m_flSmackTime() < 0.f)
 		return;
+	else if (!lockedTarget.m_pEntity)
+		iAimType = Vars::Aimbot::General::AimType.Value;
 
 	if (RunSapper(pLocal, pWeapon, pCmd))
 		return;
@@ -508,7 +491,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		return;
 
 	iDoubletapTicks = F::Ticks.GetTicks(pLocal);
-	const bool bShouldSwing = iDoubletapTicks <= (GetSwingTime(pWeapon) ? 14 : 0) || Vars::CL_Move::DoubleTap::Options.Value & (1 << 0) && pLocal->OnSolid();
+	const bool bShouldSwing = iDoubletapTicks <= (GetSwingTime(pWeapon) ? 14 : 0) || Vars::CL_Move::Doubletap::AntiWarp.Value && pLocal->OnSolid();
 
 	Vec3 vEyePos = pLocal->GetShootPos();
 	std::unordered_map<CBaseEntity*, std::deque<TickRecord>> pRecordMap;
@@ -529,10 +512,10 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 		if (!pRecordMap[target.m_pEntity].empty() && !lockedTarget.m_pEntity)
 			lockedTarget = target;
 
-		if (Vars::Aimbot::Melee::AimMethod.Value == 2)
+		if (iAimType == 3)
 			G::AimPos = target.m_vPos;
 
-		if (Vars::Aimbot::Global::AutoShoot.Value && pWeapon->m_flSmackTime() < 0.f)
+		if (Vars::Aimbot::General::AutoShoot.Value && pWeapon->m_flSmackTime() < 0.f)
 		{
 			if (bShouldSwing)
 				pCmd->buttons |= IN_ATTACK;
@@ -540,14 +523,16 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 				G::DoubleTap = true;
 		}
 
+		/*
 		// game will not manage this while shifting w/o prediction, force its hand
-		if (!Vars::Misc::NetworkFix.Value && !Vars::Misc::PredictionFix.Value
+		if (!Vars::Misc::Game::NetworkFix.Value && !Vars::Misc::Game::PredictionFix.Value
 			&& G::DoubleTap && pWeapon->GetWeaponID() != TF_WEAPON_KNIFE)
 		{
 			if (pCmd->buttons & IN_ATTACK && pWeapon->m_flSmackTime() < 0.f)
 				pWeapon->m_flSmackTime() = TICKS_TO_TIME(I::GlobalVars->tickcount + 13);
 			I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
 		}
+		*/
 
 		const bool bAttacking = IsAttacking(pCmd, pWeapon);
 		G::IsAttacking = bAttacking || bShouldSwing && G::DoubleTap; // dumb but works
@@ -558,14 +543,14 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 				pCmd->tick_count = TIME_TO_TICKS((*target.pTick).flSimTime) + TIME_TO_TICKS(F::Backtrack.flFakeInterp);
 			// bug: fast old records seem to be progressively more unreliable ?
 
-			if (Vars::Visuals::BulletTracer.Value)
+			if (Vars::Visuals::Bullet::BulletTracer.Value)
 			{
 				G::BulletsStorage.clear();
 				G::BulletsStorage.push_back({ {vEyePos, target.m_vPos}, I::GlobalVars->curtime + 5.f, Vars::Colors::BulletTracer.Value, true });
 			}
-			if (Vars::Visuals::SwingLines.Value)
+			if (Vars::Visuals::Simulation::SwingLines.Value)
 			{
-				const bool bAlwaysDraw = !Vars::Aimbot::Global::AutoShoot.Value || Vars::Debug::Info.Value;
+				const bool bAlwaysDraw = !Vars::Aimbot::General::AutoShoot.Value || Vars::Debug::Info.Value;
 				if (!bAlwaysDraw)
 				{
 					G::LinesStorage.clear();
@@ -573,7 +558,7 @@ void CAimbotMelee::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd
 					G::LinesStorage.push_back({ simLines[target.m_pEntity], I::GlobalVars->curtime + 5.f, Vars::Colors::PredictionColor.Value });
 				}
 			}
-			if (Vars::Visuals::ShowHitboxes.Value)
+			if (Vars::Visuals::Hitbox::ShowHitboxes.Value)
 			{
 				G::BoxesStorage.clear();
 				auto vBoxes = F::Visuals.GetHitboxes((matrix3x4*)(&(*target.pTick).BoneMatrix.BoneMatrix), target.m_pEntity);
@@ -598,7 +583,8 @@ bool CAimbotMelee::FindNearestBuildPoint(CBaseEntity* pBuilding, CBaseEntity* pL
 {
 	bool bFoundPoint = false;
 
-	float flNearestPoint = I::Cvar->FindVar("tf_obj_max_attach_dist")->GetFloat();
+	static auto tf_obj_max_attach_dist = g_ConVars.FindVar("tf_obj_max_attach_dist");
+	float flNearestPoint = tf_obj_max_attach_dist ? tf_obj_max_attach_dist->GetFloat() : 160.f;
 	for (int i = 0; i < pBuilding->GetNumBuildPoints(); i++)
 	{
 		int v = GetAttachment(pBuilding, i);
@@ -644,7 +630,7 @@ bool CAimbotMelee::RunSapper(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CU
 		const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 		const float flDistTo = vLocalPos.DistTo(vPoint);
 
-		if (flFOVTo > Vars::Aimbot::Melee::AimFOV.Value)
+		if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
 			continue;
 
 		validTargets.push_back({ pBuilding, ETargetType::UNKNOWN, vPoint, vAngleTo, flFOVTo, flDistTo });
@@ -655,19 +641,16 @@ bool CAimbotMelee::RunSapper(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CU
 	{
 		static int iLastRun = 0;
 
-		if (iLastRun != I::GlobalVars->tickcount - 1 || G::PSilentAngles && G::ShiftedTicks == G::MaxShift)
+		if ((Vars::Aimbot::General::AimType.Value == 3 ? iLastRun != I::GlobalVars->tickcount - 1 || G::PSilentAngles && G::ShiftedTicks == G::MaxShift : true) && Vars::Aimbot::General::AutoShoot.Value)
+			pCmd->buttons |= IN_ATTACK;
+
+		if (pCmd->buttons & IN_ATTACK)
 		{
-			if (Vars::Aimbot::Global::AutoShoot.Value)
-				pCmd->buttons |= IN_ATTACK;
+			target.m_vAngleTo = Aim(pCmd->viewangles, Math::CalcAngle(vLocalPos, target.m_vPos));
+			target.m_vAngleTo.x = pCmd->viewangles.x; // we don't need to care about pitch
+			Aim(pCmd, target.m_vAngleTo);
 
-			if (pCmd->buttons & IN_ATTACK)
-			{
-				Utils::FixMovement(pCmd, target.m_vAngleTo);
-				pCmd->viewangles.y = target.m_vAngleTo.y;
-				G::PSilentAngles = true;
-
-				iLastRun = I::GlobalVars->tickcount;
-			}
+			iLastRun = I::GlobalVars->tickcount;
 		}
 
 		break;

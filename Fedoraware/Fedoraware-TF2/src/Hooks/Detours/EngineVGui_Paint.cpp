@@ -35,7 +35,7 @@ void Paint()
 	I::MatSystemSurface->StartDrawing();
 	{
 		F::PlayerCore.Run();
-		if (Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
+		if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 			return I::MatSystemSurface->FinishDrawing();
 
 		F::AutoQueue.Run();
@@ -56,6 +56,7 @@ void Paint()
 			F::Visuals.DrawAntiAim(pLocal);
 			F::Visuals.DrawTickbaseText();
 			F::Visuals.DrawAimbotFOV(pLocal);
+			F::Visuals.DrawSeedPrediction(pLocal);
 			F::Visuals.DrawOnScreenConditions(pLocal);
 			F::Visuals.DrawOnScreenPing(pLocal);
 			F::Visuals.DrawServerHitboxes();

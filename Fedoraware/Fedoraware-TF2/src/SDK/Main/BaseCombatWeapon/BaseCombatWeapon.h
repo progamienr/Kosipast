@@ -169,7 +169,7 @@ public: //Netvars
 	}
 	__inline bool IsInReload()
 	{
-		static int nOffset = GetNetVar("CBaseCombatWeapon", "m_flNextPrimaryAttack");
+		static int nOffset = g_NetVars.GetNetVar("CBaseCombatWeapon", "m_flNextPrimaryAttack");
 		bool m_bInReload = *reinterpret_cast<bool*>(reinterpret_cast<DWORD>(this) + nOffset + 0xC);
 		return (m_bInReload || m_iReloadMode() != 0);
 	}
@@ -233,7 +233,7 @@ public: //Netvars
 	}
 	__inline CTFWeaponInfo* GetWeaponInfo()
 	{
-		static int nOffset = GetNetVar("CTFWeaponBase", "m_flEffectBarRegenTime") + 0x10;
+		static int nOffset = g_NetVars.GetNetVar("CTFWeaponBase", "m_flEffectBarRegenTime") + 0x10;
 		return *reinterpret_cast<CTFWeaponInfo**>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline bool IsRapidFire()
@@ -335,7 +335,7 @@ public: //Netvars
 	}*/
 	__inline void SetObservedCritChance(float crit_chance)
 	{
-		static auto nOffset = GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
+		static auto nOffset = g_NetVars.GetNetVar("CTFWeaponBase", "m_flObservedCritChance");
 		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset) = crit_chance;
 	}
 	__inline CBaseEntity* GetAppropriateWorldOrViewModel()
@@ -409,13 +409,13 @@ public: //Netvars
 
 	__inline CAttributeList* GetAttributeList()
 	{
-		static int nOffset = GetNetVar("CEconEntity", "m_AttributeList");
+		static int nOffset = g_NetVars.GetNetVar("CEconEntity", "m_AttributeList");
 		return reinterpret_cast<CAttributeList*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 
 	__inline void SetItemDefIndex(const int nIndex)
 	{
-		static auto nOffset = GetNetVar("CEconEntity", "m_iItemDefinitionIndex");
+		static auto nOffset = g_NetVars.GetNetVar("CEconEntity", "m_iItemDefinitionIndex");
 		*reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + nOffset) = nIndex;
 	}
 	__inline bool GetLocalizedBaseItemName(wchar_t(&szItemName)[128])

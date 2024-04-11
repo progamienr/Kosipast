@@ -62,13 +62,11 @@ struct Target_t
 class CAimbotGlobal
 {
 public:
-	bool IsKeyDown();
 	void SortTargets(std::vector<Target_t>*, const ESortMethod& method);
 	void SortPriority(std::vector<Target_t>*);
 	bool ShouldIgnore(CBaseEntity* pTarget, bool bMedigun = false);
 	int GetPriority(int targetIdx);
 	bool ValidBomb(CBaseEntity* pBomb);
-	bool IsSandvich();
 };
 
 ADD_FEATURE(CAimbotGlobal, AimbotGlobal)

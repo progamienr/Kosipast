@@ -1,12 +1,8 @@
 #include "ConfigManager.h"
 
-#include "../../Vars.h"
-#include "../../../SDK/SDK.h"
+#include "../Conditions/Conditions.h"
 #include "../../Misc/Notifications/Notifications.h"
 #include "../../Visuals/Materials/Materials.h"
-
-boost::property_tree::ptree WriteTree;
-boost::property_tree::ptree ReadTree;
 
 boost::property_tree::ptree CConfigManager::ColorToTree(const Color_t& color)
 {
@@ -27,112 +23,81 @@ void CConfigManager::TreeToColor(const boost::property_tree::ptree& tree, Color_
 	if (auto v = tree.get_optional<byte>("a")) { out.a = *v; }
 }
 
-boost::property_tree::ptree CConfigManager::VecToTree(const Vec3& vec)
-{
-	boost::property_tree::ptree vecTree;
-	vecTree.put("x", vec.x);
-	vecTree.put("y", vec.y);
-	vecTree.put("z", vec.z);
 
-	return vecTree;
+
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, bool val)
+{
+	mapTree.put(name, val);
 }
 
-void CConfigManager::TreeToVec(const boost::property_tree::ptree& tree, Vec3& out)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, int val)
 {
-	if (auto v = tree.get_optional<float>("x")) { out.x = *v; }
-	if (auto v = tree.get_optional<float>("y")) { out.y = *v; }
-	if (auto v = tree.get_optional<float>("z")) { out.z = *v; }
+	mapTree.put(name, val);
 }
 
-
-
-void CConfigManager::SaveJson(const char* name, bool val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, float val)
 {
-	WriteTree.put(name, val);
+	mapTree.put(name, val);
 }
 
-void CConfigManager::SaveJson(const char* name, int val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const IntRange_t& val)
 {
-	WriteTree.put(name, val);
+	boost::property_tree::ptree rangeTree;
+	rangeTree.put("Min", val.Min);
+	rangeTree.put("Max", val.Max);
+
+	mapTree.put_child(name, rangeTree);
 }
 
-void CConfigManager::SaveJson(const char* name, float val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const FloatRange_t& val)
 {
-	WriteTree.put(name, val);
+	boost::property_tree::ptree rangeTree;
+	rangeTree.put("Min", val.Min);
+	rangeTree.put("Max", val.Max);
+
+	mapTree.put_child(name, rangeTree);
 }
 
-void CConfigManager::SaveJson(const char* name, const std::string& val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const std::string& val)
 {
-	WriteTree.put(name, val);
+	mapTree.put(name, val);
 }
 
-void CConfigManager::SaveJson(const char* name, const Color_t& val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const std::vector<std::string>& val)
 {
-	WriteTree.put_child(name, ColorToTree(val));
+	boost::property_tree::ptree vectorTree;
+	for (const auto& sMat : val)
+	{
+		boost::property_tree::ptree child; child.put("", sMat);
+		vectorTree.push_back(std::make_pair("", child));
+	}
+	mapTree.put_child(name, vectorTree);
 }
 
-void CConfigManager::SaveJson(const char* name, const Gradient_t& val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const Color_t& val)
+{
+	mapTree.put_child(name, ColorToTree(val));
+}
+
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const Gradient_t& val)
 {
 	boost::property_tree::ptree gradientTree;
 	gradientTree.put_child("StartColor", ColorToTree(val.StartColor));
 	gradientTree.put_child("EndColor", ColorToTree(val.EndColor));
 
-	WriteTree.put_child(name, gradientTree);
+	mapTree.put_child(name, gradientTree);
 }
 
-void CConfigManager::SaveJson(const char* name, const Vec3& val)
-{
-	WriteTree.put_child(name, VecToTree(val));
-}
-
-void CConfigManager::SaveJson(const char* name, const Chams_t& val)
-{
-	boost::property_tree::ptree chamTree;
-	{
-		boost::property_tree::ptree vectorTree;
-		for (const auto& sMat : val.VisibleMaterial)
-		{
-			boost::property_tree::ptree child; child.put("", sMat);
-			vectorTree.push_back(std::make_pair("", child));
-		}
-		chamTree.put_child("VisibleMaterial", vectorTree);
-	}
-	chamTree.put_child("VisibleColor", ColorToTree(val.VisibleColor));
-	{
-		boost::property_tree::ptree vectorTree;
-		for (const auto& sMat : val.OccludedMaterial)
-		{
-			boost::property_tree::ptree child; child.put("", sMat);
-			vectorTree.push_back(std::make_pair("", child));
-		}
-		chamTree.put_child("OccludedMaterial", vectorTree);
-	}
-	chamTree.put_child("OccludedColor", ColorToTree(val.OccludedColor));
-
-	WriteTree.put_child(name, chamTree);
-}
-
-void CConfigManager::SaveJson(const char* name, const Glow_t& val)
-{
-	boost::property_tree::ptree glowTree;
-	glowTree.put("Stencil", val.Stencil);
-	glowTree.put("Blur", val.Blur);
-	glowTree.put("StencilScale", val.StencilScale);
-	glowTree.put("BlurScale", val.BlurScale);
-
-	WriteTree.put_child(name, glowTree);
-}
-
-void CConfigManager::SaveJson(const char* name, const DragBox_t& val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const DragBox_t& val)
 {
 	boost::property_tree::ptree dragBoxTree;
 	dragBoxTree.put("x", val.x);
 	dragBoxTree.put("y", val.y);
 
-	WriteTree.put_child(name, dragBoxTree);
+	mapTree.put_child(name, dragBoxTree);
 }
 
-void CConfigManager::SaveJson(const char* name, const WindowBox_t& val)
+void CConfigManager::SaveJson(boost::property_tree::ptree& mapTree, const char* name, const WindowBox_t& val)
 {
 	boost::property_tree::ptree dragBoxTree;
 	dragBoxTree.put("x", val.x);
@@ -140,52 +105,109 @@ void CConfigManager::SaveJson(const char* name, const WindowBox_t& val)
 	dragBoxTree.put("w", val.w);
 	dragBoxTree.put("h", val.h);
 
-	WriteTree.put_child(name, dragBoxTree);
+	mapTree.put_child(name, dragBoxTree);
 }
 
-void CConfigManager::LoadJson(const char* name, bool& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, bool& val)
 {
-	if (auto getValue = ReadTree.get_optional<bool>(name))
+	if (auto getValue = mapTree.get_optional<bool>(name))
 	{
 		val = *getValue;
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, int& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, int& val)
 {
-	if (auto getValue = ReadTree.get_optional<int>(name))
+	if (auto getValue = mapTree.get_optional<int>(name))
 	{
 		val = *getValue;
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, float& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, float& val)
 {
-	if (auto getValue = ReadTree.get_optional<float>(name))
+	if (auto getValue = mapTree.get_optional<float>(name))
 	{
 		val = *getValue;
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, std::string& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, IntRange_t& val)
 {
-	if (auto getValue = ReadTree.get_optional<std::string>(name))
+	if (const auto getChild = mapTree.get_child_optional(name))
+	{
+		if (auto getValue = getChild->get_optional<int>("Min")) { val.Min = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("Max")) { val.Max = *getValue; }
+	}
+}
+
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, FloatRange_t& val)
+{
+	if (const auto getChild = mapTree.get_child_optional(name))
+	{
+		if (auto getValue = getChild->get_optional<int>("Min")) { val.Min = *getValue; }
+		if (auto getValue = getChild->get_optional<int>("Max")) { val.Max = *getValue; }
+	}
+}
+
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, std::string& val)
+{
+	if (auto getValue = mapTree.get_optional<std::string>(name))
 	{
 		val = *getValue;
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, Color_t& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, std::vector<std::string>& val)
 {
-	if (const auto getChild = ReadTree.get_child_optional(name))
+	auto getMaterials = [](std::vector<std::string>& val, const boost::optional<boost::property_tree::ptree&> getVector)
+		{
+			if (!getVector)
+				return;
+
+			val.clear();
+			for (auto& [_, mat] : *getVector)
+			{
+				std::string sMat = mat.data();
+
+				bool bFound = false; // ensure no duplicates are assigned
+				for (auto& str : val)
+				{
+					if (str == sMat)
+					{
+						bFound = true;
+						break;
+					}
+				}
+
+				if (!bFound)
+					val.push_back(mat.data());
+			}
+
+			// remove invalid materials
+			for (auto it = val.begin(); it != val.end();)
+			{
+				if (*it == "None" || *it != "Original" && !F::Materials.mChamMaterials.contains(*it))
+					it = val.erase(it);
+				else
+					++it;
+			}
+		};
+
+	getMaterials(val, mapTree.get_child_optional(name));
+}
+
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, Color_t& val)
+{
+	if (const auto getChild = mapTree.get_child_optional(name))
 	{
 		TreeToColor(*getChild, val);
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, Gradient_t& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, Gradient_t& val)
 {
-	if (const auto getChild = ReadTree.get_child_optional(name))
+	if (const auto getChild = mapTree.get_child_optional(name))
 	{
 		if (const auto getStartColor = getChild->get_child_optional("StartColor"))
 			TreeToColor(*getStartColor, val.StartColor);
@@ -194,94 +216,23 @@ void CConfigManager::LoadJson(const char* name, Gradient_t& val)
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, Vec3& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, DragBox_t& val)
 {
-	if (const auto getChild = ReadTree.get_child_optional(name))
-	{
-		TreeToVec(*getChild, val);
-	}
-}
-
-void CConfigManager::LoadJson(const char* name, Chams_t& val)
-{
-	if (const auto getChild = ReadTree.get_child_optional(name))
-	{
-		auto getMaterials = [](std::vector<std::string>& val, const boost::optional<boost::property_tree::ptree&> getVector)
-			{
-				if (!getVector)
-					return;
-				
-				if (getVector->data() != "") // account for old format
-					val = { getVector->data() };
-				else
-				{
-					val.clear();
-					for (auto& mat : *getVector)
-					{
-						std::string sMat = mat.second.data();
-
-						bool bFound = false; // ensure no duplicates are assigned
-						for (auto& str : val)
-						{
-							if (str == sMat)
-							{
-								bFound = true;
-								break;
-							}
-						}
-
-						if (!bFound)
-							val.push_back(mat.second.data());
-					}
-				}
-
-				// remove invalid materials
-				for (auto it = val.begin(); it != val.end();)
-				{
-					if (*it == "None" || *it != "Original" && !F::Materials.mChamMaterials.contains(*it))
-						it = val.erase(it);
-					else
-						++it;
-				}
-			};
-
-		getMaterials(val.VisibleMaterial, getChild->get_child_optional("VisibleMaterial"));
-		if (const auto getChildColor = getChild->get_child_optional("VisibleColor")) { TreeToColor(*getChildColor, val.VisibleColor); }
-		getMaterials(val.OccludedMaterial, getChild->get_child_optional("OccludedMaterial"));
-		if (const auto getChildColor = getChild->get_child_optional("OccludedColor")) { TreeToColor(*getChildColor, val.OccludedColor); }
-	}
-}
-
-void CConfigManager::LoadJson(const char* name, Glow_t& val)
-{
-	if (const auto getChild = ReadTree.get_child_optional(name))
-	{
-		if (auto getValue = getChild->get_optional<bool>("Stencil")) { val.Stencil = *getValue; }
-		if (auto getValue = getChild->get_optional<bool>("Blur")) { val.Blur = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("StencilScale")) { val.StencilScale = *getValue; }
-		if (auto getValue = getChild->get_optional<int>("BlurScale")) { val.BlurScale = *getValue; }
-	}
-}
-
-void CConfigManager::LoadJson(const char* name, DragBox_t& val)
-{
-	if (const auto getChild = ReadTree.get_child_optional(name))
+	if (const auto getChild = mapTree.get_child_optional(name))
 	{
 		if (auto getValue = getChild->get_optional<int>("x")) { val.x = *getValue; }
 		if (auto getValue = getChild->get_optional<int>("y")) { val.y = *getValue; }
-		val.update = true;
 	}
 }
 
-void CConfigManager::LoadJson(const char* name, WindowBox_t& val)
+void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* name, WindowBox_t& val)
 {
-	if (const auto getChild = ReadTree.get_child_optional(name))
+	if (const auto getChild = mapTree.get_child_optional(name))
 	{
 		if (auto getValue = getChild->get_optional<int>("x")) { val.x = *getValue; }
 		if (auto getValue = getChild->get_optional<int>("y")) { val.y = *getValue; }
 		if (auto getValue = getChild->get_optional<int>("w")) { val.w = *getValue; }
 		if (auto getValue = getChild->get_optional<int>("h")) { val.h = *getValue; }
-		val.update = true;
 	}
 }
 
@@ -307,36 +258,74 @@ CConfigManager::CConfigManager()
 }
 
 #define IsType(type) var->m_iType == typeid(type).hash_code()
-#define SaveType(type) SaveJson(var->m_sName.c_str(), var->GetVar<type>()->Value)
-#define SaveT(type) if (IsType(type)) SaveType(type);
-#define LoadType(type) LoadJson(var->m_sName.c_str(), var->GetVar<type>()->Value)
-#define LoadT(type) if (IsType(type)) LoadType(type);
+#define SaveType(type, tree)\
+{\
+	boost::property_tree::ptree mapTree;\
+	for (const auto& [cond, value] : var->GetVar<type>()->Map)\
+		SaveJson(mapTree, cond.c_str(), value);\
+	tree.put_child(var->m_sName.c_str(), mapTree);\
+}
+#define SaveT(type, tree) if (IsType(type)) SaveType(type, tree)
+#define LoadType(type, tree)\
+{\
+	var->GetVar<type>()->Map = { { "default", var->GetVar<type>()->Default } };\
+	if (const auto mapTree = tree.get_child_optional(var->m_sName.c_str()))\
+	{\
+		for (auto& it : *mapTree)\
+		{\
+			if ((!F::Conditions.mConditions.contains(it.first) || var->GetVar<type>()->m_iFlags & NOCOND) && it.first != "default")\
+				continue;\
+			LoadJson(*mapTree, it.first.c_str(), var->GetVar<type>()->Map[it.first]);\
+		}\
+	}\
+}
+#define LoadT(type, tree) if (IsType(type)) LoadType(type, tree)
 
 bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 {
 	try
 	{
-		WriteTree.clear();
+		boost::property_tree::ptree writeTree;
 
+		boost::property_tree::ptree condTree;
+		for (const auto& sCond : F::Conditions.vConditions)
+		{
+			auto& tCond = F::Conditions.mConditions[sCond];
+
+			boost::property_tree::ptree condTree2;
+			condTree2.put("Type", tCond.Type);
+			condTree2.put("Info", tCond.Info);
+			condTree2.put("Key", tCond.Key);
+			condTree2.put("Not", tCond.Not);
+			condTree2.put("Active", tCond.Active);
+			condTree2.put("Visible", tCond.Visible);
+			condTree2.put("Parent", tCond.Parent);
+
+			condTree.put_child(sCond, condTree2);
+		}
+		writeTree.put_child("Conditions", condTree);
+
+		boost::property_tree::ptree varTree;
 		for (const auto var : g_Vars)
 		{
 			if (var->m_iFlags & NOSAVE)
 				continue;
 
-			SaveT(bool)
-			else SaveT(int)
-			else SaveT(float)
-			else SaveT(std::string)
-			else SaveT(Color_t)
-			else SaveT(Gradient_t)
-			else SaveT(Vec3)
-			else SaveT(Chams_t)
-			else SaveT(Glow_t)
-			else SaveT(DragBox_t)
-			else SaveT(WindowBox_t)
+			SaveT(bool, varTree)
+			else SaveT(int, varTree)
+			else SaveT(float, varTree)
+			else SaveT(IntRange_t, varTree)
+			else SaveT(FloatRange_t, varTree)
+			else SaveT(std::string, varTree)
+			else SaveT(std::vector<std::string>, varTree)
+			else SaveT(Color_t, varTree)
+			else SaveT(Gradient_t, varTree)
+			else SaveT(DragBox_t, varTree)
+			else SaveT(WindowBox_t, varTree)
 		}
+		writeTree.put_child("ConVars", varTree);
 
-		write_json(ConfigPath + "\\" + configName + ConfigExtension, WriteTree);
+		write_json(ConfigPath + "\\" + configName + ConfigExtension, writeTree);
 		CurrentConfig = configName; CurrentVisuals = "";
 		if (bNotify)
 			F::Notifications.Add("Config " + configName + " saved");
@@ -352,7 +341,7 @@ bool CConfigManager::SaveConfig(const std::string& configName, bool bNotify)
 bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 {
 	// Check if the config exists
-	if (!std::filesystem::exists(g_CFG.GetConfigPath() + "\\" + configName + ConfigExtension))
+	if (!std::filesystem::exists(F::ConfigManager.GetConfigPath() + "\\" + configName + ConfigExtension))
 	{
 		// Save default config if one doesn't yet exist
 		if (configName == std::string("default"))
@@ -364,25 +353,53 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 	// Read ptree from json
 	try
 	{
-		ReadTree.clear();
-		read_json(ConfigPath + "\\" + configName + ConfigExtension, ReadTree);
+		boost::property_tree::ptree readTree;
+		read_json(ConfigPath + "\\" + configName + ConfigExtension, readTree);
 
-		for (const auto var : g_Vars)
+		if (const auto condTree = readTree.get_child_optional("Conditions"))
 		{
-			if (var->m_iFlags & NOSAVE)
-				continue;
+			F::Conditions.mConditions.clear();
+			F::Conditions.vConditions.clear();
 
-			LoadT(bool)
-			else LoadT(int)
-			else LoadT(float)
-			else LoadT(std::string)
-			else LoadT(Color_t)
-			else LoadT(Gradient_t)
-			else LoadT(Vec3)
-			else LoadT(Chams_t)
-			else LoadT(Glow_t)
-			else LoadT(DragBox_t)
-			else LoadT(WindowBox_t)
+			for (auto& it : *condTree)
+			{
+				if (it.first == "default")
+					continue;
+
+				Condition_t tCond = {};
+				if (auto getValue = it.second.get_optional<int>("Type")) { tCond.Type = *getValue; }
+				if (auto getValue = it.second.get_optional<int>("Info")) { tCond.Info = *getValue; }
+				if (auto getValue = it.second.get_optional<int>("Key")) { tCond.Key = *getValue; }
+				if (auto getValue = it.second.get_optional<bool>("Not")) { tCond.Not = *getValue; }
+				if (auto getValue = it.second.get_optional<bool>("Active")) { tCond.Active = *getValue; }
+				if (auto getValue = it.second.get_optional<bool>("Visible")) { tCond.Visible = *getValue; }
+				if (auto getValue = it.second.get_optional<std::string>("Parent")) { tCond.Parent = *getValue; }
+
+				F::Conditions.mConditions[it.first] = tCond;
+				F::Conditions.vConditions.push_back(it.first);
+			}
+		}
+
+		if (const auto conVars = readTree.get_child_optional("ConVars"))
+		{
+			auto& varTree = *conVars;
+			for (const auto var : g_Vars)
+			{
+				if (var->m_iFlags & NOSAVE)
+					continue;
+
+				LoadT(bool, varTree)
+				else LoadT(int, varTree)
+				else LoadT(float, varTree)
+				else LoadT(IntRange_t, varTree)
+				else LoadT(FloatRange_t, varTree)
+				else LoadT(std::string, varTree)
+				else LoadT(std::vector<std::string>, varTree)
+				else LoadT(Color_t, varTree)
+				else LoadT(Gradient_t, varTree)
+				else LoadT(DragBox_t, varTree)
+				else LoadT(WindowBox_t, varTree)
+			}
 		}
 
 		g_Draw.RemakeFonts();
@@ -403,27 +420,27 @@ bool CConfigManager::SaveVisual(const std::string& configName, bool bNotify)
 {
 	try
 	{
-		WriteTree.clear();
+		boost::property_tree::ptree writeTree;
 
 		for (const auto var : g_Vars)
 		{
 			if (!(var->m_iFlags & VISUAL) || var->m_iFlags & NOSAVE)
 				continue;
 
-			SaveT(bool)
-			else SaveT(int)
-			else SaveT(float)
-			else SaveT(std::string)
-			else SaveT(Color_t)
-			else SaveT(Gradient_t)
-			else SaveT(Vec3)
-			else SaveT(Chams_t)
-			else SaveT(Glow_t)
-			else SaveT(DragBox_t)
-			else SaveT(WindowBox_t)
+			SaveT(bool, writeTree)
+			else SaveT(int, writeTree)
+			else SaveT(float, writeTree)
+			else SaveT(IntRange_t, writeTree)
+			else SaveT(FloatRange_t, writeTree)
+			else SaveT(std::string, writeTree)
+			else SaveT(std::vector<std::string>, writeTree)
+			else SaveT(Color_t, writeTree)
+			else SaveT(Gradient_t, writeTree)
+			else SaveT(DragBox_t, writeTree)
+			else SaveT(WindowBox_t, writeTree)
 		}
 
-		write_json(ConfigPath + "\\Visuals\\" + configName + ConfigExtension, WriteTree);
+		write_json(ConfigPath + "\\Visuals\\" + configName + ConfigExtension, writeTree);
 		if (bNotify)
 			F::Notifications.Add("Visual config " + configName + " saved");
 	}
@@ -437,7 +454,7 @@ bool CConfigManager::SaveVisual(const std::string& configName, bool bNotify)
 bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 {
 	// Check if the visual config exists
-	if (!std::filesystem::exists(g_CFG.GetVisualsPath() + "\\" + configName + ConfigExtension))
+	if (!std::filesystem::exists(F::ConfigManager.GetVisualsPath() + "\\" + configName + ConfigExtension))
 	{
 		//if (configName == std::string("default"))
 		//	SaveVisual("default");
@@ -446,25 +463,25 @@ bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 
 	try
 	{
-		ReadTree.clear();
-		read_json(ConfigPath + "\\Visuals\\" + configName + ConfigExtension, ReadTree);
+		boost::property_tree::ptree readTree;
+		read_json(ConfigPath + "\\Visuals\\" + configName + ConfigExtension, readTree);
 
 		for (const auto var : g_Vars)
 		{
 			if (!(var->m_iFlags & VISUAL) || var->m_iFlags & NOSAVE)
 				continue;
 
-			LoadT(bool)
-			else LoadT(int)
-			else LoadT(float)
-			else LoadT(std::string)
-			else LoadT(Color_t)
-			else LoadT(Gradient_t)
-			else LoadT(Vec3)
-			else LoadT(Chams_t)
-			else LoadT(Glow_t)
-			else LoadT(DragBox_t)
-			else LoadT(WindowBox_t)
+			LoadT(bool, readTree)
+			else LoadT(int, readTree)
+			else LoadT(float, readTree)
+			else LoadT(IntRange_t, readTree)
+			else LoadT(FloatRange_t, readTree)
+			else LoadT(std::string, readTree)
+			else LoadT(std::vector<std::string>, readTree)
+			else LoadT(Color_t, readTree)
+			else LoadT(Gradient_t, readTree)
+			else LoadT(DragBox_t, readTree)
+			else LoadT(WindowBox_t, readTree)
 		}
 
 		g_Draw.RemakeFonts();
@@ -480,9 +497,38 @@ bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 	return true;
 }
 
+#define ResetType(type) var->GetVar<type>()->Map = { { "default", var->GetVar<type>()->Default } };
+#define ResetT(type) if (IsType(type)) ResetType(type)
+
 void CConfigManager::RemoveConfig(const std::string& configName)
 {
-	std::filesystem::remove(ConfigPath + "\\" + configName + ConfigExtension);
+	if (configName != "default")
+		std::filesystem::remove(ConfigPath + "\\" + configName + ConfigExtension);
+	else
+	{
+		F::Conditions.mConditions.clear();
+		F::Conditions.vConditions.clear();
+
+		for (const auto var : g_Vars)
+		{
+			if (var->m_iFlags & NOSAVE)
+				continue;
+
+			ResetT(bool)
+			else ResetT(int)
+			else ResetT(float)
+			else ResetT(IntRange_t)
+			else ResetT(FloatRange_t)
+			else ResetT(std::string)
+			else ResetT(std::vector<std::string>)
+			else ResetT(Color_t)
+			else ResetT(Gradient_t)
+			else ResetT(DragBox_t)
+			else ResetT(WindowBox_t)
+		}
+
+		SaveConfig("default", false);
+	}
 }
 
 void CConfigManager::RemoveVisual(const std::string& configName)

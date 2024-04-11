@@ -122,9 +122,7 @@ void PResolver::SetAngles(const Vec3 vAngles, CBaseEntity* pEntity)
 {
 	if (const auto& pAnimState = pEntity->GetAnimState())
 	{
-		float* flPitch = reinterpret_cast<float*>(reinterpret_cast<DWORD>(pEntity) + g_NetVars.get_offset("DT_TFPlayer", "tfnonlocaldata", "m_angEyeAngles[0]"));
-
-		*flPitch = vAngles.x;
+		pEntity->m_angEyeAnglesX() = vAngles.x;
 		pAnimState->m_flCurrentFeetYaw = vAngles.y;
 		pAnimState->m_flGoalFeetYaw = vAngles.y;
 		pAnimState->Update(vAngles.y, vAngles.x);

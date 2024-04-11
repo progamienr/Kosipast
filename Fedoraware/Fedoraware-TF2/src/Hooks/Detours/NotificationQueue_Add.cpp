@@ -12,7 +12,7 @@ MAKE_HOOK(NotificationQueue_Add, S::NotificationQueue_Add(), int, __cdecl,
 	static const auto dwOnHasNewItems = S::CTFPlayer_OnHasNewItems_NotificationQueue_Add_Call();
 	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
-	if (Vars::Misc::AutoAcceptItemDrops.Value && dwRetAddr == dwOnHasNewItems)
+	if (Vars::Misc::Automation::AcceptItemDrops.Value && dwRetAddr == dwOnHasNewItems)
 	{
 		pNotification->Accept();
 		pNotification->Trigger();

@@ -1,12 +1,11 @@
 #include "../Hooks.h"
 
-//#include"../../Features/NoSpread/NoSpread.h"
+#include"../../Features/NoSpread/NoSpreadHitscan/NoSpreadHitscan.h"
 
 MAKE_HOOK(CL_SendMove, S::CL_SendMove(), void, __cdecl,
 	void* ecx, void* edx)
 {
-	//if (I::ClientState && I::ClientState->m_NetChannel && Vars::NoSpread::Hitscan.Value)
-	//	F::NoSpread.ClSendMove();
+	F::NoSpreadHitscan.AskForPlayerPerf();
 
 	byte data[4000];
 
@@ -33,14 +32,7 @@ MAKE_HOOK(CL_SendMove, S::CL_SendMove(), void, __cdecl,
 	if (bOK)
 	{
 		if (extraCommands)
-		{
 			I::ClientState->m_NetChannel->m_nChokedPackets -= extraCommands;
-		}
 		GetVFunc<bool(__thiscall*)(PVOID, INetMessage* msg, bool, bool)>(I::ClientState->m_NetChannel, 37)(I::ClientState->m_NetChannel, &moveMsg, false, false);
 	}
-
-	//if (I::ClientState && I::ClientState->m_NetChannel && Vars::NoSpread::Hitscan.Value)
-	//{
-	//	F::NoSpread.ClSendMovePost();
-	//}
 }

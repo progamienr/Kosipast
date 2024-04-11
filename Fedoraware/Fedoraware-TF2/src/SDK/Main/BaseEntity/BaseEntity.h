@@ -1,13 +1,8 @@
 #pragma once
+#include "../../Interfaces/Interfaces.h"
 #include "../../NetVars/NetVars.h"
 
 #include "AnimState/TFPlayerAnimState.h" //includes class C_BaseCombatWeapon
-
-#define VIRTUAL(name, type, base, fn, index) __inline type Get##name() \
-{ \
-	void* pBase = base; \
-	return GetVFunc<fn>(pBase, index)(pBase); \
-}
 
 namespace S
 {
@@ -24,7 +19,6 @@ namespace S
 
 	MAKE_SIGNATURE(CBasePlayer_GetAmmoCount, CLIENT_DLL, "55 8B EC 56 8B 75 08 57 8B F9 83 FE FF 75 08 5F 33 C0 5E 5D", 0x0);
 
-	MAKE_SIGNATURE(CBaseEntity_InCond, CLIENT_DLL, "55 8B EC 83 EC ? 56 57 8B 7D ? 8B F1 83 FF ? 7D", 0x0);
 	MAKE_SIGNATURE(TeamFortress_CalculateMaxSpeed, CLIENT_DLL, "55 8B EC 83 EC ? 83 3D ? ? ? ? ? 56 8B F1 75", 0x0);
 	MAKE_SIGNATURE(CTFPlayer_UpdateWearables, CLIENT_DLL, "56 8B F1 E8 ? ? ? ? 8B 06 8B CE 6A 00 68 ? ? ? ? 68 ? ? ? ? 6A 00 FF 90 ? ? ? ? 50 E8 ? ? ? ? 83 C4 14", 0x0);
 	MAKE_SIGNATURE(CTFPlayer_ThirdPersonSwitch, CLIENT_DLL, "E8 ? ? ? ? 8A 87 ? ? ? ? 88 87 ? ? ? ?", 0x0);
@@ -217,7 +211,7 @@ public:
 	{
 		Vec3 vMin = {}, vMax = {};
 		GetRenderBounds(vMin, vMax);
-		return m_vecOrigin() + Vec3(0.0f, 0.0f, (vMin.z + vMax.z) / 2.0f);
+		return m_vecOrigin() + Vec3(0.f, 0.f, (vMin.z + vMax.z) / 2.f);
 	}
 	__inline bool IsInValidTeam()
 	{
@@ -271,7 +265,7 @@ public:
 	}
 	__inline void SetAbsAngles(const Vec3& vAngles)
 	{
-		Vec3* pAbsAngles = const_cast<Vec3*>(&this->GetAbsAngles());
+		Vec3* pAbsAngles = const_cast<Vec3*>(&GetAbsAngles());
 		*pAbsAngles = vAngles;
 	}
 	__inline void SetAbsVelocity(const Vector& vVelocity)
@@ -410,7 +404,7 @@ public:
 	}
 	__inline void ClearPunchAngle()
 	{	//m_vecPunchAngle
-		*reinterpret_cast<Vec3*>(this + 0xE8C) = Vec3(0.0f, 0.0f, 0.0f);
+		*reinterpret_cast<Vec3*>(this + 0xE8C) = Vec3(0.f, 0.f, 0.f);
 	}
 	__inline float& m_flWaterJumpTime()
 	{
@@ -426,7 +420,7 @@ public:
 	}
 	__inline void SetCurrentCmd(CUserCmd* pCmd)
 	{
-		static int nOffset = GetNetVar("CBasePlayer", "m_hConstraintEntity") - 4;
+		static int nOffset = g_NetVars.GetNetVar("CBasePlayer", "m_hConstraintEntity") - 4;
 		*reinterpret_cast<CUserCmd**>(reinterpret_cast<DWORD>(this) + nOffset) = pCmd;
 	}
 	__inline int& m_surfaceProps()
@@ -452,7 +446,7 @@ public:
 	__inline float TickVelocity2D()
 	{	// bad
 		const int iDivide = floor(1000.f / I::GlobalVars->interval_per_tick);
-		const float flVel = this->m_vecVelocity().Length2D();
+		const float flVel = m_vecVelocity().Length2D();
 		return flVel / iDivide;
 	}
 	__inline IClientNetworkable* Networkable()
@@ -662,7 +656,7 @@ public:
 	CONDGET(MegaHealed, m_nPlayerCond(), TFCond_MegaHeal)
 	CONDGET(AGhost, m_nPlayerCondEx2(), TFCondEx2_HalloweenGhostMode)
 	CONDGET(InBumperKart, m_nPlayerCondEx2(), TFCondEx2_InKart)
-	CONDGET(PhlogUbered, m_nPlayerCondEx(), TFCondEx_PhlogUber)
+	CONDGET(PhlogUbered, m_nPlayerCondEx(), TFCondEx_PyroCrits)
 	CONDGET(BlastImmune, m_nPlayerCondEx2(), TFCondEx2_BlastImmune)
 	CONDGET(BulletImmune, m_nPlayerCondEx2(), TFCondEx2_BulletImmune)
 	CONDGET(FireImmune, m_nPlayerCondEx2(), TFCondEx2_FireImmune)
@@ -696,7 +690,7 @@ public:
 	}
 	__inline Vec3 GetEyeAngles()
 	{
-		return { m_angEyeAnglesX(), m_angEyeAnglesY(), 0.0f };
+		return { m_angEyeAnglesX(), m_angEyeAnglesY(), 0.f };
 	}
 	__inline Vec3 GetWorldSpaceCenter()
 	{
@@ -780,21 +774,15 @@ public:
 
 		return false;
 	}
-	__inline bool InCond(int eCond)
-	{
-		using FN = bool(__thiscall*)(CBaseEntity*, int);
-		static FN fnInCond = S::CBaseEntity_InCond.As<FN>();
-		return fnInCond(this, eCond);
-	}
 	__inline bool IsInvisible()
 	{
-		if (this->InCond(TF_COND_BURNING)
-			|| this->InCond(TF_COND_BURNING_PYRO)
-			|| this->InCond(TF_COND_MAD_MILK)
-			|| this->InCond(TF_COND_URINE))
+		if (InCond(TF_COND_BURNING)
+			|| InCond(TF_COND_BURNING_PYRO)
+			|| InCond(TF_COND_MAD_MILK)
+			|| InCond(TF_COND_URINE))
 			return false;
 
-		return m_flInvisibility() >= 1.0f;
+		return m_flInvisibility() >= 1.f;
 	}
 	__inline bool IsZoomed()
 	{
@@ -838,7 +826,7 @@ public:
 				// Only primary weapon can be crit boosted by pyro rage
 				return true;
 			
-			float flCritHealthPercent = Utils::ATTRIB_HOOK_FLOAT(1.f, "mult_crit_when_health_is_below_percent", pWeapon);
+			float flCritHealthPercent = Utils::AttribHookValue(1.f, "mult_crit_when_health_is_below_percent", pWeapon);
 			float flHealthFraction = GetMaxHealth() ? (float)m_iHealth() / GetMaxHealth() : 1.f;
 			if (flCritHealthPercent < 1.f && flHealthFraction < flCritHealthPercent)
 				return true;
@@ -889,16 +877,16 @@ public:
 	{
 		switch (m_iClass())
 		{
-		case ETFClass::CLASS_SCOUT: return 400.0f;
-		case ETFClass::CLASS_SOLDIER: return 240.0f;
-		case ETFClass::CLASS_PYRO: return 300.0f;
-		case ETFClass::CLASS_DEMOMAN: return 280.0f;
-		case ETFClass::CLASS_HEAVY: return 230.0f; // 110 when spinning minigun
-		case ETFClass::CLASS_ENGINEER: return 300.0f;
-		case ETFClass::CLASS_MEDIC: return 320.0f;
-		case ETFClass::CLASS_SNIPER: return 300.0f;
-		case ETFClass::CLASS_SPY: return 320.0f;
-		default: return 1.0f;
+		case ETFClass::CLASS_SCOUT: return 400.f;
+		case ETFClass::CLASS_SOLDIER: return 240.f;
+		case ETFClass::CLASS_PYRO: return 300.f;
+		case ETFClass::CLASS_DEMOMAN: return 280.f;
+		case ETFClass::CLASS_HEAVY: return 230.f; // 110 when spinning minigun
+		case ETFClass::CLASS_ENGINEER: return 300.f;
+		case ETFClass::CLASS_MEDIC: return 320.f;
+		case ETFClass::CLASS_SNIPER: return 300.f;
+		case ETFClass::CLASS_SPY: return 320.f;
+		default: return 1.f;
 		}
 	}
 	__inline bool OnSolid()
@@ -916,19 +904,20 @@ public:
 	}
 	__inline float GetInvisPercentage()
 	{
-		const float invisTime = I::Cvar->FindVar("tf_spy_invis_time")->GetFloat();
-		const float GetInvisPercent = Math::RemapValClamped(m_flInvisChangeCompleteTime() - I::GlobalVars->curtime, invisTime, 0.0f, 0.0f, 100.0f);
+		static auto tf_spy_invis_time = I::Cvar->FindVar("tf_spy_invis_time");
+		const float flInvisTime = tf_spy_invis_time ? tf_spy_invis_time->GetFloat() : 1.f;
+		const float GetInvisPercent = Math::RemapValClamped(m_flInvisChangeCompleteTime() - I::GlobalVars->curtime, flInvisTime, 0.f, 0.f, 100.f);
 
 		return GetInvisPercent;
 	}
 	__inline size_t* GetMyWeapons()
 	{
-		static int nOffset = GetNetVar("CBaseCombatCharacter", "m_hMyWeapons");
+		static int nOffset = g_NetVars.GetNetVar("CBaseCombatCharacter", "m_hMyWeapons");
 		return reinterpret_cast<size_t*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline CBaseCombatWeapon* GetWeaponFromSlot(const int nSlot)
 	{
-		static int nOffset = GetNetVar("CBaseCombatCharacter", "m_hMyWeapons");
+		static int nOffset = g_NetVars.GetNetVar("CBaseCombatCharacter", "m_hMyWeapons");
 		int hWeapon = *reinterpret_cast<int*>(reinterpret_cast<DWORD>(this) + (nOffset + (nSlot * 0x4)));
 		return reinterpret_cast<CBaseCombatWeapon*>(I::ClientEntityList->GetClientEntityFromHandle(hWeapon));
 	}
@@ -958,7 +947,7 @@ public:
 	}
 	__inline float GetCritMult()
 	{
-		return Math::RemapValClamped(static_cast<float>(m_iCritMult()), 0.0f, 255.0f, 1.0f, 4.0f);
+		return Math::RemapValClamped(static_cast<float>(m_iCritMult()), 0.f, 255.f, 1.f, 4.f);
 	}
 	__inline void UpdateWearables()
 	{
@@ -966,23 +955,23 @@ public:
 	}
 	__inline void ThirdPersonSwitch()
 	{
-		static auto address = S::CTFPlayer_ThirdPersonSwitch.operator()();
+		static auto address = S::CTFPlayer_ThirdPersonSwitch();
 		static auto absolute = *reinterpret_cast<std::uintptr_t*>(address + 1) + address + 5;
 		reinterpret_cast<void(__thiscall*)(CBaseEntity*)>(absolute)(this);
 	}
 	__inline float* GetHeadScale()
 	{
-		static int nOffset = GetNetVar("CTFPlayer", "m_flHeadScale");
+		static int nOffset = g_NetVars.GetNetVar("CTFPlayer", "m_flHeadScale");
 		return reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline float* GetTorsoScale()
 	{
-		static int nOffset = GetNetVar("CTFPlayer", "m_flTorsoScale");
+		static int nOffset = g_NetVars.GetNetVar("CTFPlayer", "m_flTorsoScale");
 		return reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline float* GetHandScale()
 	{
-		static int nOffset = GetNetVar("CTFPlayer", "m_flHandScale");
+		static int nOffset = g_NetVars.GetNetVar("CTFPlayer", "m_flHandScale");
 		return reinterpret_cast<float*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 
@@ -1153,7 +1142,7 @@ public:
 	}
 	__inline std::array<float, MAXSTUDIOPOSEPARAM>& m_flPoseParameter()
 	{
-		static int nOffset = GetNetVar("CBaseAnimating", "m_flPoseParameter");
+		static int nOffset = g_NetVars.GetNetVar("CBaseAnimating", "m_flPoseParameter");
 		return *reinterpret_cast<std::array<float, MAXSTUDIOPOSEPARAM>*>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline CUtlVector<matrix3x4>* GetCachedBoneData()
@@ -1162,7 +1151,7 @@ public:
 	}
 	__inline CStudioHdr* GetModelPtr()
 	{
-		static int nOffset = GetNetVar("CBaseAnimating", "m_nMuzzleFlashParity") + 12;
+		static int nOffset = g_NetVars.GetNetVar("CBaseAnimating", "m_nMuzzleFlashParity") + 12;
 		return *reinterpret_cast<CStudioHdr**>(reinterpret_cast<DWORD>(this) + nOffset);
 	}
 	__inline float FrameAdvance(float flInterval)
@@ -1214,7 +1203,7 @@ public:
 	}
 	__inline void SetRenderAngles(const Vec3& vAngles)
 	{
-		Vec3* pRenderAngles = const_cast<Vec3*>(&this->GetRenderAngles());
+		Vec3* pRenderAngles = const_cast<Vec3*>(&GetRenderAngles());
 		*pRenderAngles = vAngles;
 	}
 	__inline int LookupAttachment(const char* pAttachmentName)

@@ -4,7 +4,7 @@
 #include "../../Features/Visuals/Materials/Materials.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/TickHandler/TickHandler.h"
-#include "../../Features/AntiHack/CheaterDetection.h"
+#include "../../Features/CheaterDetection/CheaterDetection.h"
 
 #include "../../Features/Misc/Misc.h"
 
@@ -16,7 +16,7 @@ MAKE_HOOK(ViewRender_LevelInit, Utils::GetVFuncPtr(I::ViewRender, 1), void, __fa
 
 	F::Backtrack.Restart();
 	F::Ticks.Reset();
-	F::BadActors.OnLoad();
+	F::CheaterDetection.OnLoad();
 
 	Hook.Original<FN>()(ecx, edx);
 }

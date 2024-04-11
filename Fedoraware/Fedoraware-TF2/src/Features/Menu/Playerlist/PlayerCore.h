@@ -1,17 +1,15 @@
 #pragma once
 #include "../../Feature.h"
 
-#include "../../Feature.h"
-
 #include "PlayerUtils.h"
 #include "../ConfigManager/ConfigManager.h"
 
 class CPlayerlistCore
 {
-	void LoadPlayers();
 	void SavePlayers();
-	void LoadTags();
+	void LoadPlayers();
 	void SaveTags();
+	void LoadTags();
 
 public:
 	void Run();

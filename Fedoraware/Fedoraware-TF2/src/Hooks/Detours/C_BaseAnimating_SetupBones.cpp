@@ -5,7 +5,7 @@
 MAKE_HOOK(C_BaseAnimating_SetupBones, S::CBaseAnimating_SetupBones(), bool, __fastcall,
 	void* ecx, void* edx, matrix3x4* pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime)
 {
-	if (Vars::Misc::SetupBonesOptimization.Value && !F::Backtrack.bSettingUpBones)
+	if (Vars::Misc::Game::SetupBonesOptimization.Value && !F::Backtrack.bSettingUpBones)
 	{
 		auto base_ent = reinterpret_cast<CBaseEntity*>(reinterpret_cast<uintptr_t>(ecx) - 0x4);
 		if (base_ent)

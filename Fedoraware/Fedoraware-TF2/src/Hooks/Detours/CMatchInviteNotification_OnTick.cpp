@@ -5,7 +5,7 @@ MAKE_HOOK(CMatchInviteNotification_OnTick, S::CMatchInviteNotification_OnTick(),
 {
 	static auto CMatchInviteNotification_AcceptMatch = reinterpret_cast<void(__thiscall*)(void*)>(S::CMatchInviteNotification_AcceptMatch());
 
-	if (Vars::Misc::FreezeQueue.Value)
+	if (Vars::Misc::Queueing::FreezeQueue.Value)
 	{
 		*reinterpret_cast<double*>(reinterpret_cast<DWORD>(ecx) + 424) = 0.0;
 		// v3 = *(double*)(this + 424);
