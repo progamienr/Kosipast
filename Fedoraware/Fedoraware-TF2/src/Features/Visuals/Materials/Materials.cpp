@@ -104,7 +104,7 @@ void CMaterials::ReloadMaterials()
 		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
 		mat.sVMT += "\n	$additive \"1\"";
 		mat.sVMT += "\n	$phong \"1\"";
-		mat.sVMT += "\n	$phongfresnelranges \"[0 1 1]\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 0.1 0.1]\"";
 		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
 		mat.sVMT += "\n	$envmapfresnel \"1\"";
 		mat.sVMT += "\n	$selfillum \"1\"";

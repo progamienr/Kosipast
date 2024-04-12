@@ -32,7 +32,7 @@ int CNoSpreadHitscan::GetSeed(CUserCmd* pCmd)
 	static auto sv_usercmd_custom_random_seed = g_ConVars.FindVar("sv_usercmd_custom_random_seed");
 	if (sv_usercmd_custom_random_seed ? sv_usercmd_custom_random_seed->GetBool() : true)
 	{
-		const float flFloatTime = Utils::PlatFloatTime() + flFloatTimeDelta;
+		const float flFloatTime = float(Utils::PlatFloatTime()) + flFloatTimeDelta;
 		//Utils::ConLog("SeedPrediction", std::format("{}\n", flFloatTime).c_str());
 
 		const float flTime = (flFloatTime) * 1000;
@@ -110,7 +110,7 @@ bool CNoSpreadHitscan::ParsePlayerPerf(bf_read& msgData)
 		bSynced = iSynced == 1;
 
 		flServerTime = flNewServerTime;
-		flFloatTimeDelta = flServerTime - Utils::PlatFloatTime();
+		flFloatTimeDelta = flServerTime - float(Utils::PlatFloatTime());
 
 		if (!iBestSync || iBestSync == 2 && bSynced)
 		{

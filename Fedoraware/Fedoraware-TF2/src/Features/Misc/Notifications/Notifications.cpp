@@ -1,76 +1,43 @@
 #include "Notifications.h"
 
-// Myzarfin added this
+void CNotifications::Add(const std::string& sText, Color_t cColor, float flLifeTime)
+{
+	vNotifications.push_back({ sText, cColor, float(Utils::PlatFloatTime()) + flLifeTime });
+}
+
 void CNotifications::Draw()
 {
-	constexpr int x{ 1 };
-	int y{ 1 };
-	constexpr int size{ 20 };
+	if (vNotifications.size() > unsigned(iMaxNotifySize + 1))
+		vNotifications.erase(vNotifications.begin());
 
-	if (NotificationTexts.size() > (MAX_NOTIFY_SIZE + 1))
+	for (auto it = vNotifications.begin(); it != vNotifications.end();)
 	{
-		NotificationTexts.erase(NotificationTexts.begin());
-	}
-
-	for (size_t i{}; i < NotificationTexts.size(); ++i)
-	{
-		const auto notify = NotificationTexts[i];
-
-		notify->Time -= I::GlobalVars->absoluteframetime;
-
-		if (notify->Time <= 0.f)
-		{
-			NotificationTexts.erase(NotificationTexts.begin() + i);
-		}
-	}
-
-	if (NotificationTexts.empty())
-	{
-		return;
-	}
-
-	const auto& font = g_Draw.GetFont(FONT_INDICATORS);
-	for (size_t i{}; i < NotificationTexts.size(); ++i)
-	{
-		const auto notify = NotificationTexts[i];
-
-		const float left = notify->Time;
-		Color_t color = notify->Color;
-
-		if (left < .5f)
-		{
-			float f = left;
-			Math::Clamp(f, 0.f, .5f);
-
-			f /= .5f;
-
-			color.a = static_cast<int>(f * 255.f);
-
-			if (i == 0 && f < 0.2f)
-				y -= size * (1.f - f / 0.2f);
-		}
+		if (it->m_flTime <= Utils::PlatFloatTime())
+			it = vNotifications.erase(it);
 		else
-			color.a = 255;
+			++it;
+	}
 
-		const size_t cSize = strlen(notify->Text.c_str()) + 1;
-		const auto wc = new wchar_t[cSize];
-		mbstowcs(wc, notify->Text.c_str(), cSize);
+	if (vNotifications.empty())
+		return;
 
-		int w, h;
+	int y = 2;
+	const auto& fFont = g_Draw.GetFont(FONT_INDICATORS);
+	for (auto& tNotification : vNotifications)
+	{
+		int x = 2;
+		int w, h; I::MatSystemSurface->GetTextSize(fFont.dwFont, Utils::ConvertUtf8ToWide(tNotification.m_sText).c_str(), w, h);
+		w += 4; h += 4;
 
-		I::MatSystemSurface->GetTextSize(FONT_INDICATORS, wc, w, h);
+		const float flLife = std::min(tNotification.m_flTime - Utils::PlatFloatTime(), Vars::Logging::Lifetime.Value - (tNotification.m_flTime - Utils::PlatFloatTime()));
+		if (flLife < 0.1f)
+			x -= Math::RemapValClamped(flLife, 0.1f, 0.f, 0.f, w);
 
-		delete[] wc; // Memory leak
-
-		g_Draw.Line(x, y, x, y + 19, { Vars::Menu::Theme::Accent.Value.r, Vars::Menu::Theme::Accent.Value.g, Vars::Menu::Theme::Accent.Value.b, color.a });
-		g_Draw.GradientRect(x + 1, y, w / 3 + 8, 19,
-			{ Vars::Menu::Theme::Background.Value.r, Vars::Menu::Theme::Background.Value.g, Vars::Menu::Theme::Background.Value.b, color.a },
-			{ Vars::Menu::Theme::Background.Value.r, Vars::Menu::Theme::Background.Value.g, Vars::Menu::Theme::Background.Value.b, 1 },
-			true);
-		g_Draw.String(font, x + 6, y + 2,
-			{ Vars::Menu::Theme::Active.Value.r, Vars::Menu::Theme::Active.Value.g, Vars::Menu::Theme::Active.Value.b, color.a },
-			ALIGN_TOPLEFT, notify->Text.c_str());
-
-		y += size;
+		auto& cAccent = Vars::Menu::Theme::Accent.Value, &cActive = Vars::Menu::Theme::Active.Value, &cBackground = Vars::Menu::Theme::Background.Value;
+		g_Draw.Line(x, y, x, y + h, { cAccent.r, cAccent.g, cAccent.b, 255 });
+		g_Draw.GradientRect(x + 1, y, w, h, { cBackground.r, cBackground.g, cBackground.b, 255 }, { cBackground.r, cBackground.g, cBackground.b, 0 }, true);
+		g_Draw.String(fFont, x + 6, y + 2, { cActive.r, cActive.g, cActive.b, 255 }, ALIGN_TOPLEFT, tNotification.m_sText.c_str());
+		
+		y += h + 2;
 	}
 }

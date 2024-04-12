@@ -95,11 +95,9 @@ namespace Vars
 
 		SUBNAMESPACE_BEGIN(Theme) // possibly reduce the amount of theme vars
 			CVar(Accent, Color_t(255, 101, 101, 255), VISUAL)
-			CVar(AccentLight, Color_t(255, 111, 111, 255), VISUAL)
 			CVar(Background, Color_t(23, 23, 23, 250), VISUAL)
 			CVar(Foreground, Color_t(11, 11, 11, 250), VISUAL)
 			CVar(Foremost, Color_t(23, 23, 23, 250), VISUAL)
-			CVar(ForemostLight, Color_t(25, 25, 25, 250), VISUAL)
 			CVar(Inactive, Color_t(150, 150, 150, 255), VISUAL)
 			CVar(Active, Color_t(255, 255, 255, 255), VISUAL)
 		SUBNAMESPACE_END(Theme)

@@ -116,7 +116,7 @@ void CMenu::DrawMenu()
 		SetNextWindowSize({ std::min(textSize.x + 56.f, mainWindowSize.x), 40.f });
 		SetNextWindowPos({ mainWindowPos.x, mainWindowPos.y + mainWindowSize.y + 8.f });
 		PushStyleVar(ImGuiStyleVar_WindowMinSize, { 40.f, 40.f });
-		if (Begin("TitleWindow", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoFocusOnAppearing))
+		if (Begin("ConditionWindow", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar))
 		{
 			const auto windowPos = GetWindowPos();
 			const auto preSize = CalcTextSize("Editing for condition ");
@@ -1546,7 +1546,12 @@ void CMenu::MenuSettings()
 							EndPopup();
 						}
 						if (bEdit)
-							sCondition = sCond;
+						{
+							if (sCondition != sCond)
+								sCondition = sCond;
+							else
+								sCondition = "default";
+						}
 
 						y = getConds(sCond, x + 1, y);
 					}
@@ -2089,11 +2094,11 @@ void CMenu::AddDraggable(const char* szTitle, ConfigVar<DragBox_t>& var, bool bS
 	if (!bShouldDraw)
 		return;
 
-	static std::unordered_map<const char*, DragBox_t> old = {};
+	static std::unordered_map<const char*, std::pair<DragBox_t, float>> old = {};
 	DragBox_t info = FGet(var);
-	const float sizeX = 100.f * Vars::Menu::DPI.Value, sizeY = 40.f * Vars::Menu::DPI.Value;
+	const float sizeX = 100.f * Vars::Menu::DPI.Map["default"], sizeY = 40.f * Vars::Menu::DPI.Map["default"];
 	SetNextWindowSize({ sizeX, sizeY }, ImGuiCond_Always);
-	if (!old.contains(szTitle) || info != old[szTitle])
+	if (!old.contains(szTitle) || info != old[szTitle].first || sizeX != old[szTitle].second)
 		SetNextWindowPos({ float(info.x - sizeX / 2), float(info.y) }, ImGuiCond_Always);
 
 	PushStyleColor(ImGuiCol_WindowBg, {});
@@ -2105,7 +2110,7 @@ void CMenu::AddDraggable(const char* szTitle, ConfigVar<DragBox_t>& var, bool bS
 	{
 		const auto winPos = GetWindowPos();
 
-		info.x = winPos.x + sizeX / 2; info.y = winPos.y; old[szTitle] = info;
+		info.x = winPos.x + sizeX / 2; info.y = winPos.y; old[szTitle] = { info, sizeX };
 		FSet(var, info);
 
 		PushFont(FontBlack);

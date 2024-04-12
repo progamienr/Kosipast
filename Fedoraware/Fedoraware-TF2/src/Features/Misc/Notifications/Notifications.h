@@ -1,32 +1,20 @@
 #pragma once
 #include "../../Feature.h"
 
-constexpr int MAX_NOTIFY_SIZE = 8;
-
-class NotifyText
+struct Notification_t
 {
-public:
-	std::string Text;
-	Color_t Color;
-	float Time;
-
-	NotifyText() {}
-	NotifyText(std::string text, Color_t color, float time) : Text{ std::move(text) }, Color{ color }, Time{ time } { }
+	std::string m_sText;
+	Color_t m_cColor;
+	float m_flTime;
 };
 
 class CNotifications
 {
-	std::vector<std::shared_ptr<NotifyText>> NotificationTexts;
+	std::vector<Notification_t> vNotifications;
+	int iMaxNotifySize = 8;
 
 public:
-	CNotifications() = default;
-
-	__forceinline void Add(const std::string& text, Color_t color = { 255, 255, 255, 255 },
-		float time = Vars::Logging::Lifetime.Value)
-	{
-		NotificationTexts.push_back(std::make_shared<NotifyText>(text, color, time));
-	}
-
+	void Add(const std::string& sText, Color_t cColor = { 255, 255, 255, 255 }, float flLifeTime = Vars::Logging::Lifetime.Value);
 	void Draw();
 };
 
