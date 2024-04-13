@@ -37,10 +37,10 @@ enum Ignored
 	INVUL = 1 << 0,
 	CLOAKED = 1 << 1,
 	DEADRINGER = 1 << 2,
-	TAUNTING = 1 << 3,
-	VACCINATOR = 1 << 4,
-	UNSIMULATED = 1 << 5,
-	DISGUISED = 1 << 6
+	VACCINATOR = 1 << 3,
+	UNSIMULATED = 1 << 4,
+	DISGUISED = 1 << 5,
+	TAUNTING = 1 << 6
 };
 
 struct Target_t

@@ -108,7 +108,7 @@ namespace Vars
 			CVar(AimType, 0) // 0 - Off, 1 - Normal, 2 - Smooth, 3 - Silent
 			CVar(TargetSelection, 0) // 0 - FOV, 1 - Distance
 			CVar(Target, 0b0000001) // { Bombs, NPCs, Stickies, Teleporter, Dispenser, Sentry, Players }
-			CVar(Ignore, 0b00000000) // { Disguised, Unsimulated, Vaccinator, Taunting, Friends, Dead Ringer, Cloaked, Invulnerable }
+			CVar(Ignore, 0b00000000) // { Taunting, Disguised, Unsimulated, Vaccinator, Friends, Dead Ringer, Cloaked, Invulnerable }
 			CVar(AimFOV, 30.f)
 			CVar(Smoothing, 25.f)
 			CVar(MaxTargets, 2)

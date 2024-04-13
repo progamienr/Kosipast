@@ -45,7 +45,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	{	// Update Global Info
 		const int nItemDefIndex = pWeapon->m_iItemDefinitionIndex();
 		if (G::CurItemDefIndex != nItemDefIndex || !pWeapon->m_iClip1() || !pLocal->IsAlive() || pLocal->IsTaunting() || pLocal->IsBonked() || pLocal->IsAGhost() || pLocal->IsInBumperKart())
-			G::WaitForShift = 1; //Vars::CL_Move::Doubletap::WaitReady.Value;
+			G::WaitForShift = 1;
 
 		G::CurItemDefIndex = nItemDefIndex;
 		G::CanPrimaryAttack = pWeapon->CanPrimary(pLocal);
@@ -55,7 +55,9 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			switch (Utils::GetRoundState())
 			{
 			case GR_STATE_BETWEEN_RNDS:
-			case GR_STATE_GAME_OVER: G::CanPrimaryAttack = int(pLocal->m_flMaxspeed()) != 1;
+			case GR_STATE_GAME_OVER: 
+				if (int(pLocal->m_flMaxspeed()) == 1)
+					G::CanPrimaryAttack = false;
 			}
 
 			if (pWeapon->IsInReload())
@@ -105,9 +107,10 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 
 	{
 		static bool bWasSet = false;
-		if (G::PSilentAngles && G::ShiftedTicks != G::MaxShift && I::ClientState->chokedcommands < 21/*2*/) // failsafe
+		const bool bOverchoking = I::ClientState->chokedcommands >= 21; // failsafe
+		if (G::PSilentAngles && G::ShiftedTicks != G::MaxShift && !bOverchoking)
 			*pSendPacket = false, bWasSet = true;
-		else if (bWasSet)
+		else if (bWasSet || bOverchoking)
 			*pSendPacket = true, bWasSet = false;
 	}
 	F::Misc.DoubletapPacket(pCmd, pSendPacket);

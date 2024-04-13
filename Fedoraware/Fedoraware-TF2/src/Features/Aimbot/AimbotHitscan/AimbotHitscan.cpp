@@ -281,7 +281,7 @@ float CAimbotHitscan::GetMaxRange(CBaseCombatWeapon* pWeapon)
 
 int CAimbotHitscan::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
-	if (Vars::Aimbot::General::Ignore.Value & (1 << 6) && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::General::TickTolerance.Value)
+	if (Vars::Aimbot::General::Ignore.Value & UNSIMULATED && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::General::TickTolerance.Value)
 		return false;
 
 	Vec3 vEyePos = pLocal->GetShootPos();

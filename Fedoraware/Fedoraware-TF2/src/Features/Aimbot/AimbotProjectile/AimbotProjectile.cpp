@@ -608,7 +608,7 @@ bool CAimbotProjectile::TestAngle(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapo
 
 int CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, std::deque<std::pair<Vec3, Vec3>>* pMoveLines, std::deque<std::pair<Vec3, Vec3>>* pProjLines, std::vector<DrawBox>* pBoxes, float* pTimeTo)
 {
-	if (Vars::Aimbot::General::Ignore.Value & (1 << 6) && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::General::TickTolerance.Value)
+	if (Vars::Aimbot::General::Ignore.Value & UNSIMULATED && G::ChokeMap[target.m_pEntity->GetIndex()] > Vars::Aimbot::General::TickTolerance.Value)
 		return false;
 
 	PlayerStorage storage;

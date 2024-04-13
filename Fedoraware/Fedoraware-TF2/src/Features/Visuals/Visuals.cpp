@@ -328,13 +328,15 @@ void CVisuals::DrawDebugInfo(CBaseEntity* pLocal)
 		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Origin: (%.3f, %.3f, %.3f)", vOrigin.x, vOrigin.y, vOrigin.z);
 
 		Vec3 vVelocity = pLocal->m_vecVelocity();
-		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: (%.3f, %.3f, %.3f)", vVelocity.x, vVelocity.y, vVelocity.z);
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "Velocity: %.3f (%.3f, %.3f, %.3f)", vVelocity.Length(), vVelocity.x, vVelocity.y, vVelocity.z);
 
 		auto pCmd = G::LastUserCmd;
 		if (!pCmd)
 			return;
 		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd move: (%.0f, %.0f)", pCmd->forwardmove, pCmd->sidemove);
 		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "pCmd buttons: %i", pCmd->buttons);
+
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, std::format("CanAttack: {}, {}", G::CanPrimaryAttack, G::CanSecondaryAttack).c_str());
 
 		g_Draw.String(fFont, x, y += fFont.nTall + 1, { 255, 255, 255, 255 }, ALIGN_TOPLEFT, "RoundState: %i", Utils::GetRoundState());
 	}

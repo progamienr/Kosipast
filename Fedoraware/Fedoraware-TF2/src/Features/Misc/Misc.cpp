@@ -405,7 +405,7 @@ void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
 	const float flLimit = 10.f;
 	if (flSpeed > flLimit)
 	{
-		if (G::ShiftedTicks != G::MaxShift && !G::IsAttacking)
+		if (G::ShiftedTicks != G::MaxShift && !G::IsAttacking && !G::AntiAim)
 			G::ShouldStop = true;
 		else
 		{
@@ -426,7 +426,7 @@ void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal)
 		return;
 	}
 
-	const int maxSpeed = std::min(pLocal->m_flMaxspeed() * (pCmd->forwardmove < 0 && !pCmd->sidemove ? 0.9f : 1.f), 520.f) - 10.f;
+	const int maxSpeed = std::min(pLocal->m_flMaxspeed() * 0.9f, 520.f) - 10.f;
 	const float curSpeed = pLocal->m_vecVelocity().Length2D();
 	if (curSpeed > maxSpeed)
 		return;

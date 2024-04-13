@@ -152,7 +152,7 @@ void CMenu::MenuAimbot()
 				FDropdown("Aim type", Vars::Aimbot::General::AimType, { "Off", "Plain", "Smooth", "Silent" }, {}, FDropdown_Left);
 				FDropdown("Target selection", Vars::Aimbot::General::TargetSelection, { "FOV", "Distance" }, {}, FDropdown_Right);
 				FDropdown("Target", Vars::Aimbot::General::Target, { "Players", "Sentries", "Dispensers", "Teleporters", "Stickies", "NPCs", "Bombs" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Ignore", Vars::Aimbot::General::Ignore, { "Invulnerable", "Cloaked", "Dead Ringer", "Taunting", "Vaccinator", "Unsimulated Players", "Disguised" }, {}, FDropdown_Multi | FDropdown_Right);
+				FDropdown("Ignore", Vars::Aimbot::General::Ignore, { "Invulnerable", "Cloaked", "Dead Ringer", "Vaccinator", "Unsimulated Players", "Disguised", "Taunting" }, {}, FDropdown_Multi | FDropdown_Right);
 				FSlider("Aim FOV", Vars::Aimbot::General::AimFOV, 1.f, 180.f, 1.f, "%.0f", FSlider_Clamp);
 				bTransparent = FGet(Vars::Aimbot::General::AimType) != 2;
 					FSlider("Smoothing## Hitscan", Vars::Aimbot::General::Smoothing, 0.f, 100.f, 1.f, "%.0f%%", FSlider_Clamp);
@@ -161,7 +161,7 @@ void CMenu::MenuAimbot()
 				bTransparent = !(FGet(Vars::Aimbot::General::Ignore) & 1 << 1);
 					FSlider("Ignore cloak", Vars::Aimbot::General::IgnoreCloakPercentage, 0, 100, 10, "%d%%", FSlider_Clamp);
 				bTransparent = false;
-				bTransparent = !(FGet(Vars::Aimbot::General::Ignore) & 1 << 6);
+				bTransparent = !(FGet(Vars::Aimbot::General::Ignore) & 1 << 4);
 					FSlider("Tick tolerance", Vars::Aimbot::General::TickTolerance, 0, 21, 1, "%d", FSlider_Clamp);
 				bTransparent = false;
 				FColorPicker("Aimbot FOV circle", Vars::Colors::FOVCircle);
@@ -268,7 +268,7 @@ void CMenu::MenuAimbot()
 			if (Section("Fakelag"))
 			{
 				FDropdown("Fakelag", Vars::CL_Move::Fakelag::Fakelag, { "Off", "Plain", "Random", "Adaptive" }, {}, FSlider_Left);
-				FDropdown("Options", Vars::CL_Move::Fakelag::Options, { "While Moving", "While Unducking", "While Airborne" }, {}, FDropdown_Multi | FSlider_Right);
+				FDropdown("Options", Vars::CL_Move::Fakelag::Options, { "Only moving", "On unduck", "Not airborne" }, {}, FDropdown_Multi | FSlider_Right);
 				bTransparent = FGet(Vars::CL_Move::Fakelag::Fakelag) != 1;
 					FSlider("Plain ticks", Vars::CL_Move::Fakelag::PlainTicks, 1, 22, 1, "%d", FSlider_Clamp | FSlider_Left);
 				bTransparent = FGet(Vars::CL_Move::Fakelag::Fakelag) != 2;
