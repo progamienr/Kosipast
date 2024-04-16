@@ -26,10 +26,6 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	const auto& pLocal = g_EntityCache.GetLocal();
 	const auto& pWeapon = g_EntityCache.GetWeapon();
 
-	// Get the pointer to pSendPacket
-	//uintptr_t _bp; __asm mov _bp, ebp;
-	//auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(_bp) - 0x1);
-
 	// NOTE: Riley; Using inline assembly for this is unsafe.
 	auto bp = reinterpret_cast<uintptr_t>(_AddressOfReturnAddress()) - sizeof(void*);
 	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(bp) - 0x1);
