@@ -27,8 +27,12 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	const auto& pWeapon = g_EntityCache.GetWeapon();
 
 	// Get the pointer to pSendPacket
-	uintptr_t _bp; __asm mov _bp, ebp;
-	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(_bp) - 0x1);
+	//uintptr_t _bp; __asm mov _bp, ebp;
+	//auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(_bp) - 0x1);
+
+	// NOTE: Riley; Using inline assembly for this is unsafe.
+	auto bp = reinterpret_cast<uintptr_t>(_AddressOfReturnAddress()) - sizeof(void*);
+	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(bp) - 0x1);
 
 	//if (Vars::Misc::Game::NetworkFix.Value || Vars::Misc::Game::PredictionFix.Value)
 		I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
