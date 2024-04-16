@@ -10,32 +10,13 @@ void MenuHook::Unload()
 	F::Menu.Unload = true;
 }
 
-MAKE_HOOK(Direct3DDevice9_EndScene, Utils::GetVFuncPtr(I::DirectXDevice, 42), HRESULT, __stdcall,
-	LPDIRECT3DDEVICE9 pDevice)
+MAKE_HOOK(Direct3DDevice9_Present, Utils::GetVFuncPtr(I::DirectXDevice, 17), HRESULT,
+	__stdcall, IDirect3DDevice9* pDevice, const RECT* pSource, const RECT* pDestination, HWND hWindowOverride,
+	const RGNDATA* pDirtyRegion)
 {
-	static void* fRegularAddr = 0, *fOverlayAddr = 0;
-	if (!fRegularAddr || !fOverlayAddr)
-	{
-		MEMORY_BASIC_INFORMATION info;
-		VirtualQuery(_ReturnAddress(), &info, sizeof(MEMORY_BASIC_INFORMATION));
-
-		char mod[MAX_PATH];
-		GetModuleFileNameA((HMODULE)info.AllocationBase, mod, MAX_PATH);
-
-		if (strstr(mod, "bin\\shaderapidx9.dll"))
-			fRegularAddr = _ReturnAddress();
-		else
-			fOverlayAddr = _ReturnAddress();
-	}
-
-	// proof of concept, frankly would like to keep surface in use
-	//if (!Vars::Visuals::AntiOBS.Value ? (fRegularAddr && fRegularAddr != _ReturnAddress()) : (fOverlayAddr && fOverlayAddr != _ReturnAddress()))
-	if (fRegularAddr && fRegularAddr != _ReturnAddress())
-		return Hook.Original<FN>()(pDevice);
-
 	F::Menu.Render(pDevice);
 
-	return Hook.Original<FN>()(pDevice);
+	return Hook.Original<FN>()(pDevice, pSource, pDestination, hWindowOverride, pDirtyRegion);
 }
 
 MAKE_HOOK(Direct3DDevice9_Reset, Utils::GetVFuncPtr(I::DirectXDevice, 16), HRESULT, __stdcall,
