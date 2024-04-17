@@ -81,7 +81,6 @@ void CCore::Unload()
 
 bool CCore::ShouldUnload()
 {
-	// to do: check if window is focused so that we don't unload using something else
 	const bool unloadKey = GetAsyncKeyState(VK_F11) & 0x8000;
-	return unloadKey && !F::Menu.IsOpen;
+	return unloadKey && !F::Menu.IsOpen && Utils::IsGameWindowInFocus();
 }
