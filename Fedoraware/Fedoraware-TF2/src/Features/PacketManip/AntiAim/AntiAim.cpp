@@ -35,67 +35,63 @@ void CAntiAim::FakeShotAngles(CUserCmd* pCmd)
 	pCmd->viewangles.y += 180;
 }
 
-float CAntiAim::EdgeDistance(float flEdgeRayYaw, CBaseEntity* pEntity)
+float CAntiAim::EdgeDistance(CBaseEntity* pEntity, float flEdgeRayYaw, float flOffset)
 {
 	// Main ray tracing area
+	Vec3 forward, right;
+	Math::AngleVectors({ 0, flEdgeRayYaw, 0 }, &forward, &right, nullptr);
+
+	Vec3 vCenter = pEntity->GetCenter() + right * flOffset;
+	Vec3 vEndPos = vCenter + forward * 300.f;
+
 	CGameTrace trace;
-	Ray_t ray;
-	Vector forward;
-	const float sy = sinf(DEG2RAD(flEdgeRayYaw)); // yaw
-	const float cy = cosf(DEG2RAD(flEdgeRayYaw));
-	constexpr float sp = 0.f; // pitch: sinf(DEG2RAD(0))
-	constexpr float cp = 1.f; // cosf(DEG2RAD(0))
-	forward.x = cp * cy;
-	forward.y = cp * sy;
-	forward.z = -sp;
-	forward = forward * 300.0f + pEntity->GetEyePosition();
-	ray.Init(pEntity->GetEyePosition(), forward);
-	// trace::g_pFilterNoPlayer to only focus on the enviroment
-	CTraceFilterWorldAndPropsOnly Filter = {};
-	I::EngineTrace->TraceRay(ray, 0x4200400B, &Filter, &trace);
+	CTraceFilterWorldAndPropsOnly filter = {};
+	Utils::Trace(vCenter, vEndPos, MASK_SHOT | CONTENTS_GRATE, &filter, &trace);
 
-	const float edgeDistance = (trace.vStartPos - trace.vEndPos).Length2D();
-	return edgeDistance;
+	vEdgeTrace.push_back({ vCenter, trace.vEndPos });
+
+	return (trace.vStartPos - trace.vEndPos).Length2D();
 }
 
-bool CAntiAim::GetEdge(const float flEdgeOrigYaw, CBaseEntity* pEntity)
+bool CAntiAim::GetEdge(CBaseEntity* pEntity, const float flEdgeOrigYaw, bool bUpPitch)
 {
-	// distance two vectors and report their combined distances
-	float flEdgeLeftDist = EdgeDistance(flEdgeOrigYaw - 21, pEntity) + EdgeDistance(flEdgeOrigYaw - 27, pEntity);
-	float flEdgeRightDist = EdgeDistance(flEdgeOrigYaw + 21, pEntity) + EdgeDistance(flEdgeOrigYaw + 27, pEntity);
+	float flSize = pEntity->m_vecMaxs().y - pEntity->m_vecMins().y;
+	float flEdgeLeftDist = EdgeDistance(pEntity, flEdgeOrigYaw, -flSize);
+	float flEdgeRightDist = EdgeDistance(pEntity, flEdgeOrigYaw, flSize);
 
-	// If the distance is too far, then set the distance to max so the angle
-	// isnt used
-	if (flEdgeLeftDist >= 260) { flEdgeLeftDist = 999999999.f; }
-	if (flEdgeRightDist >= 260) { flEdgeRightDist = 999999999.f; }
-
-	// Depending on the edge, choose a direction to face
-	return flEdgeRightDist < flEdgeLeftDist;
+	if (flEdgeLeftDist > 299.f && flEdgeRightDist > 299.f)
+		return bUpPitch;
+	return bUpPitch ? flEdgeLeftDist > flEdgeRightDist : flEdgeLeftDist < flEdgeRightDist;
 }
 
-bool CAntiAim::IsOverlapping(float epsilon = 45.f)
+void CAntiAim::RunOverlapping(CBaseEntity* pEntity, CUserCmd* pCmd, float& flRealYaw, bool bFake, float flEpsilon)
 {
-	if (!Vars::AntiHack::AntiAim::AntiOverlap.Value)
-		return false;
-	return std::abs(GetYawOffset(false) - GetYawOffset(true)) < epsilon;
+	if (!Vars::AntiHack::AntiAim::AntiOverlap.Value || bFake)
+		return;
+
+	float flFakeYaw = GetBaseYaw(pEntity, pCmd, true) + GetYawOffset(pEntity, true);
+	const float flYawDiff = RAD2DEG(Math::AngleDiffRad(DEG2RAD(flRealYaw), DEG2RAD(flFakeYaw)));
+	if (fabsf(flYawDiff) < flEpsilon)
+		flRealYaw += flYawDiff > 0 ? flEpsilon : -flEpsilon;
 }
 
-float CAntiAim::GetYawOffset(const bool bFake)
+float CAntiAim::GetYawOffset(CBaseEntity* pEntity, bool bFake)
 {
 	const int iMode = bFake ? Vars::AntiHack::AntiAim::YawFake.Value : Vars::AntiHack::AntiAim::YawReal.Value;
+	const bool bUpPitch = bFake ? Vars::AntiHack::AntiAim::PitchFake.Value == 1 : Vars::AntiHack::AntiAim::PitchReal.Value == 1;
 	switch (iMode)
 	{
 		case 0: return 0.f;
 		case 1: return 90.f;
 		case 2: return -90.f;
 		case 3: return 180.f;
-		case 4: return fmod(I::GlobalVars->tickcount * Vars::AntiHack::AntiAim::SpinSpeed.Value + 180.0f, 360.0f) - 180.0f;
-		case 5: return (GetEdge() ? 1.f : -1.f) * (bFake ? -90.f : 90.f);
+		case 4: return fmod(I::GlobalVars->tickcount * Vars::AntiHack::AntiAim::SpinSpeed.Value + 180.f, 360.f) - 180.f;
+		case 5: return (GetEdge(pEntity, I::EngineClient->GetViewAngles().y, bUpPitch) ? 1 : -1) * (bFake ? -90 : 90);
 	}
 	return 0.f;
 }
 
-float CAntiAim::GetBaseYaw(CBaseEntity* pLocal, CUserCmd* pCmd, const bool bFake)
+float CAntiAim::GetBaseYaw(CBaseEntity* pLocal, CUserCmd* pCmd, bool bFake)
 {
 	const int iMode = bFake ? Vars::AntiHack::AntiAim::FakeYawMode.Value : Vars::AntiHack::AntiAim::RealYawMode.Value;
 	const float flOffset = bFake ? Vars::AntiHack::AntiAim::FakeYawOffset.Value : Vars::AntiHack::AntiAim::RealYawOffset.Value;
@@ -125,12 +121,19 @@ float CAntiAim::GetBaseYaw(CBaseEntity* pLocal, CUserCmd* pCmd, const bool bFake
 	return pCmd->viewangles.y;
 }
 
-float CAntiAim::CalculateCustomRealPitch(float WishPitch, bool FakeDown)
+float CAntiAim::GetYaw(CBaseEntity* pLocal, CUserCmd* pCmd, bool bFake)
 {
-	return FakeDown ? 720 + WishPitch : -720 + WishPitch;
+	float flYaw = GetBaseYaw(pLocal, pCmd, bFake) + GetYawOffset(pLocal, bFake);
+	RunOverlapping(pLocal, pCmd, flYaw, bFake);
+	return flYaw;
 }
 
-float CAntiAim::GetPitch(const float flCurPitch)
+float CAntiAim::CalculateCustomRealPitch(float flWishPitch, bool bFakeDown)
+{
+	return bFakeDown ? 720 + flWishPitch : -720 + flWishPitch;
+}
+
+float CAntiAim::GetPitch(float flCurPitch)
 {
 	const int iFake = Vars::AntiHack::AntiAim::PitchFake.Value, iReal = Vars::AntiHack::AntiAim::PitchReal.Value;
 	switch (iReal)
@@ -143,8 +146,11 @@ float CAntiAim::GetPitch(const float flCurPitch)
 	return iFake ? -89.f + (89.f * (iFake - 1)) : flCurPitch;
 }
 
+
+
 void CAntiAim::Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket)
 {
+	vEdgeTrace.clear();
 	G::AntiAim = pLocal && ShouldRun(pLocal);
 	FakeShotAngles(pCmd);
 
@@ -155,13 +161,10 @@ void CAntiAim::Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket)
 		return;
 	}
 
-	if (!I::ClientState->chokedcommands) // get base yaw on the first choked tick.
-		flBaseYaw = GetBaseYaw(pLocal, pCmd, false);
-
 	Vec2& vAngles = *pSendPacket ? vFakeAngles : vRealAngles;
 	vAngles = {
 		GetPitch(pCmd->viewangles.x),
-		(*pSendPacket ? GetBaseYaw(pLocal, pCmd, true) : flBaseYaw) + GetYawOffset(*pSendPacket)
+		GetYaw(pLocal, pCmd, *pSendPacket)
 	};
 
 	Utils::FixMovement(pCmd, vAngles);

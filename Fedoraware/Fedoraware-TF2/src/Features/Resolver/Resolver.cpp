@@ -236,7 +236,8 @@ void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 			case 4: vAdjustedAngle.y = flBaseYaw + 90.f; break;		//side2
 			case 5: vAdjustedAngle.y += 180.f; break;				//invert
 			case 6:{												//edge
-				const bool bEdge = vAdjustedAngle.x == 89 ? F::AntiAim.GetEdge(flBaseYaw, pEntity) : !F::AntiAim.GetEdge(flBaseYaw, pEntity);
+				// TODO: Fix this. Resolver will always correct inversely to the player's pitch if we do not fix the logic here.
+				const bool bEdge = vAdjustedAngle.x == 89 ? F::AntiAim.GetEdge(pEntity, flBaseYaw, false) : !F::AntiAim.GetEdge(pEntity, flBaseYaw, false);
 				vAdjustedAngle.y = flBaseYaw + (bEdge ? 90.f : -90.f);
 				break;
 			}

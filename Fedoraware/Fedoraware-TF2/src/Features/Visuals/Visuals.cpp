@@ -290,9 +290,6 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 
 	if (F::AntiAim.AntiAimOn() && Vars::Debug::AntiAimLines.Value)
 	{
-		static constexpr Color_t realColour = { 0, 255, 0, 255 };
-		static constexpr Color_t fakeColour = { 255, 0, 0, 255 };
-
 		const auto& vOrigin = pLocal->GetAbsOrigin();
 
 		Vec3 vScreen1, vScreen2;
@@ -300,10 +297,16 @@ void CVisuals::DrawAntiAim(CBaseEntity* pLocal)
 		{
 			constexpr auto distance = 50.f;
 			if (Utils::W2S(Utils::GetRotatedPosition(vOrigin, F::AntiAim.vRealAngles.y, distance), vScreen2))
-				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, realColour);
+				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, { 0, 255, 0, 255 });
 
 			if (Utils::W2S(Utils::GetRotatedPosition(vOrigin, F::AntiAim.vFakeAngles.y, distance), vScreen2))
-				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, fakeColour);
+				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, { 255, 0, 0, 255 });
+		}
+
+		for (auto& vPair : F::AntiAim.vEdgeTrace)
+		{
+			if (Utils::W2S(vPair.first, vScreen1) && Utils::W2S(vPair.second, vScreen2))
+				g_Draw.Line(vScreen1.x, vScreen1.y, vScreen2.x, vScreen2.y, { 255, 255, 255, 255 });
 		}
 	}
 }
@@ -530,10 +533,10 @@ void CVisuals::ThirdPerson(CBaseEntity* pLocal, CViewSetup* pView)
 		offset -= vForward * Vars::Visuals::ThirdPerson::Distance.Value;
 
 		const Vec3 viewDiff = pView->origin - pLocal->GetEyePosition();
-		CGameTrace Trace = {}; CTraceFilterWorldAndPropsOnly Filter = {};
-		Utils::TraceHull(pView->origin - viewDiff, pView->origin + offset - viewDiff, { -14.0f, -14.0f, -14.0f }, { 14.0f, 14.0f, 14.0f }, MASK_SOLID, & Filter, & Trace);
+		CGameTrace trace = {}; CTraceFilterWorldAndPropsOnly filter = {};
+		Utils::TraceHull(pView->origin - viewDiff, pView->origin + offset - viewDiff, { -14.f, -14.f, -14.f }, { 14.f, 14.f, 14.f }, MASK_SOLID, &filter, &trace);
 
-		pView->origin += offset * Trace.flFraction - viewDiff;
+		pView->origin += offset * trace.flFraction - viewDiff;
 	}
 }
 

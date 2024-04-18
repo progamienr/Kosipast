@@ -204,8 +204,8 @@ namespace Vars
 
 	NAMESPACE_BEGIN(AntiHack)
 		SUBNAMESPACE_BEGIN(AntiAim)
-			CVar(PitchReal, 0) // 0 - None, 1 - Zero, 2 - Up, 3 - Down, 4 - Zero
-			CVar(PitchFake, 0) // 0 - None, 1 - Zero, 2 - Up, 3 - Down
+			CVar(PitchReal, 0) // 0 - None, 1 - Up, 2 - Down, 3 - Zero
+			CVar(PitchFake, 0) // 0 - None, 1 - Up, 2 - Down
 			CVar(YawReal, 0) // 0 - Forward, 1 - Left, 2 - Right, 3 - Backwards, 4 - Spin, 5 - Edge
 			CVar(YawFake, 0) // 0 - Forward, 1 - Left, 2 - Right, 3 - Backwards, 4 - Spin, 5 - Edge
 			CVar(RealYawMode, 0) // 0 - View, 1 - Target
@@ -213,6 +213,7 @@ namespace Vars
 			CVar(RealYawOffset, 0)
 			CVar(FakeYawOffset, 0)
 			CVar(SpinSpeed, 15.f)
+			CVar(MinWalk, true)
 			CVar(AntiOverlap, false)
 			CVar(InvalidShootPitch, false)
 		SUBNAMESPACE_END(AntiAim)

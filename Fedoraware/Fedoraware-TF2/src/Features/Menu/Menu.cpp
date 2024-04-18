@@ -287,12 +287,13 @@ void CMenu::MenuAimbot()
 				FDropdown("Fake offset", Vars::AntiHack::AntiAim::FakeYawMode, { "View", "Target" }, {}, FDropdown_Right);
 				FSlider("Real offset## Offset", Vars::AntiHack::AntiAim::RealYawOffset, -180, 180, 5, "%d", FSlider_Left | FSlider_Clamp | FSlider_Precision);
 				FSlider("Fake offset## Offset", Vars::AntiHack::AntiAim::FakeYawOffset, -180, 180, 5, "%d", FSlider_Right | FSlider_Clamp | FSlider_Precision);
-				bTransparent = FGet(Vars::AntiHack::AntiAim::YawFake) != 5 && FGet(Vars::AntiHack::AntiAim::YawReal) != 5;
+				bTransparent = FGet(Vars::AntiHack::AntiAim::YawFake) != 4 && FGet(Vars::AntiHack::AntiAim::YawReal) != 4;
 					FSlider("Spin Speed", Vars::AntiHack::AntiAim::SpinSpeed, -30.f, 30.f, 1.f, "%.0f", FSlider_Left);
 				bTransparent = false;
-				FToggle("Anti-overlap", Vars::AntiHack::AntiAim::AntiOverlap, FToggle_Middle);
-				Dummy({ 0, 8 });
-				//FToggle("Hide pitch on shot", Vars::AntiHack::AntiAim::InvalidShootPitch);
+				SetCursorPos({ GetWindowSize().x / 2 + 4, GetCursorPosY() - 24 });
+				FToggle("Minwalk", Vars::AntiHack::AntiAim::MinWalk);
+				FToggle("Anti-overlap", Vars::AntiHack::AntiAim::AntiOverlap);
+				FToggle("Hide pitch on shot", Vars::AntiHack::AntiAim::InvalidShootPitch, FToggle_Middle);
 			} EndSection();
 
 			/* Column 2 */
