@@ -56,7 +56,7 @@ void CInterfaces::Init()
 	ModelInfoClient = g_Interface.Get<CModelInfoClient*>(ENGINE_DLL, VMODELINFO_CLIENT_INTERFACE_VERSION);
 	VALIDATE(ModelInfoClient);
 
-	EngineClient = g_Interface.Get<CEngineClient*>(ENGINE_DLL, VENGINE_CLIENT_INTERFACE_VERSION_13);
+	EngineClient = g_Interface.Get<CEngineClient*>(ENGINE_DLL, VENGINE_CLIENT_INTERFACE_VERSION);
 	VALIDATE(EngineClient);
 
 	EngineEffects = g_Interface.Get<IVEngineEffects*>(ENGINE_DLL, VENGINE_EFFECTS_INTERFACE_VERSION);

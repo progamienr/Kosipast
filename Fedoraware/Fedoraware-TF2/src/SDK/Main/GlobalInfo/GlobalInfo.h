@@ -57,9 +57,6 @@ namespace G
 	inline bool CanSecondaryAttack = false;
 	inline bool AntiAim = false; // Is the Anti-Aim active?
 	inline bool AvoidingBackstab = false; // Are we currently avoiding a backstab? (Overwrites AA)
-	inline bool FirstSpectated = false; // currently unused
-	inline bool ThirdSpectated = false; // currently unused
-	inline bool ShouldStop = false; // Stops our players movement, takes 1 tick.
 	inline bool UnloadWndProcHook = false;
 
 	/* Double tap / Tick shift */

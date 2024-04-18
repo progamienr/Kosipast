@@ -22,7 +22,7 @@ private:
 public:
 	int SpecListX = 30, SpecListY = 100;
 	bool GetSpectators(CBaseEntity* pLocal);
-	void Run();
+	void Run(CBaseEntity* pLocal);
 };
 
 ADD_FEATURE(CSpectatorList, SpectatorList)

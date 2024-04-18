@@ -7,17 +7,25 @@
 MAKE_HOOK(ClientModeShared_DoPostScreenSpaceEffects, Utils::GetVFuncPtr(I::ClientModeShared, 39), bool, __fastcall,
 	void* ecx, void* edx, const CViewSetup* pSetup)
 {
-	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot() || I::EngineVGui->IsGameUIVisible())
+	F::Chams.mEntities.clear();
+	if (I::EngineVGui->IsGameUIVisible() || Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(ecx, edx, pSetup);
-
-	F::Chams.RenderMain();
-	F::Glow.RenderMain();
 
 	F::Visuals.DrawBoxes();
 	F::Visuals.DrawBulletLines();
 	F::Visuals.DrawSimLines();
 	F::Visuals.DrawSightlines();
-	F::Visuals.ProjectileTrace();
+
+	auto pLocal = g_EntityCache.GetLocal();
+	auto pWeapon = g_EntityCache.GetWeapon();
+	if (pLocal)
+	{
+		F::Chams.RenderMain(pLocal);
+		F::Glow.RenderMain(pLocal);
+
+		if (pWeapon)
+			F::Visuals.ProjectileTrace(pLocal, pWeapon);
+	}
 
 	return Hook.Original<FN>()(ecx, edx, pSetup);
 }

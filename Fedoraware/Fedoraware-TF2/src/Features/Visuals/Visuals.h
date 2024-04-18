@@ -18,12 +18,12 @@ private:
 
 public:
 	void DrawAimbotFOV(CBaseEntity* pLocal);
-	void DrawTickbaseText();
+	void DrawTickbaseText(CBaseEntity* pLocal);
 	void DrawTickbaseBars();
 	void DrawOnScreenPing(CBaseEntity* pLocal);
 	void DrawOnScreenConditions(CBaseEntity* pLocal);
 	void DrawSeedPrediction(CBaseEntity* pLocal);
-	void ProjectileTrace(const bool bQuick = true);
+	void ProjectileTrace(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const bool bQuick = true);
 	void DrawAntiAim(CBaseEntity* pLocal);
 	void DrawDebugInfo(CBaseEntity* pLocal);
 
@@ -35,12 +35,12 @@ public:
 	void RevealSimLines();
 	void RevealBulletLines();
 	void RevealBoxes();
-	void DrawServerHitboxes();
+	void DrawServerHitboxes(CBaseEntity* pLocal);
 	void RenderLine(const Vec3& vStart, const Vec3& vEnd, Color_t cLine, bool bZBuffer = false);
 	void RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs, const Vec3& vOrientation, Color_t cEdge, Color_t cFace, bool bZBuffer = false);
 
-	void FOV(CViewSetup* pView);
-	void ThirdPerson(CViewSetup* pView);
+	void FOV(CBaseEntity* pLocal, CViewSetup* pView);
+	void ThirdPerson(CBaseEntity* pLocal, CViewSetup* pView);
 	bool RemoveScope(int nPanel);
 	void DrawSightlines();
 	void FillSightlines();

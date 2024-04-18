@@ -143,9 +143,8 @@ float CAntiAim::GetPitch(const float flCurPitch)
 	return iFake ? -89.f + (89.f * (iFake - 1)) : flCurPitch;
 }
 
-void CAntiAim::Run(CUserCmd* pCmd, bool* pSendPacket)
+void CAntiAim::Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	G::AntiAim = pLocal && ShouldRun(pLocal);
 	FakeShotAngles(pCmd);
 

@@ -3,7 +3,7 @@
 MAKE_HOOK(CSkyboxView_Enable3dSkyboxFog, S::CSkyboxView_Enable3dSkyboxFog(), void, __fastcall,
 	void* ecx, void* edx)
 {
-	if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::UI::CleanScreenshots.Value || !(Vars::Visuals::World::Modulations.Value & 1 << 4))
+	if (!(Vars::Visuals::World::Modulations.Value & 1 << 4) || I::EngineClient->IsTakingScreenshot() && Vars::Visuals::UI::CleanScreenshots.Value)
 		return Hook.Original<FN>()(ecx, edx);
 
 	if (!Vars::Colors::FogModulation.Value.a)

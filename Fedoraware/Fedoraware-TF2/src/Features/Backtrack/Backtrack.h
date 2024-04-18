@@ -31,7 +31,6 @@ struct TickRecord
 	bool bOnShot = false;
 	BoneMatrixes BoneMatrix{};
 	Vec3 vOrigin = {};
-	Vec3 vCenter = {}; // cham / glow optimization
 	bool bInvalid = false;
 };
 
@@ -46,7 +45,6 @@ class CBacktrack
 	void StoreNolerp();
 	void MakeRecords();
 	void CleanRecords();
-	std::optional<TickRecord> GetHitRecord(CUserCmd* pCmd, CBaseEntity* pEntity, Vec3 vAngles, Vec3 vPos);
 
 	// data
 	std::unordered_map<int, bool> mDidShoot;

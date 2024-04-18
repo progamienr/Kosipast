@@ -187,7 +187,7 @@ void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* 
 			// remove invalid materials
 			for (auto it = val.begin(); it != val.end();)
 			{
-				if (*it == "None" || *it != "Original" && !F::Materials.mChamMaterials.contains(*it))
+				if (FNV1A::Hash(it->c_str()) == FNV1A::HashConst("None") || FNV1A::Hash(it->c_str()) != FNV1A::HashConst("Original") && !F::Materials.mChamMaterials.contains(*it))
 					it = val.erase(it);
 				else
 					++it;
@@ -273,7 +273,7 @@ CConfigManager::CConfigManager()
 	{\
 		for (auto& it : *mapTree)\
 		{\
-			if ((!F::Conditions.mConditions.contains(it.first) || var->GetVar<type>()->m_iFlags & NOCOND) && it.first != "default")\
+			if ((!F::Conditions.mConditions.contains(it.first) || var->GetVar<type>()->m_iFlags & NOCOND) && FNV1A::Hash(it.first.c_str()) != FNV1A::HashConst("default"))\
 				continue;\
 			LoadJson(*mapTree, it.first.c_str(), var->GetVar<type>()->Map[it.first]);\
 		}\
@@ -363,7 +363,7 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 
 			for (auto& it : *condTree)
 			{
-				if (it.first == "default")
+				if (FNV1A::Hash(it.first.c_str()) == FNV1A::HashConst("default"))
 					continue;
 
 				Condition_t tCond = {};
@@ -502,7 +502,7 @@ bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 
 void CConfigManager::RemoveConfig(const std::string& configName)
 {
-	if (configName != "default")
+	if (FNV1A::Hash(configName.c_str()) != FNV1A::HashConst("default"))
 		std::filesystem::remove(ConfigPath + "\\" + configName + ConfigExtension);
 	else
 	{

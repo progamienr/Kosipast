@@ -6,20 +6,19 @@
 uint32_t GetFriendsID(int iIndex)
 {
 	PlayerInfo_t pi{};
-	if (I::EngineClient->GetPlayerInfo(iIndex, &pi))
+	if (I::EngineClient->GetPlayerInfo(iIndex, &pi) && !pi.fakeplayer)
 		return pi.friendsID;
 	return 0;
 }
 
 bool CPlayerlistUtils::GetTag(std::string sTag, PriorityLabel_t* plTag)
 {
-	if (sTag == "")
+	if (!sTag.length())
 		return false;
 
-	const auto find = mTags.find(sTag);
-	if (find != mTags.end())
+	if (mTags.contains(sTag))
 	{
-		*plTag = find->second;
+		*plTag = mTags[sTag];
 		return true;
 	}
 
@@ -37,7 +36,7 @@ void CPlayerlistUtils::AddTag(uint32_t friendsID, std::string sTag, bool bSave, 
 	{
 		G::PlayerTags[friendsID].push_back(sTag);
 		bSavePlayers = bSave;
-		if (sName != "")
+		if (sName.length())
 		{
 			PriorityLabel_t plTag;
 			if (GetTag(sTag, &plTag))
@@ -56,14 +55,15 @@ void CPlayerlistUtils::RemoveTag(uint32_t friendsID, std::string sTag, bool bSav
 	if (!friendsID)
 		return;
 
+	auto uHash = FNV1A::Hash(sTag.c_str());
 	auto& mTags = G::PlayerTags[friendsID];
 	for (auto it = mTags.begin(); it != mTags.end(); it++)
 	{
-		if (*it == sTag)
+		if (uHash = FNV1A::Hash(it->c_str()))
 		{
 			mTags.erase(it);
 			bSavePlayers = bSave;
-			if (sName != "")
+			if (sName.length())
 			{
 				PriorityLabel_t plTag;
 				if (GetTag(sTag, &plTag))
@@ -98,12 +98,9 @@ bool CPlayerlistUtils::HasTag(uint32_t friendsID, std::string sTag)
 	if (!friendsID)
 		return false;
 
-	for (const auto& _sTag : G::PlayerTags[friendsID])
-	{
-		if (sTag == _sTag)
-			return true;
-	}
-	return false;
+	auto uHash = FNV1A::Hash(sTag.c_str());
+	auto it = std::ranges::find_if(G::PlayerTags[friendsID], [uHash](const auto& _sTag) { return uHash == FNV1A::Hash(_sTag.c_str()); });
+	return it != G::PlayerTags[friendsID].end();
 }
 bool CPlayerlistUtils::HasTag(int iIndex, std::string sTag)
 {
@@ -130,7 +127,7 @@ int CPlayerlistUtils::GetPriority(uint32_t friendsID)
 		if (F::PlayerUtils.GetTag(sTag, &plTag) && !plTag.Label)
 			vPriorities.push_back(plTag.Priority);
 	}
-	if (Utils::IsSteamFriend(friendsID))
+	if (g_EntityCache.IsSteamFriend(friendsID))
 	{
 		auto& plTag = mTags["Friend"];
 		if (!plTag.Label)
@@ -172,7 +169,7 @@ bool CPlayerlistUtils::GetSignificantTag(uint32_t friendsID, std::string* sTag, 
 			if (F::PlayerUtils.GetTag(_sTag, &_plTag) && !_plTag.Label)
 				vLabels.push_back({ _sTag, _plTag });
 		}
-		if (Utils::IsSteamFriend(friendsID))
+		if (g_EntityCache.IsSteamFriend(friendsID))
 		{
 			auto& _plTag = mTags["Friend"];
 			if (!_plTag.Label)
@@ -187,7 +184,7 @@ bool CPlayerlistUtils::GetSignificantTag(uint32_t friendsID, std::string* sTag, 
 			if (F::PlayerUtils.GetTag(_sTag, &_plTag) && _plTag.Label)
 				vLabels.push_back({ _sTag, _plTag });
 		}
-		if (Utils::IsSteamFriend(friendsID))
+		if (g_EntityCache.IsSteamFriend(friendsID))
 		{
 			auto& _plTag = mTags["Friend"];
 			if (_plTag.Label)
@@ -232,13 +229,6 @@ bool CPlayerlistUtils::IsIgnored(int iIndex)
 	return false;
 }
 
-bool CPlayerlistUtils::IsFriend(int iIndex)
-{
-	if (const uint32_t friendsID = GetFriendsID(iIndex))
-		return Utils::IsSteamFriend(friendsID);
-	return false;
-}
-
 
 
 void CPlayerlistUtils::UpdatePlayers()
@@ -249,13 +239,13 @@ void CPlayerlistUtils::UpdatePlayers()
 		std::lock_guard lock(mutex);
 		vPlayerCache.clear();
 
-		const auto& pr = g_EntityCache.GetPR();
-		if (!pr)
+		auto pResource = g_EntityCache.GetPR();
+		if (!pResource)
 			return;
 
 		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 		{
-			if (!pr->GetValid(n) || !pr->GetConnected(n))
+			if (!pResource->GetValid(n) || !pResource->GetConnected(n))
 				continue;
 
 			bool bFake = true, bFriend = false;
@@ -263,16 +253,16 @@ void CPlayerlistUtils::UpdatePlayers()
 			if (I::EngineClient->GetPlayerInfo(n, &pi))
 			{
 				bFake = pi.fakeplayer;
-				bFriend = Utils::IsSteamFriend(pi.friendsID);
+				bFriend = g_EntityCache.IsSteamFriend(n);
 			}
 
 			vPlayerCache.push_back({
-				pr->GetPlayerName(n),
-				pr->GetAccountID(n),
-				pr->GetUserID(n),
-				pr->GetTeam(n),
-				pr->GetClass(n),
-				pr->IsAlive(n),
+				pResource->GetPlayerName(n),
+				pResource->GetAccountID(n),
+				pResource->GetUserID(n),
+				pResource->GetTeam(n),
+				pResource->GetClass(n),
+				pResource->IsAlive(n),
 				n == I::EngineClient->GetLocalPlayer(),
 				bFriend,
 				bFake

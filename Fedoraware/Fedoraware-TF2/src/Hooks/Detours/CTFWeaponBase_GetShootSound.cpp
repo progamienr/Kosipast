@@ -5,9 +5,9 @@ MAKE_HOOK(CTFWeaponBase_GetShootSound, S::CTFWeaponBase_GetShootSound(), const c
 {
 	if (Vars::Misc::Sound::GiantWeaponSounds.Value)
 	{
-		const auto& pWeapon = reinterpret_cast<CBaseCombatWeapon*>(ecx);
-		const auto& pOwner = pWeapon ? I::ClientEntityList->GetClientEntityFromHandle(pWeapon->m_hOwnerEntity()) : nullptr;
-		const auto& pLocal = g_EntityCache.GetLocal();
+		auto pWeapon = reinterpret_cast<CBaseCombatWeapon*>(ecx);
+		auto pOwner = pWeapon ? I::ClientEntityList->GetClientEntityFromHandle(pWeapon->m_hOwnerEntity()) : nullptr;
+		auto pLocal = g_EntityCache.GetLocal();
 		if (pWeapon && pOwner == pLocal)
 		{
 			int nOldTeam = pWeapon->m_iTeamNum();
@@ -17,16 +17,13 @@ MAKE_HOOK(CTFWeaponBase_GetShootSound, S::CTFWeaponBase_GetShootSound(), const c
 
 			// credits: KGB
 
-			static auto FireHash = FNV1A::Hash("Weapon_FlameThrower.Fire");
-			if (FireHash == FNV1A::HashConst(ret))
+			if (FNV1A::Hash(ret) == FNV1A::HashConst("Weapon_FlameThrower.Fire"))
 				return "MVM.GiantPyro_FlameStart";
 
-			static auto FireLoopHash = FNV1A::Hash("Weapon_FlameThrower.FireLoop");
-			if (FireLoopHash == FNV1A::HashConst(ret))
+			if (FNV1A::Hash(ret) == FNV1A::HashConst("Weapon_FlameThrower.FireLoop"))
 				return "MVM.GiantPyro_FlameLoop";
 
-			static auto GrenadeHash = FNV1A::Hash("Weapon_GrenadeLauncher.Single");
-			if (GrenadeHash == FNV1A::HashConst(ret))
+			if (FNV1A::Hash(ret) == FNV1A::HashConst("Weapon_GrenadeLauncher.Single"))
 				return "MVM.GiantDemoman_Grenadeshoot";
 
 			return ret;

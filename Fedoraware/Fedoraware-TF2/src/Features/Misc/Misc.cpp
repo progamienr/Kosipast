@@ -10,42 +10,38 @@
 #include "../Simulation/MovementSimulation/MovementSimulation.h"
 #include "../Menu/Playerlist/PlayerUtils.h"
 
-void CMisc::RunPre(CUserCmd* pCmd)
+void CMisc::RunPre(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
-	if (const auto& pLocal = g_EntityCache.GetLocal())
+	if (pLocal)
 	{
-		AutoJump(pCmd, pLocal);
-		AutoJumpbug(pCmd, pLocal);
-		AutoStrafe(pCmd, pLocal);
-		AntiBackstab(pCmd, pLocal);
-		AutoPeek(pCmd, pLocal);
-		AntiAFK(pCmd, pLocal);
+		AutoJump(pLocal, pCmd);
+		AutoJumpbug(pLocal, pCmd);
+		AutoStrafe(pLocal, pCmd);
+		AntiBackstab(pLocal, pCmd);
+		AutoPeek(pLocal, pCmd);
+		AntiAFK(pLocal, pCmd);
 		InstantRespawnMVM(pLocal);
 	}
 
 	CheatsBypass();
 	PingReducer();
-	DetectChoke();
 	WeaponSway();
 }
 
-void CMisc::RunPost(CUserCmd* pCmd, bool pSendPacket)
+void CMisc::RunPost(CBaseEntity* pLocal, CUserCmd* pCmd, bool pSendPacket)
 {
-	if (const auto& pLocal = g_EntityCache.GetLocal())
+	if (pLocal)
 	{
-		TauntKartControl(pCmd, pLocal);
-		FastStop(pCmd, pLocal);
-		FastStrafe(pCmd, pLocal);
-		FastAccel(pCmd, pLocal);
-		InstaStop(pCmd);
-		StopMovement(pCmd, pLocal);
-		LegJitter(pCmd, pSendPacket, pLocal);
+		TauntKartControl(pLocal, pCmd);
+		FastMovement(pLocal, pCmd);
+		AntiWarp(pLocal, pCmd);
+		LegJitter(pLocal, pCmd, pSendPacket);
 	}
 }
 
 
 
-void CMisc::AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::AutoJump(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
 	if (!Vars::Misc::Movement::Bunnyhop.Value || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsSwimming() || pLocal->IsInBumperKart() || pLocal->MoveType() != MOVETYPE_WALK)
 		return;
@@ -82,29 +78,10 @@ void CMisc::AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::AutoJumpbug(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
-	if (!Vars::Misc::Movement::AutoJumpbug.Value || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsSwimming() || pLocal->IsInBumperKart() || pLocal->MoveType() != MOVETYPE_WALK)
+	if (!Vars::Misc::Movement::AutoJumpbug.Value || !(pCmd->buttons & IN_DUCK) || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->OnSolid() || pLocal->IsSwimming() || pLocal->IsInBumperKart() || pLocal->MoveType() != MOVETYPE_WALK || pLocal->m_vecVelocity().z > -650.f)
 		return;
-
-	// don't try if we aren't ducking, on a solid, or won't take fall damage
-	if (!(pCmd->buttons & IN_DUCK)
-		|| pLocal->OnSolid()
-		|| pLocal->m_vecVelocity().z > -650.f)
-	{
-		return;
-	}
-
-	// don't try if we won't be on solid
-	{
-		PlayerStorage localStorage;
-		F::MoveSim.Initialize(pLocal, localStorage, false);
-		F::MoveSim.RunTick(localStorage);
-		const bool bWillSolid = pLocal->OnSolid();
-		F::MoveSim.Restore(localStorage);
-		if (bWillSolid)
-			return;
-	}
 
 	CGameTrace trace;
 	CTraceFilterWorldAndPropsOnly filter;
@@ -112,21 +89,18 @@ void CMisc::AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 	Vec3 origin = pLocal->m_vecOrigin();
 	Utils::TraceHull(origin, origin - Vec3(0, 0, 23), pLocal->m_vecMins(), pLocal->m_vecMaxs(), MASK_PLAYERSOLID, &filter, &trace);
-
-	// don't try if we aren't in range to unduck
-	if (!trace.DidHit())
+	if (!trace.DidHit()) // don't try if we aren't in range to unduck
 		return;
 
-	// this seems to be the range where this works
 	const float flDist = origin.DistTo(trace.vEndPos);
-	if (20.f < flDist && flDist < 22.f)
+	if (20.f < flDist && flDist < 22.f) // this seems to be the range where this works
 	{
 		pCmd->buttons &= ~IN_DUCK;
 		pCmd->buttons |= IN_JUMP;
 	}
 }
 
-void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::AutoStrafe(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
 	if (!Vars::Misc::Movement::AutoStrafe.Value || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->OnSolid() || pLocal->IsSwimming() || pLocal->IsInBumperKart() || pLocal->MoveType() != MOVETYPE_WALK || !(pLocal->m_afButtonLast() & IN_JUMP) && (pCmd->buttons & IN_JUMP) || pLocal->m_nWaterLevel() > static_cast<byte>(WL_Feet))
 		return;
@@ -181,7 +155,7 @@ void CMisc::AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
 	G::AvoidingBackstab = false;
 	if (!Vars::Misc::Automation::AntiBackstab.Value || G::IsAttacking || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsStunned() || pLocal->IsInBumperKart() || !Vars::Misc::Automation::AntiBackstab.Value)
@@ -225,7 +199,7 @@ void CMisc::AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::AutoPeek(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
 	static bool bPosPlaced = false;
 	static bool bReturning = false;
@@ -272,7 +246,7 @@ void CMisc::AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 }
 
-void CMisc::AntiAFK(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::AntiAFK(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
 	static Timer afkTimer{};
 
@@ -317,24 +291,10 @@ void CMisc::CheatsBypass()
 	}
 }
 
-void CMisc::Event(CGameEvent* pEvent, FNV1A_t uNameHash)
-{
-	if (uNameHash == FNV1A::HashConst("teamplay_round_start") || uNameHash == FNV1A::HashConst("client_disconnect") ||
-		uNameHash == FNV1A::HashConst("client_beginconnect") || uNameHash == FNV1A::HashConst("game_newmap"))
-	{
-		iLastCmdrate = -1;
-		F::Backtrack.flWishInterp = 0.f;
-
-		G::BulletsStorage.clear();
-		G::BoxesStorage.clear();
-		G::LinesStorage.clear();
-	}
-}
-
 void CMisc::PingReducer()
 {
-	CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-	if (!netChannel)
+	auto pNetChan = static_cast<CNetChannel*>(I::EngineClient->GetNetChannelInfo());
+	if (!pNetChan)
 		return;
 
 	static auto cl_cmdrate = g_ConVars.FindVar("cl_cmdrate");
@@ -351,32 +311,7 @@ void CMisc::PingReducer()
 		Utils::ConLog("SendNetMsg", std::format("cl_cmdrate: {}", iTarget).c_str(), { 224, 255, 131, 255 }, Vars::Debug::Logging.Value);
 
 		NET_SetConVar cmd("cl_cmdrate", std::to_string(iTarget).c_str());
-		netChannel->SendNetMsg(cmd);
-	}
-}
-
-void CMisc::DetectChoke()
-{
-	static int iOldTick = I::GlobalVars->tickcount;
-	if (I::GlobalVars->tickcount == iOldTick)
-		return;
-
-	iOldTick = I::GlobalVars->tickcount;
-	for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
-	{
-		if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant())
-		{
-			G::ChokeMap[pEntity->GetIndex()] = 0;
-			continue;
-		}
-
-		if (pEntity->m_flSimulationTime() == pEntity->m_flOldSimulationTime())
-			G::ChokeMap[pEntity->GetIndex()]++;
-		else
-		{
-			F::CheaterDetection.ReportTickCount({ pEntity, G::ChokeMap[pEntity->GetIndex()] });
-			G::ChokeMap[pEntity->GetIndex()] = 0;
-		}
+		pNetChan->SendNetMsg(cmd);
 	}
 }
 
@@ -392,189 +327,7 @@ void CMisc::WeaponSway()
 
 
 
-void CMisc::FastStop(CUserCmd* pCmd, CBaseEntity* pLocal)
-{
-	if (!Vars::Misc::Movement::FastStop.Value
-		|| !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsSwimming() || pLocal->IsCharging() || pLocal->IsInBumperKart() || pLocal->MoveType() != MOVETYPE_WALK
-		|| pCmd->buttons & (IN_JUMP | IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK))
-	{
-		return;
-	}
-
-	const float flSpeed = pLocal->m_vecVelocity().Length2D();
-	const float flLimit = 10.f;
-	if (flSpeed > flLimit)
-	{
-		if (G::ShiftedTicks != G::MaxShift && !G::IsAttacking && !G::AntiAim)
-			G::ShouldStop = true;
-		else
-		{
-			Vec3 direction = pLocal->m_vecVelocity().toAngle();
-			direction.y = pCmd->viewangles.y - direction.y;
-			const Vec3 negatedDirection = direction.fromAngle() * -flSpeed;
-			pCmd->forwardmove = negatedDirection.x;
-			pCmd->sidemove = negatedDirection.y;
-		}
-	}
-}
-
-void CMisc::FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal)
-{
-	if ((pLocal->IsDucking() ? !Vars::Misc::Movement::CrouchSpeed.Value : !Vars::Misc::Movement::FastAccel.Value) || G::IsAttacking || G::DoubleTap || G::Recharge || G::AntiAim || pCmd->command_number % 2
-		|| !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsSwimming() || pLocal->IsTaunting() || pLocal->IsCharging() || pLocal->MoveType() != MOVETYPE_WALK)
-	{
-		return;
-	}
-
-	const int maxSpeed = std::min(pLocal->m_flMaxspeed() * 0.9f, 520.f) - 10.f;
-	const float curSpeed = pLocal->m_vecVelocity().Length2D();
-	if (curSpeed > maxSpeed)
-		return;
-
-	if (pLocal->m_iClass() == ETFClass::CLASS_HEAVY && pCmd->buttons & IN_ATTACK2 && pLocal->IsDucking())
-		return;
-
-	if (!(pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
-		return;
-
-	const Vec3 vecMove(pCmd->forwardmove, pCmd->sidemove, 0.f);
-	const float flLength = vecMove.Length();
-	Vec3 angMoveReverse;
-	Math::VectorAngles(vecMove * -1.f, angMoveReverse);
-	pCmd->forwardmove = -flLength;
-	pCmd->sidemove = 0.f;
-	pCmd->viewangles.y = fmodf(pCmd->viewangles.y - angMoveReverse.y, 360.f);
-	pCmd->viewangles.z = 270.f;
-	G::PSilentAngles = true;
-}
-
-void CMisc::FastStrafe(CUserCmd* pCmd, CBaseEntity* pLocal)
-{
-	if (!Vars::Misc::Movement::FastStrafe.Value || G::IsAttacking
-		|| !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsSwimming() || pLocal->IsTaunting() || pLocal->IsCharging() || pLocal->MoveType() != MOVETYPE_WALK)
-	{
-		return;
-	}
-
-	static bool bFwd = pCmd->forwardmove > 0;
-	static bool bSde = pCmd->sidemove > 0;
-	const bool bCurFwd = pCmd->forwardmove > 0;
-	const bool bCurSde = pCmd->sidemove > 0;
-
-	bool bChanged = false;
-	if (fabsf(pCmd->sidemove) > 400)
-	{
-		if (bSde != bCurSde)
-		{
-			pCmd->viewangles.x = 90.f;
-			pCmd->viewangles.y += bSde ? -90.f : 90.f;
-			pCmd->sidemove = bSde ? -pCmd->forwardmove : pCmd->forwardmove;
-
-			G::PSilentAngles = bChanged = true;
-		}
-
-		bSde = bCurSde;
-		if (bChanged)
-			return;
-	}
-	if (fabsf(pCmd->forwardmove) > 400)
-	{
-		if (bFwd != bCurFwd)
-		{
-			pCmd->viewangles.x = 90.f;
-			pCmd->viewangles.y += bFwd ? 0.f : 180.f;
-			pCmd->sidemove *= bFwd ? 1 : -1;
-
-			G::PSilentAngles = bChanged = true;
-		}
-
-		bFwd = bCurFwd;
-		if (bChanged)
-			return;
-	}
-}
-
-void CMisc::InstaStop(CUserCmd* pCmd)
-{
-	if (!G::ShouldStop)
-		return;
-
-	Utils::StopMovement(pCmd);
-	if (G::ShouldStop)
-		return;
-
-	if (G::Recharge || G::DoubleTap)
-		G::SilentAngles = true;
-	else
-		G::PSilentAngles = true;
-}
-
-void CMisc::StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal)
-{
-	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsCharging() || pLocal->IsTaunting() || pLocal->IsStunned())
-		return;
-	
-	static Vec3 vVelocity = {};
-	if (G::AntiWarp)
-	{
-		const int iDoubletapTicks = F::Ticks.GetTicks(pLocal);
-
-		Vec3 angles = {}; Math::VectorAngles(vVelocity, angles);
-		angles.y = pCmd->viewangles.y - angles.y;
-		Vec3 forward = {}; Math::AngleVectors(angles, &forward);
-		forward *= vVelocity.Length();
-
-		if (iDoubletapTicks > std::max(Vars::CL_Move::Doubletap::TickLimit.Value - 8, 3))
-		{
-			pCmd->forwardmove = -forward.x;
-			pCmd->sidemove = -forward.y;
-		}
-		else if (iDoubletapTicks > 3)
-		{
-			pCmd->forwardmove = pCmd->sidemove = 0.f;
-			pCmd->buttons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
-		}
-		else
-		{
-			pCmd->forwardmove = forward.x;
-			pCmd->sidemove = forward.y;
-		}
-	}
-	else
-		vVelocity = pLocal->m_vecVelocity();
-}
-
-void CMisc::LegJitter(CUserCmd* pCmd, bool pSendPacket, CBaseEntity* pLocal)
-{
-	if (!F::AntiAim.AntiAimOn() || !pLocal->OnSolid() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !pLocal->IsAlive()
-		|| G::IsAttacking || G::DoubleTap || pSendPacket)
-	{
-		return;
-	}
-
-	static bool pos = true;
-	const float scale = pLocal->IsDucking() ? 14.f : 1.f;
-	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->m_vecVelocity().Length2D() < 10.f)
-	{
-		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;
-		pos ? pCmd->sidemove = scale : pCmd->sidemove = -scale;
-		pos = !pos;
-	}
-}
-
-void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
-{
-	if (G::DoubleTap || G::Warp)
-	{
-		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
-		if ((G::DoubleTap || pCmd->buttons & IN_ATTACK) && I::ClientState->chokedcommands >= 21)
-			*pSendPacket = true;
-	}
-}
-
-
-
-void CMisc::TauntKartControl(CUserCmd* pCmd, CBaseEntity* pLocal)
+void CMisc::TauntKartControl(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
 	// Handle Taunt Slide
 	if (Vars::Misc::Automation::TauntControl.Value && pLocal->IsTaunting())
@@ -594,8 +347,11 @@ void CMisc::TauntKartControl(CUserCmd* pCmd, CBaseEntity* pLocal)
 		if (pCmd->buttons & IN_MOVERIGHT)
 			pCmd->sidemove = 450.f;
 
-		if (!(pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK)))
+		if (!(pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
 			pCmd->viewangles.x = 90.f;
+
+		if (G::Buttons & IN_DUCK) // lol
+			pCmd->buttons |= IN_DUCK;
 
 		Vec3 vAngle = I::EngineClient->GetViewAngles();
 		pCmd->viewangles.y = vAngle.y;
@@ -639,6 +395,210 @@ void CMisc::TauntKartControl(CUserCmd* pCmd, CBaseEntity* pLocal)
 			pCmd->viewangles.x = 90.f;
 
 		G::SilentAngles = true;
+	}
+}
+
+void CMisc::FastMovement(CBaseEntity* pLocal, CUserCmd* pCmd)
+{
+	if (!pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->OnSolid() || pLocal->IsSwimming() || pLocal->IsCharging() || pLocal->IsInBumperKart() || pLocal->MoveType() != MOVETYPE_WALK)
+		return;
+
+	const float flSpeed = pLocal->m_vecVelocity().Length2D();
+	const int flMaxSpeed = std::min(pLocal->m_flMaxspeed() * 0.9f, 520.f) - 10.f;
+	const int iRun = !pCmd->forwardmove && !pCmd->sidemove ? 0 : flSpeed < flMaxSpeed ? 1 : 2;
+
+	switch (iRun)
+	{
+	case 0:
+	{
+		if (!Vars::Misc::Movement::FastStop.Value || !flSpeed)
+			return;
+
+		if (G::ShiftedTicks != G::MaxShift && !G::IsAttacking && !G::AntiAim)
+		{
+			if (!Utils::StopMovement(pLocal, pCmd))
+				return;
+
+			if (!G::Recharge && !G::DoubleTap)
+				G::PSilentAngles = true;
+			else
+				G::SilentAngles = true;
+		}
+		else
+		{
+			Vec3 direction = pLocal->m_vecVelocity().toAngle();
+			direction.y = pCmd->viewangles.y - direction.y;
+			const Vec3 negatedDirection = direction.fromAngle() * -flSpeed;
+			pCmd->forwardmove = negatedDirection.x;
+			pCmd->sidemove = negatedDirection.y;
+		}
+
+		break;
+	}
+	case 1:
+	{
+		if ((pLocal->IsDucking() ? !Vars::Misc::Movement::CrouchSpeed.Value : !Vars::Misc::Movement::FastAccel.Value) || G::IsAttacking || G::DoubleTap || G::Recharge || G::AntiAim || pCmd->command_number % 2)
+			return;
+
+		if (!(pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
+			return;
+
+		const Vec3 vecMove(pCmd->forwardmove, pCmd->sidemove, 0.f);
+		const float flLength = vecMove.Length();
+		Vec3 angMoveReverse;
+		Math::VectorAngles(vecMove * -1.f, angMoveReverse);
+		pCmd->forwardmove = -flLength;
+		pCmd->sidemove = 0.f;
+		pCmd->viewangles.y = fmodf(pCmd->viewangles.y - angMoveReverse.y, 360.f);
+		pCmd->viewangles.z = 270.f;
+		G::PSilentAngles = true;
+
+		break;
+	}
+	case 2:
+	{
+		if (!Vars::Misc::Movement::FastStrafe.Value || G::IsAttacking)
+			return;
+
+		static bool bFwd = pCmd->forwardmove > 0;
+		static bool bSde = pCmd->sidemove > 0;
+		const bool bCurFwd = pCmd->forwardmove > 0;
+		const bool bCurSde = pCmd->sidemove > 0;
+
+		bool bChanged = false;
+		if (fabsf(pCmd->sidemove) > 400)
+		{
+			if (bSde != bCurSde)
+			{
+				pCmd->viewangles.x = 90.f;
+				pCmd->viewangles.y += bSde ? -90.f : 90.f;
+				pCmd->sidemove = bSde ? -pCmd->forwardmove : pCmd->forwardmove;
+
+				G::PSilentAngles = bChanged = true;
+			}
+
+			bSde = bCurSde;
+			if (bChanged)
+				return;
+		}
+		if (fabsf(pCmd->forwardmove) > 400)
+		{
+			if (bFwd != bCurFwd)
+			{
+				pCmd->viewangles.x = 90.f;
+				pCmd->viewangles.y += bFwd ? 0.f : 180.f;
+				pCmd->sidemove *= bFwd ? 1 : -1;
+
+				G::PSilentAngles = bChanged = true;
+			}
+
+			bFwd = bCurFwd;
+			if (bChanged)
+				return;
+		}
+	}
+	}
+}
+
+void CMisc::AntiWarp(CBaseEntity* pLocal, CUserCmd* pCmd)
+{
+	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->IsCharging() || pLocal->IsTaunting() || pLocal->IsStunned())
+		return;
+	
+	static Vec3 vVelocity = {};
+	if (G::AntiWarp)
+	{
+		const int iDoubletapTicks = F::Ticks.GetTicks(pLocal);
+
+		Vec3 angles = {}; Math::VectorAngles(vVelocity, angles);
+		angles.y = pCmd->viewangles.y - angles.y;
+		Vec3 forward = {}; Math::AngleVectors(angles, &forward);
+		forward *= vVelocity.Length();
+
+		if (iDoubletapTicks > std::max(Vars::CL_Move::Doubletap::TickLimit.Value - 8, 3))
+		{
+			pCmd->forwardmove = -forward.x;
+			pCmd->sidemove = -forward.y;
+		}
+		else if (iDoubletapTicks > 3)
+		{
+			pCmd->forwardmove = pCmd->sidemove = 0.f;
+			pCmd->buttons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
+		}
+		else
+		{
+			pCmd->forwardmove = forward.x;
+			pCmd->sidemove = forward.y;
+		}
+	}
+	else
+		vVelocity = pLocal->m_vecVelocity();
+}
+
+void CMisc::LegJitter(CBaseEntity* pLocal, CUserCmd* pCmd, bool pSendPacket)
+{
+	if (!F::AntiAim.AntiAimOn() || !pLocal->OnSolid() || pLocal->IsInBumperKart() || pLocal->IsAGhost() || !pLocal->IsAlive()
+		|| G::IsAttacking || G::DoubleTap || pSendPacket)
+	{
+		return;
+	}
+
+	static bool pos = true;
+	const float scale = pLocal->IsDucking() ? 14.f : 1.f;
+	if (pCmd->forwardmove == 0.f && pCmd->sidemove == 0.f && pLocal->m_vecVelocity().Length2D() < 10.f)
+	{
+		pos ? pCmd->forwardmove = scale : pCmd->forwardmove = -scale;
+		pos ? pCmd->sidemove = scale : pCmd->sidemove = -scale;
+		pos = !pos;
+	}
+}
+
+
+
+void CMisc::Event(CGameEvent* pEvent, FNV1A_t uHash)
+{
+	switch (uHash)
+	{
+	case FNV1A::HashConst("teamplay_round_start"):
+	case FNV1A::HashConst("client_disconnect"):
+	case FNV1A::HashConst("client_beginconnect"):
+	case FNV1A::HashConst("game_newmap"):
+		iLastCmdrate = -1;
+		F::Backtrack.flWishInterp = 0.f;
+
+		G::BulletsStorage.clear();
+		G::BoxesStorage.clear();
+		G::LinesStorage.clear();
+	}
+}
+
+void CMisc::DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket)
+{
+	if (G::DoubleTap || G::Warp)
+	{
+		*pSendPacket = G::ShiftedGoal == G::ShiftedTicks;
+		if ((G::DoubleTap || pCmd->buttons & IN_ATTACK) && I::ClientState->chokedcommands >= 21)
+			*pSendPacket = true;
+	}
+}
+
+void CMisc::DetectChoke()
+{
+	for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	{
+		if (!pEntity->IsAlive() || pEntity->IsAGhost() || pEntity->GetDormant())
+		{
+			G::ChokeMap[pEntity->GetIndex()] = 0;
+			continue;
+		}
+
+		if (pEntity->m_flSimulationTime() == pEntity->m_flOldSimulationTime())
+			G::ChokeMap[pEntity->GetIndex()]++;
+		else
+		{
+			F::CheaterDetection.ReportChoke(pEntity, G::ChokeMap[pEntity->GetIndex()]);
+			G::ChokeMap[pEntity->GetIndex()] = 0;
+		}
 	}
 }
 

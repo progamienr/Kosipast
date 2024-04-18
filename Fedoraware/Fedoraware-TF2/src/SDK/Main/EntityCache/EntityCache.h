@@ -10,7 +10,7 @@ enum struct EGroupType
 	PLAYERS_ALL, PLAYERS_ENEMIES, PLAYERS_TEAMMATES,
 	BUILDINGS_ALL, BUILDINGS_ENEMIES, BUILDINGS_TEAMMATES,
 	WORLD_HEALTH, WORLD_AMMO, WORLD_PROJECTILES, WORLD_NPC, WORLD_BOMBS, WORLD_MONEY, WORLD_SPELLBOOK, WORLD_GARGOYLE,
-	LOCAL_STICKIES, LOCAL_FLARES
+	LOCAL_STICKIES, LOCAL_FLARES, MISC_DOTS
 };
 
 class CEntityCache
@@ -20,8 +20,9 @@ class CEntityCache
 	CBaseEntity* m_pObservedTarget = nullptr;
 	CTFPlayerResource* m_pPlayerResource = nullptr;
 
-	std::bitset<128> m_Friends;
-	std::unordered_map<EGroupType, std::vector<CBaseEntity*>> m_vecGroups;
+	std::unordered_map<EGroupType, std::vector<CBaseEntity*>> m_mGroups = {};
+	std::unordered_map<uint32_t, int> m_mIDIndex = {};
+	std::bitset<128> m_bFriends;
 	void UpdateFriends();
 
 public:
@@ -33,8 +34,9 @@ public:
 	CBaseEntity* GetObservedTarget() { return m_pObservedTarget; }
 	CTFPlayerResource* GetPR() { return m_pPlayerResource; }
 
-	const std::vector<CBaseEntity*>& GetGroup(const EGroupType& Group);
-	bool IsFriend(int entIdx) { return m_Friends[entIdx]; }
+	const std::vector<CBaseEntity*>& GetGroup(const EGroupType& Group) { return m_mGroups[Group]; }
+	bool IsSteamFriend(int entIdx) { return m_bFriends[entIdx]; }
+	bool IsSteamFriend(uint32_t friendsID) { return m_bFriends[m_mIDIndex[friendsID]]; }
 };
 
 inline CEntityCache g_EntityCache;

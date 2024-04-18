@@ -89,6 +89,16 @@ u32 CCritHack::DecryptOrEncryptSeed(int iSlot, int iIndex, u32 uSeed)
 
 void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
+	const int iSlot = pWeapon->GetSlot();
+
+	static float flOldBucket = 0.f; static int iOldID = 0, iOldCritChecks = 0, iOldCritSeedRequests = 0;
+	const float flBucket = pWeapon->CritTokenBucket(); const int iID = pWeapon->GetWeaponID(), iCritChecks = pWeapon->CritChecks(), iCritSeedRequests = pWeapon->CritSeedRequests();
+	const bool bMatch = Storage[iSlot].Damage > 0 && flOldBucket == flBucket && iOldID == iID && iOldCritChecks == iCritChecks && iOldCritSeedRequests == iCritSeedRequests;
+	
+	if (bMatch)
+		return;
+	flOldBucket = flBucket; iOldID = iID, iOldCritChecks = iCritChecks, iOldCritSeedRequests = iCritSeedRequests;
+
 	static auto bucketCap = g_ConVars.FindVar("tf_weapon_criticals_bucket_cap");
 	const float flBucketCap = bucketCap ? bucketCap->GetFloat() : 1000.f;
 
@@ -96,7 +106,6 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	if (!tfWeaponInfo)
 		return;
 
-	const int iSlot = pWeapon->GetSlot();
 	auto& tWeaponData = tfWeaponInfo->GetWeaponData(0);
 
 	float flDamage = tWeaponData.m_nDamage;
@@ -116,7 +125,7 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 			flDamage = flBucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
 	}
 
-	float flMult = iSlot == SLOT_MELEE ? 0.5f : Math::RemapValClamped((float)(pWeapon->CritSeedRequests() + 1) / (float)(pWeapon->CritChecks() + 1), 0.1f, 1.f, 1.f, 3.f);
+	float flMult = iSlot == SLOT_MELEE ? 0.5f : Math::RemapValClamped((float)(iCritSeedRequests + 1) / (float)(iCritChecks + 1), 0.1f, 1.f, 1.f, 3.f);
 	Storage[iSlot].Cost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER * flMult;
 
 	if (flBucketCap)
@@ -124,8 +133,8 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 
 	int iCrits = 0;
 	{
-		int shots = pWeapon->CritChecks(), crits = pWeapon->CritSeedRequests();
-		float bucket = pWeapon->CritTokenBucket(), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
+		int shots = iCritChecks, crits = iCritSeedRequests;
+		float bucket = flBucket, flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
 		const int iAttempts = std::min(Storage[iSlot].PotentialCrits + 1, 100);
 		for (int i = 0; i < iAttempts; i++)
 		{
@@ -144,8 +153,8 @@ void CCritHack::GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	{
 		iCrits = 0;
 
-		int shots = pWeapon->CritChecks() + 1, crits = pWeapon->CritSeedRequests() + 1;
-		float bucket = std::min(pWeapon->CritTokenBucket() + Storage[iSlot].Damage, flBucketCap), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
+		int shots = iCritChecks + 1, crits = iCritSeedRequests + 1;
+		float bucket = std::min(flBucket + Storage[iSlot].Damage, flBucketCap), flCost = flDamage * TF_DAMAGE_CRIT_MULTIPLIER;
 		for (int i = 0; i < 100; i++)
 		{
 			iCrits--;
@@ -181,26 +190,29 @@ void CCritHack::CanFireCritical(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	if (CritDamage == 0.f || pWeapon->GetSlot() == SLOT_MELEE)
 		return;
 
-	const auto divCritDamage = CritDamage / TF_DAMAGE_CRIT_MULTIPLIER;
-	const auto ratio = divCritDamage / (AllDamage - 2 * divCritDamage);
+	const float flDivCritDamage = CritDamage / TF_DAMAGE_CRIT_MULTIPLIER;
+	const float flRatio = flDivCritDamage / (AllDamage - 2 * flDivCritDamage);
+	CritBanned = flRatio >= CritChance;
 
-	CritBanned = ratio >= CritChance;
+	GetDamageTilUnban(pLocal);
 }
 
 void CCritHack::GetDamageTilUnban(CBaseEntity* pLocal)
 {
 	DamageTilUnban = 0;
-
 	if (!CritBanned)
 		return;
 
-	const auto divCritDamage = CritDamage / TF_DAMAGE_CRIT_MULTIPLIER;
-
-	DamageTilUnban = divCritDamage / CritChance + 2 * divCritDamage - AllDamage;
+	const float flDivCritDamage = CritDamage / TF_DAMAGE_CRIT_MULTIPLIER;
+	DamageTilUnban = flDivCritDamage / CritChance + 2 * flDivCritDamage - AllDamage;
 }
 
 bool CCritHack::WeaponCanCrit(CBaseCombatWeapon* pWeapon)
 {
+	static auto tf_weapon_criticals = g_ConVars.FindVar("tf_weapon_criticals");
+	if (!tf_weapon_criticals || !tf_weapon_criticals->GetBool())
+		return false;
+
 	if (Utils::AttribHookValue(1.f, "mult_crit_chance", pWeapon) <= 0.f)
 		return false;
 
@@ -282,24 +294,20 @@ void CCritHack::Reset()
 	CritBanned = false;
 	DamageTilUnban = 0;
 	CritChance = 0.f;
-	ProtectData = false;
 
 	Utils::ConLog("Crithack", "Resetting all", { 0, 255, 255, 255 }, Vars::Debug::Logging.Value);
 }
 
 
 
-void CCritHack::Run(CUserCmd* pCmd)
+void CCritHack::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
-	const auto& pLocal = g_EntityCache.GetLocal();
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon || !pLocal->IsAlive())
+	if (!pLocal || !pWeapon || !pLocal->IsAlive() || !I::EngineClient->IsInGame())
 		return;
 
 	ResetWeapons(pLocal);
 	GetTotalCrits(pLocal, pWeapon);
 	CanFireCritical(pLocal, pWeapon);
-	GetDamageTilUnban(pLocal);
 	Fill(pWeapon, pCmd, 15);
 	if (pLocal->IsCritBoosted() || !WeaponCanCrit(pWeapon))
 		return;
@@ -358,15 +366,10 @@ void CCritHack::Run(CUserCmd* pCmd)
 		bFirstTimePredicted = true;
 
 		const bool bCanCrit = Storage[pWeapon->GetSlot()].AvailableCrits > 0 && (!CritBanned || pWeapon->GetSlot() == SLOT_MELEE) && !bStreamWait;
-		static auto tf_weapon_criticals = g_ConVars.FindVar("tf_weapon_criticals");
-		const bool bWeaponCriticals = tf_weapon_criticals ? tf_weapon_criticals->GetBool() : true;
-		if (I::EngineClient->IsInGame() && bWeaponCriticals)
-		{
-			if (bPressed && closestCrit && bCanCrit)
-				pCmd->command_number = closestCrit;
-			else if (Vars::CritHack::AvoidRandom.Value && closestSkip)
-				pCmd->command_number = closestSkip;
-		}
+		if (bPressed && closestCrit && bCanCrit)
+			pCmd->command_number = closestCrit;
+		else if (Vars::CritHack::AvoidRandom.Value && closestSkip)
+			pCmd->command_number = closestSkip;
 
 		if (bRapidFire && !bStreamWait)
 			Storage[pWeapon->GetSlot()].StreamWait = I::GlobalVars->tickcount + 1 / TICK_INTERVAL;
@@ -410,59 +413,72 @@ bool CCritHack::CalcIsAttackCriticalHandler(CBaseEntity* pLocal, CBaseCombatWeap
 	return true;
 }
 
-void CCritHack::Event(CGameEvent* pEvent, FNV1A_t uNameHash)
+void CCritHack::Event(CGameEvent* pEvent, FNV1A_t uHash, CBaseEntity* pLocal)
 {
-	if (uNameHash == FNV1A::HashConst("player_hurt"))
+	switch (uHash)
 	{
-		const auto& pLocal = g_EntityCache.GetLocal();
-		if (!pLocal)
+	case FNV1A::HashConst("player_hurt"):
+	{
+		auto pWeapon = g_EntityCache.GetWeapon();
+		if (!pLocal || !pWeapon)
 			return;
 
-		const auto attacked = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-		const auto attacker = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
-		auto	   crit = pEvent->GetInt("crit");
-		auto       damage = pEvent->GetInt("damageamount");
-		const auto health = pEvent->GetInt("health");
-		const auto weaponid = pEvent->GetInt("weaponid");
+		const int iVictim = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		const int iAttacker = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
 
-		if (attacker == pLocal->GetIndex() && attacked != attacker)
-		{
-			const auto& pWeapon = g_EntityCache.GetWeapon();
-			if (!pWeapon || pWeapon->GetWeaponID() == weaponid && pWeapon->GetSlot() == SLOT_MELEE || pLocal->InCond(TF_COND_CRITBOOSTED))
-				return;
+		const bool bCrit = pEvent->GetBool("crit") || pEvent->GetBool("minicrit");
+		int iDamage = pEvent->GetInt("damageamount");
+		if (mHealthStorage.contains(iVictim))
+			iDamage = std::min(iDamage, mHealthStorage[iVictim]);
+		const auto iWeaponID = pEvent->GetInt("weaponid");
 
-			AllDamage += damage;
-			if (crit)
-				CritDamage += damage;
-		}
+		if (iVictim == iAttacker || iAttacker != pLocal->GetIndex() || iWeaponID != pWeapon->GetWeaponID() || pWeapon->GetSlot() == SLOT_MELEE) // weapon id stuff is dumb simplification
+			return;
+
+		AllDamage += iDamage;
+		if (bCrit && !pLocal->IsCritBoosted())
+			CritDamage += iDamage;
+
+		return;
 	}
-	else if (uNameHash == FNV1A::HashConst("teamplay_round_start"))
-	{
-		CritDamage = 0.f;
-		AllDamage = 0.f;
-	}
-	else if (uNameHash == FNV1A::HashConst("client_beginconnect") || uNameHash == FNV1A::HashConst("client_disconnect") ||
-		uNameHash == FNV1A::HashConst("game_newmap"))
-	{
+	case FNV1A::HashConst("teamplay_round_start"):
+		AllDamage = CritDamage = 0.f;
+		return;
+	case FNV1A::HashConst("client_beginconnect"):
+	case FNV1A::HashConst("client_disconnect"):
+	case FNV1A::HashConst("game_newmap"):
 		Reset();
-	}
-	else if (uNameHash == FNV1A::HashConst("player_changeclass"))
-	{
-		const bool bLocal = I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid")) == I::EngineClient->GetLocalPlayer();
-		if (bLocal)
-			Storage = {};
 	}
 }
 
-void CCritHack::Draw()
+void CCritHack::Fill()
+{
+	auto pResource = g_EntityCache.GetPR();
+	if (!pResource)
+		return;
+
+	for (auto it = mHealthStorage.begin(); it != mHealthStorage.end();)
+	{
+		if (I::ClientEntityList->GetClientEntity(it->first))
+			++it;
+		else
+			it = mHealthStorage.erase(it);
+	}
+	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	{
+		if (pEntity->IsAlive() && !pEntity->IsAGhost())
+			mHealthStorage[pEntity->GetIndex()] = pEntity->GetDormant() ? pResource->GetHealth(pEntity->GetIndex()) : pEntity->m_iHealth();
+	}
+}
+
+void CCritHack::Draw(CBaseEntity* pLocal)
 {
 	static auto tf_weapon_criticals = g_ConVars.FindVar("tf_weapon_criticals");
 	const bool bWeaponCriticals = tf_weapon_criticals ? tf_weapon_criticals->GetBool() : true;
 	if (!(Vars::Menu::Indicators.Value & (1 << 1)) || !I::EngineClient->IsInGame() || !bWeaponCriticals || !G::CurrentUserCmd)
 		return;
 
-	const auto& pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost())
+	if (!pLocal->IsAlive() || pLocal->IsAGhost())
 		return;
 
 	const auto& pWeapon = pLocal->GetActiveWeapon();

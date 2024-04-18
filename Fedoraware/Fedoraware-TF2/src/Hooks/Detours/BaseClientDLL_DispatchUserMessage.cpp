@@ -21,37 +21,14 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 {
 	const auto bufData = reinterpret_cast<const char*>(msgData.m_pData);
 	msgData.SetAssertOnOverflow(false);
-
-	F::Logs.UserMessage(type, msgData);
 	msgData.Seek(0);
 
 	switch (type)
 	{
-		case SayText2:
-		{
-			const int nbl = msgData.GetNumBytesLeft();
-			if (nbl < 5 || nbl >= 256)
-			{
-				break;
-			}
-
-			const int entIdx = msgData.ReadByte();
-			msgData.Seek(8);
-			char typeBuffer[256], nameBuffer[256], msgBuffer[256];
-			if (msgData.GetNumBytesLeft() == 0) { break; }
-			msgData.ReadString(typeBuffer, 256);
-			if (msgData.GetNumBytesLeft() == 0) { break; }
-			msgData.ReadString(nameBuffer, 256);
-			if (msgData.GetNumBytesLeft() == 0) { break; }
-			msgData.ReadString(msgBuffer, 256);
-
-			std::string chatType(typeBuffer);
-			std::string playerName(nameBuffer);
-			std::string chatMessage(msgBuffer);
+		case VoteStart:
+			F::Logs.UserMessage(msgData);
 
 			break;
-		}
-
 		case VoiceSubtitle:
 		{
 			int iEntityID = msgData.ReadByte();
@@ -59,49 +36,34 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 			int iCommandID = msgData.ReadByte();
 
 			if (iVoiceMenu == 1 && iCommandID == 6)
-			{
 				G::MedicCallers.push_back(iEntityID);
-			}
 
 			break;
 		}
-
 		case TextMsg:
-		{
 			if (F::NoSpreadHitscan.ParsePlayerPerf(msgData))
 				return true;
 
 			if (Vars::Misc::Automation::AntiAutobalance.Value && msgData.GetNumBitsLeft() > 35)
 			{
-				const INetChannel* server = I::EngineClient->GetNetChannelInfo();
+				auto pNetChan = I::EngineClient->GetNetChannelInfo();
 				const std::string data(bufData);
 
 				if (data.find("TeamChangeP") != std::string::npos && g_EntityCache.GetLocal())
 				{
-					const std::string serverName(server->GetAddress());
+					const std::string serverName(pNetChan->GetAddress());
 					if (serverName != previous_name)
 					{
 						previous_name = serverName;
 						anti_balance_attempts = 0;
 					}
 					if (anti_balance_attempts < 2)
-					{
 						I::EngineClient->ClientCmd_Unrestricted("retry");
-					}
-//					else
-//					{
-//						I::EngineClient->ClientCmd_Unrestricted(
-//							"tf_party_chat \"I will be autobalanced in 3 seconds\"");
-//					}
 					anti_balance_attempts++;
 				}
 			}
 			break;
-		}
-
 		case VGUIMenu:
-		{
-			// Remove MOTD
 			if (Vars::Visuals::Removals::MOTD.Value)
 			{
 				if (strcmp(reinterpret_cast<char*>(msgData.m_pData), "info") == 0)
@@ -112,27 +74,17 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 			}
 
 			break;
-		}
-
 		case ForcePlayerViewAngles:
-		{
 			return Vars::Visuals::Removals::AngleForcing.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
-		}
-
 		case SpawnFlyingBird:
 		case PlayerGodRayEffect:
 		case PlayerTauntSoundLoopStart:
 		case PlayerTauntSoundLoopEnd:
-		{
 			return Vars::Visuals::Removals::Taunts.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
-		}
-
 		case Shake:
 		case Fade:
 		case Rumble:
-		{
 			return Vars::Visuals::Removals::ScreenEffects.Value ? true : Hook.Original<FN>()(ecx, edx, type, msgData);
-		}
 	}
 
 	msgData.Seek(0);

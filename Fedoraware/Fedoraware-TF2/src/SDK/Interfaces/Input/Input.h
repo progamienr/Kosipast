@@ -8,7 +8,6 @@ struct CameraThirdData_t;
 struct GameActionSetFlags_t;
 struct C_BaseCombatWeapon;
 
-
 class IInput
 {
 public:

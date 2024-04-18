@@ -5,6 +5,32 @@
 #include "../../Resolver/Resolver.h"
 #include "../../Visuals/Visuals.h"
 
+bool CAimbotHitscan::PlayerBoneInFOV(CBaseEntity* pTarget, Vec3 vLocalPos, Vec3 vLocalAngles, float& flFOVTo, Vec3& vPos, Vec3& vAngleTo) // this won't prevent shooting bones outside of fov
+{
+	bool bReturn = false;
+
+	float flMinFOV = 180.f;
+	for (int nHitbox = 0; nHitbox < pTarget->GetNumOfHitboxes(); nHitbox++)
+	{
+		if (!IsHitboxValid(nHitbox))
+			continue;
+
+		Vec3 vCurPos = pTarget->GetHitboxPos(nHitbox);
+		Vec3 vCurAngleTo = Math::CalcAngle(vLocalPos, vCurPos);
+		float flCurFOVTo = Math::CalcFov(vLocalAngles, vCurAngleTo);
+
+		if (flCurFOVTo < flMinFOV && flCurFOVTo < Vars::Aimbot::General::AimFOV.Value)
+		{
+			bReturn = true;
+			vPos = vCurPos;
+			vAngleTo = vCurAngleTo;
+			flFOVTo = flMinFOV = flCurFOVTo;
+		}
+	}
+
+	return bReturn;
+}
+
 std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
 	std::vector<Target_t> validTargets;
@@ -37,14 +63,11 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 					continue;
 			}
 
-			if (F::AimbotGlobal.ShouldIgnore(pTarget, bIsMedigun))
+			if (F::AimbotGlobal.ShouldIgnore(pTarget, pLocal, pWeapon, bIsMedigun))
 				continue;
 
-			Vec3 vPos = pTarget->GetHitboxPos(HITBOX_PELVIS);
-			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
-			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-
-			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
+			float flFOVTo; Vec3 vPos, vAngleTo;
+			if (!PlayerBoneInFOV(pTarget, vLocalPos, vLocalAngles, flFOVTo, vPos, vAngleTo))
 				continue;
 
 			const float flDistTo = vLocalPos.DistTo(vPos);
@@ -136,7 +159,7 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			if (flFOVTo > Vars::Aimbot::General::AimFOV.Value)
 				continue;
 
-			if (!F::AimbotGlobal.ValidBomb(pBomb))
+			if (!F::AimbotGlobal.ValidBomb(pLocal, pWeapon, pBomb))
 				continue;
 
 			validTargets.push_back({ pBomb, ETargetType::BOMBS, vPos, vAngleTo, flFOVTo, flDistTo });

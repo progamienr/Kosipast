@@ -2,7 +2,7 @@
 #include "../../Interfaces/Interfaces.h"
 
 struct ScreenSize_t {
-	int w = 0, h = 0, c = 0;
+	int w = 0, h = 0;
 	void Update();
 };
 

@@ -21,7 +21,7 @@ public:
 	bool ShouldRun(CBaseEntity* pLocal);
 
 	bool GetEdge(const float flEdgeOrigYaw = I::EngineClient->GetViewAngles().y, CBaseEntity* pEntity = g_EntityCache.GetLocal());
-	void Run(CUserCmd* pCmd, bool* pSendPacket);
+	void Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket);
 
 	Vec2 vFakeAngles{};
 	Vec2 vRealAngles{};

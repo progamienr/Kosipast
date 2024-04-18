@@ -54,7 +54,7 @@ void CMenu::DrawMenu()
 		// Sub tabs
 		switch (CurrentTab)
 		{
-		case 0: FTabs({ "GENERAL", "HVH", "AUTOMATION" }, &CurrentAimbotTab, SubTabSize, { TabSize.x, 0 }); break;
+		case 0: FTabs({ "GENERAL", "HVH" }, &CurrentAimbotTab, SubTabSize, { TabSize.x, 0 }); break;
 		case 1: FTabs({ "ESP", "CHAMS", "GLOW", "MISC##", "RADAR", "MENU" }, &CurrentVisualsTab, SubTabSize, { TabSize.x, 0 }); break;
 		case 2: FTabs({ "MISC##" }, nullptr, SubTabSize, { TabSize.x, 0 }); break;
 		case 3: FTabs({ "LOGS##", "SETTINGS##" }, &CurrentLogsTab, SubTabSize, { TabSize.x, 0 }); break;
@@ -91,7 +91,7 @@ void CMenu::DrawMenu()
 	PopStyleVar();
 
 	// Title Text
-	if (Vars::Menu::CheatName.Value != "")
+	if (Vars::Menu::CheatName.Value.length())
 	{
 		PushFont(FontTitle);
 		const auto textSize = CalcTextSize(Vars::Menu::CheatName.Value.c_str());
@@ -110,7 +110,7 @@ void CMenu::DrawMenu()
 	}
 
 	// Condition Text
-	if (sCondition != "default")
+	if (FNV1A::Hash(sCondition.c_str()) != FNV1A::HashConst("default"))
 	{
 		const auto textSize = CalcTextSize(std::format("Editing for condition {}", sCondition).c_str());
 		SetNextWindowSize({ std::min(textSize.x + 56.f, mainWindowSize.x), 40.f });
@@ -297,41 +297,11 @@ void CMenu::MenuAimbot()
 
 			/* Column 2 */
 			TableNextColumn();
-			if (Section("Cheater Detection"))
-			{
-				bTransparent = !FGet(Vars::CheaterDetection::Methods);
-					FDropdown("Detection methods", Vars::CheaterDetection::Methods, { "Accuracy", "Score", "Simtime Changes", "Packet Choking", "Bunnyhopping", "Aim Flicking", "OOB Angles", "Aimbot", "Duck Speed" }, {}, FDropdown_Multi);
-					FDropdown("Ignore conditions", Vars::CheaterDetection::Protections, { "Double Scans", "Lagging Client", "Timing Out" }, {}, FDropdown_Multi);
-					FSlider("Suspicion gate", Vars::CheaterDetection::SuspicionGate, 5, 50, 1);
-
-				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 1) || bTransparent;
-					FSlider("High score multiplier", Vars::CheaterDetection::ScoreMultiplier, 1.5f, 4.f, 0.1f, "%.1f");
-				bTransparent = !FGet(Vars::CheaterDetection::Methods);
-
-				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & (1 << 3 | 1 << 2)) || bTransparent;
-					FSlider("Packet manipulation gate", Vars::CheaterDetection::PacketManipGate, 1, 22, 1);
-				bTransparent = !FGet(Vars::CheaterDetection::Methods);
-
-				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 4) || bTransparent;
-					FSlider("Bunnyhop sensitivity", Vars::CheaterDetection::BHopMaxDelay, 1, 5, 1, "%d", FSlider_Left);
-					FSlider("Minimum detections", Vars::CheaterDetection::BHopDetectionsRequired, 2, 15, 1, "%d", FSlider_Right);
-				bTransparent = !FGet(Vars::CheaterDetection::Methods);
-
-				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 5) || bTransparent;
-					FSlider("Minimum aim-flick", Vars::CheaterDetection::MinimumFlickDistance, 5.f, 30.f, 0.1f, "%.1f", FSlider_Left);
-					FSlider("Maximum noise", Vars::CheaterDetection::MaximumNoise, 5.f, 15.f, 0.1f, "%.1f", FSlider_Right);
-				bTransparent = !FGet(Vars::CheaterDetection::Methods);
-
-				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 7) || bTransparent;
-					FSlider("Maximum aimbot FOV", Vars::CheaterDetection::MaxScaledAimbotFoV, 5.f, 30.f, 0.1f, "%.1f", FSlider_Left);
-					FSlider("Minimum aimbot FOV", Vars::CheaterDetection::MinimumAimbotFoV, 5.f, 30.f, 0.1f, "%.1f", FSlider_Right);
-				bTransparent = false;
-			} EndSection();
 			if (Section("Resolver"))
 			{
 				FToggle("Enabled", Vars::AntiHack::Resolver::Resolver);
 				bTransparent = !FGet(Vars::AntiHack::Resolver::Resolver);
-					FToggle("Ignore in-air", Vars::AntiHack::Resolver::IgnoreAirborne, FToggle_Middle);
+				FToggle("Ignore in-air", Vars::AntiHack::Resolver::IgnoreAirborne, FToggle_Middle);
 				bTransparent = false;
 			} EndSection();
 			if (Section("Auto Peek"))
@@ -342,40 +312,28 @@ void CMenu::MenuAimbot()
 			{
 				FToggle("Speedhack", Vars::CL_Move::SpeedEnabled);
 				bTransparent = !FGet(Vars::CL_Move::SpeedEnabled);
-					FSlider("SpeedHack factor", Vars::CL_Move::SpeedFactor, 1, 50, 1);
+				FSlider("SpeedHack factor", Vars::CL_Move::SpeedFactor, 1, 50, 1);
+				bTransparent = false;
+			} EndSection();
+			if (Section("Cheater Detection"))
+			{
+				const bool transparent = bTransparent = !FGet(Vars::CheaterDetection::Methods);
+					FDropdown("Detection methods", Vars::CheaterDetection::Methods, { "Invalid pitch", "Packet choking", "Aim flicking", "Duck Speed" }, {}, FDropdown_Multi);
+					FSlider("Detections required", Vars::CheaterDetection::DetectionsRequired, 10, 50, 1);
+
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 1) || bTransparent;
+					FSlider("Minimum choking", Vars::CheaterDetection::MinimumChoking, 4, 22, 1);
+				bTransparent = transparent;
+
+				bTransparent = !(FGet(Vars::CheaterDetection::Methods) & 1 << 2) || bTransparent;
+					FSlider("Minimum flick angle", Vars::CheaterDetection::MinimumFlick, 10.f, 30.f, 1.f, "%.0f", FSlider_Left);
+					FSlider("Maximum noise", Vars::CheaterDetection::MaximumNoise, 1.f, 10.f, 1.f, "%.0f", FSlider_Right);
 				bTransparent = false;
 			} EndSection();
 
 			EndTable();
 		}
 		break;
-	// Trigger
-	case 2:
-		if (BeginTable("TriggerTable", 2))
-		{
-			/* Column 1 */
-			TableNextColumn();
-			if (Section("Global"))
-			{
-				FToggle("Active", Vars::Auto::Global::Active);
-			} EndSection();
-			if (Section("Autouber"))
-			{
-				FToggle("Active", Vars::Auto::Uber::Active);
-				FToggle("Activate charge trigger", Vars::Auto::Uber::VoiceCommand, FToggle_Middle);
-				FToggle("Only uber friends", Vars::Auto::Uber::OnlyFriends);
-				FToggle("Preserve self", Vars::Auto::Uber::PopLocal, FToggle_Middle);
-				FDropdown("Auto vaccinator", Vars::Auto::Uber::AutoVaccinator, { "Bullet", "Blast", "Fire" }, {}, FDropdown_Multi | FDropdown_Left);
-				FDropdown("Bullet react classes", Vars::Auto::Uber::ReactClasses, { "Scout", "Soldier", "Pyro", "Heavy", "Engineer", "Sniper", "Spy" }, { 1 << 0, 1 << 1, 1 << 2, 1 << 4, 1 << 5, 1 << 7, 1 << 8 }, FDropdown_Multi | FDropdown_Right);
-				FSlider("Health left", Vars::Auto::Uber::HealthLeft, 1.f, 99.f, 5.f, "%.0f%%", FSlider_Clamp | FSlider_Left);
-				FSlider("Reaction FOV", Vars::Auto::Uber::ReactFOV, 0, 90, 1, "%d", FSlider_Clamp | FSlider_Right);
-			} EndSection();
-
-			/* Column 2 */
-			TableNextColumn();
-
-			EndTable();
-		}
 	}
 }
 
@@ -485,6 +443,16 @@ void CMenu::MenuVisuals()
 
 			/* Column 2 */
 			TableNextColumn();
+			if (Section("Player"))
+			{
+				FToggle("Local", Vars::Chams::Player::Local);
+				FToggle("Friend", Vars::Chams::Player::Friend, FToggle_Middle);
+
+				FMDropdown("Visible material", Vars::Chams::Player::VisibleMaterial, FDropdown_Left, 1);
+				FColorPicker("Visible color", Vars::Chams::Player::VisibleColor, 0, FColorPicker_Dropdown);
+				FMDropdown("Occluded material", Vars::Chams::Player::OccludedMaterial, FDropdown_Right, 1);
+				FColorPicker("Occluded color", Vars::Chams::Player::OccludedColor, 0, FColorPicker_Dropdown);
+			} EndSection();
 			if (Section("Backtrack"))
 			{
 				FToggle("Active", Vars::Chams::Backtrack::Active);
@@ -570,6 +538,20 @@ void CMenu::MenuVisuals()
 
 			/* Column 2 */
 			TableNextColumn();
+			if (Section("Player"))
+			{
+				FToggle("Local", Vars::Glow::Player::Local);
+				FToggle("Friend", Vars::Glow::Player::Friend, FToggle_Middle);
+				Dummy({ 0, 8 });
+
+				FToggle("Stencil", Vars::Glow::Player::Stencil);
+				FToggle("Blur", Vars::Glow::Player::Blur, FToggle_Middle);
+				bTransparent = !FGet(Vars::Glow::Player::Stencil);
+					FSlider("Stencil scale## Player", Vars::Glow::Player::StencilScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Left);
+				bTransparent = !FGet(Vars::Glow::Player::Blur);
+					FSlider("Blur scale## Player", Vars::Glow::Player::BlurScale, 1, 10, 1, "%d", FSlider_Clamp | FSlider_Right);
+				bTransparent = false;
+			} EndSection();
 			if (Section("Backtrack"))
 			{
 				FToggle("Active", Vars::Glow::Backtrack::Active);
@@ -923,12 +905,11 @@ void CMenu::MenuMisc()
 				FSDropdown("Value", &sValue, {}, FDropdown_Right);
 				if (FButton("Send"))
 				{
-					CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
-					if (netChannel)
+					if (auto pNetChan = static_cast<CNetChannel*>(I::EngineClient->GetNetChannelInfo()))
 					{
 						Utils::ConLog("Convar", std::format("Sent {} as {}", sName, sValue).c_str(), VecToColor(Accent));
 						NET_SetConVar cmd(sName.c_str(), sValue.c_str());
-						netChannel->SendNetMsg(cmd);
+						pNetChan->SendNetMsg(cmd);
 
 						//sName = "";
 						//sValue = "";
@@ -951,11 +932,6 @@ void CMenu::MenuMisc()
 			FDropdown("Block", Vars::Misc::Sound::Block, { "Footsteps", "Noisemaker" }, {}, FDropdown_Multi);
 			FToggle("Giant weapon sounds", Vars::Misc::Sound::GiantWeaponSounds);
 		} EndSection();
-		if (Section("Mann vs. Machine"))
-		{
-			FToggle("Instant respawn", Vars::Misc::MannVsMachine::InstantRespawn);
-			FToggle("Instant revive", Vars::Misc::MannVsMachine::InstantRevive, FToggle_Middle);
-		} EndSection();
 
 		/* Column 2 */
 		TableNextColumn();
@@ -972,8 +948,13 @@ void CMenu::MenuMisc()
 				{ DC_ATL,	 DC_ORD,	DC_LAX,		   DC_EAT,		 DC_SEA,	DC_IAD,		DC_DFW,		  DC_AMS,	   DC_FRA,		DC_LHR,	  DC_MAD,	DC_PAR,	 DC_STO,	  DC_VIE,	DC_WAW,	  DC_EZE,		  DC_LIM, DC_SCL,	  DC_GRU,	   DC_MAA,	  DC_DXB,  DC_CAN,		DC_HKG,		 DC_BOM,   DC_SEO,	DC_SHA,		DC_SGP,		 DC_TSN,	DC_TYO,	 DC_SYD,   DC_JNB },
 				FDropdown_Multi
 			);
-			FDropdown("Auto queue", Vars::Misc::Queueing::AutoCasualQueue, { "Off", "In menu", "Always" });
 			FToggle("Freeze queue", Vars::Misc::Queueing::FreezeQueue);
+			FToggle("Auto queue", Vars::Misc::Queueing::AutoCasualQueue, FToggle_Middle);
+		} EndSection();
+		if (Section("Mann vs. Machine"))
+		{
+			FToggle("Instant respawn", Vars::Misc::MannVsMachine::InstantRespawn);
+			FToggle("Instant revive", Vars::Misc::MannVsMachine::InstantRevive, FToggle_Middle);
 		} EndSection();
 		if (Section("Chat"))
 		{
@@ -1118,7 +1099,7 @@ void CMenu::MenuSettings()
 						SetCursorPos({ GetWindowSize().x - o, current + 9 });
 						if (IconButton(ICON_MD_SAVE))
 						{
-							if (configName != F::ConfigManager.GetCurrentConfig() || F::ConfigManager.GetCurrentVisuals() != "")
+							if (configName != F::ConfigManager.GetCurrentConfig() || F::ConfigManager.GetCurrentVisuals().length())
 								OpenPopup(std::format("Confirmation## SaveConfig{}", configName).c_str());
 							else
 								F::ConfigManager.SaveConfig(configName);
@@ -1273,7 +1254,7 @@ void CMenu::MenuSettings()
 				FToggle("Anti aim lines", Vars::Debug::AntiAimLines, FToggle_Middle);
 				static std::string particleName = "ping_circle";
 				FSDropdown("Particle name", &particleName, {}, FDropdown_Left);
-				const auto& pLocal = g_EntityCache.GetLocal();
+				auto pLocal = g_EntityCache.GetLocal();
 				if (FButton("Dispatch", FButton_Right | FButton_SameLine | FButton_Large) && pLocal)
 					Particles::DispatchParticleEffect(particleName.c_str(), pLocal->GetAbsOrigin(), { });
 			} EndSection();
@@ -1389,13 +1370,13 @@ void CMenu::MenuSettings()
 
 					// create/modify button
 					bool bCreate = false, bClear = false, bMatch = false, bParent = true;
-					if (tCond.Parent != "")
-						bParent = F::Conditions.Exists(tCond.Parent);
+					if (tCond.Parent.length())
+						bParent = F::Conditions.mConditions.contains(tCond.Parent);
 
 					SetCursorPos({ GetWindowSize().x - 96, 64 });
 					PushStyleColor(ImGuiCol_Button, Foremost.Value);
 					PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
-					if (sName != "" && sName != "default" && bParent && (!tCond.Type ? tCond.Key : true))
+					if (sName.length() && FNV1A::Hash(sName.c_str()) != FNV1A::HashConst("default") && bParent && (!tCond.Type ? tCond.Key : true))
 					{
 						PushStyleColor(ImGuiCol_ButtonHovered, ForemostLight.Value);
 						bCreate = Button("##CreateButton", { 40, 40 });
@@ -1407,9 +1388,9 @@ void CMenu::MenuSettings()
 					}
 					PopStyleColor(3);
 					SetCursorPos({ GetWindowSize().x - 83, 76 });
-					if (sName != "" && sName != "default" && bParent && (!tCond.Type ? tCond.Key : true))
+					if (sName.length() && FNV1A::Hash(sName.c_str()) != FNV1A::HashConst("default") && bParent && (!tCond.Type ? tCond.Key : true))
 					{
-						bMatch = F::Conditions.Exists(sName);
+						bMatch = F::Conditions.mConditions.contains(sName);
 						IconImage(bMatch ? ICON_MD_SETTINGS : ICON_MD_ADD);
 					}
 					else
@@ -1445,12 +1426,13 @@ void CMenu::MenuSettings()
 			SetCursorPos({ 14, 128 }); FText("Conditions");
 			PopStyleColor();
 
-			std::function<int(std::string, int, int)> getConds = [&](std::string parent, int x, int y)
+			std::function<int(std::string, int, int)> getConds = [&](std::string sParent, int x, int y)
 				{
+					auto uHash = FNV1A::Hash(sParent.c_str());
 					for (auto& sCond : F::Conditions.vConditions)
 					{
 						auto& cCond = F::Conditions.mConditions[sCond];
-						if (cCond.Parent != parent)
+						if (uHash != FNV1A::Hash(cCond.Parent.c_str()))
 							continue;
 
 						y++;
@@ -1775,7 +1757,8 @@ void CMenu::MenuSettings()
 					FSDropdown("Name", &sName, {}, FSDropdown_AutoUpdate | FDropdown_Left, 1);
 					FColorPicker("Color", &tTag.Color, 0, FColorPicker_Dropdown);
 
-					bDisabled = sName == "Default" || sName == "Ignored";
+					auto uHash = FNV1A::Hash(sName.c_str());
+					bDisabled = uHash == FNV1A::HashConst("Original") || uHash == FNV1A::HashConst("Ignored");
 						int iLabel = bDisabled ? 0 : tTag.Label;
 						FDropdown("Type", &iLabel, { "Priority", "Label" }, {}, FDropdown_Right);
 						tTag.Label = iLabel;
@@ -1799,7 +1782,7 @@ void CMenu::MenuSettings()
 					SetCursorPos({ GetWindowSize().x - 96, 16 });
 					PushStyleColor(ImGuiCol_Button, Foremost.Value);
 					PushStyleColor(ImGuiCol_ButtonActive, Foremost.Value);
-					if (sName != "")
+					if (sName.length())
 					{
 						PushStyleColor(ImGuiCol_ButtonHovered, ForemostLight.Value);
 						bCreate = Button("##CreateButton", { 40, 40 });
@@ -1811,16 +1794,9 @@ void CMenu::MenuSettings()
 					}
 					PopStyleColor(3);
 					SetCursorPos({ GetWindowSize().x - 83, 28 });
-					if (sName != "")
+					if (sName.length())
 					{
-						bool bMatch = false;
-						for (const auto& [sTag, _] : F::PlayerUtils.mTags)
-						{
-							if (bMatch)
-								break;
-							if (sTag == sName)
-								bMatch = true;
-						}
+						bool bMatch = F::PlayerUtils.mTags.contains(sName);
 						IconImage(bMatch ? ICON_MD_SETTINGS : ICON_MD_ADD);
 					}
 					else
@@ -1926,9 +1902,9 @@ void CMenu::MenuSettings()
 			std::sort(vPriorities.begin(), vPriorities.end(), [&](const auto& a, const auto& b) -> bool
 				{
 					// override for default tag
-					if (a.first == "Default")
+					if (FNV1A::Hash(a.first.c_str()) == FNV1A::HashConst("Default"))
 						return true;
-					if (b.first == "Default")
+					if (FNV1A::Hash(b.first.c_str()) == FNV1A::HashConst("Default"))
 						return false;
 
 					// sort by priority if unequal
@@ -1987,9 +1963,9 @@ void CMenu::MenuSettings()
 				std::sort(vMaterials.begin(), vMaterials.end(), [&](const auto& a, const auto& b) -> bool
 					{
 						// override for none material
-						if (a.first == "None")
+						if (FNV1A::Hash(a.first.c_str()) == FNV1A::HashConst("None"))
 							return true;
-						if (b.first == "None")
+						if (FNV1A::Hash(b.first.c_str()) == FNV1A::HashConst("None"))
 							return false;
 
 						// keep locked materials higher
@@ -2048,7 +2024,7 @@ void CMenu::MenuSettings()
 
 			/* Column 2 */
 			TableNextColumn();
-			if (CurrentMaterial != "")
+			if (CurrentMaterial.length())
 			{
 				auto count = std::ranges::count(TextEditor.GetText(), '\n'); // doesn't account for text editor size otherwise
 				if (Section("Editor", 81 + 15 * count, true))
@@ -2146,12 +2122,13 @@ void CMenu::DrawBinds()
 	float stateWidth = 0;
 
 	PushFont(FontSmall);
-	std::function<void(std::string)> getConds = [&](std::string parent)
+	std::function<void(std::string)> getConds = [&](std::string sParent)
 		{
+			auto uHash = FNV1A::Hash(sParent.c_str());
 			for (auto& sCond : F::Conditions.vConditions)
 			{
 				auto& tCond = F::Conditions.mConditions[sCond];
-				if (tCond.Parent != parent)
+				if (uHash != FNV1A::Hash(tCond.Parent.c_str()))
 					continue;
 
 				if (tCond.Visible)

@@ -55,7 +55,6 @@
     <ClCompile Include="src\Features\Visuals\Visuals.cpp" />
     <ClCompile Include="src\Hooks\Detours\BaseClientDLL_DispatchUserMessage.cpp" />
     <ClCompile Include="src\Hooks\Detours\BaseClientDLL_FrameStageNotify.cpp" />
-    <ClCompile Include="src\Hooks\Detours\BaseClientDLL_PostEntity.cpp" />
     <ClCompile Include="src\Hooks\Detours\BaseClientDLL_ShutDown.cpp" />
     <ClCompile Include="src\Hooks\Detours\CAchievementMgr_CheckAchievementsEnabled.cpp" />
     <ClCompile Include="src\Hooks\Detours\CBaseClient_Connect.cpp" />
@@ -95,8 +94,6 @@
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_Interpolate.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_MaintainSequenceTransitions.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseAnimating_UpdateClientSideAnimations.cpp" />
-    <ClCompile Include="src\Hooks\Detours\C_BaseCombatWeapon_AddToCritBucket.cpp" />
-    <ClCompile Include="src\Hooks\Detours\C_BaseCombatWeapon_IsAllowedToWithdrawFromCritBucket.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_FireBullets.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_Interpolate.cpp" />
     <ClCompile Include="src\Hooks\Detours\C_BaseEntity_SetAbsVelocity.cpp" />

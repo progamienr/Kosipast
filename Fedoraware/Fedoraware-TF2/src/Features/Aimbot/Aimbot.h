@@ -7,7 +7,7 @@ private:
 	bool ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 public:
-	bool Run(CUserCmd* pCmd);
+	bool Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
 };
 
 ADD_FEATURE(CAimbot, Aimbot)

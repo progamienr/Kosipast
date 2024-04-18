@@ -8,12 +8,12 @@ class CFakeLag
 	bool bUnducking = false;
 
 	bool IsAllowed(CBaseEntity* pLocal);
-	void Prediction(CUserCmd* pCmd);
-	void PreserveBlastJump();
-	void Unduck(CUserCmd* pCmd);
+	void Prediction(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void PreserveBlastJump(CBaseEntity* pLocal);
+	void Unduck(CBaseEntity* pLocal, CUserCmd* pCmd);
 
 public:
-	void Run(CUserCmd* pCmd, bool* pSendPacket);
+	void Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket);
 };
 
 ADD_FEATURE(CFakeLag, FakeLag)

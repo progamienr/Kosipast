@@ -8,41 +8,37 @@
 
 class CMisc
 {
-	void AutoJump(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void AutoJumpbug(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void AutoStrafe(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void AntiBackstab(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void AutoPeek(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void AntiAFK(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void AutoJump(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AutoJumpbug(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AutoStrafe(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AntiBackstab(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AutoPeek(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AntiAFK(CBaseEntity* pLocal, CUserCmd* pCmd);
 	void InstantRespawnMVM(CBaseEntity* pLocal);
 
 	void CheatsBypass();
 	int iLastCmdrate = -1;
 	void PingReducer();
-	void DetectChoke();
 	void WeaponSway();
 
-	void TauntKartControl(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void FastStop(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void FastAccel(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void FastStrafe(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void InstaStop(CUserCmd* pCmd);
-	void StopMovement(CUserCmd* pCmd, CBaseEntity* pLocal);
-	void LegJitter(CUserCmd* pCmd, bool pSendPacket, CBaseEntity* pLocal);
+	void TauntKartControl(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void FastMovement(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void AntiWarp(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void LegJitter(CBaseEntity* pLocal, CUserCmd* pCmd, bool pSendPacket);
 
 	bool bSteamCleared = false;
 	Vec3 vPeekReturnPos = {};
 
 public:
-	void RunPre(CUserCmd* pCmd);
-	void RunPost(CUserCmd* pCmd, bool pSendPacket);
+	void RunPre(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void RunPost(CBaseEntity* pLocal, CUserCmd* pCmd, bool pSendPacket);
 	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
+	void DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket);
+	void DetectChoke();
 
 	void UnlockAchievements();
 	void LockAchievements();
 	void SteamRPC();
-
-	void DoubletapPacket(CUserCmd* pCmd, bool* pSendPacket);
 
 #ifdef DEBUG
 	void DumpClassIDS();

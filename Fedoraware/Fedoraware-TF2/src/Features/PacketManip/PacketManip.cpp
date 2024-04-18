@@ -6,9 +6,8 @@ bool CPacketManip::WillTimeOut()
 	return I::ClientState->chokedcommands >= 21;
 }
 
-bool CPacketManip::AntiAimCheck()
+bool CPacketManip::AntiAimCheck(CBaseEntity* pLocal)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
 		return false;
 
@@ -18,7 +17,7 @@ bool CPacketManip::AntiAimCheck()
 	return I::ClientState->chokedcommands < 3 && F::AntiAim.ShouldRun(pLocal);
 }
 
-void CPacketManip::Run(CUserCmd* pCmd, bool* pSendPacket)
+void CPacketManip::Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket)
 {
 	F::FakeAngle.DrawChams = Vars::CL_Move::Fakelag::Fakelag.Value || F::AntiAim.AntiAimOn();
 
@@ -26,10 +25,10 @@ void CPacketManip::Run(CUserCmd* pCmd, bool* pSendPacket)
 	const bool bTimeout = WillTimeOut(); // prevent overchoking by just not running anything below if we believe it will cause us to time out
 
 	if (!bTimeout)
-		F::FakeLag.Run(pCmd, pSendPacket);
+		F::FakeLag.Run(pLocal, pCmd, pSendPacket);
 	else
 		G::ChokeAmount = 0;
 
-	if (!bTimeout && AntiAimCheck() && !G::PSilentAngles)
+	if (!bTimeout && AntiAimCheck(pLocal) && !G::PSilentAngles)
 		*pSendPacket = false;
 }

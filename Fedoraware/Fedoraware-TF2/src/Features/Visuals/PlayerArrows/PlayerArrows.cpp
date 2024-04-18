@@ -74,43 +74,40 @@ void CPlayerArrows::DrawArrowTo(const Vec3& vecFromPos, const Vec3& vecToPos, Co
 	g_Draw.Polygon(3, verts.data(), color);
 }
 
-void CPlayerArrows::Run()
+void CPlayerArrows::Run(CBaseEntity* pLocal)
 {
-	if (const auto& pLocal = g_EntityCache.GetLocal())
+	if (!ShouldRun(pLocal))
+		return;
+
+	const Vec3 vLocalPos = pLocal->GetEyePosition();
+
+	for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!ShouldRun(pLocal))
-			return;
+		if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsCloaked() || pEnemy->IsAGhost())
+			continue;
 
-		const Vec3 vLocalPos = pLocal->GetEyePosition();
+		Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
 
-		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
+		Color_t color;
+		if (!Vars::Colors::Relative.Value)
 		{
-			if (!pEnemy || !pEnemy->IsAlive() || pEnemy->IsCloaked() || pEnemy->IsAGhost())
-				continue;
-
-			Vec3 vEnemyPos = pEnemy->GetWorldSpaceCenter();
-
-			Color_t color;
-			if (!Vars::Colors::Relative.Value)
-			{
-				if (pLocal->m_iTeamNum() == 2)
-					color = Vars::Colors::TeamBlu.Value;
-				else
-					color = Vars::Colors::TeamRed.Value;
-			}
+			if (pLocal->m_iTeamNum() == 2)
+				color = Vars::Colors::TeamBlu.Value;
 			else
-				color = Vars::Colors::Enemy.Value;
-			if (pEnemy->InCond(TF_COND_DISGUISED))
-				color = Vars::Colors::Cloak.Value;
-
-			auto MapFloat = [&](float x, float in_min, float in_max, float out_min, float out_max) -> float
-			{
-				return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-			};
-			const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::FOVArrows::MaxDist.Value, Vars::Visuals::FOVArrows::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
-			color.a = static_cast<byte>(fMap * 255.f);
-
-			DrawArrowTo(vLocalPos, vEnemyPos, color);
+				color = Vars::Colors::TeamRed.Value;
 		}
+		else
+			color = Vars::Colors::Enemy.Value;
+		if (pEnemy->InCond(TF_COND_DISGUISED))
+			color = Vars::Colors::Cloak.Value;
+
+		auto MapFloat = [&](float x, float in_min, float in_max, float out_min, float out_max) -> float
+		{
+			return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+		};
+		const float fMap = std::clamp(MapFloat(vLocalPos.DistTo(vEnemyPos), Vars::Visuals::FOVArrows::MaxDist.Value, Vars::Visuals::FOVArrows::MaxDist.Value * 0.9f, 0.0f, 1.0f), 0.0f, 1.0f);
+		color.a = static_cast<byte>(fMap * 255.f);
+
+		DrawArrowTo(vLocalPos, vEnemyPos, color);
 	}
 }

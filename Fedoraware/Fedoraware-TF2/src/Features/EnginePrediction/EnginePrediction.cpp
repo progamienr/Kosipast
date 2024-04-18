@@ -19,9 +19,8 @@ int CEnginePrediction::GetTickbase(CUserCmd* pCmd, CBaseEntity* pLocal)
 	return nTick;
 }
 
-void CEnginePrediction::Simulate(CUserCmd* pCmd)
+void CEnginePrediction::Simulate(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || !I::MoveHelper)
 		return;
 
@@ -49,9 +48,8 @@ void CEnginePrediction::Simulate(CUserCmd* pCmd)
 	I::Prediction->m_bInPrediction = bOldInPrediction;
 }
 
-void CEnginePrediction::Start(CUserCmd* pCmd)
+void CEnginePrediction::Start(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || !I::MoveHelper)
 		return;
 
@@ -68,12 +66,11 @@ void CEnginePrediction::Start(CUserCmd* pCmd)
 		return; // hopefully more accurate eyepos while dting
 
 	bSimulated = true;
-	Simulate(pCmd);
+	Simulate(pLocal, pCmd);
 }
 
-void CEnginePrediction::End(CUserCmd* pCmd)
+void CEnginePrediction::End(CBaseEntity* pLocal, CUserCmd* pCmd)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || !I::MoveHelper)
 		return;
 
@@ -88,5 +85,5 @@ void CEnginePrediction::End(CUserCmd* pCmd)
 	*I::RandomSeed = -1;
 
 	if (!bSimulated)
-		Simulate(pCmd);
+		Simulate(pLocal, pCmd);
 }

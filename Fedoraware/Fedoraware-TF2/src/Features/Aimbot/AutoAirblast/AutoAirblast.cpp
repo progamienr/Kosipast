@@ -28,9 +28,6 @@ void CAutoAirblast::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 	if (iWeaponID != TF_WEAPON_FLAMETHROWER && iWeaponID != TF_WEAPON_FLAME_BALL || G::CurItemDefIndex == Pyro_m_ThePhlogistinator)
 		return;
 
-	const auto& pNet = I::EngineClient->GetNetChannelInfo();
-	const float flLatency = pNet ? pNet->GetLatency(FLOW_INCOMING) + pNet->GetLatency(FLOW_OUTGOING) : 0.f;
-
 	const Vec3 vEyePos = pLocal->GetShootPos();
 	bool bShouldBlast = false;
 

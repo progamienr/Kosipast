@@ -3,7 +3,7 @@
 MAKE_HOOK(CRendering3dView_EnableWorldFog, S::CRendering3dView_EnableWorldFog(), void, __cdecl,
 	)
 {
-	if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::UI::CleanScreenshots.Value || !(Vars::Visuals::World::Modulations.Value & 1 << 4))
+	if (!(Vars::Visuals::World::Modulations.Value & 1 << 4) || I::EngineClient->IsTakingScreenshot() && Vars::Visuals::UI::CleanScreenshots.Value)
 		return Hook.Original<FN>()();
 
 	if (!Vars::Colors::FogModulation.Value.a)

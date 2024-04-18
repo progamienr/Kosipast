@@ -9,7 +9,8 @@ class CChams
 		Color_t VisibleColor = { 255, 255, 255, 255 },
 		Color_t OccludedColor = { 255, 255, 255, 255 }
 	);
-	bool GetChams(CBaseEntity* pEntity, Chams_t* pChams);
+	bool GetPlayerChams(CBaseEntity* pEntity, CBaseEntity* pLocal, Chams_t* pChams, bool bFriendly, bool bEnemy);
+	bool GetChams(CBaseEntity* pLocal, CBaseEntity* pEntity, Chams_t* pChams);
 
 	void StencilBegin(IMatRenderContext* pRenderContext, bool bTwoModels = false);
 	void StencilVisible(IMatRenderContext* pRenderContext, bool bTwoModels = false);
@@ -22,7 +23,7 @@ class CChams
 	void RenderFakeAngle(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 
 public:
-	void RenderMain();
+	void RenderMain(CBaseEntity* pLocal);
 	void RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 
 	bool RenderViewmodel(void* ecx, int flags, int* iReturn);

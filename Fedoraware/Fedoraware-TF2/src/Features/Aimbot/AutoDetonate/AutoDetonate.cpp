@@ -2,7 +2,7 @@
 
 #include "../../Vars.h"
 
-bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup, float flRadiusScale, CUserCmd* pCmd)
+bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, EGroupType entityGroup, float flRadiusScale, CUserCmd* pCmd)
 {
 	for (const auto& pExplosive : g_EntityCache.GetGroup(entityGroup))
 	{
@@ -39,7 +39,7 @@ bool CAutoDetonate::CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup,
 			if (vOrigin.DistTo(vPos) > flRadius)
 				continue;
 
-			const bool isPlayer = pTarget->IsPlayer() && Vars::Aimbot::General::Target.Value & ToAimAt::PLAYER && !F::AimbotGlobal.ShouldIgnore(pTarget);
+			const bool isPlayer = pTarget->IsPlayer() && Vars::Aimbot::General::Target.Value & ToAimAt::PLAYER && !F::AimbotGlobal.ShouldIgnore(pTarget, pLocal, pWeapon);
 			const bool isSentry = Vars::Aimbot::General::Target.Value & ToAimAt::SENTRY && pTarget->IsSentrygun();
 			const bool isDispenser = Vars::Aimbot::General::Target.Value & ToAimAt::DISPENSER && pTarget->IsDispenser();
 			const bool isTeleporter = Vars::Aimbot::General::Target.Value & ToAimAt::TELEPORTER && pTarget->IsTeleporter();
@@ -72,10 +72,10 @@ void CAutoDetonate::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCm
 		return;
 
 	// Check sticky detonation
-	if (Vars::Aimbot::Projectile::AutoDetonate.Value & (1 << 0) && CheckDetonation(pLocal, EGroupType::LOCAL_STICKIES, Vars::Aimbot::Projectile::AutodetRadius.Value / 100, pCmd))
+	if (Vars::Aimbot::Projectile::AutoDetonate.Value & (1 << 0) && CheckDetonation(pLocal, pWeapon, EGroupType::LOCAL_STICKIES, Vars::Aimbot::Projectile::AutodetRadius.Value / 100, pCmd))
 		pCmd->buttons |= IN_ATTACK2;
 
 	// Check flare detonation
-	if (Vars::Aimbot::Projectile::AutoDetonate.Value & (1 << 1) && CheckDetonation(pLocal, EGroupType::LOCAL_FLARES, Vars::Aimbot::Projectile::AutodetRadius.Value / 100, pCmd))
+	if (Vars::Aimbot::Projectile::AutoDetonate.Value & (1 << 1) && CheckDetonation(pLocal, pWeapon, EGroupType::LOCAL_FLARES, Vars::Aimbot::Projectile::AutodetRadius.Value / 100, pCmd))
 		pCmd->buttons |= IN_ATTACK2;
 }

@@ -56,9 +56,7 @@ MAKE_HOOK(ISteamNetworkingUtils_GetDirectPingToPOP, Utils::GetVFuncPtr(g_SteamIn
 	void* ecx, void* edx, SteamNetworkingPOPID popID)
 {
 	if (!Vars::Misc::Queueing::ForceRegions.Value)
-	{
 		return Hook.Original<FN>()(ecx, edx, popID);
-	}
 
 	char popIDName[5];
 	POPID_ToString(popID, popIDName);

@@ -20,9 +20,8 @@ struct Condition_t
 class CConditions
 {
 public:
-	void Run();
+	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
-	bool Exists(std::string sCondition);
 	bool HasChildren(std::string sCondition);
 	std::string GetParent(std::string sCondition);
 	void AddCondition(std::string sCondition, Condition_t tCond);

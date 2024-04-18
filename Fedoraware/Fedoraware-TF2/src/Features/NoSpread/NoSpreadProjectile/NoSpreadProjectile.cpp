@@ -16,7 +16,7 @@ bool CNoSpreadProjectile::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	return G::IsAttacking;
 }
 
-void CNoSpreadProjectile::Run(CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
+void CNoSpreadProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
 	if (!ShouldRun(pLocal, pWeapon))
 		return;

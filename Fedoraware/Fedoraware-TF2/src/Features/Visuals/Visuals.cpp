@@ -34,13 +34,12 @@ void CVisuals::DrawAimbotFOV(CBaseEntity* pLocal)
 	g_Draw.LineCircle(g_ScreenSize.w / 2, g_ScreenSize.h / 2, flR, 68, clr);
 }
 
-void CVisuals::DrawTickbaseText()
+void CVisuals::DrawTickbaseText(CBaseEntity* pLocal)
 {
 	if (!(Vars::Menu::Indicators.Value & (1 << 0)))
 		return;
 
-	const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
-	if (!pLocal || !pLocal->IsAlive())
+	if (!pLocal->IsAlive())
 		return;
 
 	const int iTicks = std::clamp(G::ShiftedTicks + G::ChokeAmount, 0, G::MaxShift);
@@ -90,16 +89,16 @@ void CVisuals::DrawOnScreenPing(CBaseEntity* pLocal)
 	if (!(Vars::Menu::Indicators.Value & (1 << 3)) || !pLocal || !pLocal->IsAlive())
 		return;
 
-	CTFPlayerResource* cResource = g_EntityCache.GetPR();
-	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!cResource || !iNetChan)
+	auto pResource = g_EntityCache.GetPR();
+	auto pNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!pResource || !pNetChan)
 		return;
 
-	const float flLatencyIn = iNetChan->GetLatency(FLOW_INCOMING) * 1000.f;
-	const float flLatencyOut = iNetChan->GetLatency(FLOW_OUTGOING) * 1000.f;
+	const float flLatencyIn = pNetChan->GetLatency(FLOW_INCOMING) * 1000.f;
+	const float flLatencyOut = pNetChan->GetLatency(FLOW_OUTGOING) * 1000.f;
 	const float flFake = std::min((F::Backtrack.GetFake() + (F::Backtrack.flFakeInterp > G::LerpTime ? F::Backtrack.flFakeInterp : 0.f)) * 1000.f, F::Backtrack.flMaxUnlag * 1000.f);
 	const float flLatency = F::Backtrack.GetReal() * 1000.f;
-	const int iLatencyScoreBoard = cResource->GetPing(pLocal->GetIndex());
+	const int iLatencyScoreBoard = pResource->GetPing(pLocal->GetIndex());
 
 	int x = Vars::Menu::PingDisplay.Value.x;
 	int y = Vars::Menu::PingDisplay.Value.y + 8;
@@ -182,7 +181,7 @@ void CVisuals::DrawSeedPrediction(CBaseEntity* pLocal)
 
 	if (!Vars::Debug::Info.Value)
 	{
-		const auto& pWeapon = g_EntityCache.GetWeapon();
+		auto pWeapon = g_EntityCache.GetWeapon();
 		if (!pWeapon || !F::NoSpreadHitscan.ShouldRun(pLocal, pWeapon))
 			return;
 	}
@@ -208,22 +207,17 @@ void CVisuals::DrawSeedPrediction(CBaseEntity* pLocal)
 	g_Draw.String(fFont, x, y, cColor, align, std::format("Uptime {}", F::NoSpreadHitscan.GetFormat(F::NoSpreadHitscan.flServerTime)).c_str());
 	g_Draw.String(fFont, x, y += fFont.nTall + 1, cColor, align, std::format("Mantissa step {}", F::NoSpreadHitscan.flMantissaStep).c_str());
 	if (Vars::Debug::Info.Value)
+	{
 		g_Draw.String(fFont, x, y += fFont.nTall + 1, cColor, align, std::format("Seed {}", F::NoSpreadHitscan.iSeed).c_str());
+		g_Draw.String(fFont, x, y += fFont.nTall + 1, cColor, align, std::format("{}", F::NoSpreadHitscan.flFloatTimeDelta).c_str());
+	}
 }
 
-void CVisuals::ProjectileTrace(const bool bQuick)
+void CVisuals::ProjectileTrace(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const bool bQuick)
 {
 	F::CameraWindow.ShouldDraw = false;
-
-	if (bQuick ? !Vars::Visuals::Simulation::ProjectileTrajectory.Value : !Vars::Visuals::Simulation::TrajectoryOnShot.Value)
-		return;
-
-	const auto& pLocal = g_EntityCache.GetLocal();
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon)
-		return;
-
-	if (pWeapon->GetWeaponID() == TF_WEAPON_FLAMETHROWER && !Vars::Debug::Info.Value)
+	if ((bQuick ? !Vars::Visuals::Simulation::ProjectileTrajectory.Value : !Vars::Visuals::Simulation::TrajectoryOnShot.Value) || !pLocal || !pWeapon
+		|| pWeapon->GetWeaponID() == TF_WEAPON_FLAMETHROWER && !Vars::Debug::Info.Value)
 		return;
 
 	ProjectileInfo projInfo = {};
@@ -452,14 +446,14 @@ void CVisuals::RevealBoxes()
 		Box.m_flTime = I::GlobalVars->curtime + 60.f;
 }
 
-void CVisuals::DrawServerHitboxes()
+void CVisuals::DrawServerHitboxes(CBaseEntity* pLocal)
 {
 	static int iOldTick = I::GlobalVars->tickcount;
 	if (iOldTick == I::GlobalVars->tickcount)
 		return;
 	iOldTick = I::GlobalVars->tickcount;
 
-	if (I::Input->CAM_IsThirdPerson() && Vars::Debug::ServerHitbox.Value)
+	if (I::Input->CAM_IsThirdPerson() && Vars::Debug::ServerHitbox.Value && pLocal->IsAlive())
 	{
 		using GetServerAnimating_t = void* (*)(int);
 		static auto GetServerAnimating = S::GetServerAnimating.As<GetServerAnimating_t>();
@@ -467,13 +461,9 @@ void CVisuals::DrawServerHitboxes()
 		using DrawServerHitboxes_t = void(__thiscall*)(void*, float, bool); // C_BaseAnimating, Duration, MonoColour
 		static auto DrawServerHitboxes = S::DrawServerHitboxes.As<DrawServerHitboxes_t>();
 
-		const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
-		if (pLocal && pLocal->IsAlive())
-		{
-			void* server_animating = GetServerAnimating(pLocal->GetIndex());
-			if (server_animating)
-				DrawServerHitboxes(server_animating, TICK_INTERVAL, true);
-		}
+		void* server_animating = GetServerAnimating(pLocal->GetIndex());
+		if (server_animating)
+			DrawServerHitboxes(server_animating, TICK_INTERVAL, true);
 	}
 }
 
@@ -500,27 +490,21 @@ void CVisuals::RenderBox(const Vec3& vPos, const Vec3& vMins, const Vec3& vMaxs,
 
 
 
-void CVisuals::FOV(CViewSetup* pView)
+void CVisuals::FOV(CBaseEntity* pLocal, CViewSetup* pView)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	pLocal->m_iFOV() = pView->fov;
 
-	if (pLocal && pView)
-	{
-		pLocal->m_iFOV() = pView->fov;
+	const int fov = pLocal->IsScoped() ? Vars::Visuals::UI::ZoomFieldOfView.Value : Vars::Visuals::UI::FieldOfView.Value;
+	if (!fov)
+		return;
 
-		const int fov = pLocal->IsScoped() ? Vars::Visuals::UI::ZoomFieldOfView.Value : Vars::Visuals::UI::FieldOfView.Value;
-		if (!fov)
-			return;
-
-		pView->fov = fov;
-		pLocal->m_iFOV() = fov;
-	}
+	pView->fov = fov;
+	pLocal->m_iFOV() = fov;
 }
 
-void CVisuals::ThirdPerson(CViewSetup* pView)
+void CVisuals::ThirdPerson(CBaseEntity* pLocal, CViewSetup* pView)
 {
-	const auto& pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || !pLocal->IsAlive())
+	if (!pLocal->IsAlive())
 		return I::Input->CAM_ToFirstPerson();
 	
 	const bool bNoZoom = (!Vars::Visuals::Removals::Scope.Value || Vars::Visuals::UI::ZoomFieldOfView.Value < 70) && pLocal->IsScoped();
@@ -580,21 +564,16 @@ void CVisuals::DrawSightlines()
 
 void CVisuals::FillSightlines()
 {
-	if (Vars::Visuals::UI::SniperSightlines.Value)
+	auto pLocal = g_EntityCache.GetLocal();
+	if (Vars::Visuals::UI::SniperSightlines.Value && pLocal)
 	{
 		m_SightLines = {}; // should get rid of residual lines
 
 		std::unordered_map<CBaseEntity*, Vec3> mDots = {};
-		for (int n = I::EngineClient->GetMaxClients() + 1; n <= I::ClientEntityList->GetHighestEntityIndex(); n++)
+		for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::MISC_DOTS))
 		{
-			if (CBaseEntity* pDot = I::ClientEntityList->GetClientEntity(n))
-			{
-				if (pDot->GetClassID() != ETFClassID::CSniperDot || pDot->GetDormant())
-					continue;
-
-				if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pDot->m_hOwnerEntity()))
-					mDots[pOwner] = pDot->m_vecOrigin();
-			}
+			if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()))
+				mDots[pOwner] = pEntity->m_vecOrigin();
 		}
 
 		for (const auto& pEnemy : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
@@ -616,7 +595,7 @@ void CVisuals::FillSightlines()
 			filter.pSkip = pEnemy;
 			Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
 
-			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pEnemy, Vars::Colors::Relative.Value), true };
+			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, GetEntityDrawColor(pLocal, pEnemy, Vars::Colors::Relative.Value), true };
 		}
 	}
 }
@@ -672,20 +651,20 @@ void CVisuals::OverrideWorldTextures()
 {
 	KeyValues* kv = nullptr;
 
-	auto& string = Vars::Visuals::World::WorldTexture.Value;
-	if (string == "Default")
+	auto uHash = FNV1A::Hash(Vars::Visuals::World::WorldTexture.Value.c_str());
+	if (uHash == FNV1A::HashConst("Default"))
 		return;
 
 	kv = new KeyValues("LightmappedGeneric");
-	if (string == "Dev")
+	if (uHash == FNV1A::HashConst("Dev"))
 		kv->SetString("$basetexture", "dev/dev_measuregeneric01b");
-	else if (string == "Camo")
+	else if (uHash == FNV1A::HashConst("Camo"))
 		kv->SetString("$basetexture", "patterns/paint_strokes");
-	else if (string == "Black")
+	else if (uHash == FNV1A::HashConst("Black"))
 		kv->SetString("$basetexture", "patterns/combat/black");
-	else if (string == "White")
+	else if (uHash == FNV1A::HashConst("White"))
 		kv->SetString("$basetexture", "patterns/combat/white");
-	else if (string == "Flat")
+	else if (uHash == FNV1A::HashConst("Flat"))
 	{
 		kv->SetString("$basetexture", "vgui/white_additive");
 		kv->SetString("$color2", "[0.12 0.12 0.15]");
@@ -799,7 +778,7 @@ void CVisuals::SkyboxChanger()
 	const bool bScreenshot = Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 
 	static auto sv_skyname = g_ConVars.FindVar("sv_skyname");
-	if (Vars::Visuals::World::SkyboxChanger.Value != "Off" && !bScreenshot)
+	if (FNV1A::Hash(Vars::Visuals::World::SkyboxChanger.Value.c_str()) != FNV1A::HashConst("Off") && !bScreenshot)
 		fnLoadSkys(Vars::Visuals::World::SkyboxChanger.Value.c_str());
 	else if (sv_skyname)
 		fnLoadSkys(sv_skyname->GetString());

@@ -8,7 +8,7 @@ private:
 	void DrawArrowTo(const Vec3& vecFromPos, const Vec3& vecToPos, Color_t color);
 
 public:
-	void Run();
+	void Run(CBaseEntity* pLocal);
 };
 
 ADD_FEATURE(CPlayerArrows, PlayerArrows)

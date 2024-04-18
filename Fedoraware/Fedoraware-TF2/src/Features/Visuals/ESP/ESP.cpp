@@ -12,17 +12,14 @@ namespace S
 	MAKE_SIGNATURE(C_EconItemView_GetItemName, CLIENT_DLL, "56 8B F1 C6 86 ? ? ? ? ? E8 ? ? ? ? 8B 8E ? ? ? ? 5E 85 C9 75 06", 0x0);
 }
 
-void CESP::Run()
+void CESP::Run(CBaseEntity* pLocal)
 {
 	if (!Vars::ESP::Draw.Value)
 		return;
 
-	if (const auto& pLocal = g_EntityCache.GetLocal())
-	{
-		DrawWorld();
-		DrawBuildings(pLocal);
-		DrawPlayers(pLocal);
-	}
+	DrawWorld();
+	DrawBuildings(pLocal);
+	DrawPlayers(pLocal);
 }
 
 bool CESP::GetDrawBounds(CBaseEntity* pEntity, int& x, int& y, int& w, int& h)
@@ -38,51 +35,14 @@ bool CESP::GetDrawBounds(CBaseEntity* pEntity, int& x, int& y, int& w, int& h)
 		Math::MatrixSetColumn(pEntity->GetAbsOrigin(), 3, transform);
 	}
 
-	float left = 0.f, right = 0.f, top = 0.f, bottom = 0.f;
-	const Vec3 vPoints[] =
-	{
-		Vec3(0.f, 0.f, vMins.z),
-		Vec3(0.f, 0.f, vMaxs.z),
-		Vec3(vMins.x, vMins.y, vMaxs.z * 0.5f),
-		Vec3(vMins.x, vMaxs.y, vMaxs.z * 0.5f),
-		Vec3(vMaxs.x, vMins.y, vMaxs.z * 0.5f),
-		Vec3(vMaxs.x, vMaxs.y, vMaxs.z * 0.5f)
-	};
-	for (int n = 0; n < 6; n++)
-	{
-		Vec3 trans; Math::VectorTransform(vPoints[n], transform, trans);
+	float flLeft, flRight, flTop, flBottom;
+	if (!Utils::IsOnScreen(pEntity, transform, &flLeft, &flRight, &flTop, &flBottom))
+		return false;
 
-		Vec3 vScreenPos;
-		if (!Utils::W2S(trans, vScreenPos))
-			return false;
-
-		if (vScreenPos.x < -g_ScreenSize.w
-			|| vScreenPos.x > g_ScreenSize.w * 2
-			|| vScreenPos.y < -g_ScreenSize.h
-			|| vScreenPos.y > g_ScreenSize.h * 2)
-			return false;
-
-		left = n ? std::min(left, vScreenPos.x) : vScreenPos.x;
-		right = n ? std::max(right, vScreenPos.x) : vScreenPos.x;
-		top = n ? std::max(top, vScreenPos.y) : vScreenPos.y;
-		bottom = n ? std::min(bottom, vScreenPos.y) : vScreenPos.y;
-	}
-
-	float x_ = left;
-	const float y_ = bottom;
-	float w_ = right - left;
-	const float h_ = top - bottom;
-
-	//if (Vars::ESP::Players::Box.Value)
-	//{
-		x_ += (right - left) / 8.f;
-		w_ -= (right - left) / 8.f * 2.f;
-	//}
-
-	x = static_cast<int>(x_);
-	y = static_cast<int>(y_);
-	w = static_cast<int>(w_);
-	h = static_cast<int>(h_);
+	x = flLeft + (flRight - flLeft) / 8.f;
+	y = flBottom;
+	w = flRight - flLeft - (flRight - flLeft) / 8.f * 2.f;
+	h = flTop - flBottom;
 
 	return !(x > g_ScreenSize.w || x + w < 0 || y > g_ScreenSize.h || y + h < 0);
 }
@@ -92,8 +52,8 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 	if (!Vars::ESP::Player.Value)
 		return;
 
-	CTFPlayerResource* cResource = g_EntityCache.GetPR();
-	if (!cResource)
+	auto pResource = g_EntityCache.GetPR();
+	if (!pResource)
 		return;
 
 	for (const auto& pPlayer : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
@@ -113,12 +73,11 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				if (I::EngineClient->GetPlayerInfo(nIndex, &pi) && F::PlayerUtils.GetPriority(pi.friendsID) <= F::PlayerUtils.mTags["Default"].Priority)
 					continue;
 			}
-			pPlayer->m_iHealth() = cResource->GetHealth(pPlayer->GetIndex());
 		}
 
 		if (nIndex != I::EngineClient->GetLocalPlayer())
 		{
-			if (!(Vars::ESP::Draw.Value & 1 << 2 && g_EntityCache.IsFriend(nIndex)))
+			if (!(Vars::ESP::Draw.Value & 1 << 2 && g_EntityCache.IsSteamFriend(nIndex)))
 			{
 				if (!(Vars::ESP::Draw.Value & 1 << 0) && pPlayer->m_iTeamNum() != pLocal->m_iTeamNum())
 					continue;
@@ -137,8 +96,8 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			int lOffset = 0, rOffset = 0, bOffset = 2, tOffset = 0;
 			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_NAME);
 
-			const Color_t drawColor = GetEntityDrawColor(pPlayer, Vars::Colors::Relative.Value); //GetTeamColor(pPlayer->m_iTeamNum(), Vars::Colors::Relative.Value);
-			const int iMaxHealth = pPlayer->GetMaxHealth(), iHealth = pPlayer->m_iHealth(), iClassNum = pPlayer->m_iClass();
+			const Color_t drawColor = GetEntityDrawColor(pLocal, pPlayer, Vars::Colors::Relative.Value); //GetTeamColor(pPlayer->m_iTeamNum(), Vars::Colors::Relative.Value);
+			const int iMaxHealth = pPlayer->GetMaxHealth(), iHealth = pPlayer->GetDormant() ? pResource->GetHealth(pPlayer->GetIndex()) : pPlayer->m_iHealth(), iClassNum = pPlayer->m_iClass();
 
 			// Bones
 			if (Vars::ESP::Player.Value & 1 << 11)
@@ -227,7 +186,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						if (F::PlayerUtils.GetTag(sTag, &plTag) && plTag.Label)
 							vLabels.push_back({ sTag, plTag });
 					}
-					if (Utils::IsSteamFriend(pi.friendsID))
+					if (g_EntityCache.IsSteamFriend(nIndex))
 					{
 						const auto& plTag = F::PlayerUtils.mTags["Friend"];
 						if (plTag.Label)
@@ -354,36 +313,18 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "LAGCOMP");
 						rOffset += fFontEsp.nTall;
 					}
-					/*
-					const float flDelta = pPlayer->m_flSimulationTime() - pPlayer->m_flOldSimulationTime();
-					if (TIME_TO_TICKS(flDelta) != 1)
-					{
-						bool bDisplay = F::Backtrack.mRecords[pPlayer].size() < 3;
-						if (!bDisplay)
-						{
-							const Vec3 vPrevOrigin = F::Backtrack.mRecords[pPlayer].front().vOrigin;
-							const Vec3 vDelta = pPlayer->GetAbsOrigin() - vPrevOrigin;
-							if (vDelta.Length2DSqr() > 4096.f)
-								bDisplay = true;
-						}
-						if (bDisplay)
-						{
-							g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "LAGCOMP");
-							rOffset += fFontEsp.nTall;
-						}
-					}
-					*/
 				}
 
 				// Ping warning, idea from nitro
 				if (Vars::ESP::Player.Value & 1 << 18 && pPlayer != pLocal)
 				{
-					int ping = cResource->GetPing(pPlayer->GetIndex());
-					if (const INetChannel* netChannel = I::EngineClient->GetNetChannelInfo()) // safety net
+					auto pNetChan = I::EngineClient->GetNetChannelInfo();
+					if (pNetChan && !pNetChan->IsLoopback())
 					{
-						if (!netChannel->IsLoopback() && ping != 0 && (ping >= 200 || ping <= 5))
+						int iPing = pResource->GetPing(pPlayer->GetIndex());
+						if (iPing && (iPing >= 200 || iPing <= 5))
 						{
-							g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "%dMS", ping);
+							g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "%dMS", iPing);
 							rOffset += fFontEsp.nTall;
 						}
 					}
@@ -392,21 +333,16 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				// Idea from rijin
 				if (Vars::ESP::Player.Value & 1 << 19 && pPlayer != pLocal)
 				{
-					const int kills = cResource->GetKills(pPlayer->GetIndex());
-					const int deaths = cResource->GetDeaths(pPlayer->GetIndex());
-					if (deaths > 1)
+					const int iKills = pResource->GetKills(pPlayer->GetIndex());
+					const int iDeaths = pResource->GetDeaths(pPlayer->GetIndex());
+					if (iKills >= 20)
 					{
-						const int kd = kills / deaths;
-						if (kills >= 12 && kd >= 6) // dont just say they have a high kd because they just joined and got a couple kills
+						const int iKDR = iKills / std::max(iDeaths, 1);
+						if (iKDR >= 10)
 						{
-							g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "HIGH K/D [%d/%d]", kills, deaths);
+							g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "HIGH K/D [%d/%d]", iKills, iDeaths);
 							rOffset += fFontEsp.nTall;
 						}
-					}
-					else if (kills >= 12)
-					{
-						g_Draw.String(fFontEsp, x + w + 4, y + rOffset, { 255, 95, 95, 255 }, ALIGN_TOPLEFT, "HIGH K/D [%d]", kills);
-						rOffset += fFontEsp.nTall;
 					}
 				}
 
@@ -420,17 +356,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					// Buffs
 					if (Vars::ESP::Player.Value & 1 << 14)
 					{
-						if (pPlayer->InCond(TF_COND_CRITBOOSTED) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_PUMPKIN) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_USER_BUFF) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_DEMO_CHARGE) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_FIRST_BLOOD) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_BONUS_TIME) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_CTF_CAPTURE) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_ON_KILL) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_RAGE_BUFF) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_CARD_EFFECT) ||
-							pPlayer->InCond(TF_COND_CRITBOOSTED_RUNE_TEMP))
+						if (pPlayer->IsCritBoosted())
 							drawCond("CRITS", { 255, 107, 108, 255 }, x + w + 4, y);
 
 						if (pPlayer->InCond(TF_COND_ENERGY_BUFF) ||
@@ -556,7 +482,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 			const int nIndex = pOwner->GetIndex();
 			if (nIndex != I::EngineClient->GetLocalPlayer())
 			{
-				if (!(Vars::ESP::Draw.Value & 1 << 2 && g_EntityCache.IsFriend(nIndex)))
+				if (!(Vars::ESP::Draw.Value & 1 << 2 && g_EntityCache.IsSteamFriend(nIndex)))
 				{
 					if (!(Vars::ESP::Draw.Value & 1 << 0) && pOwner->m_iTeamNum() != pLocal->m_iTeamNum())
 						continue;
@@ -581,7 +507,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 			int lOffset = 0, rOffset = 0, /*bOffset = 0, */tOffset = 0;
 			const auto& fFontEsp = g_Draw.GetFont(FONT_ESP), & fFontName = g_Draw.GetFont(FONT_NAME);
 
-			const Color_t drawColor = GetEntityDrawColor(pOwner ? pOwner : pBuilding, Vars::Colors::Relative.Value); //GetTeamColor(pBuilding->m_iTeamNum(), Vars::ESP::Main::Relative.Value);
+			const Color_t drawColor = GetEntityDrawColor(pLocal, pOwner ? pOwner : pBuilding, Vars::Colors::Relative.Value); //GetTeamColor(pBuilding->m_iTeamNum(), Vars::ESP::Main::Relative.Value);
 			const int iMaxHealth = pBuilding->GetMaxHealth(), iHealth = std::min(pBuilding->m_iBOHealth(), iMaxHealth);
 
 			const auto nType = static_cast<EBuildingType>(pBuilding->m_iObjectType());

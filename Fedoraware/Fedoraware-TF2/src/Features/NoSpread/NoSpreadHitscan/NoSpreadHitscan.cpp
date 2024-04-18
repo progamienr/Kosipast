@@ -1,6 +1,8 @@
 #include "NoSpreadHitscan.h"
 #include "../../Vars.h"
+#include "../../TickHandler/TickHandler.h"
 #include <regex>
+#include <numeric>
 
 void CNoSpreadHitscan::Reset(bool bResetPrint)
 {
@@ -105,12 +107,12 @@ bool CNoSpreadHitscan::ParsePlayerPerf(bf_read& msgData)
 		if (flNewServerTime < flServerTime)
 			return true;
 
-		flMantissaStep = CalcMantissaStep(flNewServerTime);
-		const int iSynced = flMantissaStep < 1.f ? 2 : 1;
-		bSynced = iSynced == 1;
-
 		flServerTime = flNewServerTime;
 		flFloatTimeDelta = flServerTime - float(Utils::PlatFloatTime());
+
+		flMantissaStep = CalcMantissaStep(flServerTime);
+		const int iSynced = flMantissaStep < 4.f ? 2 : 1;
+		bSynced = iSynced == 1;
 
 		if (!iBestSync || iBestSync == 2 && bSynced)
 		{
@@ -125,7 +127,7 @@ bool CNoSpreadHitscan::ParsePlayerPerf(bf_read& msgData)
 	return std::regex_match(msg, std::regex(R"(\d+.\d+\s\d+\s\d+)"));
 }
 
-void CNoSpreadHitscan::Run(CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
+void CNoSpreadHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
 {
 	iSeed = GetSeed(pCmd);
 	if (!bSynced || !ShouldRun(pLocal, pWeapon, true))
@@ -143,7 +145,7 @@ void CNoSpreadHitscan::Run(CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapo
 	{
 		Utils::RandomSeed(iSeed + iBullet);
 
-		if (!iBullet) // Check if we'll get a guaranteed perfect shot
+		if (!iBullet && !F::Ticks.GetTicks(pLocal)) // Check if we'll get a guaranteed perfect shot
 		{
 			const float flTimeSinceLastShot = (pLocal->m_nTickBase() * TICK_INTERVAL) - pWeapon->m_flLastFireTime();
 

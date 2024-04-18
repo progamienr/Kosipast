@@ -29,21 +29,24 @@ MAKE_HOOK(CTFPlayerShared_InCond, S::CTFPlayerShared_InCond(), bool, __fastcall,
 			return false;
 	}
 
+	auto pLocal = g_EntityCache.GetLocal();
+	auto pEntity = GetOuter();
+
 	// Compare team's, removing team's taunt is useless
-	if (nCond == TF_COND_TAUNTING && Vars::Visuals::Removals::Taunts.Value)
+	if (nCond == TF_COND_TAUNTING && Vars::Visuals::Removals::Taunts.Value && pLocal && pEntity && pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
+		return false;
+
+	if (pLocal == pEntity)
 	{
-		const auto& pLocal = g_EntityCache.GetLocal();
-		const auto& pEntity = GetOuter();
-		if (pLocal && pEntity && pEntity->m_iTeamNum() != pLocal->m_iTeamNum())
+		if (nCond == TF_COND_HALLOWEEN_KART && Vars::Misc::Automation::KartControl.Value && !G::AnimateKart)
+			return false;
+	}
+	else
+	{
+		if (nCond == TF_COND_DISGUISED && Vars::Visuals::Removals::Disguises.Value)
 			return false;
 	}
 
-	// Just compare entity ptr's, filtering out local is enough. Also prevents T pose.
-	if (nCond == TF_COND_DISGUISED && Vars::Visuals::Removals::Disguises.Value && g_EntityCache.GetLocal() != GetOuter())
-		return false;
-
-	if (nCond == TF_COND_HALLOWEEN_KART && Vars::Misc::Automation::KartControl.Value && !G::AnimateKart && g_EntityCache.GetLocal() == GetOuter())
-		return false;
 
 	return Hook.Original<FN>()(ecx, edx, nCond);
 }

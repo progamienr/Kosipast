@@ -225,35 +225,12 @@ namespace Vars
 	NAMESPACE_END(AntiHack)
 
 	NAMESPACE_BEGIN(CheaterDetection)
-		CVar(Methods, 0b111111100)			// { Duck Speed, Aimbot, OOB Angles, Aim Flicking, Bunnyhopping, Packet Choking, Simtime Changes, Score, Accuracy }
-		CVar(Protections, 0b111)			// { Timing Out, Lagging Client, Double Scans }
-		CVar(SuspicionGate, 10)				// the amount of infractions prior to marking someone as a cheater
-		CVar(PacketManipGate, 14)			// the avg choke for someone to receive and infraction for packet choking
-		CVar(BHopMaxDelay, 1)				// max groundticks used when detecting a bunny hop.
-		CVar(BHopDetectionsRequired, 5)		// how many times must some be seen bunny hopping to receive an infraction
-		CVar(ScoreMultiplier, 2.f)			// multiply the avg score/s by this to receive the maximum amount
-		CVar(MinimumFlickDistance, 20.f)	// min mouse flick size to suspect someone of angle cheats.
-		CVar(MaximumNoise, 5.f)				// max mouse noise prior to a flick to mark somebody
-		CVar(MinimumAimbotFoV, 3.f)			// scaled with how many ticks a player has choked up to ->
-		CVar(MaxScaledAimbotFoV, 20.f)		// self explanatory
+		CVar(Methods, 0b00001)				// { Duck Speed, Aim flicking, Packet choking, Invalid pitch }
+		CVar(DetectionsRequired, 10)
+		CVar(MinimumChoking, 20)
+		CVar(MinimumFlick, 20.f)			// min flick size to suspect
+		CVar(MaximumNoise, 5.f)				// max different between angles before and after flick
 	NAMESPACE_END(CheaterDetection)
-
-	NAMESPACE_BEGIN(Auto)
-		SUBNAMESPACE_BEGIN(Global)
-			CVar(Active, false)
-		SUBNAMESPACE_END(Global)
-
-		SUBNAMESPACE_BEGIN(Uber)
-			CVar(Active, false)
-			CVar(OnlyFriends, false)
-			CVar(PopLocal, false)
-			CVar(AutoVaccinator, 0b111) // { Fire, Blast, Bullet }
-			CVar(ReactClasses, 0b000000000)
-			CVar(HealthLeft, 35.0f)
-			CVar(ReactFOV, 25)
-			CVar(VoiceCommand, false)
-		SUBNAMESPACE_END(Uber)
-	NAMESPACE_END(Triggerbot)
 
 	NAMESPACE_BEGIN(ESP)
 		CVar(Draw, 0, VISUAL)
@@ -290,6 +267,16 @@ namespace Vars
 			CVar(VisibleColor, Color_t(255, 255, 255, 255), VISUAL)
 			CVar(OccludedColor, Color_t(255, 255, 255, 255), VISUAL)
 		SUBNAMESPACE_END(Enemy)
+
+		SUBNAMESPACE_BEGIN(Player)
+			CVar(Local, false, VISUAL)
+			CVar(Friend, false, VISUAL)
+		
+			CVar(VisibleMaterial, std::vector<std::string> { "Original" }, VISUAL)
+			CVar(OccludedMaterial, std::vector<std::string> {}, VISUAL)
+			CVar(VisibleColor, Color_t(255, 255, 255, 255), VISUAL)
+			CVar(OccludedColor, Color_t(255, 255, 255, 255), VISUAL)
+		SUBNAMESPACE_END(Player)
 
 		SUBNAMESPACE_BEGIN(World)
 			CVar(NPCs, false, VISUAL)
@@ -357,6 +344,16 @@ namespace Vars
 			CVar(StencilScale, 1, VISUAL)
 			CVar(BlurScale, 1, VISUAL)
 		SUBNAMESPACE_END(Enemy)
+
+		SUBNAMESPACE_BEGIN(Player)
+			CVar(Local, false, VISUAL)
+			CVar(Friend, false, VISUAL)
+				
+			CVar(Stencil, false, VISUAL)
+			CVar(Blur, false, VISUAL)
+			CVar(StencilScale, 1, VISUAL)
+			CVar(BlurScale, 1, VISUAL)
+		SUBNAMESPACE_END(Player)
 
 		SUBNAMESPACE_BEGIN(World)
 			CVar(NPCs, false, VISUAL)
@@ -621,11 +618,6 @@ namespace Vars
 			CVar(GiantWeaponSounds, false)
 		SUBNAMESPACE_END(Sound)
 
-		SUBNAMESPACE_BEGIN(MannVsMachine)
-			CVar(InstantRespawn, false)
-			CVar(InstantRevive, false)
-		SUBNAMESPACE_END(Sound)
-
 		SUBNAMESPACE_BEGIN(Game)
 			CVar(NetworkFix, false)
 			CVar(PredictionErrorJitterFix, false)
@@ -635,8 +627,13 @@ namespace Vars
 		SUBNAMESPACE_BEGIN(Queueing)
 			CVar(ForceRegions, 0)
 			CVar(FreezeQueue, false)
-			CVar(AutoCasualQueue, 0)
+			CVar(AutoCasualQueue, false)
 		SUBNAMESPACE_END(Queueing)
+
+		SUBNAMESPACE_BEGIN(MannVsMachine)
+			CVar(InstantRespawn, false)
+			CVar(InstantRevive, false)
+		SUBNAMESPACE_END(Sound)
 
 		SUBNAMESPACE_BEGIN(Chat)
 			CVar(Tags, false)

@@ -17,13 +17,32 @@ Chams_t CChams::GetStruct(std::vector<std::string> VisibleMaterial, std::vector<
 	};
 }
 
-bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
+bool CChams::GetPlayerChams(CBaseEntity* pEntity, CBaseEntity* pLocal, Chams_t* pChams, bool bFriendly, bool bEnemy)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || pEntity->GetDormant() || !pEntity->ShouldDraw())
-		return false;
+	if (pEntity == pLocal)
+	{
+		*pChams = GetStruct(Vars::Chams::Player::VisibleMaterial.Value, Vars::Chams::Player::OccludedMaterial.Value, Vars::Chams::Player::VisibleColor.Value, Vars::Chams::Player::OccludedColor.Value);
+		return Vars::Chams::Player::Local.Value;
+	}
+	else
+	{
+		if (g_EntityCache.IsSteamFriend(pEntity->GetIndex()) && Vars::Chams::Player::Friend.Value)
+		{
+			*pChams = GetStruct(Vars::Chams::Player::VisibleMaterial.Value, Vars::Chams::Player::OccludedMaterial.Value, Vars::Chams::Player::VisibleColor.Value, Vars::Chams::Player::OccludedColor.Value);
+			return true;
+		}
+	}
 
-	if (!Utils::IsOnScreen(pEntity, pEntity->GetWorldSpaceCenter()))
+	const bool bTeam = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
+	*pChams = bTeam
+		? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
+		: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
+	return bTeam ? bFriendly : bEnemy;
+}
+
+bool CChams::GetChams(CBaseEntity* pLocal, CBaseEntity* pEntity, Chams_t* pChams)
+{
+	if (pEntity->GetDormant() || !pEntity->ShouldDraw())
 		return false;
 
 	switch (pEntity->GetClassID())
@@ -31,35 +50,25 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 	// player chams
 	case ETFClassID::CBasePlayer:
 	case ETFClassID::CTFPlayer:
-	{
-		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly
-			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
-			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
-		return bFriendly ? Vars::Chams::Friendly::Players.Value : Vars::Chams::Enemy::Players.Value;
-	}
+		return GetPlayerChams(pEntity, pLocal, pChams, Vars::Chams::Friendly::Players.Value, Vars::Chams::Enemy::Players.Value);
 	case ETFClassID::CTFWearable:
 	{
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity());
 		if (!pOwner)
 			return false;
 
-		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly
-			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
-			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
-		return bFriendly ? Vars::Chams::Friendly::Players.Value : Vars::Chams::Enemy::Players.Value;
+		return GetPlayerChams(pOwner, pLocal, pChams, Vars::Chams::Friendly::Players.Value, Vars::Chams::Enemy::Players.Value);
 	}
 	// building chams
 	case ETFClassID::CObjectSentrygun:
 	case ETFClassID::CObjectDispenser:
 	case ETFClassID::CObjectTeleporter:
 	{
-		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly
-			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
-			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
-		return bFriendly ? Vars::Chams::Friendly::Buildings.Value : Vars::Chams::Enemy::Buildings.Value;
+		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hBuilder());
+		if (!pOwner)
+			return false;
+
+		return GetPlayerChams(pOwner, pLocal, pChams, Vars::Chams::Friendly::Buildings.Value, Vars::Chams::Enemy::Buildings.Value);
 	}
 	// ragdoll chams
 	case ETFClassID::CRagdollPropAttached:
@@ -79,12 +88,8 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hPlayer());
 		if (!pOwner)
 			return false;
-		
-		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly
-			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
-			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
-		return bFriendly ? Vars::Chams::Friendly::Ragdolls.Value : Vars::Chams::Enemy::Ragdolls.Value;
+
+		return GetPlayerChams(pOwner, pLocal, pChams, Vars::Chams::Friendly::Ragdolls.Value, Vars::Chams::Enemy::Ragdolls.Value);
 	}
 	// projectile chams
 	case ETFClassID::CTFProjectile_Rocket:
@@ -108,11 +113,7 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 		if (!pOwner)
 			return false;
 
-		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly
-			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
-			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
-		return bFriendly ? Vars::Chams::Friendly::Projectiles.Value : Vars::Chams::Enemy::Projectiles.Value;
+		return GetPlayerChams(pOwner, pLocal, pChams, Vars::Chams::Friendly::Projectiles.Value, Vars::Chams::Enemy::Projectiles.Value);
 	}
 	// npc chams
 	case ETFClassID::CHeadlessHatman:
@@ -152,11 +153,7 @@ bool CChams::GetChams(CBaseEntity* pEntity, Chams_t* pChams)
 		if (!pOwner || !pOwner->IsPlayer())
 			return false;
 
-		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
-		*pChams = bFriendly
-			? GetStruct(Vars::Chams::Friendly::VisibleMaterial.Value, Vars::Chams::Friendly::OccludedMaterial.Value, Vars::Chams::Friendly::VisibleColor.Value, Vars::Chams::Friendly::OccludedColor.Value)
-			: GetStruct(Vars::Chams::Enemy::VisibleMaterial.Value, Vars::Chams::Enemy::OccludedMaterial.Value, Vars::Chams::Enemy::VisibleColor.Value, Vars::Chams::Enemy::OccludedColor.Value);
-		return bFriendly ? Vars::Chams::Friendly::Players.Value : Vars::Chams::Enemy::Players.Value;
+		return GetPlayerChams(pOwner, pLocal, pChams, Vars::Chams::Friendly::Players.Value, Vars::Chams::Enemy::Players.Value);
 	}
 	
 	return false;
@@ -220,7 +217,7 @@ void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* p
 		auto material = F::Materials.GetMaterial(*it);
 
 		F::Materials.SetColor(material, chams.VisibleColor, it + 1 == visibleMaterials.end()); // only apply color to last material
-		I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+		I::ModelRender->ForcedMaterialOverride(material);
 		pEntity->DrawModel(STUDIO_RENDER);
 	}
 	if (bTwoModels)
@@ -231,7 +228,7 @@ void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* p
 			auto material = F::Materials.GetMaterial(*it);
 
 			F::Materials.SetColor(material, chams.OccludedColor, it + 1 == occludedMaterials.end());
-			I::ModelRender->ForcedMaterialOverride(material ? material : nullptr);
+			I::ModelRender->ForcedMaterialOverride(material);
 			pEntity->DrawModel(STUDIO_RENDER);
 		}
 	}
@@ -246,12 +243,10 @@ void CChams::DrawModel(CBaseEntity* pEntity, Chams_t chams, IMatRenderContext* p
 
 
 
-void CChams::RenderMain()
+void CChams::RenderMain(CBaseEntity* pLocal)
 {
-	mEntities.clear();
-
 	const auto pRenderContext = I::MaterialSystem->GetRenderContext();
-	if (!pRenderContext)
+	if (!pLocal || !pRenderContext)
 		return;
 
 	// main
@@ -262,17 +257,14 @@ void CChams::RenderMain()
 			continue;
 
 		Chams_t chams = {};
-		const bool bShouldDraw = GetChams(pEntity, &chams);
-
-		if (bShouldDraw)
+		if (GetChams(pLocal, pEntity, &chams) && Utils::IsOnScreen(pEntity))
 			DrawModel(pEntity, chams, pRenderContext);
 	}
 
 	// backtrack / fakeangle
-	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
+	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 	{
-		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
-		if (!pEntity || !pEntity->IsPlayer() || !pEntity->ShouldDraw() || pEntity->GetDormant())
+		if (!pEntity->ShouldDraw() || pEntity->GetDormant())
 			continue;
 
 		bRendering = bExtra = true;
@@ -299,15 +291,13 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 	if (!ModelRender_DrawModelExecute)
 		return;
 
-	const auto& pEntity = I::ClientEntityList->GetClientEntity(pInfo.m_nEntIndex);
+	auto pEntity = I::ClientEntityList->GetClientEntity(pInfo.m_nEntIndex);
 	if (!pEntity || pEntity->GetClassID() != ETFClassID::CTFPlayer || !pEntity->IsAlive())
 		return;
 
-	const auto& pLocal = g_EntityCache.GetLocal();
-	const auto& pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon)
-		return;
-	if (G::CurWeaponType == EWeaponType::PROJECTILE)
+	auto pLocal = g_EntityCache.GetLocal();
+	auto pWeapon = g_EntityCache.GetWeapon();
+	if (!pLocal || !pWeapon || G::CurWeaponType == EWeaponType::PROJECTILE)
 		return;
 	if (pEntity == pLocal ||
 		pWeapon->m_iItemDefinitionIndex() != Soldier_t_TheDisciplinaryAction && pWeapon->GetWeaponID() != TF_WEAPON_MEDIGUN && pEntity->m_iTeamNum() == pLocal->m_iTeamNum() ||
@@ -316,9 +306,9 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 
 
 
-	auto drawModel = [ModelRender_DrawModelExecute, pLocal](Vec3 vCenter, std::vector<std::string> materials, Color_t color, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+	auto drawModel = [ModelRender_DrawModelExecute, pEntity](Vec3& vOrigin, std::vector<std::string> materials, Color_t color, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 		{
-			if (!Utils::IsOnScreen(pLocal, vCenter))
+			if (!Utils::IsOnScreen(pEntity, vOrigin))
 				return;
 
 			for (auto it = materials.begin(); it != materials.end(); it++)
@@ -351,17 +341,17 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 	{
 		auto vLastRec = vRecords.end() - 1;
 		if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
-			drawModel(vLastRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+			drawModel(vLastRec->vOrigin, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 		break;
 	}
 	case 1: // last + first
 	{
 		auto vFirstRec = vRecords.begin();
 		if (vFirstRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) > 0.1f)
-			drawModel(vFirstRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
+			drawModel(vFirstRec->vOrigin, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
 		auto vLastRec = vRecords.end() - 1;
 		if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
-			drawModel(vLastRec->vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+			drawModel(vLastRec->vOrigin, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 		break;
 	}
 	case 2: // all
@@ -371,7 +361,7 @@ void CChams::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderIn
 			if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) < 0.1f)
 				continue;
 
-			drawModel(record.vCenter, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
+			drawModel(record.vOrigin, vMaterials, sColor, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
 		}
 	}
 	}

@@ -5,7 +5,7 @@ MAKE_HOOK(CStudioRender_DrawModelStaticProp, Utils::GetVFuncPtr(I::StudioRender,
 {
 	if (Vars::Visuals::World::NearPropFade.Value)
 	{
-		if (const auto& pLocal = g_EntityCache.GetLocal())
+		if (auto pLocal = g_EntityCache.GetLocal())
 		{
 			Vec3 vOrigin = { modelToWorld[0][3], modelToWorld[1][3], modelToWorld[2][3] };
 

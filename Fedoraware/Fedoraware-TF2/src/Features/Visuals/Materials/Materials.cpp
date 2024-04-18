@@ -100,15 +100,14 @@ void CMaterials::ReloadMaterials()
 
 		mat.sVMT =	"\"VertexLitGeneric\"";
 		mat.sVMT += "\n{";
-		mat.sVMT += "\n	$basetexture \"models/player/shared/ice_player\"";
+		mat.sVMT += "\n	$basetexture \"vgui/white_additive\"";
 		mat.sVMT += "\n	$bumpmap \"models/player/shared/shared_normal\"";
+		mat.sVMT += "\n	$color2 \"[0 0 0]\"";
 		mat.sVMT += "\n	$additive \"1\"";
 		mat.sVMT += "\n	$phong \"1\"";
-		mat.sVMT += "\n	$phongfresnelranges \"[0 0.1 0.1]\"";
+		mat.sVMT += "\n	$phongfresnelranges \"[0 0.5 1]\"";
 		mat.sVMT += "\n	$envmap \"skybox/sky_dustbowl_01\"";
 		mat.sVMT += "\n	$envmapfresnel \"1\"";
-		mat.sVMT += "\n	$selfillum \"1\"";
-		mat.sVMT += "\n	$selfillumtint \"[0 0 0]\"";
 		mat.sVMT += "\n}";
 
 		mat.bLocked = true;
@@ -160,6 +159,9 @@ void CMaterials::ReloadMaterials()
 		std::string sName = entry.path().filename().string();
 		sName.erase(sName.end() - 4, sName.end());
 		const std::string sVMT((std::istreambuf_iterator(inStream)), std::istreambuf_iterator<char>());
+
+		if (FNV1A::Hash(sName.c_str()) == FNV1A::HashConst("Original"))
+			continue;
 
 		Material_t mat = {};
 		mat.sVMT = sVMT;
@@ -232,6 +234,13 @@ void CMaterials::SetColor(IMaterial* material, Color_t color, bool bSetColor)
 	}
 	else
 	{
+		if (material)
+		{
+			if (auto $phongtint = material->FindVar("$phongtint", nullptr, false))
+				$phongtint->SetVecValue(1.f, 1.f, 1.f);
+			if (auto $envmaptint = material->FindVar("$envmaptint", nullptr, false))
+				$envmaptint->SetVecValue(1.f, 1.f, 1.f);
+		}
 		I::RenderView->SetColorModulation(1.f, 1.f, 1.f);
 		I::RenderView->SetBlend(1.f);
 	}
@@ -241,14 +250,10 @@ void CMaterials::SetColor(IMaterial* material, Color_t color, bool bSetColor)
 
 IMaterial* CMaterials::GetMaterial(std::string sName)
 {
-	if (sName == "Original")
+	if (FNV1A::Hash(sName.c_str()) == FNV1A::HashConst("Original"))
 		return nullptr;
 
-	const auto cham = mChamMaterials.find(sName);
-	if (cham != mChamMaterials.end())
-		return cham->second.pMaterial;
-	
-	return nullptr;
+	return mChamMaterials.contains(sName) ? mChamMaterials[sName].pMaterial : nullptr;
 }
 
 std::string CMaterials::GetVMT(std::string sName)
@@ -262,10 +267,7 @@ std::string CMaterials::GetVMT(std::string sName)
 
 void CMaterials::AddMaterial(std::string sName)
 {
-	if (sName == "Original" || std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt"))
-		return;
-
-	if (mChamMaterials.contains(sName))
+	if (FNV1A::Hash(sName.c_str()) == FNV1A::HashConst("Original") || std::filesystem::exists(MaterialFolder + "\\" + sName + ".vmt") || mChamMaterials.contains(sName))
 		return;
 
 	Material_t mat = {};

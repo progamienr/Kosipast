@@ -24,11 +24,8 @@ void CAimbotGlobal::SortPriority(std::vector<Target_t>* targets)
 			  });
 }
 
-bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, bool bMedigun)
+bool CAimbotGlobal::ShouldIgnore(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, bool bMedigun)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	CBaseCombatWeapon* pWeapon = g_EntityCache.GetWeapon();
-
 	PlayerInfo_t pi{};
 	if (!pTarget || pTarget == pLocal || pTarget->GetDormant())
 		return true;
@@ -90,10 +87,9 @@ int CAimbotGlobal::GetPriority(int targetIdx)
 }
 
 // will not predict for projectile weapons
-bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
+bool CAimbotGlobal::ValidBomb(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseEntity* pBomb)
 {
-	CBaseEntity* pLocal = g_EntityCache.GetLocal();
-	if (!pLocal || G::CurWeaponType == EWeaponType::PROJECTILE)
+	if (G::CurWeaponType == EWeaponType::PROJECTILE)
 		return false;
 
 	const Vec3 vOrigin = pBomb->m_vecOrigin();
@@ -117,7 +113,7 @@ bool CAimbotGlobal::ValidBomb(CBaseEntity* pBomb)
 		const bool isNPC = Vars::Aimbot::General::Target.Value & NPC && pTarget->IsNPC();
 		if (isPlayer || isSentry || isDispenser || isTeleporter || isNPC)
 		{
-			if (isPlayer && F::AimbotGlobal.ShouldIgnore(pTarget))
+			if (isPlayer && ShouldIgnore(pTarget, pLocal, pWeapon))
 				continue;
 
 			if (!Utils::VisPosProjectile(pBomb, pTarget, vOrigin, isPlayer ? pTarget->m_vecOrigin() + pTarget->GetViewOffset() : pTarget->GetWorldSpaceCenter(), MASK_SHOT))

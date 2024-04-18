@@ -2,9 +2,8 @@
 
 #include "../../PacketManip/AntiAim/AntiAim.h"
 
-void CFakeAngle::Run()
+void CFakeAngle::Run(CBaseEntity* pLocal)
 {
-	const auto& pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost())
 		return;
 

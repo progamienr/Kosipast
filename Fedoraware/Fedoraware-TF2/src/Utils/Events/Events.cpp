@@ -32,39 +32,48 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 	if (!pEvent || I::EngineClient->IsPlayingTimeDemo())
 		return;
 
-	const FNV1A_t uNameHash = FNV1A::Hash(pEvent->GetName());
-	F::Logs.Event(pEvent, uNameHash);
-	F::CritHack.Event(pEvent, uNameHash);
-	F::Misc.Event(pEvent, uNameHash);
+	auto pLocal = g_EntityCache.GetLocal();
+	const auto uHash = FNV1A::Hash(pEvent->GetName());
 
-	if (uNameHash == FNV1A::HashConst("player_hurt"))
+	F::Logs.Event(pEvent, uHash, pLocal);
+	F::CritHack.Event(pEvent, uHash, pLocal);
+	F::Misc.Event(pEvent, uHash);
+	switch (uHash)
 	{
+	case FNV1A::HashConst("player_hurt"):
 		F::Resolver.OnPlayerHurt(pEvent);
 		F::CheaterDetection.ReportDamage(pEvent);
-	}
-
-	if (uNameHash == FNV1A::HashConst("player_spawn"))
+		return;
+	case FNV1A::HashConst("player_spawn"):
 		F::Backtrack.SetLerp(pEvent);
-
-	if (Vars::Visuals::UI::PickupTimers.Value && uNameHash == FNV1A::HashConst("item_pickup"))
+		return;
+	case FNV1A::HashConst("item_pickup"):
 	{
+		if (!Vars::Visuals::UI::PickupTimers.Value)
+			return;
+
+		const auto& pEntity = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid")));
+		if (!pEntity)
+			return;
 		const auto itemName = pEvent->GetString("item");
-		if (const auto& pEntity = I::ClientEntityList->GetClientEntity(I::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"))))
-		{
-			if (std::strstr(itemName, "medkit"))
-				F::Visuals.PickupDatas.push_back({ 1, I::EngineClient->Time(), pEntity->GetAbsOrigin() });
-			else if (std::strstr(itemName, "ammopack"))
-				F::Visuals.PickupDatas.push_back({ 0, I::EngineClient->Time(), pEntity->GetAbsOrigin() });
-		}
-	}
+		if (std::strstr(itemName, "medkit"))
+			F::Visuals.PickupDatas.push_back({ 1, I::EngineClient->Time(), pEntity->GetAbsOrigin() });
+		else if (std::strstr(itemName, "ammopack"))
+			F::Visuals.PickupDatas.push_back({ 0, I::EngineClient->Time(), pEntity->GetAbsOrigin() });
 
-	if (Vars::Misc::MannVsMachine::InstantRevive.Value && uNameHash == FNV1A::HashConst("revive_player_notify"))
+		return;
+	}
+	case FNV1A::HashConst("revive_player_notify"):
 	{
-		if (pEvent->GetInt("entindex") == I::EngineClient->GetLocalPlayer())
-		{
-			auto kv = new KeyValues("MVM_Revive_Response");
-			kv->SetInt("accepted", 1);
-			I::EngineClient->ServerCmdKeyValues(kv);
-		}
+		if (!Vars::Misc::MannVsMachine::InstantRevive.Value)
+			return;
+
+		if (pEvent->GetInt("entindex") != I::EngineClient->GetLocalPlayer())
+			return;
+		
+		auto kv = new KeyValues("MVM_Revive_Response");
+		kv->SetInt("accepted", 1);
+		I::EngineClient->ServerCmdKeyValues(kv);
+	}
 	}
 }

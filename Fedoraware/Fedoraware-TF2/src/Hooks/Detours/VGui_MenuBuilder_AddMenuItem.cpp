@@ -42,8 +42,8 @@ MAKE_HOOK(VGui_MenuBuilder_AddMenuItem, S::VGui_MenuBuilder_AddMenuItem(), void*
     {
         auto ret = Hook.Original<FN>()(ecx, edx, pszButtonText, pszCommand, pszCategoryName);
 
-        const auto& pr = g_EntityCache.GetPR(); PlayerInfo_t pi{};
-        if (pr && I::EngineClient->GetPlayerInfo(PlayerIndex, &pi))
+        PlayerInfo_t pi{};
+        if (I::EngineClient->GetPlayerInfo(PlayerIndex, &pi) && !pi.fakeplayer)
         {
             PlayerName = pi.name;
             FriendsID = pi.friendsID;
@@ -67,14 +67,15 @@ MAKE_HOOK(CTFClientScoreBoardDialog_OnCommand, S::CTFClientScoreBoardDialog_OnCo
     if (!Vars::Visuals::UI::ScoreboardPlayerlist.Value)
         return Hook.Original<FN>()(ecx, edx, command);
 
-    if (FNV1A::Hash(command) == FNV1A::HashConst("fedignore"))
+    auto uHash = FNV1A::Hash(command);
+    if (uHash == FNV1A::HashConst("fedignore"))
     {
         if (!F::PlayerUtils.HasTag(FriendsID, "Ignored"))
             F::PlayerUtils.AddTag(FriendsID, "Ignored", true, PlayerName);
         else
             F::PlayerUtils.RemoveTag(FriendsID, "Ignored", true, PlayerName);
     }
-    else if (FNV1A::Hash(command) == FNV1A::HashConst("fedmark"))
+    else if (uHash == FNV1A::HashConst("fedmark"))
     {
         if (!F::PlayerUtils.HasTag(FriendsID, "Cheater"))
             F::PlayerUtils.AddTag(FriendsID, "Cheater", true, PlayerName);
