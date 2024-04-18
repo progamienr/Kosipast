@@ -1,7 +1,7 @@
 #include "Logs.h"
 
 #include "../Vars.h"
-#include "../Misc/Notifications/Notifications.h"
+#include "../Visuals/Notifications/Notifications.h"
 #include "../../Features/Visuals/Visuals.h"
 #include "../Menu/Playerlist/PlayerUtils.h"
 

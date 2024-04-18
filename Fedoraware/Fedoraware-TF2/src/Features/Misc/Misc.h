@@ -17,7 +17,6 @@ class CMisc
 	void InstantRespawnMVM(CBaseEntity* pLocal);
 
 	void CheatsBypass();
-	int iLastCmdrate = -1;
 	void PingReducer();
 	void WeaponSway();
 
@@ -28,6 +27,7 @@ class CMisc
 
 	bool bSteamCleared = false;
 	Vec3 vPeekReturnPos = {};
+	int iLastCmdrate = -1;
 
 public:
 	void RunPre(CBaseEntity* pLocal, CUserCmd* pCmd);

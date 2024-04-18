@@ -35,7 +35,7 @@
     <ClCompile Include="src\Features\Menu\Playerlist\PlayerUtils.cpp" />
     <ClCompile Include="src\Features\Visuals\SpectatorList\SpectatorList.cpp" />
     <ClCompile Include="src\Features\Misc\Misc.cpp" />
-    <ClCompile Include="src\Features\Misc\Notifications\Notifications.cpp" />
+    <ClCompile Include="src\Features\Visuals\Notifications\Notifications.cpp" />
     <ClCompile Include="src\Features\NoSpread\NoSpread.cpp" />
     <ClCompile Include="src\Features\PacketManip\AntiAim\AntiAim.cpp" />
     <ClCompile Include="src\Features\PacketManip\FakeLag\FakeLag.cpp" />
@@ -259,7 +259,7 @@
     <ClInclude Include="src\Features\Menu\Playerlist\PlayerUtils.h" />
     <ClInclude Include="src\Features\Visuals\SpectatorList\SpectatorList.h" />
     <ClInclude Include="src\Features\Misc\Misc.h" />
-    <ClInclude Include="src\Features\Misc\Notifications\Notifications.h" />
+    <ClInclude Include="src\Features\Visuals\Notifications\Notifications.h" />
     <ClInclude Include="src\Features\NoSpread\NoSpread.h" />
     <ClInclude Include="src\Features\PacketManip\AntiAim\AntiAim.h" />
     <ClInclude Include="src\Features\PacketManip\FakeLag\FakeLag.h" />

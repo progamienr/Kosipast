@@ -8,7 +8,7 @@
 #include "../../Features/Visuals/SpectatorList/SpectatorList.h"
 #include "../../Features/Visuals/Radar/Radar.h"
 #include "../../Features/Menu/Menu.h"
-#include "../../Features/Misc/Notifications/Notifications.h"
+#include "../../Features/Visuals/Notifications/Notifications.h"
 
 void Paint()
 {

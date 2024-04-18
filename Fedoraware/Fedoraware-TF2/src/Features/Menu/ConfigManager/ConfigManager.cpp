@@ -1,7 +1,7 @@
 #include "ConfigManager.h"
 
 #include "../Conditions/Conditions.h"
-#include "../../Misc/Notifications/Notifications.h"
+#include "../../Visuals/Notifications/Notifications.h"
 #include "../../Visuals/Materials/Materials.h"
 
 boost::property_tree::ptree CConfigManager::ColorToTree(const Color_t& color)
