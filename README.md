@@ -13,7 +13,7 @@
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/rei-kes/Fedoraware/msbuild.yml?branch=master)](/../../actions)
 [![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/rei-kes/Fedoraware)](/../../commits/)
 
-A free and open-source training software for Team Fortress 2, based on [SE-Owned](https://www.unknowncheats.me/forum/team-fortress-2-a/436430-seowned-featured-cheat.html).
+A free and open-source training software for Team Fortress 2, based on [SEOwned](https://www.unknowncheats.me/forum/team-fortress-2-a/436430-seowned-featured-cheat.html) and [Fedoraware](https://github.com/Fedoraware/Fedoraware).
 
 ## Notes
 
@@ -40,6 +40,7 @@ A free and open-source training software for Team Fortress 2, based on [SE-Owned
 - [Baan](https://github.com/xxmyn)
 - [lnx00](https://github.com/lnx00)
 - [Johnathon Walnut](https://github.com/johnathon-walnut)
+- ## [Rei-Kes](https://github.com/rei-kes)
 - [JAGNEmk](https://github.com/JAGNEmk)
 - [r00t](https://github.com/l-r00t-l)
 - [lykanfox](https://github.com/lykanfox)
