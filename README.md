@@ -6,7 +6,7 @@
   </a>
 </p>
 
-# Fedoraware
+# Rei-Fork
 
 [![GitHub Repo stars](https://img.shields.io/github/stars/rei-kes/Fedoraware)](/../../stargazers)
 [![Discord](https://img.shields.io/discord/1227898008373297223?logo=Discord&label=discord)](https://discord.gg/RbP9DfkUhe)
