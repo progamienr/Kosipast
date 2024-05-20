@@ -27,9 +27,10 @@ private:
 MAKE_HOOK(EngineClient_ClientCmd_Unrestricted, Utils::GetVFuncPtr(I::EngineClient, 106), void, __fastcall,
 	void* ecx, void* edx, const char* szCmdString)
 {
-	std::string cmdString = szCmdString;
+	std::string cmdString(szCmdString);
 	std::deque<std::string> cmdArgs;
 
+	// Yes I will use boost for this
 	boost::split(cmdArgs, cmdString, split_q());
 
 	if (!cmdArgs.empty())
@@ -41,7 +42,7 @@ MAKE_HOOK(EngineClient_ClientCmd_Unrestricted, Utils::GetVFuncPtr(I::EngineClien
 			return;
 	}
 
-	if (FNV1A::Hash(cmdString.c_str()) == FNV1A::HashConst("disconnect"))
+	if (cmdString == "disconnect")
 		F::Materials.RemoveMaterials();
 
 	Hook.Original<FN>()(ecx, edx, cmdString.c_str());

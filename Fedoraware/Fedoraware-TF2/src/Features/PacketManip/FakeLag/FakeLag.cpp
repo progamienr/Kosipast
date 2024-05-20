@@ -37,9 +37,11 @@ bool CFakeLag::IsAllowed(CBaseEntity* pLocal)
 	return false;
 }
 
-void CFakeLag::PreserveBlastJump(CBaseEntity* pLocal)
+void CFakeLag::PreserveBlastJump()
 {
 	bPreservingBlast = false;
+
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost() || !pLocal->IsPlayer() || G::ShiftedTicks == G::MaxShift)
 		return;
 
@@ -51,8 +53,9 @@ void CFakeLag::PreserveBlastJump(CBaseEntity* pLocal)
 	bPreservingBlast = bVar && bPlayerReady && bCanPreserve && bValid;
 }
 
-void CFakeLag::Unduck(CBaseEntity* pLocal, CUserCmd* pCmd)
+void CFakeLag::Unduck(CUserCmd* pCmd)
 {
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost())
 		return;
 
@@ -62,18 +65,19 @@ void CFakeLag::Unduck(CBaseEntity* pLocal, CUserCmd* pCmd)
 	bUnducking = bVar && bPlayerReady;
 }
 
-void CFakeLag::Prediction(CBaseEntity* pLocal, CUserCmd* pCmd)
+void CFakeLag::Prediction(CUserCmd* pCmd)
 {
-	PreserveBlastJump(pLocal);
-	Unduck(pLocal, pCmd);
+	PreserveBlastJump();
+	Unduck(pCmd);
 }
 
-void CFakeLag::Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket)
+void CFakeLag::Run(CUserCmd* pCmd, bool* pSendPacket)
 {
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
 		return;
 
-	Prediction(pLocal, pCmd);
+	Prediction(pCmd);
 
 	// Set the selected choke amount (if not random)
 	switch (Vars::CL_Move::Fakelag::Fakelag.Value)

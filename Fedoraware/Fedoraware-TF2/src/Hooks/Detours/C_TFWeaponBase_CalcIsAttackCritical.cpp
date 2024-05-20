@@ -4,8 +4,8 @@
 MAKE_HOOK(C_TFWeaponBase_CalcIsAttackCritical, S::CTFWeaponBase_CalcIsAttackCritical(), void, __fastcall,
 	void* ecx, void* edx)
 {
-	auto pLocal = g_EntityCache.GetLocal();
-	auto pWeapon = reinterpret_cast<CBaseCombatWeapon*>(ecx);
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto pWeapon = reinterpret_cast<CBaseCombatWeapon*>(ecx);
 	if (!pLocal || !pWeapon || pWeapon != g_EntityCache.GetWeapon())
 		Hook.Original<FN>()(ecx, edx);
 

@@ -32,13 +32,20 @@ DWORD WINAPI MainThread(LPVOID lpParam)
 	//"mss32.dll" being one of the last modules to be loaded
 	//So wait for that before proceeding, after it's up everything else should be too
 	//Allows us to correctly use autoinject and just start the game.
-	while (!GetModuleHandleW(L"mss32.dll"))
+	while (!GetModuleHandleW(L"mss32.dll") ||
+		!GetModuleHandleW(L"ntdll.dll") ||
+		!GetModuleHandleW(L"stdshader_dx9.dll") ||
+		!GetModuleHandleW(L"materialsystem.dll"))
+	{
 		Sleep(2000);
+	}
 
 	g_Core.Load();
 
 	while (!g_Core.ShouldUnload())
+	{
 		Sleep(20);
+	}
 
 	g_Core.Unload();
 

@@ -126,11 +126,15 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 	case TF_WEAPON_BAT_WOOD:
 	case TF_WEAPON_BAT_GIFTWRAP:
 	{
+		auto pLocal = g_EntityCache.GetLocal();
+		if (!pLocal)
+			return false;
+
 		const bool bWrapAssassin = pWeapon->GetWeaponID() == TF_WEAPON_BAT_GIFTWRAP;
 		
 		Utils::GetProjectileFireSetup(pPlayer, vAngles, { 0.f, 0.f, 0.f }, pos, ang, true, bQuick);
 		Vec3 forward; Math::AngleVectors(ang, &forward);
-		pos = (bQuick ? pPlayer->GetAbsOrigin() : pPlayer->m_vecOrigin()) + (Vec3(0, 0, 50) + forward * 32.f) * pPlayer->m_flModelScale(); // why?
+		pos = (bQuick ? pLocal->GetAbsOrigin() : pLocal->m_vecOrigin()) + (Vec3(0, 0, 50) + forward * 32.f) * pLocal->m_flModelScale(); // why?
 		out = { bWrapAssassin ? TF_PROJECTILE_FESTIVE_ARROW : TF_PROJECTILE_THROWABLE, pos, ang, { 3.f, 3.f, 3.f }, 2000.f, 1.f, false, bWrapAssassin ? 2.3f : 100.f };
 		return true;
 	}
@@ -179,7 +183,7 @@ bool CProjectileSimulation::GetInfoMain(CBaseEntity* pPlayer, CBaseCombatWeapon*
 bool CProjectileSimulation::GetInfo(CBaseEntity* pPlayer, CBaseCombatWeapon* pWeapon, const Vec3& vAngles, ProjectileInfo& out, bool bTrace, bool bQuick, float flCharge)
 {
 	const float flOldCurrentTime = I::GlobalVars->curtime;
-	if (bQuick)
+	if (pPlayer && bQuick)
 		I::GlobalVars->curtime = TICKS_TO_TIME(pPlayer->m_nTickBase());
 	const bool bReturn = GetInfoMain(pPlayer, pWeapon, vAngles, out, bTrace, bQuick, flCharge);
 	I::GlobalVars->curtime = flOldCurrentTime;

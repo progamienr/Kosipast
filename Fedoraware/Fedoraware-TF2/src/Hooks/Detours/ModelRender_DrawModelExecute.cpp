@@ -22,7 +22,7 @@ MAKE_HOOK(ModelRender_DrawModelExecute, Utils::GetVFuncPtr(I::ModelRender, 19), 
 	}
 	*/
 
-	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot() || G::UnloadWndProcHook)
+	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(ecx, edx, pState, pInfo, pBoneToWorld);
 
 	if (F::Chams.bRendering)
@@ -50,7 +50,7 @@ MAKE_HOOK(C_BaseAnimating_DrawModel, S::CBaseAnimating_DrawModel(), int, __fastc
 	static const auto dwDrawModel = S::m_hViewmodelAttachment_DrawModel();
 	const auto dwRetAddr = reinterpret_cast<DWORD>(_ReturnAddress());
 
-	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot() || G::UnloadWndProcHook)
+	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return Hook.Original<FN>()(ecx, edx, flags);
 
 	if (dwRetAddr == dwDrawModel && flags & STUDIO_RENDER)

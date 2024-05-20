@@ -12,14 +12,16 @@
 
 bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 {
-	if (!pLocal || !pWeapon
-		|| !pLocal->IsAlive()
-		|| pLocal->IsTaunting()
-		|| pLocal->IsBonked()
-		|| pLocal->m_bFeignDeathReady()
-		|| pLocal->IsCloaked()
-		|| pLocal->IsInBumperKart()
-		|| pLocal->IsAGhost())
+	if (I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
+		return false;
+
+	if (!pLocal->IsAlive() ||
+		pLocal->IsTaunting() ||
+		pLocal->IsBonked() ||
+		pLocal->m_bFeignDeathReady() ||
+		pLocal->IsCloaked() ||
+		pLocal->IsInBumperKart() ||
+		pLocal->IsAGhost())
 		return false;
 
 	switch (G::CurItemDefIndex)
@@ -29,18 +31,19 @@ bool CAimbot::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 		return false;
 	}
 
-	if (I::EngineVGui->IsGameUIVisible() || I::MatSystemSurface->IsCursorVisible())
-		return false;
-
 	return true;
 }
 
-bool CAimbot::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
+bool CAimbot::Run(CUserCmd* pCmd)
 {
 	G::AimPos = Vec3();
+
+	const auto pLocal = g_EntityCache.GetLocal();
+	const auto pWeapon = g_EntityCache.GetWeapon();
+
 	F::AutoRocketJump.Run(pLocal, pWeapon, pCmd);
 
-	if (!ShouldRun(pLocal, pWeapon))
+	if (!pLocal || !pWeapon || !ShouldRun(pLocal, pWeapon))
 		return false;
 
 	F::AutoDetonate.Run(pLocal, pWeapon, pCmd);

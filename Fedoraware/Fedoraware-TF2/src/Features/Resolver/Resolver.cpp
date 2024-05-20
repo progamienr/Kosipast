@@ -7,18 +7,24 @@ static std::vector<float> vYawRotations{ 0.0f, 180.0f, 90.0f, -90.0f};
 void PResolver::UpdateSniperDots()
 {
 	mSniperDots.clear();
-	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::MISC_DOTS))
+	for (int n = I::EngineClient->GetMaxClients() + 1; n <= I::ClientEntityList->GetHighestEntityIndex(); n++)
 	{
-		if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity()))
-			mSniperDots[pOwner] = pEntity->m_vecOrigin();
+		if (CBaseEntity* pDot = I::ClientEntityList->GetClientEntity(n))
+		{
+			if (pDot->GetClassID() != ETFClassID::CSniperDot || pDot->GetDormant())
+				continue;
+
+			if (CBaseEntity* pOwner = I::ClientEntityList->GetClientEntityFromHandle(pDot->m_hOwnerEntity()))
+				mSniperDots[pOwner] = pDot;
+		}
 	}
 }
 
 std::optional<float> PResolver::GetPitchForSniperDot(CBaseEntity* pEntity)
 {
-	if (mSniperDots.contains(pEntity))
+	if (CBaseEntity* SniperDot = mSniperDots[pEntity])
 	{
-		const Vec3 vOrigin = mSniperDots[pEntity];
+		const Vec3 vOrigin = SniperDot->m_vecOrigin();
 		const Vec3 vEyeOrigin = pEntity->GetEyePosition();
 		const Vec3 vDelta = vOrigin - vEyeOrigin;
 		Vec3 vAngles;
@@ -28,11 +34,14 @@ std::optional<float> PResolver::GetPitchForSniperDot(CBaseEntity* pEntity)
 	return std::nullopt;
 }
 
-std::optional<float> PResolver::PredictBaseYaw(CBaseEntity* pLocal, CBaseEntity* pEntity)
+std::optional<float> PResolver::PredictBaseYaw(CBaseEntity* pEntity)
 {
 	if (I::GlobalVars->tickcount - mResolverData[pEntity].pLastFireAngles.first.first > 66 || !mResolverData[pEntity].pLastFireAngles.first.first)
 	{	// staleness & validity check
-		if (!pLocal || !pLocal->IsAlive() || pLocal->IsAGhost())
+		CBaseEntity* pLocal = g_EntityCache.GetLocal();
+		if (!pLocal)
+			return std::nullopt;
+		if (!pLocal->IsAlive() || pLocal->IsAGhost())
 			return std::nullopt;
 		return Math::CalcAngle(pEntity->m_vecOrigin(), pLocal->m_vecOrigin()).y;
 	}
@@ -61,9 +70,14 @@ std::optional<float> PResolver::PredictBaseYaw(CBaseEntity* pLocal, CBaseEntity*
 	return flSmallestAngleTo;
 }
 
-bool PResolver::ShouldRun(CBaseEntity* pLocal)
+bool PResolver::ShouldRun()
 {
-	if (!Vars::AntiHack::Resolver::Resolver.Value || !pLocal || pLocal->IsAlive() || pLocal->IsAGhost() || G::CurWeaponType != EWeaponType::HITSCAN)
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (!pLocal)
+		return false;
+	if (!(pLocal->IsAlive() && !pLocal->IsAGhost() && Vars::AntiHack::Resolver::Resolver.Value))
+		return false;
+	if (G::CurWeaponType != EWeaponType::HITSCAN)
 		return false;
 	return true;
 }
@@ -145,24 +159,25 @@ void PResolver::Aimbot(CBaseEntity* pEntity, const bool bHeadshot)
 	if (abs(I::GlobalVars->tickcount - pWaiting.first) < 66)
 		return;
 
-	auto pNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!pNetChan)
+	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!iNetChan)
 		return;
 
-	const int iDelay = 6 + TIME_TO_TICKS(G::LerpTime + pNetChan->GetLatency(FLOW_INCOMING) + pNetChan->GetLatency(FLOW_OUTGOING));
+	const int iDelay = 6 + TIME_TO_TICKS(G::LerpTime + iNetChan->GetLatency(FLOW_INCOMING) + iNetChan->GetLatency(FLOW_OUTGOING));
 	pWaiting = {I::GlobalVars->tickcount + iDelay, {pEntity, bHeadshot}};
 }
 
 void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 {
-	if (!ShouldRun(pLocal))
+	if (!ShouldRun())
 		return;
 
 	UpdateSniperDots();
 
-	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	for (auto n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		if (pEntity->GetIndex() == I::EngineClient->GetLocalPlayer())
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+		if (!pEntity || n == I::EngineClient->GetLocalPlayer())
 			continue;
 
 		if (pEntity->GetDormant())
@@ -223,7 +238,7 @@ void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 
 		const int iYawMode = GetYawMode(pEntity);
 		if (iYawMode){
-			std::optional<float> flTempYaw = PredictBaseYaw(pLocal, pEntity);
+			std::optional<float> flTempYaw = PredictBaseYaw(pEntity);
 			if (!flTempYaw) { flTempYaw = Math::CalcAngle(pEntity->m_vecOrigin(), pLocal->m_vecOrigin()).y; }
 
 			const float flBaseYaw = flTempYaw.value();
@@ -236,8 +251,7 @@ void PResolver::FrameStageNotify(CBaseEntity* pLocal)
 			case 4: vAdjustedAngle.y = flBaseYaw + 90.f; break;		//side2
 			case 5: vAdjustedAngle.y += 180.f; break;				//invert
 			case 6:{												//edge
-				// TODO: Fix this. Resolver will always correct inversely to the player's pitch if we do not fix the logic here.
-				const bool bEdge = vAdjustedAngle.x == 89 ? F::AntiAim.GetEdge(pEntity, flBaseYaw, false) : !F::AntiAim.GetEdge(pEntity, flBaseYaw, false);
+				const bool bEdge = vAdjustedAngle.x == 89 ? F::AntiAim.GetEdge(flBaseYaw, pEntity) : !F::AntiAim.GetEdge(flBaseYaw, pEntity);
 				vAdjustedAngle.y = flBaseYaw + (bEdge ? 90.f : -90.f);
 				break;
 			}

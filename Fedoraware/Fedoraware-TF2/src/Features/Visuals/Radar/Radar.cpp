@@ -83,8 +83,12 @@ void CRadar::DrawBackground()
 	g_Draw.Line(info.x, info.y + info.w / 2, info.x + info.w, info.y + info.w / 2, accentColor);
 }
 
-void CRadar::DrawPoints(CBaseEntity* pLocal)
+void CRadar::DrawPoints()
 {
+	const auto& pLocal = g_EntityCache.GetLocal();
+	if (!pLocal)
+		return;
+
 	// Ammo & Health
 	if (Vars::Radar::World::Active.Value)
 	{
@@ -213,7 +217,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 					const int nIndex = pOwner->GetIndex();
 					if (nIndex != I::EngineClient->GetLocalPlayer() && pOwner != g_EntityCache.GetObservedTarget())
 					{
-						if (!(Vars::Radar::Buildings::Draw.Value & 1 << 3 && g_EntityCache.IsSteamFriend(nIndex)))
+						if (!(Vars::Radar::Buildings::Draw.Value & 1 << 3 && g_EntityCache.IsFriend(nIndex)))
 						{
 							if (!(Vars::Radar::Buildings::Draw.Value & 1 << 1) && pOwner->m_iTeamNum() != pLocal->m_iTeamNum())
 								continue;
@@ -229,7 +233,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 			int x, y, z;
 			if (GetDrawPosition(pLocal, pBuilding, x, y, z))
 			{
-				const Color_t drawColor = GetEntityDrawColor(pLocal, pBuilding, Vars::Colors::Relative.Value);
+				const Color_t drawColor = GetEntityDrawColor(pBuilding, Vars::Colors::Relative.Value);
 
 				int iBounds = iSize;
 				if (Vars::Radar::Buildings::Background.Value)
@@ -285,7 +289,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 			const int nIndex = pPlayer->GetIndex();
 			if (nIndex != I::EngineClient->GetLocalPlayer() && pPlayer != g_EntityCache.GetObservedTarget())
 			{
-				if (!(Vars::Radar::Players::Draw.Value & 1 << 3 && g_EntityCache.IsSteamFriend(nIndex)))
+				if (!(Vars::Radar::Players::Draw.Value & 1 << 3 && g_EntityCache.IsFriend(nIndex)))
 				{
 					if (!(Vars::Radar::Players::Draw.Value & 1 << 1) && pPlayer->m_iTeamNum() != pLocal->m_iTeamNum())
 						continue;
@@ -301,7 +305,7 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 			int x, y, z;
 			if (GetDrawPosition(pLocal, pPlayer, x, y, z))
 			{
-				const Color_t drawColor = GetEntityDrawColor(pLocal, pPlayer, Vars::Colors::Relative.Value);
+				const Color_t drawColor = GetEntityDrawColor(pPlayer, Vars::Colors::Relative.Value);
 
 				int iBounds = iSize;
 				if (Vars::Radar::Players::Background.Value)
@@ -365,11 +369,11 @@ void CRadar::DrawPoints(CBaseEntity* pLocal)
 	}
 }
 
-void CRadar::Run(CBaseEntity* pLocal)
+void CRadar::Run()
 {
 	if (!Vars::Radar::Main::Active.Value)
 		return;
 
 	DrawBackground();
-	DrawPoints(pLocal);
+	DrawPoints();
 }

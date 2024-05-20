@@ -15,7 +15,7 @@ MAKE_HOOK(UTIL_TraceLine, S::UTIL_TraceLine(), void, __cdecl,
 
 	if (dwRetAddr == dwDisplayDamageFeedback && pFilter)
 	{
-		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(pFilter) + 0x2C) = 1.f;
+		*reinterpret_cast<float*>(reinterpret_cast<DWORD>(pFilter) + 0x2C) = 1.0f;
 		return;
 	}
 

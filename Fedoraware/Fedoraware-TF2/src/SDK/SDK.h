@@ -195,6 +195,12 @@ inline void ShaderStencilState_t::SetStencilState(IMatRenderContext* pRenderCont
 
 namespace Utils
 {
+	__inline int RandIntSimple(int min, int max)
+	{
+		std::random_device rd; std::mt19937 gen(rd()); std::uniform_int_distribution<> distr(min, max);
+		return distr(gen);
+	}
+
 	__inline void ConLog(const char* cFunction, const char* cLog, Color_t cColour = { 255, 255, 255, 255 }, const bool bShouldPrint = true, const bool bDebugOutput = false)
 	{
 		if (bShouldPrint)
@@ -324,6 +330,21 @@ namespace Utils
 		return (GetForegroundWindow() == hwGame);
 	}
 
+	__inline int GetPlayerForUserID(int userID)
+	{
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
+		{
+			PlayerInfo_t pi{};
+			if (!I::EngineClient->GetPlayerInfo(n, &pi))
+				continue;
+
+			// Found player
+			if (pi.userID == userID)
+				return n;
+		}
+		return 0;
+	}
+
 	__inline bool IsSteamFriend(uint32_t friendsID)
 	{
 		if (friendsID)
@@ -364,7 +385,7 @@ namespace Utils
 		float w = worldToScreen[3][0] * vOrigin[0] + worldToScreen[3][1] * vOrigin[1] + worldToScreen[3][2] * vOrigin[2] + worldToScreen[3][3];
 		m_vScreen.z = 0;
 
-		if (w > 0.001f)
+		if (w > 0.001)
 		{
 			const float fl1DBw = 1 / w;
 			m_vScreen.x = (g_ScreenSize.w / 2) + (0.5 * ((worldToScreen[0][0] * vOrigin[0] + worldToScreen[0][1] * vOrigin[1] + worldToScreen[0][2] * vOrigin[2] + worldToScreen[0][3]) * fl1DBw) * g_ScreenSize.w + 0.5);
@@ -375,76 +396,26 @@ namespace Utils
 		return false;
 	}
 
-	__inline bool IsOnScreen(CBaseEntity* pEntity, matrix3x4& transform, float* pLeft = nullptr, float* pRight = nullptr, float* pTop = nullptr, float* pBottom = nullptr)
+	__inline bool IsOnScreen(CBaseEntity* pLocal, Vec3 vCenter)
 	{
-		Vec3 vMins = pEntity->m_vecMins(), vMaxs = pEntity->m_vecMaxs();
-
-		float flLeft = 0.f, flRight = 0.f, flTop = 0.f, flBottom = 0.f;
-		const Vec3 vPoints[] =
+		if (vCenter.DistTo(pLocal->GetWorldSpaceCenter()) > 300.f)
 		{
-			Vec3(0.f, 0.f, vMins.z),
-			Vec3(0.f, 0.f, vMaxs.z),
-			Vec3(vMins.x, vMins.y, vMaxs.z * 0.5f),
-			Vec3(vMins.x, vMaxs.y, vMaxs.z * 0.5f),
-			Vec3(vMaxs.x, vMins.y, vMaxs.z * 0.5f),
-			Vec3(vMaxs.x, vMaxs.y, vMaxs.z * 0.5f)
-		};
-		for (int n = 0; n < 6; n++)
-		{
-			Vec3 vPoint; Math::VectorTransform(vPoints[n], transform, vPoint);
-
-			Vec3 vScreenPos;
-			if (!Utils::W2S(vPoint, vScreenPos))
+			Vec3 vScreen = {};
+			if (W2S(vCenter, vScreen))
+			{
+				if (vScreen.x < -400
+					|| vScreen.x > g_ScreenSize.w + 400
+					|| vScreen.y < -400
+					|| vScreen.y > g_ScreenSize.h + 400)
+				{
+					return false;
+				}
+			}
+			else
 				return false;
-
-			flLeft = n ? std::min(flLeft, vScreenPos.x) : vScreenPos.x;
-			flRight = n ? std::max(flRight, vScreenPos.x) : vScreenPos.x;
-			flTop = n ? std::max(flTop, vScreenPos.y) : vScreenPos.y;
-			flBottom = n ? std::min(flBottom, vScreenPos.y) : vScreenPos.y;
 		}
 
-		if (pLeft) *pLeft = flLeft;
-		if (pRight) *pRight = flRight;
-		if (pTop) *pTop = flTop;
-		if (pBottom) *pBottom = flBottom;
-
-		return !(flRight < 0 || flLeft > g_ScreenSize.w || flTop < 0 || flBottom > g_ScreenSize.h);
-	}
-
-	__inline bool IsOnScreen(CBaseEntity* pEntity)
-	{
-		return IsOnScreen(pEntity, pEntity->GetRgflCoordinateFrame());
-	}
-
-	__inline bool IsOnScreen(CBaseEntity* pEntity, Vec3 vOrigin)
-	{
-		Vec3 vMins = pEntity->m_vecMins(), vMaxs = pEntity->m_vecMaxs();
-
-		float flLeft = 0.f, flRight = 0.f, flTop = 0.f, flBottom = 0.f;
-		const Vec3 vPoints[] =
-		{
-			Vec3(0.f, 0.f, vMins.z),
-			Vec3(0.f, 0.f, vMaxs.z),
-			Vec3(vMins.x, vMins.y, vMaxs.z * 0.5f),
-			Vec3(vMins.x, vMaxs.y, vMaxs.z * 0.5f),
-			Vec3(vMaxs.x, vMins.y, vMaxs.z * 0.5f),
-			Vec3(vMaxs.x, vMaxs.y, vMaxs.z * 0.5f)
-		};
-		for (int n = 0; n < 6; n++)
-		{
-			Vec3 vPoint = vOrigin + vPoints[n];
-
-			Vec3 vScreenPos;
-			if (!Utils::W2S(vPoint, vScreenPos))
-				return false;
-
-			flLeft = n ? std::min(flLeft, vScreenPos.x) : vScreenPos.x;
-			flRight = n ? std::max(flRight, vScreenPos.x) : vScreenPos.x;
-			flTop = n ? std::max(flTop, vScreenPos.y) : vScreenPos.y;
-			flBottom = n ? std::min(flBottom, vScreenPos.y) : vScreenPos.y;
-		}
-
-		return !(flRight < 0 || flLeft > g_ScreenSize.w || flTop < 0 || flBottom > g_ScreenSize.h);
+		return true;
 	}
 
 	__inline void Trace(const Vec3& vecStart, const Vec3& vecEnd, unsigned int nMask, CTraceFilter* pFilter, CGameTrace* pTrace)
@@ -506,13 +477,14 @@ namespace Utils
 		pCmd->sidemove = (sin(fYaw) * fSpeed);
 	}
 
-	__inline bool StopMovement(CBaseEntity* pLocal, CUserCmd* pCmd)
+	__inline void StopMovement(CUserCmd* pCmd)
 	{
-		if (pLocal->m_vecVelocity().IsZero())
+		const auto& pLocal = g_EntityCache.GetLocal();
+		if (!pLocal || pLocal->m_vecVelocity().IsZero())
 		{
 			pCmd->forwardmove = 0.f;
 			pCmd->sidemove = 0.f;
-			return false;
+			return;
 		}
 
 		if (!G::IsAttacking)
@@ -520,7 +492,7 @@ namespace Utils
 			const float direction = Math::VelocityToAngles(pLocal->m_vecVelocity()).y;
 			pCmd->viewangles = { -90, direction, 0 };
 			pCmd->sidemove = 0; pCmd->forwardmove = 0;
-			return true;
+			G::ShouldStop = false;
 		}
 		else
 		{
@@ -529,7 +501,6 @@ namespace Utils
 			const Vec3 negatedDirection = direction.fromAngle() * -pLocal->m_vecVelocity().Length2D();
 			pCmd->forwardmove = negatedDirection.x;
 			pCmd->sidemove = negatedDirection.y;
-			return false;
 		}
 	}
 
@@ -680,7 +651,7 @@ namespace Utils
 		return EWeaponType::HITSCAN;
 	}
 
-	__inline bool IsAttacking(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const CUserCmd* pCmd)
+	__inline bool IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWeapon)
 	{
 		//if (pWeapon->IsInReload())
 		//	return false;
@@ -690,7 +661,9 @@ namespace Utils
 			if (pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
 				return ((pCmd->buttons & IN_ATTACK) && G::CanPrimaryAttack);
 
-			float flTime = TICKS_TO_TIME(pLocal->m_nTickBase() + 1);
+			auto pLocal = g_EntityCache.GetLocal();
+			float flTime = pLocal ? TICKS_TO_TIME(pLocal->m_nTickBase() + 1) : I::GlobalVars->curtime;
+
 			return fabsf(pWeapon->m_flSmackTime() - flTime) < TICK_INTERVAL * 2.f;
 		}
 
@@ -750,7 +723,8 @@ namespace Utils
 				if (G::LastUserCmd->buttons & IN_ATTACK || !(pCmd->buttons & IN_ATTACK))
 					return false;
 
-				if (pLocal->InCond(TF_COND_GRAPPLINGHOOK))
+				auto pLocal = g_EntityCache.GetLocal();
+				if (!pLocal || pLocal->InCond(TF_COND_GRAPPLINGHOOK))
 					return false;
 
 				Vec3 pos, ang; GetProjectileFireSetup(pLocal, pCmd->viewangles, { 23.5f, -8.f, -3.f }, pos, ang, false);

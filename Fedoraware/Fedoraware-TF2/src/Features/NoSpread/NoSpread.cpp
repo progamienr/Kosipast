@@ -23,11 +23,13 @@ bool CNoSpread::ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	return true;
 }
 
-void CNoSpread::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd)
+void CNoSpread::Run(CUserCmd* pCmd)
 {
+	const auto pLocal = g_EntityCache.GetLocal();
+	const auto pWeapon = g_EntityCache.GetWeapon();
 	if (!ShouldRun(pLocal, pWeapon))
 		return;
 
-	F::NoSpreadHitscan.Run(pLocal, pWeapon, pCmd);
-	F::NoSpreadProjectile.Run(pLocal, pWeapon, pCmd);
+	F::NoSpreadHitscan.Run(pCmd, pLocal, pWeapon);
+	F::NoSpreadProjectile.Run(pCmd, pLocal, pWeapon);
 }

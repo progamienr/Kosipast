@@ -6,7 +6,7 @@
 class CFakeAngle
 {
 public:
-	void Run(CBaseEntity* pLocal);
+	void Run();
 
 	matrix3x4 BoneMatrix[128];
 	bool BonesSetup = false;

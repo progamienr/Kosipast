@@ -36,7 +36,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 					continue;
 			}
 
-			if (F::AimbotGlobal.ShouldIgnore(pTarget, pLocal, pWeapon))
+			if (F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
 			Vec3 vPos = pTarget->GetWorldSpaceCenter();
@@ -687,7 +687,7 @@ int CAimbotProjectile::CanHit(Target_t& target, CBaseEntity* pLocal, CBaseCombat
 
 			float flDist = bSplash ? target.m_vPos.DistTo(vPoint.m_vPoint) : flLowestDist;
 			if (!bSplash
-				? (iPriority >= iLowestPriority || !iLowestPriority || tInfo.iPrimeTime > iSimTime && !storage.m_MoveData.m_vecVelocity.IsZero())
+				? (iPriority >= iLowestPriority || !iLowestPriority || tInfo.iPrimeTime > iSimTime)
 				: (iPriority > iLowestPriority || flDist > flLowestDist))
 			{
 				continue;
@@ -820,7 +820,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		&& (nWeaponID == TF_WEAPON_COMPOUND_BOW || nWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER || nWeaponID == TF_WEAPON_CANNON))
 	{
 		pCmd->buttons |= IN_ATTACK;
-		if (!G::CanPrimaryAttack && Vars::Aimbot::General::AimType.Value == 3)
+		if (!G::CanPrimaryAttack)
 			return true;
 	}
 
@@ -861,7 +861,7 @@ bool CAimbotProjectile::RunMain(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 			}
 		}
 
-		G::IsAttacking = Utils::IsAttacking(pLocal, pWeapon, pCmd);
+		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
 
 		if ((G::IsAttacking || !Vars::Aimbot::General::AutoShoot.Value) && (!pWeapon->IsInReload() || pWeapon->GetWeaponID() == TF_WEAPON_CROSSBOW))
 		{

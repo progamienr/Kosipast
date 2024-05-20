@@ -1,7 +1,7 @@
 #include "ConfigManager.h"
 
 #include "../Conditions/Conditions.h"
-#include "../../Visuals/Notifications/Notifications.h"
+#include "../../Misc/Notifications/Notifications.h"
 #include "../../Visuals/Materials/Materials.h"
 
 boost::property_tree::ptree CConfigManager::ColorToTree(const Color_t& color)
@@ -187,7 +187,7 @@ void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* 
 			// remove invalid materials
 			for (auto it = val.begin(); it != val.end();)
 			{
-				if (FNV1A::Hash(it->c_str()) == FNV1A::HashConst("None") || FNV1A::Hash(it->c_str()) != FNV1A::HashConst("Original") && !F::Materials.mChamMaterials.contains(*it))
+				if (*it == "None" || *it != "Original" && !F::Materials.mChamMaterials.contains(*it))
 					it = val.erase(it);
 				else
 					++it;
@@ -238,8 +238,8 @@ void CConfigManager::LoadJson(boost::property_tree::ptree& mapTree, const char* 
 
 CConfigManager::CConfigManager()
 {
-	ConfigPath = std::filesystem::current_path().string() + "\\FedCfgs";
-	VisualsPath = ConfigPath + "\\Visuals";
+	ConfigPath = std::filesystem::current_path().string() + "\\SalmonPaste";
+	VisualsPath = ConfigPath + "\\Viscuals";
 
 	// Create 'FedCfgs' folder (not FedFigs as I want to keep those separate)
 	if (!std::filesystem::exists(ConfigPath))
@@ -273,7 +273,7 @@ CConfigManager::CConfigManager()
 	{\
 		for (auto& it : *mapTree)\
 		{\
-			if ((!F::Conditions.mConditions.contains(it.first) || var->GetVar<type>()->m_iFlags & NOCOND) && FNV1A::Hash(it.first.c_str()) != FNV1A::HashConst("default"))\
+			if ((!F::Conditions.mConditions.contains(it.first) || var->GetVar<type>()->m_iFlags & NOCOND) && it.first != "default")\
 				continue;\
 			LoadJson(*mapTree, it.first.c_str(), var->GetVar<type>()->Map[it.first]);\
 		}\
@@ -363,7 +363,7 @@ bool CConfigManager::LoadConfig(const std::string& configName, bool bNotify)
 
 			for (auto& it : *condTree)
 			{
-				if (FNV1A::Hash(it.first.c_str()) == FNV1A::HashConst("default"))
+				if (it.first == "default")
 					continue;
 
 				Condition_t tCond = {};
@@ -502,7 +502,7 @@ bool CConfigManager::LoadVisual(const std::string& configName, bool bNotify)
 
 void CConfigManager::RemoveConfig(const std::string& configName)
 {
-	if (FNV1A::Hash(configName.c_str()) != FNV1A::HashConst("default"))
+	if (configName != "default")
 		std::filesystem::remove(ConfigPath + "\\" + configName + ConfigExtension);
 	else
 	{

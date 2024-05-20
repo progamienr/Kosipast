@@ -23,20 +23,21 @@ class CCritHack
 {
 private:
 	void Fill(CBaseEntity* pLocal, const CUserCmd* pCmd, int n = 10);
+	int FirstGoodCommand(std::deque<int>& vCommands, const CUserCmd* pCmd);
 
 	bool IsCritCommand(int iSlot, int iIndex, const i32 command_number, const bool bCrit = true, const bool bSafe = true);
 	u32 DecryptOrEncryptSeed(int iSlot, int iIndex, const u32 uSeed);
 
 	void GetTotalCrits(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	void CanFireCritical(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
+	void GetDamageTilUnban(CBaseEntity* pLocal);
 	bool WeaponCanCrit(CBaseCombatWeapon* weapon);
 
 	void ResetWeapons(CBaseEntity* pLocal);
 	void Reset();
 
-	int CritDamage = 0.f;
-	int AllDamage = 0.f;
-	std::unordered_map<int, int> mHealthStorage = {};
+	float CritDamage = 0;
+	float AllDamage = 0;
 
 	bool CritBanned = false;
 	int DamageTilUnban = 0;
@@ -44,13 +45,13 @@ private:
 	int WishRandomSeed = 0;
 
 public:
-	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+	void Run(CUserCmd* pCmd);
 	bool CalcIsAttackCriticalHandler(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	void Event(CGameEvent* pEvent, FNV1A_t uHash, CBaseEntity* pLocal);
-	void Fill();
-	void Draw(CBaseEntity* pLocal);
+	void Event(CGameEvent* pEvent, FNV1A_t uNameHash);
+	void Draw();
 
 	std::unordered_map<int, WeaponStorage> Storage = {};
+	bool ProtectData = false;
 };
 
 ADD_FEATURE(CCritHack, CritHack)

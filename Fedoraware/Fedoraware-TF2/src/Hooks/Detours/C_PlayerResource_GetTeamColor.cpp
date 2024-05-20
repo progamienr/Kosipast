@@ -24,7 +24,7 @@ __inline Color_t GetScoreboardColor(int iIndex, bool enableOtherColors)
 
     if (iIndex == I::EngineClient->GetLocalPlayer())
         out = Vars::Colors::Local.Value;
-    else if (g_EntityCache.IsSteamFriend(iIndex))
+    else if (g_EntityCache.IsFriend(iIndex))
         out = F::PlayerUtils.mTags["Friend"].Color;
     else if (bTagColor)
         out = plTagColor;

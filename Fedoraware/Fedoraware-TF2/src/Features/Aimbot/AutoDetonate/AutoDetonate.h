@@ -5,7 +5,7 @@
 
 class CAutoDetonate
 {
-	bool CheckDetonation(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, EGroupType entityGroup, float flRadiusScale, CUserCmd* pCmd);
+	bool CheckDetonation(CBaseEntity* pLocal, EGroupType entityGroup, float flRadiusScale, CUserCmd* pCmd);
 
 public:
 	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);

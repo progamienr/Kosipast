@@ -29,12 +29,17 @@ MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pCh
 	if (finalMsg.find(name) == std::string::npos)
 		return Hook.Original<FN>()(ecx, iPlayerIndex, iFilter, "%s", finalMsg.c_str());
 
+	/*
+	 *	Chat Flags
+	 *	@https://www.unknowncheats.me/forum/team-fortress-2-a/488217-chat-flags-titles.html
+		i swear its not pasted i just used this as inspiration, credits myzarfin.
+	*/
 	if (iPlayerIndex && Vars::Misc::Chat::Tags.Value)
 	{
 		std::string tag = "", color = "";
 		if (iPlayerIndex == I::EngineClient->GetLocalPlayer())
 			tag = "You", color = Vars::Colors::Local.Value.to_hex_alpha();
-		else if (g_EntityCache.IsSteamFriend(iPlayerIndex))
+		else if (g_EntityCache.IsFriend(iPlayerIndex))
 			tag = "Friend", color = F::PlayerUtils.mTags["Friend"].Color.to_hex_alpha();
 		else
 		{
@@ -43,7 +48,7 @@ MAKE_HOOK(CBaseHudChat_ChatPrintf, Utils::GetVFuncPtr(I::ClientModeShared->m_pCh
 				tag = sTag, color = plTag.Color.to_hex_alpha();
 		}
 
-		if (tag.length())
+		if (tag != "")
 		{
 			finalMsg = std::format("{}[{}] \x3{}", color, tag, finalMsg);
 			if (auto offset = finalMsg.find(name))

@@ -26,10 +26,10 @@ private:
 	std::optional<float> GetPitchForSniperDot(CBaseEntity* pEntity);
 
 	//logic
-	std::optional<float> PredictBaseYaw(CBaseEntity* pLocal, CBaseEntity* pEntity);
+	std::optional<float> PredictBaseYaw(CBaseEntity* pEntity);
 
 	//misc
-	bool ShouldRun(CBaseEntity* pLocal);
+	bool ShouldRun();
 	bool ShouldRunEntity(CBaseEntity* pEntity);
 	bool KeepOnShot(CBaseEntity* pEntity);
 	bool IsOnShotPitchReliable(const float flPitch);
@@ -41,7 +41,7 @@ private:
 	
 
 	//data
-	std::unordered_map<CBaseEntity*, Vec3> mSniperDots;
+	std::unordered_map<CBaseEntity*, CBaseEntity*> mSniperDots;
 	std::unordered_map<CBaseEntity*, ResolveData> mResolverData;
 	std::pair<int, std::pair<CBaseEntity*, bool>> pWaiting = {0, {nullptr, false}};
 public:

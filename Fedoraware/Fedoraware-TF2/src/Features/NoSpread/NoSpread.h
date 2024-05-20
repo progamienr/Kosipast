@@ -7,7 +7,7 @@ private:
 	bool ShouldRun(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 public:
-	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+	void Run(CUserCmd* pCmd);
 };
 
 ADD_FEATURE(CNoSpread, NoSpread)

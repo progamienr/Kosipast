@@ -29,20 +29,19 @@ float CBacktrack::GetFake()
 // Returns the current real latency
 float CBacktrack::GetReal(int iFlow)
 {
-	auto pNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!pNetChan)
+	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!iNetChan)
 		return 0.f;
 
 	if (iFlow)
-		return pNetChan->GetLatency(iFlow) - (iFlow == FLOW_INCOMING ? GetFake() : 0.f);
-	return pNetChan->GetLatency(FLOW_INCOMING) - GetFake() + pNetChan->GetLatency(FLOW_OUTGOING);
+		return iNetChan->GetLatency(iFlow) - (iFlow == FLOW_INCOMING ? GetFake() : 0.f);
+	return iNetChan->GetLatency(FLOW_INCOMING) - GetFake() + iNetChan->GetLatency(FLOW_OUTGOING);
 }
 
 void CBacktrack::SendLerp()
 {
-	auto pNetChan = static_cast<CNetChannel*>(I::EngineClient->GetNetChannelInfo());
-	if (!pNetChan)
-		return;
+	CNetChannel* netChannel = I::EngineClient->GetNetChannelInfo();
+	if (!netChannel) return;
 
 	static Timer interpTimer{};
 	if (interpTimer.Run(100))
@@ -54,13 +53,13 @@ void CBacktrack::SendLerp()
 		Utils::ConLog("SendNetMsg", std::format("cl_interp: {}", flTarget).c_str(), { 224, 255, 131, 255 }, Vars::Debug::Logging.Value);
 
 		NET_SetConVar cl_interp("cl_interp", std::to_string(flTarget).c_str());
-		pNetChan->SendNetMsg(cl_interp);
+		netChannel->SendNetMsg(cl_interp);
 
 		NET_SetConVar cl_interp_ratio("cl_interp_ratio", "1.0");
-		pNetChan->SendNetMsg(cl_interp_ratio);
+		netChannel->SendNetMsg(cl_interp_ratio);
 
 		NET_SetConVar cl_interpolate("cl_interpolate", "1");
-		pNetChan->SendNetMsg(cl_interpolate);
+		netChannel->SendNetMsg(cl_interpolate);
 	}
 }
 
@@ -75,29 +74,30 @@ void CBacktrack::SetLerp(CGameEvent* pEvent)
 // Store the last 2048 sequences
 void CBacktrack::UpdateDatagram()
 {
-	auto pNetChan = static_cast<CNetChannel*>(I::EngineClient->GetNetChannelInfo());
-	if (!pNetChan)
-		return;
-
-	if (pNetChan->m_nInSequenceNr > iLastInSequence)
+	if (INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo())
 	{
-		iLastInSequence = pNetChan->m_nInSequenceNr;
-		dSequences.push_front(CIncomingSequence(pNetChan->m_nInReliableState, pNetChan->m_nInSequenceNr, I::GlobalVars->realtime));
-	}
+		if (iNetChan->m_nInSequenceNr > iLastInSequence)
+		{
+			iLastInSequence = iNetChan->m_nInSequenceNr;
+			dSequences.push_front(CIncomingSequence(iNetChan->m_nInReliableState, iNetChan->m_nInSequenceNr, I::GlobalVars->realtime));
+		}
 
-	if (dSequences.size() > 2048)
-		dSequences.pop_back();
+		if (dSequences.size() > 2048)
+		{
+			dSequences.pop_back();
+		}
+	}
 }
 
 
 
 bool CBacktrack::WithinRewind(const TickRecord& record)
 {
-	auto pNetChan = I::EngineClient->GetNetChannelInfo();
-	if (!pNetChan)
+	const auto iNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!iNetChan)
 		return false;
 
-	const float flCorrect = std::clamp(pNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.f, flMaxUnlag) - pNetChan->GetLatency(FLOW_OUTGOING);
+	const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.f, flMaxUnlag) - iNetChan->GetLatency(FLOW_OUTGOING);
 	const int iServerTick = iTickCount + (Vars::Misc::Game::NetworkFix.Value ? 1 : 0) + G::AnticipatedChoke + Vars::Backtrack::Offset.Value;
 
 	const float flDelta = flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(record.flSimTime));
@@ -139,11 +139,11 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pReco
 				});
 		else
 		{
-			auto pNetChan = I::EngineClient->GetNetChannelInfo();
-			if (!pNetChan)
+			const auto iNetChan = I::EngineClient->GetNetChannelInfo();
+			if (!iNetChan)
 				return validRecords;
 
-			const float flCorrect = std::clamp(pNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.f, flMaxUnlag) - pNetChan->GetLatency(FLOW_OUTGOING);
+			const float flCorrect = std::clamp(iNetChan->GetLatency(FLOW_OUTGOING) + ROUND_TO_TICKS(flFakeInterp) + GetFake(), 0.f, flMaxUnlag) - iNetChan->GetLatency(FLOW_OUTGOING);
 			const int iServerTick = iTickCount + (Vars::Misc::Game::NetworkFix.Value ? 1 : 0) + G::AnticipatedChoke + Vars::Backtrack::Offset.Value;
 
 			std::sort(validRecords.begin(), validRecords.end(), [&](const TickRecord& a, const TickRecord& b) -> bool
@@ -161,13 +161,40 @@ std::deque<TickRecord> CBacktrack::GetValidRecords(std::deque<TickRecord>* pReco
 	return validRecords;
 }
 
+std::optional<TickRecord> CBacktrack::GetHitRecord(CUserCmd* pCmd, CBaseEntity* pEntity, const Vec3 vAngles, const Vec3 vPos)
+{
+	std::optional<TickRecord> cReturnRecord{};
+	float flLastAngle = 45.f;
+
+	for (const auto& rCurQuery : mRecords[pEntity])
+	{
+		if (!WithinRewind(rCurQuery))
+			continue;
+
+		for (int iCurHitbox = 0; iCurHitbox < 18; iCurHitbox++)
+		{
+			//	it's possible to set entity positions and bones back to this record and then see what hitbox we will hit and rewind to that record, bt i dont wanna
+			const Vec3 vHitboxPos = pEntity->GetHitboxPosMatrix(iCurHitbox, (matrix3x4*)(&rCurQuery.BoneMatrix.BoneMatrix));
+			const Vec3 vAngleTo = Math::CalcAngle(vPos, vHitboxPos);
+			const float flFOVTo = Math::CalcFov(vAngles, vAngleTo);
+			if (flFOVTo < flLastAngle)
+			{
+				cReturnRecord = rCurQuery;
+				flLastAngle = flFOVTo;
+			}
+		}
+	}
+	return cReturnRecord;
+}
+
 
 
 void CBacktrack::StoreNolerp()
 {
-	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		if (pEntity->GetIndex() == I::EngineClient->GetLocalPlayer())
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+		if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer())
 			continue;
 
 		// more of a placeholder, still interpolated iirc
@@ -185,9 +212,10 @@ void CBacktrack::MakeRecords()
 		return;
 	iLastCreationTick = I::GlobalVars->tickcount;
 
-	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		if (pEntity->GetIndex() == I::EngineClient->GetLocalPlayer() || !mBones[pEntity].first)
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+		if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer() || !mBones[pEntity].first)
 			continue;
 
 		const float flSimTime = pEntity->m_flSimulationTime(), flOldSimTime = pEntity->m_flOldSimulationTime();
@@ -200,7 +228,8 @@ void CBacktrack::MakeRecords()
 			I::GlobalVars->tickcount,
 			mDidShoot[pEntity->GetIndex()],
 			*reinterpret_cast<BoneMatrixes*>(&mBones[pEntity].second),
-			pEntity->m_vecOrigin()
+			pEntity->m_vecOrigin(),
+			pEntity->GetWorldSpaceCenter()
 		};
 
 		bool bLagComp = false;
@@ -225,6 +254,7 @@ void CBacktrack::MakeRecords()
 				pRecord.bOnShot = curRecord.bOnShot;
 				pRecord.BoneMatrix = curRecord.BoneMatrix;
 				pRecord.vOrigin = curRecord.vOrigin;
+				pRecord.vCenter = curRecord.vCenter;
 			}
 		}
 
@@ -237,9 +267,10 @@ void CBacktrack::MakeRecords()
 
 void CBacktrack::CleanRecords()
 {
-	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		if (pEntity->GetIndex() == I::EngineClient->GetLocalPlayer())
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+		if (!pEntity || n == I::EngineClient->GetLocalPlayer())
 			continue;
 
 		if (!pEntity->IsPlayer() || pEntity->GetDormant() || !pEntity->IsAlive() || pEntity->IsAGhost())
@@ -269,7 +300,9 @@ void CBacktrack::CleanRecords()
 
 void CBacktrack::FrameStageNotify()
 {
-	if (!I::EngineClient->IsInGame())
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	INetChannel* iNetChan = I::EngineClient->GetNetChannelInfo();
+	if (!pLocal || !iNetChan)
 		return Restart();
 
 	static auto sv_maxunlag = g_ConVars.FindVar("sv_maxunlag");
@@ -283,7 +316,6 @@ void CBacktrack::FrameStageNotify()
 void CBacktrack::Run(CUserCmd* pCmd)
 {
 	SendLerp();
-	UpdateDatagram();
 
 	// might not even be necessary
 	G::AnticipatedChoke = 0;
@@ -291,6 +323,8 @@ void CBacktrack::Run(CUserCmd* pCmd)
 		G::AnticipatedChoke = 1;
 	if (G::ChokeAmount && !Vars::CL_Move::Fakelag::UnchokeOnAttack.Value && G::ShiftedTicks == G::ShiftedGoal && !G::DoubleTap)
 		G::AnticipatedChoke = G::ChokeGoal - G::ChokeAmount; // iffy, unsure if there is a good way to get it to work well without unchoking
+
+	UpdateDatagram();
 }
 
 void CBacktrack::ResolverUpdate(CBaseEntity* pEntity)
@@ -300,9 +334,6 @@ void CBacktrack::ResolverUpdate(CBaseEntity* pEntity)
 
 void CBacktrack::ReportShot(int iIndex)
 {
-	if (!Vars::Backtrack::PreferOnShot.Value)
-		return;
-
 	CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(iIndex);
 	if (!pEntity || Utils::GetWeaponType(pEntity->GetActiveWeapon()) != EWeaponType::HITSCAN)
 		return;

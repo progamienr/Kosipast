@@ -538,7 +538,7 @@ namespace ImGui
 							switch (mActives[index])
 							{
 							case 1:
-								*var1 = text.length() ? std::stof(text) : 0.f;
+								*var1 = text != "" ? std::stof(text) : 0.f;
 								*var1 = std::min(*var1, *var2 - step);
 								if (!(flags & FSlider_Precision))
 									*var1 = *var1 - fnmodf(*var1 - step / 2, step) + step / 2;
@@ -546,7 +546,7 @@ namespace ImGui
 									*var1 = std::clamp(*var1, v_min, v_max);
 								break;
 							case 2:
-								*var2 = text.length() ? std::stof(text) : 0.f;
+								*var2 = text != "" ? std::stof(text) : 0.f;
 								*var2 = std::max(*var2, *var1 + step);
 								if (!(flags & FSlider_Precision))
 									*var2 = *var2 - fnmodf(*var2 - step / 2, step) + step / 2;
@@ -555,7 +555,7 @@ namespace ImGui
 							}
 						else
 						{
-							*var1 = text.length() ? std::stof(text) : 0.f;
+							*var1 = text != "" ? std::stof(text) : 0.f;
 							if (!(flags & FSlider_Precision))
 								*var1 = *var1 - fnmodf(*var1 - step / 2, step) + step / 2;
 							if (flags & FSlider_Clamp)
@@ -1355,7 +1355,7 @@ namespace ImGui
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 		str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
 
-		if (Vars::Debug::Info.Value && FNV1A::Hash(str.c_str()) == FNV1A::HashConst("unknown"))
+		if (Vars::Debug::Info.Value && str == "unknown")
 			str = std::format("{:#x}", key);
 
 		return str;
@@ -1426,7 +1426,7 @@ namespace ImGui
 		std::vector<std::pair<std::string, Material_t>> vMaterials;
 		for (auto const& [sName, mat] : F::Materials.mChamMaterials)
 		{
-			if (FNV1A::Hash(sName.c_str()) != FNV1A::HashConst("None"))
+			if (sName != "None")
 				vMaterials.push_back({ sName, mat });
 		}
 
@@ -1463,7 +1463,7 @@ namespace ImGui
 		std::string parent = sCondition;
 		while (true)
 		{
-			if (FNV1A::Hash(parent.c_str()) == FNV1A::HashConst("default") || var.Map.contains(parent))
+			if (parent == "default" || var.Map.contains(parent))
 				break;
 			parent = F::Conditions.GetParent(parent);
 		}
@@ -1477,7 +1477,7 @@ namespace ImGui
 		while (true)
 		{
 			parent = F::Conditions.GetParent(parent);
-			if (FNV1A::Hash(parent.c_str()) == FNV1A::HashConst("default") || var.Map.contains(parent))
+			if (parent == "default" || var.Map.contains(parent))
 				break;
 		}
 		return var.Map[parent];
@@ -1491,13 +1491,13 @@ namespace ImGui
 		const auto condition = GetCondition(var);
 		if (bDisable)
 		{
-			if (FNV1A::Hash(sCondition.c_str()) == FNV1A::HashConst("default"))
+			if (sCondition == "default")
 			{
-				if (Vars::Menu::MenuShowsBinds.Value && var.Map["default"] != var.Value)
+				if (Vars::Menu::MenuShowsBinds.Value && sCondition == "default" && var.Map["default"] != var.Value)
 				{
 					for (auto& [sCond, tVal] : var.Map)
 					{
-						if (FNV1A::Hash(sCond.c_str()) == FNV1A::HashConst("default"))
+						if (sCond == "default")
 							continue;
 
 						if (tVal == var.Value)
@@ -1524,7 +1524,7 @@ namespace ImGui
 
 			if (value != val)
 				var.Map[condition] = val;
-			else if (FNV1A::Hash(condition.c_str()) != FNV1A::HashConst("default"))
+			else if (condition != "default")
 			{
 				for (auto it = var.Map.begin(); it != var.Map.end();)
 				{

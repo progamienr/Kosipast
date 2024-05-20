@@ -5,10 +5,10 @@ class CRadar
 {
 	bool GetDrawPosition(CBaseEntity* pLocal, CBaseEntity* pEntity, int& x, int& y, int& z);
 	void DrawBackground();
-	void DrawPoints(CBaseEntity* pLocal);
+	void DrawPoints();
 
 public:
-	void Run(CBaseEntity* pLocal);
+	void Run();
 };
 
 ADD_FEATURE(CRadar, Radar)

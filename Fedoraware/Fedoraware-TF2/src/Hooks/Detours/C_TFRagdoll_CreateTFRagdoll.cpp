@@ -18,15 +18,17 @@ MAKE_HOOK(C_TFRagdoll_CreateTFRagdoll, S::CTFRagdoll_CreateTFRagdoll(), void, __
 	if (Vars::Visuals::Ragdolls::NoRagdolls.Value)
 		return;
 
-	if (auto pEntity = static_cast<CBaseEntity*>(ecx))
+	if (const auto& pEntity = static_cast<CBaseEntity*>(ecx))
 	{
 		bool bValid = Vars::Visuals::Ragdolls::Active.Value;
 
 		if (bValid && Vars::Visuals::Ragdolls::EnemyOnly.Value)
 		{
-			auto pLocal = g_EntityCache.GetLocal();
-			if (pLocal && Offset(int*, pEntity, 0xCBC) == pLocal->m_iTeamNum()) // Team offset
-				bValid = false;
+			if (const auto& pLocal = g_EntityCache.GetLocal())
+			{
+				if (Offset(int*, pEntity, 0xCBC) == pLocal->m_iTeamNum()) // Team offset
+					bValid = false;
+			}
 		}
 
 		if (bValid)

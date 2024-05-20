@@ -18,28 +18,29 @@
 MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 21), bool, __fastcall,
 	void* ecx, void* edx, float input_sample_frametime, CUserCmd* pCmd)
 {
-	G::PSilentAngles = G::SilentAngles = G::IsAttacking = false; G::Buttons = pCmd ? pCmd->buttons : G::Buttons;
+	G::PSilentAngles = G::SilentAngles = G::IsAttacking = false;
 	const bool bReturn = Hook.Original<FN>()(ecx, edx, input_sample_frametime, pCmd);
 	if (!pCmd || !pCmd->command_number)
 		return bReturn;
+
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto& pWeapon = g_EntityCache.GetWeapon();
 
 	// NOTE: Riley; Using inline assembly for this is unsafe.
 	auto bp = reinterpret_cast<uintptr_t>(_AddressOfReturnAddress()) - sizeof(void*);
 	auto pSendPacket = reinterpret_cast<bool*>(***reinterpret_cast<uintptr_t***>(bp) - 0x1);
 
-	I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
+	//if (Vars::Misc::Game::NetworkFix.Value || Vars::Misc::Game::PredictionFix.Value)
+		I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
 
+	G::Buttons = pCmd->buttons;
 	G::CurrentUserCmd = pCmd;
 	if (!G::LastUserCmd)
 		G::LastUserCmd = pCmd;
 
 	// correct tick_count for fakeinterp / nointerp
 	pCmd->tick_count += TICKS_TO_TIME(F::Backtrack.flFakeInterp) - (Vars::Visuals::Removals::Interpolation.Value ? 0 : TICKS_TO_TIME(G::LerpTime));
-	if (G::Buttons & IN_DUCK) // lol
-		pCmd->buttons |= IN_DUCK;
 
-	auto pLocal = g_EntityCache.GetLocal();
-	auto pWeapon = g_EntityCache.GetWeapon();
 	if (pLocal && pWeapon)
 	{	// Update Global Info
 		const int nItemDefIndex = pWeapon->m_iItemDefinitionIndex();
@@ -76,7 +77,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		}
 		G::CanHeadShot = pWeapon->CanWeaponHeadShot();
 		G::CurWeaponType = Utils::GetWeaponType(pWeapon);
-		G::IsAttacking = Utils::IsAttacking(pLocal, pWeapon, pCmd);
+		G::IsAttacking = Utils::IsAttacking(pCmd, pWeapon);
 	}
 
 	const bool bSkip = F::AimbotProjectile.bLastTickCancel;
@@ -87,22 +88,21 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	}
 
 	// Run Features
-	F::Misc.RunPre(pLocal, pCmd);
+	F::Misc.RunPre(pCmd);
+	F::CheaterDetection.OnTick();
 	F::Backtrack.Run(pCmd);
 
-	F::EnginePrediction.Start(pLocal, pCmd);
-	{
-		const bool bAimRan = bSkip ? false : F::Aimbot.Run(pLocal, pWeapon, pCmd);
-		if (!bAimRan && G::CanPrimaryAttack && G::IsAttacking && !F::AimbotProjectile.bLastTickCancel)
-			F::Visuals.ProjectileTrace(pLocal, pWeapon, false);
-	}
-	F::EnginePrediction.End(pLocal, pCmd);
+	F::EnginePrediction.Start(pCmd);
+	const bool bAimRan = bSkip ? false : F::Aimbot.Run(pCmd);
+	if (!bAimRan && G::CanPrimaryAttack && G::IsAttacking && !F::AimbotProjectile.bLastTickCancel)
+		F::Visuals.ProjectileTrace(false);
+	F::EnginePrediction.End(pCmd);
 
-	F::PacketManip.Run(pLocal, pCmd, pSendPacket);
-	F::Ticks.MovePost(pLocal, pCmd);
-	F::CritHack.Run(pLocal, pWeapon, pCmd);
-	F::NoSpread.Run(pLocal, pWeapon, pCmd);
-	F::Misc.RunPost(pLocal, pCmd, *pSendPacket);
+	F::PacketManip.Run(pCmd, pSendPacket);
+	F::Ticks.MovePost(pCmd);
+	F::CritHack.Run(pCmd);
+	F::NoSpread.Run(pCmd);
+	F::Misc.RunPost(pCmd, *pSendPacket);
 	F::Resolver.CreateMove();
 
 	{
@@ -114,10 +114,10 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			*pSendPacket = true, bWasSet = false;
 	}
 	F::Misc.DoubletapPacket(pCmd, pSendPacket);
-	F::AntiAim.Run(pLocal, pCmd, pSendPacket);
+	F::AntiAim.Run(pCmd, pSendPacket);
 	G::Choking = !*pSendPacket;
 	if (*pSendPacket)
-		F::FakeAngle.Run(pLocal);
+		F::FakeAngle.Run();
 	
 	G::ViewAngles = pCmd->viewangles;
 	G::LastUserCmd = pCmd;

@@ -13,7 +13,7 @@ class CTickshiftHandler
 	// utils
 	void CLMoveFunc(float accumulated_extra_samples, bool bFinalTick);
 
-	void MovePre(CBaseEntity* pLocal);
+	void MovePre();
 	void MoveMain(float accumulated_extra_samples, bool bFinalTick);
 
 	bool bSpeedhack = false;
@@ -21,8 +21,8 @@ class CTickshiftHandler
 
 public:
 	int GetTicks(CBaseEntity* pLocal);
-	void Run(float accumulated_extra_samples, bool bFinalTick, CBaseEntity* pLocal);
-	void MovePost(CBaseEntity* pLocal, CUserCmd* pCmd);
+	void CLMove(float accumulated_extra_samples, bool bFinalTick);
+	void MovePost(CUserCmd* pCmd);
 	void Reset();
 
 	int iDeficit = 0;

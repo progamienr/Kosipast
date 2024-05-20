@@ -46,6 +46,7 @@ public:
 	bool GetSignificantTag(int iIndex, std::string* sTag, PriorityLabel_t* plTag, int iMode = 1); // iMode: 0 - Priorities & Labels, 1 - Priorities, 2 - Labels
 	bool IsIgnored(uint32_t friendsID);
 	bool IsIgnored(int iIndex);
+	bool IsFriend(int iIndex);
 
 	void UpdatePlayers();
 	std::mutex mutex;

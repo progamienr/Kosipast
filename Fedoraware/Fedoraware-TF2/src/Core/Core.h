@@ -4,8 +4,6 @@ class CCore
 {
 	void OnLoaded();
 
-	bool bHasFailed = false;
-
 public:
 	void Load();
 	void Unload();

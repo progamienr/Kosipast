@@ -37,7 +37,7 @@ std::vector<Target_t> CAimbotMelee::GetTargets(CBaseEntity* pLocal, CBaseCombatW
 			if (!pTarget->IsAlive() || pTarget->IsAGhost() || pTarget == pLocal)
 				continue;
 
-			if (F::AimbotGlobal.ShouldIgnore(pTarget, pLocal, pWeapon))
+			if (F::AimbotGlobal.ShouldIgnore(pTarget))
 				continue;
 
 			Vec3 vPos = pTarget->GetHitboxPos(HITBOX_PELVIS);

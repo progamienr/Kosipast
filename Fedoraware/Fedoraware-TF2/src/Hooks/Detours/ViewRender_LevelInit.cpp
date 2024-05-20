@@ -16,7 +16,7 @@ MAKE_HOOK(ViewRender_LevelInit, Utils::GetVFuncPtr(I::ViewRender, 1), void, __fa
 
 	F::Backtrack.Restart();
 	F::Ticks.Reset();
-	F::CheaterDetection.Reset();
+	F::CheaterDetection.OnLoad();
 
 	Hook.Original<FN>()(ecx, edx);
 }

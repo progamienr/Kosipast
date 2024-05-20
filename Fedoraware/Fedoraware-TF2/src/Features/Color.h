@@ -2,13 +2,15 @@
 #include "Vars.h"
 #include "Menu/Playerlist/PlayerUtils.h"
 
-__inline Color_t GetTeamColor(int iLocalTeam, int iTargetTeam, bool bOther)
+__inline Color_t GetTeamColor(int iTeam, bool bOther)
 {
 	if (bOther)
-		return iLocalTeam == iTargetTeam ? Vars::Colors::Team.Value : Vars::Colors::Enemy.Value;
-	else
 	{
-		switch (iTargetTeam)
+		if (const auto& pLocal = g_EntityCache.GetLocal())
+			return pLocal->m_iTeamNum() == iTeam ? Vars::Colors::Team.Value : Vars::Colors::Enemy.Value;
+	}
+	else {
+		switch (iTeam)
 		{
 		case 2: return Vars::Colors::TeamRed.Value;
 		case 3: return Vars::Colors::TeamBlu.Value;
@@ -18,9 +20,9 @@ __inline Color_t GetTeamColor(int iLocalTeam, int iTargetTeam, bool bOther)
 	return { 255, 255, 255, 255 };
 }
 
-__inline Color_t GetEntityDrawColor(CBaseEntity* pLocal, CBaseEntity* pEntity, bool enableOtherColors)
+__inline Color_t GetEntityDrawColor(CBaseEntity* pEntity, bool enableOtherColors)
 {
-	Color_t out = GetTeamColor(pLocal->m_iTeamNum(), pEntity->m_iTeamNum(), enableOtherColors);
+	Color_t out = GetTeamColor(pEntity->m_iTeamNum(), enableOtherColors);
 
 	if (pEntity->IsPlayer())
 	{
@@ -32,9 +34,9 @@ __inline Color_t GetEntityDrawColor(CBaseEntity* pLocal, CBaseEntity* pEntity, b
 				cTagColor = plTag.Color;
 		}
 
-		if (pLocal == pEntity)
+		if (g_EntityCache.GetLocal()->GetIndex() == pEntity->GetIndex())
 			out = Vars::Colors::Local.Value;
-		else if (g_EntityCache.IsSteamFriend(pEntity->GetIndex()))
+		else if (g_EntityCache.IsFriend(pEntity->GetIndex()))
 			out = F::PlayerUtils.mTags["Friend"].Color;
 		else if (bTagColor)
 			out = cTagColor;

@@ -18,35 +18,13 @@ Glow_t CGlow::GetStruct(bool Stencil, bool Blur, int StencilScale, int BlurScale
 	};
 }
 
-bool CGlow::GetPlayerGlow(CBaseEntity* pEntity, CBaseEntity* pLocal, Glow_t* pGlow, Color_t* pColor, bool bFriendly, bool bEnemy)
+bool CGlow::GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color)
 {
-	if (pEntity == pLocal)
-	{
-		*pGlow = GetStruct(Vars::Glow::Player::Stencil.Value, Vars::Glow::Player::Blur.Value, Vars::Glow::Player::StencilScale.Value, Vars::Glow::Player::BlurScale.Value);
-		*pColor = GetEntityDrawColor(pLocal, pEntity, Vars::Colors::Relative.Value);
-		return Vars::Glow::Player::Local.Value;
-	}
-	else
-	{
-		if (g_EntityCache.IsSteamFriend(pEntity->GetIndex()) && Vars::Glow::Player::Friend.Value)
-		{
-			*pGlow = GetStruct(Vars::Glow::Player::Stencil.Value, Vars::Glow::Player::Blur.Value, Vars::Glow::Player::StencilScale.Value, Vars::Glow::Player::BlurScale.Value);
-			*pColor = GetEntityDrawColor(pLocal, pEntity, Vars::Colors::Relative.Value);
-			return true;
-		}
-	}
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
+	if (!pLocal || pEntity->GetDormant() || !pEntity->ShouldDraw())
+		return false;
 
-	const bool bTeam = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
-	*pGlow = bTeam
-		? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
-		: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
-	*pColor = GetEntityDrawColor(pLocal, pEntity, Vars::Colors::Relative.Value);
-	return bTeam ? bFriendly : bEnemy;
-}
-
-bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Color_t* pColor)
-{
-	if (pEntity->GetDormant() || !pEntity->ShouldDraw())
+	if (!Utils::IsOnScreen(pEntity, pEntity->GetWorldSpaceCenter()))
 		return false;
 
 	switch (pEntity->GetClassID())
@@ -54,14 +32,26 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 		// player glow
 	case ETFClassID::CBasePlayer:
 	case ETFClassID::CTFPlayer:
-		return GetPlayerGlow(pEntity, pLocal, pGlow, pColor, Vars::Glow::Friendly::Players.Value, Vars::Glow::Enemy::Players.Value);
+	{
+		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
+		*color = GetEntityDrawColor(pEntity, Vars::Colors::Relative.Value);
+		return bFriendly ? Vars::Glow::Friendly::Players.Value : Vars::Glow::Enemy::Players.Value;
+	}
 	case ETFClassID::CTFWearable:
 	{
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hOwnerEntity());
 		if (!pOwner)
 			return false;
 
-		return GetPlayerGlow(pOwner, pLocal, pGlow, pColor, Vars::Glow::Friendly::Players.Value, Vars::Glow::Enemy::Players.Value);
+		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
+		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
+		return bFriendly ? Vars::Glow::Friendly::Players.Value : Vars::Glow::Enemy::Players.Value;
 	}
 	// building glow
 	case ETFClassID::CObjectSentrygun:
@@ -69,10 +59,13 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 	case ETFClassID::CObjectTeleporter:
 	{
 		const auto& pOwner = I::ClientEntityList->GetClientEntityFromHandle(pEntity->m_hBuilder());
-		if (!pOwner)
-			return false;
 
-		return GetPlayerGlow(pOwner, pLocal, pGlow, pColor, Vars::Glow::Friendly::Buildings.Value, Vars::Glow::Enemy::Buildings.Value);
+		const bool bFriendly = pEntity->m_iTeamNum() == pLocal->m_iTeamNum();
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
+		*color = GetEntityDrawColor(pOwner ? pOwner : pEntity, Vars::Colors::Relative.Value);
+		return bFriendly ? Vars::Glow::Friendly::Buildings.Value : Vars::Glow::Enemy::Buildings.Value;
 	}
 	// ragdoll glow
 	case ETFClassID::CRagdollPropAttached:
@@ -83,7 +76,12 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 		if (!pOwner)
 			return false;
 
-		return GetPlayerGlow(pOwner, pLocal, pGlow, pColor, Vars::Glow::Friendly::Ragdolls.Value, Vars::Glow::Enemy::Ragdolls.Value);
+		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
+		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
+		return bFriendly ? Vars::Glow::Friendly::Ragdolls.Value : Vars::Glow::Enemy::Ragdolls.Value;
 	}
 	// projectile glow
 	case ETFClassID::CTFProjectile_Rocket:
@@ -107,7 +105,12 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 		if (!pOwner)
 			return false;
 
-		return GetPlayerGlow(pOwner, pLocal, pGlow, pColor, Vars::Glow::Friendly::Projectiles.Value, Vars::Glow::Enemy::Projectiles.Value);
+		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
+		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
+		return bFriendly ? Vars::Glow::Friendly::Projectiles.Value : Vars::Glow::Enemy::Projectiles.Value;
 	}
 	// npc glow
 	case ETFClassID::CHeadlessHatman:
@@ -115,41 +118,41 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 	case ETFClassID::CMerasmus:
 	case ETFClassID::CZombie:
 	case ETFClassID::CEyeballBoss:
-		*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-		*pColor = Vars::Colors::NPC.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+		*color = Vars::Colors::NPC.Value;
 		return Vars::Glow::World::NPCs.Value;
 	// pickup glow
 	case ETFClassID::CTFAmmoPack:
-		*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-		*pColor = Vars::Colors::Ammo.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+		*color = Vars::Colors::Ammo.Value;
 		return Vars::Glow::World::Pickups.Value;
 	case ETFClassID::CCurrencyPack:
-		*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-		*pColor = Vars::Colors::Money.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+		*color = Vars::Colors::Money.Value;
 		return Vars::Glow::World::Pickups.Value;
 	case ETFClassID::CHalloweenGiftPickup:
-		*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-		*pColor = Vars::Colors::Halloween.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+		*color = Vars::Colors::Halloween.Value;
 		return Vars::Glow::World::Halloween.Value;
 	case ETFClassID::CBaseAnimating:
 	{
 		const auto szName = pEntity->GetModelName();
 		if (Hash::IsAmmo(szName))
 		{
-			*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-			*pColor = Vars::Colors::Ammo.Value;
+			*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+			*color = Vars::Colors::Ammo.Value;
 			return Vars::Glow::World::Pickups.Value;
 		}
 		if (Hash::IsHealth(szName))
 		{
-			*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-			*pColor = Vars::Colors::Health.Value;
+			*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+			*color = Vars::Colors::Health.Value;
 			return Vars::Glow::World::Pickups.Value;
 		}
 		if (Hash::IsSpell(szName))
 		{
-			*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-			*pColor = Vars::Colors::Halloween.Value;
+			*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+			*color = Vars::Colors::Halloween.Value;
 			return Vars::Glow::World::Halloween.Value;
 		}
 		break;
@@ -157,8 +160,8 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 	// bomb glow
 	case ETFClassID::CTFPumpkinBomb:
 	case ETFClassID::CTFGenericBomb:
-		*pGlow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
-		*pColor = Vars::Colors::Bomb.Value;
+		*glow = GetStruct(Vars::Glow::World::Stencil.Value, Vars::Glow::World::Blur.Value, Vars::Glow::World::StencilScale.Value, Vars::Glow::World::BlurScale.Value);
+		*color = Vars::Colors::Bomb.Value;
 		return Vars::Glow::World::Bombs.Value;
 	}
 
@@ -169,7 +172,12 @@ bool CGlow::GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Co
 		if (!pOwner || !pOwner->IsPlayer())
 			return false;
 
-		return GetPlayerGlow(pOwner, pLocal, pGlow, pColor, Vars::Glow::Friendly::Players.Value, Vars::Glow::Enemy::Players.Value);
+		const bool bFriendly = pOwner->m_iTeamNum() == pLocal->m_iTeamNum();
+		*glow = bFriendly
+			? GetStruct(Vars::Glow::Friendly::Stencil.Value, Vars::Glow::Friendly::Blur.Value, Vars::Glow::Friendly::StencilScale.Value, Vars::Glow::Friendly::BlurScale.Value)
+			: GetStruct(Vars::Glow::Enemy::Stencil.Value, Vars::Glow::Enemy::Blur.Value, Vars::Glow::Enemy::StencilScale.Value, Vars::Glow::Enemy::BlurScale.Value);
+		*color = GetEntityDrawColor(pOwner, Vars::Colors::Relative.Value);
+		return bFriendly ? Vars::Glow::Friendly::Players.Value : Vars::Glow::Enemy::Players.Value;
 	}
 
 	return false;
@@ -288,11 +296,12 @@ void CGlow::DrawModel(CBaseEntity* pEntity, bool bModel)
 
 
 
-void CGlow::RenderMain(CBaseEntity* pLocal)
+void CGlow::RenderMain()
 {
 	mEntities.clear();
+
 	const int w = g_ScreenSize.w, h = g_ScreenSize.h;
-	if (!pLocal || w < 1 || h < 1 || w > 4096 || h > 2160)
+	if (w < 1 || h < 1 || w > 4096 || h > 2160)
 		return;
 
 	const auto pRenderContext = I::MaterialSystem->GetRenderContext();
@@ -312,7 +321,9 @@ void CGlow::RenderMain(CBaseEntity* pLocal)
 			continue;
 
 		Glow_t glow = {}; Color_t color = {};
-		if (GetGlow(pLocal, pEntity, &glow, &color) && Utils::IsOnScreen(pEntity))
+		const bool bShouldDraw = GetGlow(pEntity, &glow, &color);
+
+		if (bShouldDraw)
 			mEntities[glow].push_back({ pEntity, color });
 	}
 
@@ -337,9 +348,10 @@ void CGlow::RenderMain(CBaseEntity* pLocal)
 	}
 
 	// backtrack / fakeangle
-	for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+	for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 	{
-		if (!pEntity->ShouldDraw() || pEntity->GetDormant())
+		CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+		if (!pEntity || !pEntity->IsPlayer() || !pEntity->ShouldDraw() || pEntity->GetDormant())
 			continue;
 
 		bRendering = bExtra = true;
@@ -367,13 +379,15 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 	if (!ModelRender_DrawModelExecute)
 		return;
 
-	auto pEntity = I::ClientEntityList->GetClientEntity(pInfo.m_nEntIndex);
+	const auto& pEntity = I::ClientEntityList->GetClientEntity(pInfo.m_nEntIndex);
 	if (!pEntity || pEntity->GetClassID() != ETFClassID::CTFPlayer || !pEntity->IsAlive())
 		return;
 
-	auto pLocal = g_EntityCache.GetLocal();
-	auto pWeapon = g_EntityCache.GetWeapon();
-	if (!pLocal || !pWeapon || G::CurWeaponType == EWeaponType::PROJECTILE)
+	const auto& pLocal = g_EntityCache.GetLocal();
+	const auto& pWeapon = g_EntityCache.GetWeapon();
+	if (!pLocal || !pWeapon)
+		return;
+	if (G::CurWeaponType == EWeaponType::PROJECTILE)
 		return;
 	if (pEntity == pLocal ||
 		pWeapon->m_iItemDefinitionIndex() != Soldier_t_TheDisciplinaryAction && pWeapon->GetWeaponID() != TF_WEAPON_MEDIGUN && pEntity->m_iTeamNum() == pLocal->m_iTeamNum() ||
@@ -382,9 +396,9 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 
 
 
-	auto drawModel = [ModelRender_DrawModelExecute, pEntity](Vec3& vOrigin, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
+	auto drawModel = [ModelRender_DrawModelExecute, pLocal](Vec3 vCenter, const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld)
 		{
-			if (!Utils::IsOnScreen(pEntity, vOrigin))
+			if (!Utils::IsOnScreen(pLocal, vCenter))
 				return;
 
 			ModelRender_DrawModelExecute->Original<void(__thiscall*)(CModelRender*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4*)>()(I::ModelRender, pState, pInfo, pBoneToWorld);
@@ -405,17 +419,17 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 			{
 				auto vLastRec = vRecords.end() - 1;
 				if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
-					drawModel(vLastRec->vOrigin, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+					drawModel(vLastRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 				break;
 			}
 			case 1: // last + first
 			{
 				auto vFirstRec = vRecords.begin();
 				if (vFirstRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vFirstRec->vOrigin) > 0.1f)
-					drawModel(vFirstRec->vOrigin, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
+					drawModel(vFirstRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vFirstRec->BoneMatrix));
 				auto vLastRec = vRecords.end() - 1;
 				if (vLastRec != vRecords.end() && pEntity->GetAbsOrigin().DistTo(vLastRec->vOrigin) > 0.1f)
-					drawModel(vLastRec->vOrigin, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
+					drawModel(vLastRec->vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&vLastRec->BoneMatrix));
 				break;
 			}
 			case 2: // all
@@ -425,7 +439,7 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 					if (pEntity->GetAbsOrigin().DistTo(record.vOrigin) < 0.1f)
 						continue;
 
-					drawModel(record.vOrigin, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
+					drawModel(record.vCenter, pState, pInfo, reinterpret_cast<matrix3x4*>(&record.BoneMatrix));
 				}
 			}
 			}
@@ -444,7 +458,7 @@ void CGlow::RenderBacktrack(const DrawModelState_t& pState, const ModelRenderInf
 	StencilEnd(pRenderContext);
 
 	SetupMid(pRenderContext, m_pMatGlowColor, w, h);
-	auto color = GetEntityDrawColor(pLocal, pEntity, Vars::Colors::Relative.Value);
+	auto color = GetEntityDrawColor(pEntity, Vars::Colors::Relative.Value);
 	I::RenderView->SetColorModulation(float(color.r) / 255.f, float(color.g) / 255.f, float(color.b) / 255.f);
 	I::RenderView->SetBlend(float(color.a) / 255.f);
 	drawModels(false);

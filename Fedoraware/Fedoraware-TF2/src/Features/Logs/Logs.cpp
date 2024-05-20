@@ -1,7 +1,7 @@
 #include "Logs.h"
 
 #include "../Vars.h"
-#include "../Visuals/Notifications/Notifications.h"
+#include "../Misc/Notifications/Notifications.h"
 #include "../../Features/Visuals/Visuals.h"
 #include "../Menu/Playerlist/PlayerUtils.h"
 
@@ -28,20 +28,23 @@ void CLogs::OutputInfo(int flags, std::string name, std::string string, std::str
 }
 
 // Event info
-void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uHash, CBaseEntity* pLocal)
+void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 {
-	if (uHash == FNV1A::HashConst("game_newmap"))
+	if (uNameHash == FNV1A::HashConst("game_newmap"))
 	{
 		bTagsOnJoin = true;
 		return;
 	}
 
-	if (!I::EngineClient->IsConnected() || !I::EngineClient->IsInGame() || !pLocal)
+	if (!I::EngineClient->IsConnected() || !I::EngineClient->IsInGame())
 		return;
 
-	switch (uHash)
-	{
-	case FNV1A::HashConst("vote_cast"): // Voting
+	const auto pLocal = I::ClientEntityList->GetClientEntity(I::EngineClient->GetLocalPlayer());
+	if (!pLocal)
+		return;
+
+	// Voting
+	if (uNameHash == FNV1A::HashConst("vote_cast"))
 	{
 		if (!(Vars::Logging::Logs.Value & 1 << 1))
 			return;
@@ -61,10 +64,11 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uHash, CBaseEntity* pLocal)
 		std::string string = std::format("{}{} voted {}", (bSameTeam ? "" : "[Enemy] "), (pi.name), (bVotedYes ? "Yes" : "No"));
 		std::string cstring = std::format("{}{}{}\x1 voted {}{}", (bSameTeam ? "" : "[Enemy] "), (yellow), (pi.name), (bVotedYes ? green : red), (bVotedYes ? "Yes" : "No"));
 		OutputInfo(Vars::Logging::VoteCast::LogTo.Value, "Vote Cast", string, cstring);
-
 		return;
 	}
-	case FNV1A::HashConst("player_changeclass"): // Class change
+
+	// Class change
+	if (uNameHash == FNV1A::HashConst("player_changeclass"))
 	{
 		if (!(Vars::Logging::Logs.Value & 1 << 2))
 			return;
@@ -83,10 +87,11 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uHash, CBaseEntity* pLocal)
 		std::string string = std::format("{}{} changed class to {}", (bSameTeam ? "" : "[Enemy] "), (pi.name), (Utils::GetClassByIndex(pEvent->GetInt("class"))));
 		std::string cstring = std::format("{}{}{}\x1 changed class to {}{}", (bSameTeam ? "" : "[Enemy] "), (yellow), (pi.name), (yellow), (Utils::GetClassByIndex(pEvent->GetInt("class"))));
 		OutputInfo(Vars::Logging::ClassChange::LogTo.Value, "Class Change", string, cstring);
-
 		return;
 	}
-	case FNV1A::HashConst("player_hurt"): // Damage
+
+	// Damage
+	if (uNameHash == FNV1A::HashConst("player_hurt"))
 	{
 		if (!(Vars::Logging::Logs.Value & 1 << 3))
 			return;
@@ -110,10 +115,11 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uHash, CBaseEntity* pLocal)
 		std::string string = std::format("You hit {} for {} damage{}({} / {})", (pi.name), (nDamage), (bCrit ? " (crit) " : " "), (nHealth), (maxHealth));
 		std::string cstring = std::format("You hit {}{}\x1 for {}{} damage{}{}({} / {})", (yellow), (pi.name), (red), (nDamage), (bCrit ? " (crit) " : " "), (yellow), (nHealth), (maxHealth));
 		OutputInfo(Vars::Logging::Damage::LogTo.Value, "Damage", string, cstring);
-
 		return;
 	}
-	case FNV1A::HashConst("player_activate"): // Tags (player join)
+
+	// Tags (player join)
+	if (uNameHash == FNV1A::HashConst("player_activate"))
 	{
 		if (!(Vars::Logging::Logs.Value & 1 << 5) || bTagsOnJoin)
 			return;
@@ -127,10 +133,10 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uHash, CBaseEntity* pLocal)
 			return;
 
 		TagsOnJoin(pi.name, pi.friendsID);
-
 		return;
 	}
-	case FNV1A::HashConst("player_spawn"): // Tags (local join)
+	// Tags (local join)
+	if (uNameHash == FNV1A::HashConst("player_spawn"))
 	{
 		if (!(Vars::Logging::Logs.Value & 1 << 5) || !bTagsOnJoin)
 			return;
@@ -149,16 +155,15 @@ void CLogs::Event(CGameEvent* pEvent, const FNV1A_t uHash, CBaseEntity* pLocal)
 			TagsOnJoin(pi.name, pi.friendsID);
 		}
 	}
-	}
 }
 
 // Vote start
-void CLogs::UserMessage(bf_read& msgData)
+void CLogs::UserMessage(UserMessageType type, bf_read& msgData)
 {
-	if (!(Vars::Logging::Logs.Value & 1 << 0))
+	if (type != VoteStart || !(Vars::Logging::Logs.Value & 1 << 0))
 		return;
 
-	auto pLocal = g_EntityCache.GetLocal();
+	const auto& pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
 		return;
 
@@ -250,8 +255,7 @@ void CLogs::TagsChanged(std::string name, std::string action, std::string color,
 	if (!(Vars::Logging::Logs.Value & 1 << 5))
 		return;
 
-	auto uHash = FNV1A::Hash(action.c_str());
-	std::string string = std::format("{} tag {} {} {}", (action), (tag), (uHash == FNV1A::HashConst("Added") ? "to" : "from"), (name));
-	std::string cstring = std::format("{} tag {}{}\x1 {} {}{}", (action), (color), (tag), (uHash == FNV1A::HashConst("Added") ? "to" : "from"), (yellow), (name));
+	std::string string = std::format("{} tag {} {} {}", (action), (tag), (action == "Added" ? "to" : "from"), (name));
+	std::string cstring = std::format("{} tag {}{}\x1 {} {}{}", (action), (color), (tag), (action == "Added" ? "to" : "from"), (yellow), (name));
 	OutputInfo(Vars::Logging::Tags::LogTo.Value, "Tags", string, cstring);
 }

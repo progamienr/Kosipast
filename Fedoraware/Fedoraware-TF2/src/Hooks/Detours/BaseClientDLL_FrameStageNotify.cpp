@@ -1,13 +1,11 @@
 #include "../Hooks.h"
 
+#include "../../Features/Resolver/Resolver.h"
+#include "../../Features/Visuals/Visuals.h"
+#include "../../Features/Visuals/FakeAngle/FakeAngle.h"
+#include "../../Features/Menu/Playerlist/PlayerUtils.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Simulation/MovementSimulation/MovementSimulation.h"
-#include "../../Features/Resolver/Resolver.h"
-#include "../../Features/CritHack/CritHack.h"
-#include "../../Features/CheaterDetection/CheaterDetection.h"
-#include "../../Features/Visuals/Visuals.h"
-#include "../../Features/Misc/Misc.h"
-#include "../../Features/Menu/Playerlist/PlayerUtils.h"
 
 MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 35), void, __fastcall,
 	void* ecx, void* edx, EClientFrameStage curStage)
@@ -16,8 +14,9 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 	{
 	case EClientFrameStage::FRAME_RENDER_START:
 		G::PunchAngles = Vec3();
-		if (auto pLocal = g_EntityCache.GetLocal())
+		if (const auto& pLocal = g_EntityCache.GetLocal())
 		{
+			// Remove punch effect
 			G::PunchAngles = pLocal->m_vecPunchAngle(); // use in aimbot 
 			if (Vars::Visuals::Removals::ViewPunch.Value)
 				pLocal->ClearPunchAngle(); // visual no-recoil
@@ -35,11 +34,11 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 		break;
 	case EClientFrameStage::FRAME_NET_UPDATE_END:
 		g_EntityCache.Fill();
-		for (auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
+		F::PlayerUtils.UpdatePlayers();
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
 		{
-			G::VelFixRecords[pEntity] = { pEntity->m_vecOrigin(), pEntity->m_vecMaxs().z - pEntity->m_vecMins().z, pEntity->m_flSimulationTime() };
-
-			if (pEntity->GetIndex() == I::EngineClient->GetLocalPlayer())
+			CBaseEntity* pEntity = I::ClientEntityList->GetClientEntity(n);
+			if (!pEntity || !pEntity->IsPlayer() || n == I::EngineClient->GetLocalPlayer())
 				continue; // local player managed in CPrediction_RunCommand
 
 			static auto sv_maxusrcmdprocessticks = g_ConVars.FindVar("sv_maxusrcmdprocessticks");
@@ -60,11 +59,12 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 
 		F::Backtrack.FrameStageNotify();
 		F::MoveSim.FillVelocities();
-		F::CritHack.Fill();
-		F::CheaterDetection.Fill();
 		F::Visuals.FillSightlines();
-		F::Misc.DetectChoke();
-		F::PlayerUtils.UpdatePlayers();
+		for (int n = 1; n <= I::EngineClient->GetMaxClients(); n++)
+		{
+			if (const auto& pPlayer = I::ClientEntityList->GetClientEntity(n))
+				G::VelFixRecords[pPlayer] = { pPlayer->m_vecOrigin(), pPlayer->m_vecMaxs().z - pPlayer->m_vecMins().z, pPlayer->m_flSimulationTime() };
+		}
 
 		break;
 	case EClientFrameStage::FRAME_RENDER_START:

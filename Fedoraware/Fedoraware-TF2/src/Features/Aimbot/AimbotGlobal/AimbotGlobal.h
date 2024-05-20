@@ -64,9 +64,9 @@ class CAimbotGlobal
 public:
 	void SortTargets(std::vector<Target_t>*, const ESortMethod& method);
 	void SortPriority(std::vector<Target_t>*);
-	bool ShouldIgnore(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, bool bMedigun = false);
+	bool ShouldIgnore(CBaseEntity* pTarget, bool bMedigun = false);
 	int GetPriority(int targetIdx);
-	bool ValidBomb(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseEntity* pBomb);
+	bool ValidBomb(CBaseEntity* pBomb);
 };
 
 ADD_FEATURE(CAimbotGlobal, AimbotGlobal)

@@ -12,7 +12,7 @@ private:
 	static void DrawBones(CBaseEntity* pPlayer, const std::vector<int>& vecBones, Color_t clr);
 
 public:
-	void Run(CBaseEntity* pLocal);
+	void Run();
 	static bool GetDrawBounds(CBaseEntity* pEntity, int& x, int& y, int& w, int& h);
 };
 

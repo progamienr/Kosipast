@@ -10,17 +10,16 @@
 }
 #define SetT(type, cond) if (IsType(type)) SetType(type, cond)
 
-void CConditions::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
+void CConditions::Run()
 {
 	if (G::UnloadWndProcHook)
 		return;
 
 	auto setVars = [](std::string sCond)
 		{
-			const bool bDefault = FNV1A::Hash(sCond.c_str()) == FNV1A::HashConst("default");
 			for (const auto var : g_Vars)
 			{
-				if (var->m_iFlags & (NOSAVE | NOCOND) && !bDefault)
+				if (var->m_iFlags & (NOSAVE | NOCOND) && sCond != "default")
 					continue;
 
 				SetT(bool, sCond)
@@ -37,15 +36,15 @@ void CConditions::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 				else SetT(WindowBox_t, sCond)
 			}
 		};
+
 	setVars("default");
 
 	std::function<void(std::string)> getConds = [&](std::string sParent)
 		{
-			auto uHash = FNV1A::Hash(sParent.c_str());
 			for (auto& sCond : vConditions)
 			{
 				auto& tCond = mConditions[sCond];
-				if (uHash != FNV1A::Hash(tCond.Parent.c_str()))
+				if (tCond.Parent != sParent)
 					continue;
 				
 				switch (tCond.Type)
@@ -76,6 +75,7 @@ void CConditions::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 				// class
 				case 1:
 				{
+					const auto& pLocal = g_EntityCache.GetLocal();
 					const int iClass = pLocal ? pLocal->m_iClass() : 0;
 					switch (tCond.Info)
 					{
@@ -96,6 +96,7 @@ void CConditions::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 				// weapon type
 				case 2:
 				{
+					const auto& pWeapon = g_EntityCache.GetWeapon();
 					tCond.Active = tCond.Info + 1 == int(Utils::GetWeaponType(pWeapon));
 					if (tCond.Not)
 						tCond.Active = !tCond.Active;
@@ -112,25 +113,41 @@ void CConditions::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon)
 	getConds("");
 }
 
+bool CConditions::Exists(std::string sCondition)
+{
+	for (const auto& sCond : vConditions)
+	{
+		if (sCond == sCondition)
+			return true;
+	}
+	return false;
+}
+
 bool CConditions::HasChildren(std::string sCondition)
 {
-	auto uHash = FNV1A::Hash(sCondition.c_str());
-	auto it = std::ranges::find_if(vConditions, [this, uHash](const auto& sCond) { return uHash == FNV1A::Hash(mConditions[sCond].Parent.c_str()); });
-	return it != vConditions.end();
+	for (auto& sCond : vConditions)
+	{
+		if (mConditions[sCond].Parent == sCondition)
+			return true;
+	}
+	return false;
 }
 
 std::string CConditions::GetParent(std::string sCondition)
 {
-	if (mConditions.contains(sCondition) && mConditions[sCondition].Parent.length())
-		return mConditions[sCondition].Parent;
+	for (auto& sCond : vConditions)
+	{
+		if (sCond == sCondition && mConditions[sCond].Parent != "")
+			return mConditions[sCond].Parent;
+	}
 	return "default";
 }
 
 void CConditions::AddCondition(std::string sCondition, Condition_t tCond)
 {
-	if (!mConditions.contains(sCondition))
-		vConditions.push_back(sCondition);
 	mConditions[sCondition] = tCond;
+	if (!Exists(sCondition))
+		vConditions.push_back(sCondition);
 }
 
 // fun!
@@ -138,10 +155,9 @@ void CConditions::AddCondition(std::string sCondition, Condition_t tCond)
 {\
 	if (var->GetVar<type>()->Map.contains(cond))\
 	{\
-		auto uHash = FNV1A::Hash(cond.c_str());\
 		for (auto it = var->GetVar<type>()->Map.begin(); it != var->GetVar<type>()->Map.end();)\
 		{\
-			if (uHash == FNV1A::Hash(it->first.c_str()))\
+			if (it->first == cond)\
 				it = var->GetVar<type>()->Map.erase(it);\
 			else\
 				++it;\
@@ -168,19 +184,18 @@ void CConditions::RemoveCondition(std::string sCondition)
 		else RemoveT(WindowBox_t, sCondition)
 	}
 
-	auto removeCond = [&](std::string sCond)
+	auto removeCond = [&](std::string cond)
 		{
-			auto uHash = FNV1A::Hash(sCond.c_str());
 			for (auto it = vConditions.begin(); it != vConditions.end();)
 			{
-				if (uHash == FNV1A::Hash(it->c_str()))
+				if (*it == cond)
 					it = vConditions.erase(it);
 				else
 					++it;
 			}
 			for (auto it = mConditions.begin(); it != mConditions.end();)
 			{
-				if (uHash == FNV1A::Hash(it->first.c_str()))
+				if (it->first == cond)
 					it = mConditions.erase(it);
 				else
 					++it;
@@ -188,13 +203,12 @@ void CConditions::RemoveCondition(std::string sCondition)
 		};
 	removeCond(sCondition);
 
-	std::function<void(std::string)> removeChildren = [&](std::string sParent)
+	std::function<void(std::string)> removeChildren = [&](std::string parent)
 		{
-			auto uHash = FNV1A::Hash(sParent.c_str());
 			for (auto& sCond : vConditions)
 			{
 				auto& cCond = mConditions[sCond];
-				if (uHash == FNV1A::Hash(cCond.Parent.c_str()))
+				if (cCond.Parent != parent)
 					continue;
 
 				removeCond(sCond);

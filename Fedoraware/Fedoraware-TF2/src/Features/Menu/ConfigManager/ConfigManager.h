@@ -31,13 +31,13 @@ class CConfigManager
 	void LoadJson(boost::property_tree::ptree& mapTree, const char* name, DragBox_t& val);
 	void LoadJson(boost::property_tree::ptree& mapTree, const char* name, WindowBox_t& val);
 
-	std::string CurrentConfig = "default";
-	std::string CurrentVisuals = "default";
+	std::string CurrentConfig = "Salmon'sOwn";
+	std::string CurrentVisuals = "Salmon'sOwn";
 	std::string ConfigPath;
 	std::string VisualsPath;
 
 public:
-	const std::string ConfigExtension = ".fw";
+	const std::string ConfigExtension = ".jew";
 
 	CConfigManager();
 	bool SaveConfig(const std::string& configName, bool bNotify = true);

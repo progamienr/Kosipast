@@ -8,7 +8,9 @@
 #include "../../Features/Visuals/SpectatorList/SpectatorList.h"
 #include "../../Features/Visuals/Radar/Radar.h"
 #include "../../Features/Menu/Menu.h"
-#include "../../Features/Visuals/Notifications/Notifications.h"
+#include "../../Features/Misc/Notifications/Notifications.h"
+#include "../../Features/AutoQueue/AutoQueue.h"
+#include "../../Features/Menu/Playerlist/PlayerCore.h"
 
 void Paint()
 {
@@ -20,42 +22,46 @@ void Paint()
 
 		if (!bInitIcons)
 		{
-			bInitIcons = true;
 			for (int nIndex = 0; nIndex < ICONS::TEXTURE_AMOUNT; nIndex++)
 			{
 				ICONS::ID[nIndex] = -1;
 				g_Draw.Texture(-200, 0, 18, 18, nIndex);
 			}
+
+			bInitIcons = true;
 		}
 	}
 
 	I::MatSystemSurface->StartDrawing();
 	{
+		F::PlayerCore.Run();
 		if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 			return I::MatSystemSurface->FinishDrawing();
 
+		F::AutoQueue.Run();
 		F::Notifications.Draw();
 
-		auto pLocal = g_EntityCache.GetLocal();
-		if (I::EngineVGui->IsGameUIVisible() || !pLocal)
+		if (I::EngineVGui->IsGameUIVisible())
 			return I::MatSystemSurface->FinishDrawing();
 
-		F::Visuals.DrawServerHitboxes(pLocal);
-		F::Visuals.DrawAntiAim(pLocal);
-
+		F::ESP.Run();
 		F::Visuals.PickupTimers();
-		F::ESP.Run(pLocal);
-		F::PlayerArrows.Run(pLocal);
-		F::Radar.Run(pLocal);
+		F::PlayerArrows.Run();
+		F::SpectatorList.Run();
+		F::CritHack.Draw();
+		F::Radar.Run();
 
-		F::Visuals.DrawAimbotFOV(pLocal);
-		F::Visuals.DrawSeedPrediction(pLocal);
-		F::Visuals.DrawOnScreenConditions(pLocal);
-		F::Visuals.DrawOnScreenPing(pLocal);
-		F::SpectatorList.Run(pLocal);
-		F::CritHack.Draw(pLocal);
-		F::Visuals.DrawTickbaseText(pLocal);
-		F::Visuals.DrawDebugInfo(pLocal);
+		if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
+		{
+			F::Visuals.DrawAntiAim(pLocal);
+			F::Visuals.DrawTickbaseText();
+			F::Visuals.DrawAimbotFOV(pLocal);
+			F::Visuals.DrawSeedPrediction(pLocal);
+			F::Visuals.DrawOnScreenConditions(pLocal);
+			F::Visuals.DrawOnScreenPing(pLocal);
+			F::Visuals.DrawServerHitboxes();
+			F::Visuals.DrawDebugInfo(pLocal);
+		}
 	}
 	I::MatSystemSurface->FinishDrawing();
 }

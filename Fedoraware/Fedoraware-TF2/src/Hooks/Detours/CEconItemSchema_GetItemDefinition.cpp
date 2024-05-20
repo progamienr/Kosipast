@@ -94,7 +94,7 @@ MAKE_HOOK(CEconItemSchema_GetItemDefinition, S::CEconItemSchema_GetItemDefinitio
 	DWORD* ecx, void* edx, int iItemIndex)
 {
 	const auto pItemDefinition = Hook.Original<FN>()(ecx, edx, iItemIndex);
-	if (Vars::Misc::Exploits::EquipRegionUnlock.Value && pItemDefinition)
+	if (pItemDefinition && Vars::Misc::Exploits::EquipRegionUnlock.Value)
 	{
 		pItemDefinition->m_unEquipRegionMask = 0;
 		pItemDefinition->m_unEquipRegionConflictMask = 0;

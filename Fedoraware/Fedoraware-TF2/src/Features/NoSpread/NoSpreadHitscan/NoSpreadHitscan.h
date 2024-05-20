@@ -14,7 +14,7 @@ public:
 	void AskForPlayerPerf();
 	bool ParsePlayerPerf(bf_read& msgData);
 
-	void Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserCmd* pCmd);
+	void Run(CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 
 	std::string GetFormat(int m_ServerTime);
 

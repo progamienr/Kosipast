@@ -11,8 +11,7 @@ class CGlow
 		int StencilScale = 1,
 		int BlurScale = 1
 	);
-	bool GetPlayerGlow(CBaseEntity* pEntity, CBaseEntity* pLocal, Glow_t* pGlow, Color_t* pColor, bool bFriendly, bool bEnemy);
-	bool GetGlow(CBaseEntity* pLocal, CBaseEntity* pEntity, Glow_t* pGlow, Color_t* pColor);
+	bool GetGlow(CBaseEntity* pEntity, Glow_t* glow, Color_t* color);
 
 	void SetupBegin(Glow_t glow, IMatRenderContext* pRenderContext, IMaterial* m_pMatBlurY);
 	void SetupMid(IMatRenderContext* pRenderContext, IMaterial* m_pMatGlowColor, int w, int h);
@@ -57,7 +56,7 @@ class CGlow
 	std::unordered_map<Glow_t, std::vector<GlowInfo_t>, GlowHasher_t> mEntities = {};
 
 public:
-	void RenderMain(CBaseEntity* pLocal);
+	void RenderMain();
 	void RenderHandler(const DrawModelState_t& pState, const ModelRenderInfo_t& pInfo, matrix3x4* pBoneToWorld);
 
 	void RenderViewmodel(void* ecx, int flags);

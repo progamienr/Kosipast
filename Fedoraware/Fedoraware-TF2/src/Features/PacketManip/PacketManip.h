@@ -6,10 +6,10 @@
 class CPacketManip
 {
 	bool WillTimeOut();
-	bool AntiAimCheck(CBaseEntity* pLocal);
+	bool AntiAimCheck();
 
 public:
-	void Run(CBaseEntity* pLocal, CUserCmd* pCmd, bool* pSendPacket);
+	void Run(CUserCmd* pCmd, bool* pSendPacket);
 };
 
 ADD_FEATURE(CPacketManip, PacketManip)

@@ -6,19 +6,38 @@
 MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 	CNetChannel* netChannel, void* edi, INetMessage& msg, bool bForceReliable, bool bVoice)
 {
+	/*
+	bool retn = false, runfurther = false;
+	if (Vars::NoSpread::Hitscan.Value) {
+		if (F::NoSpread.SendNetMessage(&msg)) {
+			bForceReliable = true;
+			runfurther = true;
+		}
+	}
+	*/
+
 	switch (msg.GetType())
 	{
 		case clc_VoiceData:
+		{
 			// stop lag with voice chat
 			bVoice = true;
 			break;
+		}
+
 		case clc_FileCRCCheck:
+		{
 			// whitelist
 			if (Vars::Misc::Exploits::BypassPure.Value)
+			{
 				return false;
+			}
 			break;
+		}
+
 		case clc_RespondCvarValue:
-			// causes b1g crash
+		{
+			//	causes b1g crash
 			if (Vars::Visuals::Removals::ConvarQueries.Value)
 			{
 				if (const auto respondMsg = reinterpret_cast<DWORD*>(&msg))
@@ -30,7 +49,7 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 							if (const char* defaultValue = convarC->GetDefault())
 							{
 								respondMsg[7] = reinterpret_cast<DWORD>(defaultValue);
-								I::Cvar->ConsoleColorPrintf({ 255, 0, 0, 255 }, "%s\n", msg.ToString());
+								I::Cvar->ConsoleColorPrintf({ 255, 0, 0, 255 }, "%s\n", msg.ToString()); //	mt everest
 								break;
 							}
 						}
@@ -39,6 +58,8 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 				}
 			}
 			break;
+		}
+
 		case clc_Move:
 		{
 			static auto sv_maxusrcmdprocessticks = g_ConVars.FindVar("sv_maxusrcmdprocessticks");
@@ -55,6 +76,15 @@ MAKE_HOOK(CNetChan_SendNetMsg, S::CNetChan_SendNetMsg(), bool, __fastcall,
 			break;
 		}
 	}
+
+	/*
+	retn = Hook.Original<FN>()(netChannel, edi, msg, bForceReliable, bVoice);
+
+	if (runfurther)
+		F::NoSpread.SendNetMessagePost();
+
+	return retn;
+	*/
 
 	return Hook.Original<FN>()(netChannel, edi, msg, bForceReliable, bVoice);
 }

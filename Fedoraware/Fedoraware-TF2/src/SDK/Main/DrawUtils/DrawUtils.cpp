@@ -12,7 +12,8 @@ namespace S
 
 void ScreenSize_t::Update()
 {
-	I::EngineClient->GetScreenSize(w, h);
+	I::EngineClient->GetScreenSize(this->w, this->h);
+	this->c = (this->w / 2);
 }
 
 

@@ -2,7 +2,9 @@
 
 #include "../../Hooks/HookManager.h"
 #include "../../Hooks/Hooks.h"
+#include "../Menu/Conditions/Conditions.h"
 #include "../NetworkFix/NetworkFix.h"
+#include "../Backtrack/Backtrack.h"
 #include "../PacketManip/AntiAim/AntiAim.h"
 
 void CTickshiftHandler::Reset()
@@ -192,8 +194,9 @@ void CTickshiftHandler::MoveMain(float accumulated_extra_samples, bool bFinalTic
 	// else recharge
 }
 
-void CTickshiftHandler::MovePre(CBaseEntity* pLocal)
+void CTickshiftHandler::MovePre()
 {
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	CUserCmd* pCmd = G::CurrentUserCmd;
 	if (!pLocal || !pCmd)
 		return;
@@ -203,18 +206,21 @@ void CTickshiftHandler::MovePre(CBaseEntity* pLocal)
 	Speedhack(pCmd);
 }
 
-void CTickshiftHandler::MovePost(CBaseEntity* pLocal, CUserCmd* pCmd)
+void CTickshiftHandler::MovePost(CUserCmd* pCmd)
 {
+	CBaseEntity* pLocal = g_EntityCache.GetLocal();
 	if (!pLocal)
 		return;
 
 	Doubletap(pCmd, pLocal);
 }
 
-void CTickshiftHandler::Run(float accumulated_extra_samples, bool bFinalTick, CBaseEntity* pLocal)
+void CTickshiftHandler::CLMove(float accumulated_extra_samples, bool bFinalTick)
 {
+	F::Conditions.Run();
 	F::NetworkFix.FixInputDelay(bFinalTick);
+	F::Backtrack.iTickCount = I::GlobalVars->tickcount;
 
-	MovePre(pLocal);
+	MovePre();
 	MoveMain(accumulated_extra_samples, bFinalTick);
 }
