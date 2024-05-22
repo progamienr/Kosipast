@@ -1,12 +1,12 @@
 <p align="center">
   <img src=".github/assets/reiforklogo.png" alt="Fedoraware Logo" width="250" align="center">
   <br/>
-  <a href="https://nightly.link/rei-kes/Fedoraware/workflows/msbuild/master/Fedoraware.zip">
+  <a href="https://nightly.link/SamlonDev/SalmonPaste/workflows/msbuild/master/Fedoraware.zip">
     <img src=".github/assets/download.png" alt="Download Button" width="400" height="auto" align="center">
   </a>
 </p>
 
-# Rei-Fork
+# SalmonPaste
 
 [![GitHub Repo stars](https://img.shields.io/github/stars/rei-kes/Fedoraware)](/../../stargazers)
 [![Discord](https://img.shields.io/discord/1227898008373297223?logo=Discord&label=discord)](https://discord.gg/RbP9DfkUhe)
